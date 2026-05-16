@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\laragon\\\\www\\\\project-ketua\" -Force | ForEach-Object { $_.Name })",
+      "PowerShell(mysql *)",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"SHOW DATABASES;\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root -e \"CREATE DATABASE IF NOT EXISTS db_project_ketua CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\")",
+      "PowerShell(cmd /c \"dir /s /b C:\\\\laragon\\\\www\\\\project-ketua\\\\resources\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SHOW TABLES;\")",
+      "PowerShell(cmd /c \"dir /b C:\\\\laragon\\\\www\\\\project-ketua\\\\database\\\\migrations\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'db_project_ketua' ORDER BY TABLE_NAME;\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT model_type, model_id, role_id FROM model_has_roles LIMIT 10;\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT r.name as role, COUNT\\(mr.model_id\\) as jumlah_user FROM roles r LEFT JOIN model_has_roles mr ON r.id = mr.role_id GROUP BY r.name ORDER BY r.name; SELECT name, abbreviation FROM master_units ORDER BY id; SELECT code, name, type FROM master_branches;\")"
+    ]
+  }
+}

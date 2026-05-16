@@ -1,0 +1,53 @@
+<h2>Scope: View mana yang ingin didesain?</h2>
+<p class="subtitle">Berdasarkan eksplorasi kode, ini kondisi view Admin Gudang saat ini</p>
+
+<div class="section" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div>
+      <div class="label" style="color:#64748b;">✅ Sudah ada (fungsional)</div>
+      <ul style="margin:8px 0 0;padding-left:16px;line-height:1.8;color:#334155;">
+        <li>Stock Index (tabel + filter + modal SO)</li>
+        <li>Stock Movements (histori)</li>
+        <li>Purchase Order Index + Form + Show</li>
+        <li>Receiving Index + Form + Show</li>
+        <li>Transfer Request Index + Show</li>
+        <li>Transfer Out Index + Form + Show</li>
+        <li>Layout sidebar (indigo, navigasi lengkap)</li>
+      </ul>
+    </div>
+    <div>
+      <div class="label" style="color:#ef4444;">❌ Belum ada / stub</div>
+      <ul style="margin:8px 0 0;padding-left:16px;line-height:1.8;color:#334155;">
+        <li><strong>Dashboard</strong> — hanya "Coming Soon"</li>
+        <li>User Management view</li>
+        <li>Sidebar link operasional (disabled semua)</li>
+        <li>Notifikasi realtime</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h3>Apa yang ingin didesain ulang / dibuat?</h3>
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Dashboard saja</h3>
+      <p>Fokus pada halaman utama Admin Gudang — summary stok, PO aktif, transfer request pending, grafik, aktivitas terbaru. Views lain sudah OK.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dashboard + aktifkan sidebar + User Management</h3>
+      <p>Desain dashboard, aktifkan semua link sidebar yang masih disabled, dan tambah view User Management (CRUD user per role).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Semua view dari awal (redesign total)</h3>
+      <p>Desain ulang semua view Admin Gudang — dashboard, layout, semua halaman operasional — dengan visual lebih konsisten dan polished.</p>
+    </div>
+  </div>
+</div>

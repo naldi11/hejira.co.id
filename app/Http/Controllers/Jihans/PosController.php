@@ -1,0 +1,147 @@
+<?php
+
+namespace App\Http\Controllers\Jihans;
+
+use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\JihansStock;
+use App\Models\JihansTransaction;
+use App\Models\JihansTransactionDetail;
+use App\Models\Product;
+use App\Services\ActivityLogService;
+use App\Services\NumberGeneratorService;
+use App\Services\StockService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PosController extends Controller
+{
+    public function __construct(
+        private NumberGeneratorService $numbers,
+        private StockService $stock,
+        private ActivityLogService $logger
+    ) {}
+
+    public function index()
+    {
+        // Get products that are available in Jihans Stock
+        $products = Product::where('status', 'active')
+            ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
+            ->where('jihans_stock.quantity', '>', 0)
+            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+            ->with(['unit', 'category'])
+            ->get();
+
+        $customers = Customer::where('is_active', true)->get();
+
+        return view('jihans.pos.index', compact('products', 'customers'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'customer_id'       => 'nullable|exists:master_customers,id',
+            'customer_name'     => 'nullable|string|max:150',
+            'customer_type'     => 'required|in:retail,agen',
+            'ppn_type'          => 'required|in:none,include,exclude',
+            'ppn_rate'          => 'required|numeric|min:0',
+            'subtotal'          => 'required|numeric|min:0',
+            'discount_amount'   => 'required|numeric|min:0',
+            'tax_amount'        => 'required|numeric|min:0',
+            'other_costs'       => 'required|numeric|min:0',
+            'grand_total'       => 'required|numeric|min:0',
+            'payment_method'    => 'required|in:cash,transfer',
+            'amount_paid'       => 'required|numeric|min:0', // Validasi minimal senilai grand_total jika lunas
+            'bank_name'         => 'nullable|string|max:100',
+            'reference_number'  => 'nullable|string|max:100',
+            'notes'             => 'nullable|string',
+            'items'             => 'required|array|min:1',
+            'items.*.product_id'=> 'required|exists:master_products,id',
+            'items.*.quantity'  => 'required|numeric|min:0.001',
+            'items.*.price'     => 'required|numeric|min:0',
+            'items.*.discount'  => 'nullable|numeric|min:0',
+            'items.*.total'     => 'required|numeric|min:0',
+        ]);
+
+        // Cek stok apakah mencukupi
+        foreach ($request->items as $item) {
+            $stock = JihansStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
+            if ($item['quantity'] > $stock) {
+                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$item['product_id']}."], 422);
+            }
+        }
+
+        $transaction = DB::transaction(function () use ($request) {
+            $trx = JihansTransaction::create([
+                'transaction_number' => $this->numbers->generateYearly('JHS-INV', 'jihans_transactions', 'transaction_number'),
+                'date'               => now()->toDateString(),
+                'time'               => now()->toTimeString(),
+                'customer_id'        => $request->customer_id,
+                'customer_name'      => $request->customer_name ?? 'Pelanggan Umum',
+                'customer_type'      => $request->customer_type,
+                'ppn_type'           => $request->ppn_type,
+                'ppn_rate'           => $request->ppn_rate,
+                'subtotal'           => $request->subtotal,
+                'discount_amount'    => $request->discount_amount,
+                'tax_amount'         => $request->tax_amount,
+                'other_costs'        => $request->other_costs,
+                'grand_total'        => $request->grand_total,
+                'status'             => 'paid',
+                'notes'              => $request->notes,
+                'created_by'         => auth()->id(),
+            ]);
+
+            foreach ($request->items as $item) {
+                $product = Product::with('unit')->find($item['product_id']);
+                
+                $trx->details()->create([
+                    'product_id'       => $item['product_id'],
+                    'product_name'     => $product->name,
+                    'quantity'         => $item['quantity'],
+                    'unit_id'          => $product->unit_id,
+                    'price'            => $item['price'],
+                    'discount_amount'  => $item['discount'] ?? 0,
+                    'total'            => $item['total'],
+                ]);
+
+                // Kurangi stok lokal Jihans
+                $this->stock->debitJihans(
+                    $item['product_id'],
+                    $item['quantity'],
+                    'pos_sale',
+                    $trx->id,
+                    auth()->id()
+                );
+            }
+
+            // Catat Pembayaran
+            $trx->payments()->create([
+                'payment_method'   => $request->payment_method,
+                'amount'           => $request->amount_paid,
+                'reference_number' => $request->reference_number,
+                'bank_name'        => $request->bank_name,
+                'notes'            => null,
+            ]);
+
+            $this->logger->log('create', 'jihans.pos', "Transaksi POS Kasir Jihan's: {$trx->transaction_number}", $trx);
+
+            return $trx;
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'transaction_id' => $transaction->id,
+                'redirect' => route('jihans.pos.receipt', $transaction->id)
+            ]);
+        }
+
+        return redirect()->route('jihans.pos.receipt', $transaction->id);
+    }
+
+    public function receipt(JihansTransaction $transaction)
+    {
+        $transaction->load(['details.product.unit', 'payments', 'creator', 'customer']);
+        return view('jihans.pos.receipt', compact('transaction'));
+    }
+}
