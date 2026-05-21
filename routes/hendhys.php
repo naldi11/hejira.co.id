@@ -68,6 +68,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
         // Distribusi ke Cabang
         Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
         Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
 
         // Retur dari Cabang
