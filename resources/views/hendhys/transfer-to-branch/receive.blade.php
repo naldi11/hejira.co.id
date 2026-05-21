@@ -69,7 +69,9 @@
                         <tr class="bg-surface-container-low border-b border-outline-variant">
                             <th class="px-md py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Produk</th>
                             <th class="px-md py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Qty Dikirim</th>
-                            <th class="px-md py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-48">Qty Diterima <span class="text-error">*</span></th>
+                            <th class="px-md py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-48">
+                                Qty Diterima <span class="text-error">*</span>
+                            </th>
                             <th class="px-md py-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">Satuan</th>
                         </tr>
                     </thead>
@@ -80,7 +82,9 @@
                                 <p class="font-label-lg text-label-lg font-bold text-on-surface">{{ $detail->product->name }}</p>
                             </td>
                             <td class="px-md py-sm text-right">
-                                <span class="font-label-lg text-label-lg text-on-surface-variant">{{ number_format((float)$detail->quantity, 0, ',', '.') }}</span>
+                                <span class="font-label-lg text-label-lg text-on-surface-variant">
+                                    {{ number_format((float)$detail->quantity, 0, ',', '.') }}
+                                </span>
                             </td>
                             <td class="px-md py-sm">
                                 <input type="number"
@@ -93,7 +97,9 @@
                                     class="w-full text-right text-sm border border-outline-variant rounded-lg px-sm py-xs focus:border-primary focus:ring-0 bg-surface font-bold text-on-surface">
                             </td>
                             <td class="px-md py-sm">
-                                <span class="font-label-sm text-label-sm text-on-surface-variant font-bold">{{ $detail->unit->abbreviation ?? $detail->unit->name }}</span>
+                                <span class="font-label-sm text-label-sm text-on-surface-variant font-bold">
+                                    {{ $detail->unit->abbreviation ?? $detail->unit->name ?? '-' }}
+                                </span>
                             </td>
                         </tr>
                         @endforeach
@@ -103,16 +109,19 @@
         </div>
 
         {{-- Foto & Catatan --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-md">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-md"
+             x-data="{ preview: null, fileName: '' }">
             <div class="px-md py-sm border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
                 <span class="material-symbols-outlined text-primary text-[20px]">attach_file</span>
                 <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Bukti & Keterangan</h3>
             </div>
             <div class="p-md space-y-md">
+
                 {{-- Upload Foto --}}
-                <div x-data="{ preview: null, fileName: '' }">
+                <div>
                     <label class="block font-label-md text-label-md font-bold text-on-surface-variant mb-xs">
-                        Foto Bukti Serah Terima <span class="font-normal text-on-surface-variant">(opsional)</span>
+                        Foto Bukti Serah Terima
+                        <span class="font-normal text-on-surface-variant">(opsional)</span>
                     </label>
                     <div class="border-2 border-dashed border-outline-variant rounded-xl p-lg flex flex-col items-center justify-center gap-sm cursor-pointer hover:border-primary hover:bg-primary-fixed/20 transition-all"
                          @click="$refs.photoInput.click()"
@@ -127,7 +136,7 @@
                                 $refs.photoInput.files = dt.files;
                             }">
                         <template x-if="!preview">
-                            <div class="text-center">
+                            <div class="text-center pointer-events-none">
                                 <span class="material-symbols-outlined text-outline text-[48px] mb-sm block">photo_camera</span>
                                 <p class="font-label-lg text-label-lg text-on-surface-variant">Klik atau drag foto ke sini</p>
                                 <p class="font-body-sm text-body-sm text-outline mt-xs">JPG, PNG, WEBP — maks. 5 MB</p>
@@ -137,29 +146,39 @@
                             <div class="text-center">
                                 <img :src="preview" class="max-h-40 max-w-full rounded-lg shadow-sm mx-auto mb-sm object-contain" alt="Preview">
                                 <p class="font-label-sm text-label-sm text-on-surface-variant" x-text="fileName"></p>
-                                <button type="button" @click.stop="preview = null; fileName = ''; $refs.photoInput.value = ''"
-                                    class="mt-xs text-error font-label-sm text-label-sm hover:underline">Hapus foto</button>
+                                <button type="button"
+                                    @click.stop="preview = null; fileName = ''; $refs.photoInput.value = ''"
+                                    class="mt-xs text-error font-label-sm text-label-sm hover:underline">
+                                    Hapus foto
+                                </button>
                             </div>
                         </template>
                     </div>
-                    <input type="file" name="receive_photo" accept="image/*" class="hidden" x-ref="photoInput"
+                    <input type="file" name="receive_photo" accept="image/*"
+                           class="hidden" x-ref="photoInput"
                            @change="
                             const file = $event.target.files[0];
                             if (file) { preview = URL.createObjectURL(file); fileName = file.name; }
                            ">
-                    @error('receive_photo') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('receive_photo')
+                        <p class="text-error text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Catatan --}}
                 <div>
                     <label class="block font-label-md text-label-md font-bold text-on-surface-variant mb-xs">
-                        Catatan ke Pusat <span class="font-normal text-on-surface-variant">(opsional — tuliskan jika ada masalah)</span>
+                        Catatan ke Pusat
+                        <span class="font-normal text-on-surface-variant">(opsional — tuliskan jika ada masalah)</span>
                     </label>
                     <textarea name="receive_notes" rows="3"
                         placeholder="Contoh: 2 pcs Roti Abon datang dalam kondisi rusak. Kotak pengiriman terbuka."
                         class="w-full font-body-md text-body-md bg-surface-container border border-outline-variant focus:border-primary focus:ring-0 rounded-xl text-on-surface px-sm py-sm resize-none">{{ old('receive_notes') }}</textarea>
-                    @error('receive_notes') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('receive_notes')
+                        <p class="text-error text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
+
             </div>
         </div>
 
