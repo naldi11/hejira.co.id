@@ -27,7 +27,7 @@ class TransactionController extends Controller
 
     public function show($id)
     {
-        $transaction = JihansTransaction::with(['details.product', 'creator', 'customer', 'branch'])->findOrFail($id);
+        $transaction = JihansTransaction::with(['details.product', 'creator', 'customer'])->findOrFail($id);
         return view('jihans.transactions.show', compact('transaction'));
     }
 }
