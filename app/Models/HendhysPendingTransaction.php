@@ -5,14 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Hendhys\Customer as HendhysCustomer;
 
 class HendhysPendingTransaction extends Model
 {
     protected $table = 'hendhys_pending_transactions';
 
     protected $fillable = [
-        'pending_number', 'branch_id', 'date', 'customer_name', 
-        'customer_id', 'customer_type', 'notes', 'created_by'
+        'pending_number', 'branch_id', 'date', 'customer_name',
+        'customer_phone', 'customer_id', 'customer_type', 'notes', 'created_by'
     ];
 
     public function branch(): BelongsTo
@@ -22,7 +23,7 @@ class HendhysPendingTransaction extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(HendhysCustomer::class, 'customer_id', 'id');
     }
 
     public function details(): HasMany

@@ -12,7 +12,7 @@ class HendhysTransaction extends Model
 
     protected $fillable = [
         'transaction_number', 'branch_id', 'date', 'time', 'customer_name',
-        'customer_id', 'customer_type', 'subtotal', 'discount_amount',
+        'customer_phone', 'customer_id', 'customer_type', 'subtotal', 'discount_amount',
         'ppn_type', 'tax_amount', 'other_costs', 'grand_total',
         'status', 'notes', 'created_by'
     ];
@@ -24,7 +24,7 @@ class HendhysTransaction extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(\App\Models\Hendhys\Customer::class);
     }
 
     public function details(): HasMany
