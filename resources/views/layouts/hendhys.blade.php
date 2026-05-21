@@ -1,193 +1,287 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', "Hendhys Brownies") — Sistem Bisnis Terpadu</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Hendhys Brownies')</title>
+
+    {{-- <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script> --}}
+    {{-- NOTE: To avoid conflicts, we use Vite for js, but Tailwind CDN for this specific layout --}}
+    @vite(['resources/js/app.js'])
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet"/>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary-fixed": "#ffdbc9",
+                    "surface-container-low": "#f5f3f3",
+                    "surface-container-highest": "#e4e2e2",
+                    "surface-container": "#efeded",
+                    "on-secondary-container": "#6e5c00",
+                    "secondary": "#705d00",
+                    "primary-fixed-dim": "#ffb68c",
+                    "surface-container-high": "#eae8e7",
+                    "primary": "#6c2f00",
+                    "on-surface-variant": "#54433a",
+                    "inverse-on-surface": "#f2f0f0",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed-variant": "#544600",
+                    "secondary-fixed": "#ffe16d",
+                    "secondary-fixed-dim": "#e9c400",
+                    "inverse-surface": "#303030",
+                    "outline": "#877369",
+                    "on-primary-fixed": "#321200",
+                    "on-error-container": "#93000a",
+                    "surface": "#fbf9f8",
+                    "tertiary-container": "#5a5a38",
+                    "on-background": "#1b1c1c",
+                    "outline-variant": "#dac2b6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-container": "#d3d1a7",
+                    "background": "#fbf9f8",
+                    "surface-bright": "#fbf9f8",
+                    "on-primary-fixed-variant": "#753401",
+                    "inverse-primary": "#ffb68c",
+                    "tertiary-fixed": "#e6e5b9",
+                    "on-tertiary-fixed-variant": "#484828",
+                    "primary-container": "#8b4513",
+                    "tertiary-fixed-dim": "#cac99f",
+                    "on-secondary-fixed": "#221b00",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1b1c1c",
+                    "tertiary": "#424223",
+                    "surface-dim": "#dbd9d9",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#1d1d03",
+                    "surface-variant": "#e4e2e2",
+                    "on-error": "#ffffff",
+                    "secondary-container": "#fcd400",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#ffc29f",
+                    "surface-tint": "#934b19"
+                },
+                "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                "spacing": { "xl": "64px", "lg": "40px", "xs": "4px", "sm": "12px", "md": "24px", "margin-mobile": "16px", "gutter": "16px", "base": "8px", "margin-desktop": "32px" },
+                "fontFamily": {
+                    "headline-lg": ["Montserrat"], "label-lg": ["Inter"], "display-lg": ["Montserrat"], "headline-md": ["Montserrat"], 
+                    "body-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "title-lg": ["Inter"], "headline-lg-mobile": ["Montserrat"]
+                },
+                "fontSize": {
+                    "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                    "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                    "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                    "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                }
+            },
+        },
+    }
+    </script>
     <style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
         [x-cloak] { display: none !important; }
+        /* Scrollbar customization */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dac2b6; border-radius: 4px; }
+        
+        .cart-collapsed { width: 0 !important; opacity: 0; border-left-width: 0 !important; }
+        .cart-wrapper { width: 20rem; }
+        @media (min-width: 1024px) { .cart-wrapper { width: 24rem; } }
     </style>
+    @stack('styles')
 </head>
-<body class="bg-[#faf7f5] text-gray-800 font-sans antialiased flex h-screen overflow-hidden selection:bg-amber-200 selection:text-amber-900">
+<body class="flex h-screen overflow-hidden antialiased bg-background text-on-background font-body-md" x-data="{ sidebarOpen: window.innerWidth >= 768, isMobile: window.innerWidth < 768 }" @resize.window="isMobile = window.innerWidth < 768;">
 
     @php
         $isPusat = auth()->user()->branch->type === 'pusat';
     @endphp
 
-    {{-- Sidebar --}}
-    <aside class="w-64 bg-[#4a2e15] text-[#faeadd] flex flex-col transition-all duration-300 shadow-xl z-20">
-        {{-- Logo Area --}}
-        <div class="h-16 flex items-center px-6 border-b border-[#5e3b1c] bg-[#3a2310]">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-[#d97706] text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-inner">
-                    🧁
-                </div>
-                <div>
-                    <span class="font-bold text-lg tracking-wide text-white block leading-none mt-1">Hendhys</span>
-                    <span class="text-[10px] text-amber-200 font-medium tracking-wider uppercase">{{ $isPusat ? 'Pusat Bakery' : 'Cabang ' . auth()->user()->branch->name }}</span>
-                </div>
-            </div>
-        </div>
+    {{-- Mobile Overlay --}}
+    <div x-show="sidebarOpen && isMobile" x-cloak class="fixed inset-0 z-40 bg-inverse-surface bg-opacity-40 backdrop-blur-sm md:hidden transition-opacity" @click="sidebarOpen = false"></div>
 
-        {{-- Navigation --}}
-        <div class="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
-            <nav class="space-y-1">
-                <a href="{{ route('hendhys.dashboard') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.dashboard') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+    <!-- SideNavBar -->
+    <nav class="fixed inset-y-0 left-0 z-50 w-64 bg-surface-container flex flex-col h-full py-md px-sm border-r border-outline-variant shadow-lg transition-transform duration-300 ease-in-out"
+         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+        
+        <div class="mb-lg px-sm">
+            <h1 class="font-headline-md text-headline-md font-black text-primary-container">Hendhys Bakery</h1>
+            <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">{{ $isPusat ? 'Pusat Manufaktur' : 'Cabang ' . auth()->user()->branch->name }}</p>
+        </div>
+        
+        <ul class="flex flex-col gap-xs flex-grow overflow-y-auto custom-scrollbar">
+            <li>
+                <a href="{{ route('hendhys.dashboard') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.dashboard') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.dashboard') ? 'fill' : '' }}" data-icon="dashboard">dashboard</span>
                     Dashboard
                 </a>
+            </li>
 
-                <div class="pt-4 pb-1">
-                    <p class="px-3 text-xs font-semibold text-amber-500/70 uppercase tracking-wider">Kasir & Penjualan</p>
-                </div>
-                
-                <a href="{{ route('hendhys.pos.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.pos.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Penjualan</li>
+            <li>
+                <a href="{{ route('hendhys.pos.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.pos.index') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.pos.index') ? 'fill' : '' }}">point_of_sale</span>
                     POS Kasir
                 </a>
-                
-                <a href="{{ route('hendhys.pending.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.pending.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </li>
+            <li>
+                <a href="{{ route('hendhys.transactions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.transactions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transactions.*') ? 'fill' : '' }}" data-icon="receipt_long">receipt_long</span>
+                    Riwayat Transaksi
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('hendhys.pending.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.pending.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.pending.*') ? 'fill' : '' }}">pause_circle</span>
                     Transaksi Pending
                 </a>
+            </li>
 
-                @if($isPusat)
-                <div class="pt-4 pb-1">
-                    <p class="px-3 text-xs font-semibold text-amber-500/70 uppercase tracking-wider">Pusat Manufaktur</p>
-                </div>
-
-                <a href="{{ route('hendhys.productions.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.productions.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Inventory</li>
+            <li>
+                <a href="{{ route('hendhys.stock.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.stock.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.stock.*') ? 'fill' : '' }}" data-icon="inventory_2">inventory_2</span>
+                    Stok Produk
+                </a>
+            </li>
+            
+            @if($isPusat)
+            <li>
+                <a href="{{ route('hendhys.productions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.productions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.productions.*') ? 'fill' : '' }}">factory</span>
                     Produksi Bakery
                 </a>
-                
-                <a href="{{ route('hendhys.transfer-to-branch.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    Distribusi ke Cabang
+            </li>
+            <li>
+                <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'fill' : '' }}">local_shipping</span>
+                    Distribusi
                 </a>
-                @endif
+            </li>
+            <li>
+                <a href="{{ route('hendhys.branch-requests.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.branch-requests.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.branch-requests.*') ? 'fill' : '' }}">inbox</span>
+                    Permintaan Cabang
+                </a>
+            </li>
+            @endif
 
-                <div class="pt-4 pb-1">
-                    <p class="px-3 text-xs font-semibold text-amber-500/70 uppercase tracking-wider">Inventory & Logistik</p>
-                </div>
-
-                <a href="{{ route('hendhys.stock.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.stock.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    Stok Tersedia
-                </a>
-
-                @if($isPusat)
-                <a href="{{ route('hendhys.transfer-requests.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.transfer-requests.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    Request Bahan Baku
-                </a>
-                
-                <a href="{{ route('hendhys.branch-requests.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.branch-requests.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    Daftar Request Cabang
-                </a>
-                @else
-                <a href="{{ route('hendhys.branch-requests.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.branch-requests.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Request Stok ke Pusat
-                </a>
-                <a href="{{ route('hendhys.transfer-to-branch.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                    Penerimaan Barang
-                </a>
-                @endif
-                
-                <a href="{{ route('hendhys.returns.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('hendhys.returns.*') ? 'bg-[#5e3b1c] text-white font-medium' : 'text-[#d7c4b3] hover:bg-[#5e3b1c]/60' }}">
-                    <svg class="w-5 h-5 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/></svg>
-                    Return Barang Cacat
-                </a>
-            </nav>
-        </div>
-
-        {{-- User Menu --}}
-        <div class="p-4 border-t border-[#5e3b1c] bg-[#3a2310]" x-data="{ open: false }">
-            <div class="relative">
-                <button @click="open = !open" @click.away="open = false" class="flex items-center gap-3 w-full hover:bg-[#4a2e15] p-2 rounded-lg transition-colors">
-                    <div class="w-9 h-9 rounded-full bg-[#d97706] text-white flex items-center justify-center font-bold shadow-sm">
-                        {{ substr(auth()->user()->name, 0, 1) }}
-                    </div>
-                    <div class="text-left flex-1 min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-amber-200 truncate">{{ auth()->user()->getRoleNames()->first() }}</p>
-                    </div>
-                    <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            @if($isPusat)
+            <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Master Data</li>
+            <li x-data="{ masterOpen: {{ request()->routeIs('hendhys.master.*') ? 'true' : 'false' }} }">
+                <button @click="masterOpen = !masterOpen" class="w-full flex items-center justify-between px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all text-on-surface-variant hover:bg-surface-container-high">
+                    <span class="flex items-center gap-sm"><span class="material-symbols-outlined" data-icon="settings">settings</span>Master Data</span>
+                    <span class="material-symbols-outlined transition-transform" :class="masterOpen ? 'rotate-180' : ''">expand_more</span>
                 </button>
-                
-                {{-- Dropdown --}}
-                <div x-show="open" x-transition.opacity
-                     class="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                            Logout
-                        </button>
-                    </form>
+                <div x-show="masterOpen" x-collapse x-cloak class="pl-xl mt-1 space-y-1">
+                    @foreach([
+                        ['route' => 'hendhys.master.products.index',   'label' => 'Produk'],
+                        ['route' => 'hendhys.master.categories.index',  'label' => 'Kategori'],
+                        ['route' => 'hendhys.master.units.index',       'label' => 'Satuan'],
+                        ['route' => 'hendhys.master.brands.index',      'label' => 'Brand'],
+                    ] as $item)
+                        <a href="{{ route($item['route']) }}" class="block px-sm py-xs rounded text-[13px] {{ request()->routeIs($item['route']) ? 'text-primary font-bold bg-primary-fixed' : 'text-on-surface-variant hover:bg-surface-container-high' }}">{{ $item['label'] }}</a>
+                    @endforeach
                 </div>
+            </li>
+            @endif
+        </ul>
+
+        <div class="mt-auto">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="w-full flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-error-container hover:text-error transition-all rounded-lg font-label-lg text-label-lg active:scale-[0.98] duration-200">
+                    <span class="material-symbols-outlined" data-icon="logout">logout</span>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </nav>
+    {{-- Sidebar spacer — mirrors nav width to push content --}}
+    <div class="shrink-0 transition-all duration-300 ease-in-out h-full" :class="sidebarOpen ? 'w-64' : 'w-0'"></div>
+    <!-- Main Flex Area after Nav -->
+    <div class="flex-1 flex min-w-0 h-full w-full relative transition-all duration-300" @yield('wrapper-attributes', '')>
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-surface overflow-auto relative z-10 h-full w-full">
+        
+        <header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-20 z-40 bg-surface border-b border-outline-variant shrink-0">
+            <div class="flex items-center gap-md">
+                {{-- Sidebar Toggle - visible always --}}
+                <button @click="sidebarOpen = !sidebarOpen"
+                        class="text-primary hover:bg-surface-container-low p-xs rounded-lg transition-colors active:scale-95 duration-150 shrink-0"
+                        title="Toggle Sidebar">
+                    <span class="material-symbols-outlined" x-text="sidebarOpen ? 'menu_open' : 'menu'">menu</span>
+                </button>
+                <div class="font-headline-md text-[18px] md:text-headline-md font-bold text-primary truncate max-w-[200px] md:max-w-none">@yield('page-title', 'Hendhys POS')</div>
             </div>
-        </div>
-    </aside>
-
-    {{-- Main Content --}}
-    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {{-- Topbar --}}
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-10 print:hidden">
-            <h1 class="text-xl font-bold text-gray-800">@yield('page-title', "Dashboard")</h1>
-            
-            <div class="flex items-center gap-4">
-                {{-- Notifications --}}
-                <button class="relative p-2 text-gray-400 hover:text-[#d97706] transition-colors rounded-full hover:bg-amber-50">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                    <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-                </button>
+            {{-- Auth Profile --}}
+            <div class="flex items-center gap-sm shrink-0">
+                <div class="text-right leading-tight">
+                    <div class="font-label-lg text-label-lg text-on-background">{{ auth()->user()->name }}</div>
+                    <div class="font-label-sm text-label-sm text-on-surface-variant">{{ auth()->user()->getRoleNames()->first() }}</div>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
+                    <span class="font-bold text-on-primary-fixed-variant text-sm">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                </div>
             </div>
         </header>
 
-        {{-- Page Content --}}
-        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <!-- Flash messages -->
+        <div class="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none px-4">
             @if(session('success'))
-            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 shadow-sm" role="alert">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span class="text-sm font-medium">{{ session('success') }}</span>
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                 class="flex items-center gap-3 bg-tertiary-fixed border border-tertiary-fixed-dim text-on-tertiary-fixed-variant shadow-lg rounded-xl p-4 pointer-events-auto">
+                <span class="material-symbols-outlined text-tertiary">check_circle</span>
+                <p class="font-body-md text-sm font-bold">{{ session('success') }}</p>
             </div>
             @endif
-
             @if(session('error'))
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-3 shadow-sm" role="alert">
-                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span class="text-sm font-medium">{{ session('error') }}</span>
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+                 class="flex items-center gap-3 bg-error-container border border-error text-on-error-container shadow-lg rounded-xl p-4 pointer-events-auto">
+                <span class="material-symbols-outlined text-error">error</span>
+                <p class="font-body-md text-sm font-bold">{{ session('error') }}</p>
             </div>
             @endif
-
-            @yield('content')
         </div>
-    </main>
 
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
-        aside.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
-        aside.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-    </style>
+        @yield('content')
+    </main>
+    
+    @yield('right-sidebar')
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let lastHendhysCount = {{ $hendhys_pusat_pending_count ?? 0 }};
+
+            function fetchNotificationCounts() {
+                axios.get('{{ route('api.notifications.counts') }}')
+                    .then(response => {
+                        const data = response.data;
+                        lastHendhysCount = data.hendhys_pusat_pending;
+                    }).catch(error => console.error('Error fetching notifications:', error));
+            }
+            setInterval(fetchNotificationCounts, 30000);
+        });
+    </script>
+    @stack('scripts')
 </body>
 </html>

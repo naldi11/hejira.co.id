@@ -20,7 +20,10 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $q = Product::with(['category', 'unit', 'brand']);
+        $info = $this->getScopeInfo($request);
+        $modelClass = $this->getModelClass('Product', $info['scope']);
+
+        $q = $modelClass::with(['category', 'unit', 'brand']);
 
         if ($search = $request->search) {
             $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
@@ -34,7 +37,12 @@ class ProductController extends Controller
 
         $products = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('master.products.index', compact('products'));
+        return view('master.products.index', [
+            'products' => $products,
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
     public function create()
@@ -48,12 +56,15 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $info = $this->getScopeInfo($request);
+        $tableName = strtolower($info['scope']) . '_products';
+
         $data = $request->validate([
             'name'          => 'required|string|max:200',
-            'barcode'       => 'nullable|string|max:50|unique:master_products,barcode',
-            'category_id'   => 'required|exists:master_product_categories,id',
-            'unit_id'       => 'required|exists:master_units,id',
-            'brand_id'      => 'nullable|exists:master_brands,id',
+            'barcode'       => "nullable|string|max:50|unique:{$tableName},barcode",
+            'category_id'   => "required|exists:{$info['scope']}_product_categories,id",
+            'unit_id'       => "required|exists:{$info['scope']}_units,id",
+            'brand_id'      => "nullable|exists:{$info['scope']}_brands,id",
             'rack'          => 'nullable|string|max:20',
             'jenis'         => 'required|in:frozen,tortilla,bakery,bahan_baku,aksesoris,minuman,snack,selai,property,lainnya',
             'hpp'           => 'required|numeric|min:0',
@@ -65,15 +76,17 @@ class ProductController extends Controller
             'entity_scope'  => 'required|in:gudang,jihans,hendhys,all',
             'status'        => 'required|in:active,discontinued',
             'notes'         => 'nullable|string',
+        ], [
+            'barcode.unique' => 'Gagal menyimpan produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
 
-        $data['code']       = $this->numbers->generate('PRD', 'master_products', 'code');
+        $data['code']       = $this->numbers->generate('PRD', $tableName, 'code');
         $data['created_by'] = auth()->id();
 
-        $product = Product::create($data);
+        $product = $this->getModelClass('Product', $info['scope'])::create($data);
         $this->logger->log('create', 'master.product', "Tambah produk: {$product->name}", $product);
 
-        return redirect()->route('master.products.index')->with('success', "Produk {$product->name} berhasil ditambahkan.");
+        return redirect()->route($info['route'] . 'products.index')->with('success', "Produk {$product->name} berhasil ditambahkan.");
     }
 
     public function edit(Product $product)
@@ -85,14 +98,18 @@ class ProductController extends Controller
         return view('master.products.form', compact('product', 'categories', 'units', 'brands'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $product = $this->getModelClass('Product', $info['scope'])::findOrFail($id);
+        $tableName = strtolower($info['scope']) . '_products';
+
         $data = $request->validate([
             'name'          => 'required|string|max:200',
-            'barcode'       => 'nullable|string|max:50|unique:master_products,barcode,' . $product->id,
-            'category_id'   => 'required|exists:master_product_categories,id',
-            'unit_id'       => 'required|exists:master_units,id',
-            'brand_id'      => 'nullable|exists:master_brands,id',
+            'barcode'       => "nullable|string|max:50|unique:{$tableName},barcode," . $product->id,
+            'category_id'   => "required|exists:{$info['scope']}_product_categories,id",
+            'unit_id'       => "required|exists:{$info['scope']}_units,id",
+            'brand_id'      => "nullable|exists:{$info['scope']}_brands,id",
             'rack'          => 'nullable|string|max:20',
             'jenis'         => 'required|in:frozen,tortilla,bakery,bahan_baku,aksesoris,minuman,snack,selai,property,lainnya',
             'hpp'           => 'required|numeric|min:0',
@@ -104,6 +121,8 @@ class ProductController extends Controller
             'entity_scope'  => 'required|in:gudang,jihans,hendhys,all',
             'status'        => 'required|in:active,discontinued',
             'notes'         => 'nullable|string',
+        ], [
+            'barcode.unique' => 'Gagal memperbarui produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
 
         $old = $product->toArray();
@@ -111,15 +130,18 @@ class ProductController extends Controller
 
         $this->logger->log('update', 'master.product', "Update produk: {$product->name}", $product, $old, $product->fresh()->toArray());
 
-        return redirect()->route('master.products.index')->with('success', "Produk {$product->name} berhasil diperbarui.");
+        return redirect()->route($info['route'] . 'products.index')->with('success', "Produk {$product->name} berhasil diperbarui.");
     }
 
-    public function destroy(Product $product)
+    public function destroy(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $product = $this->getModelClass('Product', $info['scope'])::findOrFail($id);
+
         $name = $product->name;
         $product->delete();
         $this->logger->log('delete', 'master.product', "Hapus produk: $name");
 
-        return redirect()->route('master.products.index')->with('success', "Produk $name berhasil dihapus.");
+        return redirect()->route($info['route'] . 'products.index')->with('success', "Produk $name berhasil dihapus.");
     }
 }

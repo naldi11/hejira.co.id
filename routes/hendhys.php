@@ -20,7 +20,6 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         // Master Data (Scoped to Hendhys)
         Route::prefix('master')->name('master.')->group(function () {
             Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
-            Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
             Route::resource('products', \App\Http\Controllers\Master\ProductController::class)->except(['show']);
 
             Route::get('categories', [\App\Http\Controllers\Master\ProductCategoryController::class, 'index'])->name('categories.index');
