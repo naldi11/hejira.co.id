@@ -14,7 +14,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet"/>
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
+    <!-- Alpine.js CDN sebagai backup jika Vite gagal load -->
+    <script>
+        // Hanya load Alpine CDN jika belum ada dari Vite
+        if (typeof window.Alpine === 'undefined') {
+            document.write('<scr'+'ipt defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"><\/scr'+'ipt>');
+            document.write('<scr'+'ipt defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"><\/scr'+'ipt>');
+        }
+    </script>
+
     <!-- Backup Tailwind CDN for shared views using arbitrary MD3 classes -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
     <script id="tailwind-config">
