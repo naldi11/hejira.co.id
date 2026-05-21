@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use App\Models\Product;
+use App\Models\Hendhys\Customer;
+use App\Models\Hendhys\Product;
 use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
 use App\Models\HendhysTransactionPayment;
@@ -27,15 +27,13 @@ class PosController extends Controller
         $q = Product::where('status', 'active');
 
         if ($user->branch->type === 'pusat') {
-            $q->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-              ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
-              ->where('hendhys_stock_pusat.quantity', '>', 0);
+            $q->leftJoin('hendhys_stock_pusat', 'hendhys_products.id', '=', 'hendhys_stock_pusat.product_id')
+              ->select('hendhys_products.*', DB::raw('COALESCE(hendhys_stock_pusat.quantity, 0) as current_stock'));
         } else {
-            $q->join('hendhys_stock_branch', function($join) use ($user) {
-                $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
+            $q->leftJoin('hendhys_stock_branch', function($join) use ($user) {
+                $join->on('hendhys_products.id', '=', 'hendhys_stock_branch.product_id')
                      ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
-            })->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock')
-              ->where('hendhys_stock_branch.quantity', '>', 0);
+            })->select('hendhys_products.*', DB::raw('COALESCE(hendhys_stock_branch.quantity, 0) as current_stock'));
         }
 
         $products = $q->with('unit')->get();
@@ -44,15 +42,73 @@ class PosController extends Controller
         return view('hendhys.pos.index', compact('products', 'customers'));
     }
 
+    public function checkout()
+    {
+        return view('hendhys.pos.checkout');
+    }
+
+    public function heldStock()
+    {
+        $user = auth()->user();
+        $query = \App\Models\HendhysPendingTransaction::with('details');
+
+        if ($user->branch->type === 'cabang') {
+            $query->where('branch_id', $user->branch_id);
+        } else {
+            $query->whereNull('branch_id');
+        }
+
+        $heldQty = [];
+        foreach ($query->get() as $pending) {
+            foreach ($pending->details as $detail) {
+                $pid = $detail->product_id;
+                $heldQty[$pid] = ($heldQty[$pid] ?? 0) + (int) $detail->quantity;
+            }
+        }
+
+        return response()->json($heldQty);
+    }
+
+    public function customerSearch(Request $request)
+    {
+        $q = $request->get('q', '');
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $user = auth()->user();
+
+        $query = \App\Models\HendhysTransaction::query()
+            ->whereNotNull('customer_name')
+            ->where('customer_name', '!=', '')
+            ->where('customer_name', 'like', '%' . $q . '%');
+
+        if ($user->branch->type === 'cabang') {
+            $query->where('branch_id', $user->branch_id);
+        } else {
+            $query->whereNull('branch_id');
+        }
+
+        $results = $query
+            ->select('customer_name', 'customer_phone')
+            ->distinct()
+            ->orderBy('customer_name')
+            ->limit(8)
+            ->get();
+
+        return response()->json($results);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'customer_type' => 'required|in:retail,agen',
+            'customer_phone' => 'nullable|string|max:20',
             'payment_method' => 'required|in:cash,transfer',
             'amount_paid' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         try {
@@ -65,9 +121,10 @@ class PosController extends Controller
                     'branch_id' => $branchId,
                     'date' => now()->toDateString(),
                     'time' => now()->toTimeString(),
-                    'customer_id' => $request->customer_id,
+                    'customer_id' => null,
                     'customer_name' => $request->customer_name,
-                    'customer_type' => $request->customer_type,
+                    'customer_phone' => $request->customer_phone,
+                    'customer_type' => 'retail',
                     'subtotal' => $request->subtotal,
                     'discount_amount' => $request->discount_amount ?? 0,
                     'ppn_type' => $request->ppn_type,
@@ -98,7 +155,7 @@ class PosController extends Controller
                         $item['product_id'],
                         $item['quantity'],
                         $branchId,
-                        'pos_transaction',
+                        'pos_sale',
                         $transaction->id,
                         $user->id
                     );

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Hendhys\ProductionController;
 use App\Http\Controllers\Hendhys\PosController;
 use App\Http\Controllers\Hendhys\PendingController;
-use App\Http\Controllers\Hendhys\TransferRequestController;
+
 use App\Http\Controllers\Hendhys\BranchRequestController;
 use App\Http\Controllers\Hendhys\TransferToBranchController;
 use App\Http\Controllers\Hendhys\ReturnController;
@@ -15,15 +15,43 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
     ->name('hendhys.')
     ->group(function () {
 
-        Route::get('/dashboard', fn () => view('hendhys.dashboard'))->name('dashboard');
+        Route::get('/dashboard', fn() => view('hendhys.dashboard'))->name('dashboard');
+
+        // Master Data (Scoped to Hendhys)
+        Route::prefix('master')->name('master.')->group(function () {
+            Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
+            Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
+            Route::resource('products', \App\Http\Controllers\Master\ProductController::class)->except(['show']);
+
+            Route::get('categories', [\App\Http\Controllers\Master\ProductCategoryController::class, 'index'])->name('categories.index');
+            Route::post('categories', [\App\Http\Controllers\Master\ProductCategoryController::class, 'store'])->name('categories.store');
+            Route::put('categories/{category}', [\App\Http\Controllers\Master\ProductCategoryController::class, 'update'])->name('categories.update');
+            Route::delete('categories/{category}', [\App\Http\Controllers\Master\ProductCategoryController::class, 'destroy'])->name('categories.destroy');
+
+            Route::get('units', [\App\Http\Controllers\Master\UnitController::class, 'index'])->name('units.index');
+            Route::post('units', [\App\Http\Controllers\Master\UnitController::class, 'store'])->name('units.store');
+            Route::put('units/{unit}', [\App\Http\Controllers\Master\UnitController::class, 'update'])->name('units.update');
+            Route::delete('units/{unit}', [\App\Http\Controllers\Master\UnitController::class, 'destroy'])->name('units.destroy');
+
+            Route::get('brands', [\App\Http\Controllers\Master\BrandController::class, 'index'])->name('brands.index');
+            Route::post('brands', [\App\Http\Controllers\Master\BrandController::class, 'store'])->name('brands.store');
+            Route::put('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'update'])->name('brands.update');
+            Route::delete('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'destroy'])->name('brands.destroy');
+        });
 
         // Produksi (khusus pusat)
         Route::resource('productions', ProductionController::class)->except(['edit', 'update', 'destroy']);
 
         // POS (pusat & cabang)
         Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+        Route::get('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
+        Route::get('/pos/held-stock', [PosController::class, 'heldStock'])->name('pos.held-stock');
+        Route::get('/pos/customer-search', [PosController::class, 'customerSearch'])->name('pos.customer-search');
         Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
         Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+
+        // Riwayat Transaksi
+        Route::resource('transactions', \App\Http\Controllers\Hendhys\TransactionController::class)->only(['index', 'show']);
 
         // Transaksi Pending
         Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');
@@ -31,8 +59,10 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
         Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
 
-        // Request ke Gudang (bahan baku)
-        Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy']);
+        // Request ke Gudang (stok gudang tempua)
+        Route::resource('transfer-requests', \App\Http\Controllers\Hendhys\TransferRequestController::class)->except(['edit', 'update', 'destroy']);
+
+
 
         // Request Cabang ke Pusat
         Route::resource('branch-requests', BranchRequestController::class)->except(['edit', 'update', 'destroy']);
