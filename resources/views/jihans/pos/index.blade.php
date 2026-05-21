@@ -64,7 +64,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-width: 60px;
+            min-width: 90px;
+            height: 52px;
         }
 
         .ipos-button:hover {
@@ -190,7 +191,7 @@
         </div>
 
         {{-- Bottom Section --}}
-        <div class="mt-2 flex gap-4">
+        <div class="mt-2 mb-6 pb-2 flex gap-4">
             {{-- Summaries --}}
             <div class="w-1/3 bg-white border border-gray-400 p-2 grid grid-cols-[100px_1fr] gap-y-1 items-center">
                 <label class="text-xs font-semibold">Sub Total</label>
@@ -213,7 +214,7 @@
                 </select>
                 <label class="text-xs font-semibold text-gray-500" x-show="ppnType === 'include'">Info PPN</label>
                 <span class="text-xs text-gray-500" x-show="ppnType === 'include'"
-                    x-text="'PPN ≈ ' + formatCurrency(subtotal - (subtotal / 1.11))"></span>
+                    x-text="'PPN = ' + formatCurrency(subtotal - (subtotal / 1.11))"></span>
                 <label class="text-xs font-semibold" x-show="ppnType === 'exclude'">Nilai PPN</label>
                 <input type="text" x-show="ppnType === 'exclude'" class="ipos-input bg-gray-200 text-right"
                     :value="formatCurrency(taxAmount)" disabled>
@@ -226,26 +227,20 @@
             {{-- Actions --}}
             <div class="w-2/3 flex flex-wrap gap-2 items-end justify-end">
                 <button class="ipos-button" @click="openSearchModal()">
-                    <span class="text-lg">➕</span>
-                    <span>Tambah [Ins]</span>
+                    <span class="font-bold">Tambah [Ins]</span>
                 </button>
-                <button class="ipos-button" @click="removeFromCart(selectedCartIndex)"
-                    :disabled="cart.length === 0 || selectedCartIndex === null">
-                    <span class="text-lg text-red-500">âŒ</span>
-                    <span>Hapus [Del]</span>
+                <button class="ipos-button" @click="removeFromCart(selectedCartIndex)" :disabled="cart.length === 0 || selectedCartIndex === null">
+                    <span class="font-bold text-red-600">Hapus [Del]</span>
                 </button>
                 <button class="ipos-button" @click="holdTransaction()" :disabled="cart.length === 0">
-                    <span class="text-lg text-blue-500">â³</span>
-                    <span>Pending [F5]</span>
+                    <span class="font-bold text-blue-600">Pending [F5]</span>
                 </button>
                 <a href="{{ route('jihans.pending.index') }}" class="ipos-button text-center no-underline">
-                    <span class="text-lg text-orange-500">📋</span>
-                    <span>Daftar<br>Pending [F6]</span>
+                    <span class="font-bold text-orange-600">Daftar<br>Pending [F6]</span>
                 </a>
                 <div class="w-px h-12 bg-gray-400 mx-2"></div>
                 <button class="ipos-button bg-green-100" @click="openPaymentModal()" :disabled="cart.length === 0">
-                    <span class="text-2xl text-green-600">💵</span>
-                    <span class="font-bold">BAYAR [END]</span>
+                    <span class="font-bold text-green-700 text-lg">BAYAR [END]</span>
                 </button>
             </div>
         </div>
@@ -313,16 +308,16 @@
                         &nbsp;|&nbsp; Dblclick = langsung tambah 1 item
                     </span>
                     <div class="flex gap-2">
-                        <button @click="selectMultipleItems()" :disabled="selectedProducts.length === 0"
+                        <button @click="selectMultipleItems()"
+                            :disabled="selectedProducts.length === 0"
                             :class="selectedProducts.length > 0 ? 'bg-blue-200 hover:bg-blue-300' : 'opacity-50 cursor-not-allowed'"
                             class="ipos-button inline-flex flex-row gap-1">
-                            ✔️ Pilih
-                            <span x-show="selectedProducts.length > 0" x-text="'(' + selectedProducts.length + ')'"
-                                class="font-bold"></span>
-                        </button>
-                        <button @click="closeSearchModal()" class="ipos-button inline-flex flex-row gap-1">
-                            ✖️ Batal
-                        </button>
+                        <span class="font-bold">Pilih</span>
+                        <span x-show="selectedProducts.length > 0" x-text="'(' + selectedProducts.length + ')'" class="font-bold"></span>
+                    </button>
+                    <button @click="closeSearchModal()" class="ipos-button inline-flex flex-row gap-1">
+                        <span class="font-bold text-red-600">Batal</span>
+                    </button>
                     </div>
                 </div>
             </div>

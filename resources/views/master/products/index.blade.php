@@ -111,7 +111,7 @@
                                             <p class="font-label-lg text-label-lg font-bold text-on-surface">
                                                 {{ $product->name }}</p>
                                             <p class="font-label-sm text-label-sm text-on-surface-variant">
-                                                {{ $product->unit->abbreviation ?? '-' }} Â·
+                                                {{ $product->unit->abbreviation ?? '-' }} -
                                                 {{ $product->brand->name ?? 'Tanpa Brand' }}</p>
                                         </div>
                                     </div>

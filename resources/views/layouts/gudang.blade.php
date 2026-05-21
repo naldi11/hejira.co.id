@@ -159,7 +159,7 @@
                             ['route' => 'master.branches.index',    'label' => 'Cabang'],
                         ] as $item)
                         <a href="{{ route($item['route']) }}"
-                           class="flex items-center gap-3 pl-10 pr-3 py-2 rounded-lg text-[13px] transition-all duration-200 {{ request()->routeIs($item['route']) ? 'text-indigo-100 font-semibold bg-white/10 relative before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:bg-indigo-300 before:rounded-full' : 'text-indigo-300/60 hover:text-indigo-100 hover:bg-white/5' }}">
+                           class="flex items-center gap-3 pl-10 pr-3 py-2 rounded-lg text-[13px] transition-all duration-200 {{ request()->routeIs($item['route']) ? 'text-indigo-100 font-semibold bg-white/10 relative border-l-2 border-indigo-400 pl-9' : 'text-indigo-300/60 hover:text-indigo-100 hover:bg-white/5' }}">
                             {{ $item['label'] }}
                         </a>
                         @endforeach

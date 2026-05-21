@@ -344,7 +344,7 @@
             <div class="invoice-number">{{ $transaction->transaction_number }}</div>
             <div class="invoice-date">
                 {{ \Carbon\Carbon::parse($transaction->date)->translatedFormat('d F Y') }}
-                &nbsp;Â·&nbsp; {{ $transaction->time }}
+                &nbsp;-&nbsp; {{ $transaction->time }}
             </div>
         </div>
     </div>
@@ -469,9 +469,9 @@
     <div class="invoice-footer">
         <div class="footer-note">
             <strong>Catatan:</strong><br>
-            Â· Barang yang sudah dibeli tidak dapat dikembalikan.<br>
-            Â· Simpan faktur ini sebagai bukti pembelian yang sah.<br>
-            Â· Terima kasih telah berbelanja di Jihan's Food!
+            - Barang yang sudah dibeli tidak dapat dikembalikan.<br>
+            - Simpan faktur ini sebagai bukti pembelian yang sah.<br>
+            - Terima kasih telah berbelanja di Jihan's Food!
         </div>
         <div class="signature-block">
             <div class="signature-line"></div>

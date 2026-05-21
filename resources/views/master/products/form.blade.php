@@ -186,7 +186,7 @@
                                 <div class="flex flex-col items-center justify-center py-lg gap-sm text-on-surface-variant">
                                     <span class="material-symbols-outlined text-[48px] text-outline">image</span>
                                     <p class="font-label-lg text-label-lg font-medium">Klik atau seret gambar</p>
-                                    <p class="font-label-sm text-label-sm opacity-60">PNG, JPG, WEBP Â· Maks 2MB</p>
+                                    <p class="font-label-sm text-label-sm opacity-60">PNG, JPG, WEBP - Maks 2MB</p>
                                 </div>
                             </template>
                             <template x-if="preview">

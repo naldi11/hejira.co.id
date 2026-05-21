@@ -38,7 +38,7 @@ $statusLabel = ['draft'=>'Draft','sent'=>'Terkirim','partial'=>'Sebagian Diterim
         <div class="flex items-start justify-between">
             <div>
                 <p class="text-xl font-bold text-gray-900">{{ $po->po_number }}</p>
-                <p class="text-sm text-gray-500 mt-0.5">Dibuat oleh {{ $po->creator->name }} Â· {{ $po->created_at->format('d M Y H:i') }}</p>
+                <p class="text-sm text-gray-500 mt-0.5">Dibuat oleh {{ $po->creator->name }} - {{ $po->created_at->format('d M Y H:i') }}</p>
             </div>
             <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium {{ $statusClass[$po->status]??'' }}">
                 {{ $statusLabel[$po->status]??$po->status }}

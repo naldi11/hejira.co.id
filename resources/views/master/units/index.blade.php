@@ -23,7 +23,7 @@
         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
             <div class="px-md py-sm border-b border-outline-variant bg-surface-container-low">
                 <span class="font-label-sm text-label-sm text-on-surface-variant">
-                    Menampilkan <strong class="text-on-surface">{{ $units->firstItem() ?? 0 }}</strong> â€“ <strong
+                    Menampilkan <strong class="text-on-surface">{{ $units->firstItem() ?? 0 }}</strong> - <strong
                         class="text-on-surface">{{ $units->lastItem() ?? 0 }}</strong> dari <strong
                         class="text-on-surface">{{ $units->total() }}</strong> total satuan
                 </span>

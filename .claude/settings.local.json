@@ -16,7 +16,11 @@
       "Bash(git commit *)",
       "Bash(php -r ' *)",
       "Bash(mysql -h127.0.0.1 -uroot db_project_ketua -e \"DESCRIBE hendhys_transactions;\")",
-      "Bash(grep -n '@foreach\\($customers' resources/views/hendhys/pos/index.blade.php)"
+      "Bash(grep -n '@foreach\\($customers' resources/views/hendhys/pos/index.blade.php)",
+      "Bash(ssh -V)",
+      "Bash(npm run *)",
+      "Bash(git push *)",
+      "Bash(xargs grep -l \"Tambah Item\\\\|purchase.order\\\\|po\")"
     ]
   }
 }
