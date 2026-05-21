@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hendhys\Product;
+use App\Models\Gudang\Product as GudangProduct;
 use App\Models\TransferRequest;
 use App\Models\TransferRequestDetail;
-use App\Models\Hendhys\Unit;
+use App\Models\Gudang\Unit as GudangUnit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +42,8 @@ class TransferRequestController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $products = Product::where('status', 'active')->orderBy('name')->get();
-        $units = Unit::all();
+        $products = GudangProduct::where('status', 'active')->orderBy('name')->get();
+        $units = GudangUnit::all();
 
         return view('hendhys.transfer-requests.form', compact('products', 'units'));
     }
@@ -58,9 +58,9 @@ class TransferRequestController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.product_id' => 'required|exists:gudang_products,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_id' => 'required|exists:hendhys_units,id',
+            'items.*.unit_id' => 'required|exists:gudang_units,id',
         ]);
 
         try {

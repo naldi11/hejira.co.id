@@ -55,6 +55,8 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
 
         // Request ke Gudang
         Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form');
+        Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive');
 
         // Stok
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');

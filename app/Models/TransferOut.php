@@ -12,7 +12,7 @@ class TransferOut extends Model
 
     protected $fillable = [
         'transfer_number', 'request_id', 'to_entity', 'branch_id',
-        'date', 'notes', 'created_by',
+        'date', 'notes', 'created_by', 'status', 'received_by', 'receive_notes', 'receive_photo'
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class TransferOut extends Model
     public function request(): BelongsTo  { return $this->belongsTo(TransferRequest::class, 'request_id'); }
     public function branch(): BelongsTo   { return $this->belongsTo(Branch::class); }
     public function creator(): BelongsTo  { return $this->belongsTo(User::class, 'created_by'); }
+    public function receiver(): BelongsTo { return $this->belongsTo(User::class, 'received_by'); }
     public function details(): HasMany    { return $this->hasMany(TransferOutDetail::class, 'transfer_id'); }
 
     public function getToEntityLabelAttribute(): string

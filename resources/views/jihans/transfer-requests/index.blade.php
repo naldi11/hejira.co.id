@@ -74,7 +74,17 @@
                         {{ $req->creator->name ?? '-' }}
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <a href="{{ route('jihans.transfer-requests.show', $req) }}" class="text-orange-600 hover:text-orange-900 font-medium text-sm">Lihat Detail</a>
+                        @php
+                            $pendingDO = $req->transferOuts->where('status', 'sent')->first();
+                        @endphp
+                        @if($pendingDO)
+                            <a href="{{ route('jihans.transfer-requests.receive-form', $pendingDO->id) }}" class="inline-flex items-center gap-1 bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-700 transition-colors shadow-sm">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Terima Barang
+                            </a>
+                        @else
+                            <a href="{{ route('jihans.transfer-requests.show', $req) }}" class="text-orange-600 hover:text-orange-900 font-medium text-sm">Lihat Detail</a>
+                        @endif
                     </td>
                 </tr>
                 @empty

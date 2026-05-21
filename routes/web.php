@@ -24,3 +24,5 @@ Route::middleware('auth')->group(function() {
 });
 
 require __DIR__.'/auth.php';
+
+Route::get('/flush-opcache', function() { if(function_exists('opcache_reset')){ opcache_reset(); return 'OK'; } return 'NO'; });

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jihans\Product;
+use App\Models\Gudang\Product as GudangProduct;
 use App\Models\TransferRequest;
-use App\Models\Jihans\Unit;
+use App\Models\Gudang\Unit as GudangUnit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
@@ -16,7 +16,8 @@ class TransferRequestController extends Controller
     public function __construct(
         private NumberGeneratorService $numbers,
         private ActivityLogService $logger
-    ) {}
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -37,12 +38,9 @@ class TransferRequestController extends Controller
 
     public function create()
     {
-        $products = Product::where('status', 'active')
-            ->with('unit')
-            ->orderBy('name')
-            ->get();
-            
-        $units = Unit::all();
+        $products = GudangProduct::where('status', 'active')->with('unit')->orderBy('name')->get();
+
+        $units = GudangUnit::all();
 
         return view('jihans.transfer-requests.form', compact('products', 'units'));
     }
@@ -50,30 +48,30 @@ class TransferRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'date'               => 'required|date',
-            'notes'              => 'nullable|string',
-            'items'              => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:jihans_products,id',
-            'items.*.quantity'   => 'required|numeric|min:0.001',
-            'items.*.unit_id'    => 'required|exists:jihans_units,id',
+            'date' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:gudang_products,id',
+            'items.*.quantity' => 'required|numeric|min:0.001',
+            'items.*.unit_id' => 'required|exists:gudang_units,id',
         ]);
 
         DB::transaction(function () use ($request) {
             $transferRequest = TransferRequest::create([
                 'request_number' => $this->numbers->generateYearly('REQ-JHS', 'gudang_transfer_requests', 'request_number'),
-                'from_entity'    => 'jihans',
-                'branch_id'      => null, // Jihans doesn't use branch
-                'date'           => $request->date,
-                'status'         => 'pending',
-                'notes'          => $request->notes,
-                'requested_by'   => auth()->id(),
+                'from_entity' => 'jihans',
+                'branch_id' => null, // Jihans doesn't use branch
+                'date' => $request->date,
+                'status' => 'pending',
+                'notes' => $request->notes,
+                'requested_by' => auth()->id(),
             ]);
 
             foreach ($request->items as $item) {
                 $transferRequest->details()->create([
-                    'product_id'         => $item['product_id'],
+                    'product_id' => $item['product_id'],
                     'quantity_requested' => $item['quantity'],
-                    'unit_id'            => $item['unit_id'],
+                    'unit_id' => $item['unit_id'],
                 ]);
             }
 
@@ -87,9 +85,9 @@ class TransferRequestController extends Controller
     public function show(TransferRequest $transferRequest)
     {
         abort_if($transferRequest->from_entity !== 'jihans', 403);
-        
+
         $transferRequest->load(['details.product', 'details.unit', 'approver', 'transferOuts']);
-        
+
         return view('jihans.transfer-requests.show', compact('transferRequest'));
     }
 }

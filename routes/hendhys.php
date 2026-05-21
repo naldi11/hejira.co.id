@@ -60,6 +60,8 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
         // Request ke Gudang (stok gudang tempua)
         Route::resource('transfer-requests', \App\Http\Controllers\Hendhys\TransferRequestController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form-gudang');
+        Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive-gudang');
 
 
 
