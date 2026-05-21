@@ -90,7 +90,7 @@
                     @php $grandTotal += $item->total; @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-5 py-3 font-medium text-gray-800">{{ $item->product->name }}</td>
-                        <td class="px-5 py-3 text-center font-bold text-gray-900">{{ number_format($item->quantity, 3, ',', '.') }}</td>
+                        <td class="px-5 py-3 text-center font-bold text-gray-900">{{ floatval($item->quantity) }}</td>
                         <td class="px-5 py-3 text-center text-gray-500">{{ $item->unit->abbreviation ?? '-' }}</td>
                         <td class="px-5 py-3 text-right text-gray-500">Rp {{ number_format($item->hpp_price, 0, ',', '.') }}</td>
                         <td class="px-5 py-3 text-right font-medium text-gray-800">Rp {{ number_format($item->total, 0, ',', '.') }}</td>

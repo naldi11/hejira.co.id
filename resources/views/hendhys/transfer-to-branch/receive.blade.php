@@ -83,7 +83,7 @@
                             </td>
                             <td class="px-md py-sm text-right">
                                 <span class="font-label-lg text-label-lg text-on-surface-variant">
-                                    {{ number_format((float)$detail->quantity, 0, ',', '.') }}
+                                    {{ floatval($detail->quantity) }}
                                 </span>
                             </td>
                             <td class="px-md py-sm">

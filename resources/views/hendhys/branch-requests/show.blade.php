@@ -151,7 +151,7 @@
                             <p class="font-label-lg text-label-lg font-bold text-on-surface">{{ $detail->product->name }}</p>
                         </td>
                         <td class="px-md py-sm text-right">
-                            <span class="font-label-lg text-label-lg font-bold text-on-surface">{{ number_format((float) $detail->quantity_requested, 0, ',', '.') }}</span>
+                            <span class="font-label-lg text-label-lg font-bold text-on-surface">{{ floatval($detail->quantity_requested) }}</span>
                         </td>
                         <td class="px-md py-sm text-right">
                             @if($detail->quantity_approved === null)
@@ -160,9 +160,9 @@
                                     Menunggu
                                 </span>
                             @elseif((float)$detail->quantity_approved >= (float)$detail->quantity_requested)
-                                <span class="font-label-lg text-label-lg font-bold text-tertiary">{{ number_format((float) $detail->quantity_approved, 0, ',', '.') }}</span>
+                                <span class="font-label-lg text-label-lg font-bold text-tertiary">{{ floatval($detail->quantity_approved) }}</span>
                             @elseif((float)$detail->quantity_approved > 0)
-                                <span class="font-label-lg text-label-lg font-bold text-primary">{{ number_format((float) $detail->quantity_approved, 0, ',', '.') }}</span>
+                                <span class="font-label-lg text-label-lg font-bold text-primary">{{ floatval($detail->quantity_approved) }}</span>
                                 <span class="font-label-sm text-label-sm text-on-surface-variant ml-xs">(parsial)</span>
                             @else
                                 <span class="font-label-lg text-label-lg font-bold text-error">0</span>

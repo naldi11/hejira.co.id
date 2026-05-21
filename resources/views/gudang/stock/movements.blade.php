@@ -72,7 +72,7 @@
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right font-bold {{ $m->type === 'in' ? 'text-green-600' : 'text-red-600' }}">
-                        {{ $m->type === 'in' ? '+' : '-' }}{{ number_format($m->quantity, 3, ',', '.') }}
+                        {{ $m->type === 'in' ? '+' : '-' }}{{ floatval($m->quantity) }}
                     </td>
                     <td class="px-4 py-3">
                         @php

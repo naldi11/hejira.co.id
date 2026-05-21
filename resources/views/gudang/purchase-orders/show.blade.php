@@ -72,9 +72,9 @@ $statusLabel = ['draft'=>'Draft','sent'=>'Terkirim','partial'=>'Sebagian Diterim
                 @foreach($po->details as $d)
                 <tr>
                     <td class="px-4 py-3 text-gray-800">{{ $d->product->name }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($d->quantity_ordered,3,',','.') }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ floatval($d->quantity_ordered) }}</td>
                     <td class="px-4 py-3 text-right {{ $d->quantity_received >= $d->quantity_ordered ? 'text-green-600 font-medium' : 'text-yellow-600' }}">
-                        {{ number_format($d->quantity_received,3,',','.') }}
+                        {{ floatval($d->quantity_received) }}
                     </td>
                     <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ $d->unit->abbreviation }}</td>
                     <td class="px-4 py-3 text-right text-gray-600">Rp {{ number_format($d->price,0,',','.') }}</td>
