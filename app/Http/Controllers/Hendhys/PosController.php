@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hendhys\Customer;
 use App\Models\Hendhys\Product;
 use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
@@ -37,9 +36,8 @@ class PosController extends Controller
         }
 
         $products = $q->with('unit')->get();
-        $customers = Customer::where('is_active', true)->orderBy('name')->get();
 
-        return view('hendhys.pos.index', compact('products', 'customers'));
+        return view('hendhys.pos.index', compact('products'));
     }
 
     public function checkout()
