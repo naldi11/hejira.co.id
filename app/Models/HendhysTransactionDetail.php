@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Hendhys\Product as HendhysProduct;
+use App\Models\Hendhys\Unit as HendhysUnit;
 
 class HendhysTransactionDetail extends Model
 {
@@ -21,11 +23,11 @@ class HendhysTransactionDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(HendhysProduct::class);
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(HendhysUnit::class);
     }
 }

@@ -20,7 +20,7 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
     ->name('gudang.')
     ->group(function () {
 
-        Route::get('/dashboard', fn () => view('gudang.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [App\Http\Controllers\Gudang\DashboardController::class, 'index'])->name('dashboard');
 
         // Purchase Order
         Route::resource('po', PurchaseOrderController::class)->except(['destroy']);
@@ -62,6 +62,7 @@ Route::middleware(['auth', 'role:admin_gudang'])
         Route::resource('customers', CustomerController::class)->except(['show']);
         Route::resource('products',  ProductController::class)->except(['show']);
         Route::resource('branches',  BranchController::class)->except(['show']);
+        Route::resource('users',     App\Http\Controllers\Master\UserController::class)->except(['show']);
 
         Route::get('categories',               [ProductCategoryController::class, 'index'])->name('categories.index');
         Route::post('categories',              [ProductCategoryController::class, 'store'])->name('categories.store');

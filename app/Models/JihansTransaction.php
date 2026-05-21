@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Jihans\Customer as JihansCustomer;
 
 class JihansTransaction extends Model
 {
@@ -35,7 +36,7 @@ class JihansTransaction extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(JihansCustomer::class, 'customer_id', 'id');
     }
 
     public function creator(): BelongsTo

@@ -10,7 +10,13 @@
       "PowerShell(cmd /c \"dir /b C:\\\\laragon\\\\www\\\\project-ketua\\\\database\\\\migrations\")",
       "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'db_project_ketua' ORDER BY TABLE_NAME;\")",
       "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT model_type, model_id, role_id FROM model_has_roles LIMIT 10;\")",
-      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT r.name as role, COUNT\\(mr.model_id\\) as jumlah_user FROM roles r LEFT JOIN model_has_roles mr ON r.id = mr.role_id GROUP BY r.name ORDER BY r.name; SELECT name, abbreviation FROM master_units ORDER BY id; SELECT code, name, type FROM master_branches;\")"
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\mysql\\\\mysql-8.0.30-winx64\\\\bin\\\\mysql.exe\" -u root db_project_ketua -e \"SELECT r.name as role, COUNT\\(mr.model_id\\) as jumlah_user FROM roles r LEFT JOIN model_has_roles mr ON r.id = mr.role_id GROUP BY r.name ORDER BY r.name; SELECT name, abbreviation FROM master_units ORDER BY id; SELECT code, name, type FROM master_branches;\")",
+      "Bash(php artisan *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(php -r ' *)",
+      "Bash(mysql -h127.0.0.1 -uroot db_project_ketua -e \"DESCRIBE hendhys_transactions;\")",
+      "Bash(grep -n '@foreach\\($customers' resources/views/hendhys/pos/index.blade.php)"
     ]
   }
 }

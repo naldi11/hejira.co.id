@@ -1,103 +1,156 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', 'Kategori Produk')
 @section('page-title', 'Master Data — Kategori Produk')
 
 @section('content')
-<div class="flex items-center justify-between mt-4 mb-5">
-    <div>
-        <h2 class="text-lg font-semibold text-gray-800">Kategori Produk</h2>
-        <p class="text-sm text-gray-400">{{ $categories->total() }} data</p>
-    </div>
-    <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
-            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Tambah Kategori
-    </button>
-</div>
+    <div class="p-margin-mobile md:p-margin-desktop w-full overflow-y-auto h-full bg-surface">
 
-<form method="GET" class="flex gap-2 mb-4">
-    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama kategori..."
-           class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-    <button type="submit" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg">Cari</button>
-</form>
-
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Scope</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Produk</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100" x-data="{}">
-            @forelse($categories as $cat)
-            <tr class="hover:bg-gray-50" x-data="{ editOpen: false }">
-                <td class="px-4 py-3 font-medium text-gray-800">{{ $cat->name }}</td>
-                <td class="px-4 py-3">
-                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">{{ ucfirst($cat->entity) }}</span>
-                </td>
-                <td class="px-4 py-3 text-center text-gray-500">{{ $cat->products_count }}</td>
-                <td class="px-4 py-3 text-right">
-                    <div class="flex items-center justify-end gap-2">
-                        <button @click="editOpen = !editOpen" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</button>
-                        <form method="POST" action="{{ route('master.categories.destroy', $cat) }}"
-                              onsubmit="return confirm('Hapus kategori {{ $cat->name }}?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>
-                        </form>
-                    </div>
-                    {{-- Inline Edit --}}
-                    <div x-show="editOpen" x-cloak class="mt-2 text-left">
-                        <form method="POST" action="{{ route('master.categories.update', $cat) }}" class="flex gap-2 items-center">
-                            @csrf @method('PUT')
-                            <input type="text" name="name" value="{{ $cat->name }}" required
-                                   class="border border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                            <select name="entity" class="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none">
-                                @foreach(['all','gudang','jihans','hendhys'] as $e)
-                                <option value="{{ $e }}" {{ $cat->entity === $e ? 'selected' : '' }}>{{ ucfirst($e) }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg">Simpan</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            @empty
-            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">Belum ada kategori.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
-<div class="mt-4">{{ $categories->links() }}</div>
-
-{{-- Modal Tambah --}}
-<div id="modal-add" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
-        <h3 class="font-semibold text-gray-800 mb-4">Tambah Kategori</h3>
-        <form method="POST" action="{{ route('master.categories.store') }}" class="space-y-3">
-            @csrf
+        {{-- Header --}}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-lg gap-md">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nama <span class="text-red-500">*</span></label>
-                <input type="text" name="name" required
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                <h2 class="font-headline-md text-headline-md text-on-background">Kategori Produk</h2>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-xs">{{ $categories->total() }} kategori
+                    terdaftar</p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Scope Entitas</label>
-                <select name="entity" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-                    <option value="all">Semua Entitas</option>
-                    <option value="gudang">Gudang</option>
-                    <option value="jihans">Jihan's</option>
-                    <option value="hendhys">Hendhys</option>
-                </select>
+            <button onclick="document.getElementById('modal-add').classList.remove('hidden')"
+                class="inline-flex items-center gap-sm px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant  transition-all self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Tambah Kategori
+            </button>
+        </div>
+
+        {{-- Filter --}}
+        <form method="GET" class="flex gap-sm mb-lg">
+            <div class="relative flex-1 max-w-sm">
+                <span
+                    class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama kategori..."
+                    class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
             </div>
-            <div class="flex gap-2 pt-1">
-                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg">Tambah</button>
-                <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
-                        class="flex-1 border border-gray-300 text-gray-600 text-sm py-2 rounded-lg hover:bg-gray-50">Batal</button>
-            </div>
+            <button type="submit"
+                class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
+                <span class="material-symbols-outlined text-[18px]">filter_list</span>
+                Cari
+            </button>
+            @if(request('search'))
+                <a href="{{ route(($routePrefix ?? 'master.') . 'categories.index') }}"
+                    class="px-sm py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </a>
+            @endif
         </form>
+
+        {{-- Table --}}
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-surface-container-low border-b border-outline-variant">
+                        <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
+                            Kategori</th>
+                        <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Scope</th>
+                        <th
+                            class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">
+                            Produk</th>
+                        <th
+                            class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                            Aksi</th>
+                    </tr>
+                </thead>
+                <tbody x-data="{}">
+                    @forelse($categories as $cat)
+                        <tr class="border-b border-surface-container hover:bg-surface-container-lowest/80 transition-colors group"
+                            x-data="{ editOpen: false }">
+                            <td class="px-md py-sm font-label-lg text-label-lg font-bold text-on-surface">{{ $cat->name }}</td>
+                            <td class="px-md py-sm">
+                                <span
+                                    class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim">
+                                    {{ ucfirst($cat->entity_scope ?? $cat->entity ?? 'All') }}
+                                </span>
+                            </td>
+                            <td class="px-md py-sm text-center font-body-md text-body-md text-on-surface-variant">
+                                {{ $cat->products_count }}</td>
+                            <td class="px-md py-sm text-right">
+                                <div class="flex items-center justify-end gap-sm">
+                                    <button @click="editOpen = !editOpen"
+                                        class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high transition-colors  shadow-sm">
+                                        <span class="material-symbols-outlined text-[14px]">edit</span>
+                                        Edit
+                                    </button>
+                                    <form method="POST"
+                                        action="{{ route(($routePrefix ?? 'master.') . 'categories.destroy', $cat) }}"
+                                        onsubmit="return confirm('Hapus kategori {{ $cat->name }}?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-error rounded-lg font-label-sm text-label-sm hover:bg-error-container transition-colors  shadow-sm">
+                                            <span class="material-symbols-outlined text-[14px]">delete</span>
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
+                                {{-- Inline Edit Row --}}
+                                <div x-show="editOpen" x-cloak class="mt-sm text-left">
+                                    <form method="POST"
+                                        action="{{ route(($routePrefix ?? 'master.') . 'categories.update', $cat) }}"
+                                        class="flex gap-sm items-center">
+                                        @csrf @method('PUT')
+                                        <input type="text" name="name" value="{{ $cat->name }}" required
+                                            class="flex-1 bg-surface-container-low border-b border-primary focus:ring-0 font-body-md text-body-md text-on-surface px-sm py-xs rounded-t-sm outline-none">
+                                        <button type="submit"
+                                            class="px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant ">Simpan</button>
+                                        <button type="button" @click="editOpen = false"
+                                            class="px-sm py-xs bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high ">Batal</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-md py-xl text-center text-on-surface-variant">
+                                <span
+                                    class="material-symbols-outlined text-[48px] text-outline opacity-40 mb-sm block">category</span>
+                                <p class="font-label-lg text-label-lg font-medium">Belum ada kategori.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            @if($categories->hasPages())
+                <div class="bg-surface-container-low border-t border-outline-variant px-md py-sm">
+                    {{ $categories->links() }}
+                </div>
+            @endif
+        </div>
     </div>
-</div>
+
+    {{-- Modal Tambah --}}
+    <div id="modal-add"
+        class="hidden fixed inset-0 bg-on-surface/40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-surface-container-lowest rounded-xl shadow-2xl p-lg w-full max-w-sm mx-md">
+            <div class="flex items-center justify-between mb-md">
+                <h3 class="font-headline-md text-title-lg text-on-surface">Tambah Kategori</h3>
+                <button onclick="document.getElementById('modal-add').classList.add('hidden')"
+                    class="p-xs rounded-full hover:bg-surface-container text-on-surface-variant transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'categories.store') }}" class="space-y-md">
+                @csrf
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Nama Kategori <span
+                            class="text-error">*</span></label>
+                    <div
+                        class="bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all">
+                        <input type="text" name="name" required placeholder="cth: Roti Tawar"
+                            class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
+                    </div>
+                </div>
+                <div class="flex gap-sm pt-xs">
+                    <button type="submit"
+                        class="flex-1 bg-primary text-on-primary py-sm rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant  transition-all">Tambah</button>
+                    <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
+                        class="flex-1 border border-outline-variant text-on-surface-variant py-sm rounded-lg font-label-lg text-label-lg hover:bg-surface-container transition-colors">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
 @endsection

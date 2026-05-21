@@ -66,14 +66,15 @@
                                         </select>
                                     </td>
                                     <td class="py-3 px-2">
-                                        <input type="number" step="0.01" min="0.01" :name="`items[${index}][quantity]`" x-model="item.qty" required
+                                        <input type="number" step="1" min="1" :name="`items[${index}][quantity]`" x-model.number="item.qty" required placeholder="1"
+                                               @change="item.qty = Math.max(1, Math.round(item.qty || 1))"
                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
                                     </td>
                                     <td class="py-3 px-2">
                                         <select :name="`items[${index}][unit_id]`" x-model="item.unit_id" required
                                                 class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
                                             @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->code }}</option>
+                                                <option value="{{ $u->id }}">{{ $u->abbreviation }} — {{ $u->name }}</option>
                                             @endforeach
                                         </select>
                                     </td>

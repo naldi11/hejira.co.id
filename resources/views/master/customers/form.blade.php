@@ -1,10 +1,10 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', isset($customer) ? 'Edit Customer' : 'Tambah Customer')
 @section('page-title', 'Master Data — ' . (isset($customer) ? 'Edit Customer' : 'Tambah Customer'))
 
 @section('content')
 <div class="max-w-2xl mt-4">
-    <form method="POST" action="{{ isset($customer) ? route('master.customers.update', $customer) : route('master.customers.store') }}"
+    <form method="POST" action="{{ isset($customer) ? route(($routePrefix ?? 'master.') . 'customers.update', $customer) : route(($routePrefix ?? 'master.') . 'customers.store') }}"
           class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         @csrf
         @if(isset($customer)) @method('PUT') @endif
@@ -18,11 +18,18 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tipe <span class="text-red-500">*</span></label>
-                <select name="type" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                    <option value="retail" {{ old('type', $customer->type ?? 'retail') === 'retail' ? 'selected' : '' }}>Retail</option>
-                    <option value="agen"   {{ old('type', $customer->type ?? '') === 'agen' ? 'selected' : '' }}>Agen</option>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Pelanggan <span class="text-red-500">*</span></label>
+                <select name="type" required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none @error('type') border-red-400 @enderror">
+                    <option value="">-- Pilih Tipe --</option>
+                    <option value="retail" {{ old('type', $customer->type ?? '') === 'retail' ? 'selected' : '' }}>
+                        ðŸ›’ Retail (Pelanggan Umum)
+                    </option>
+                    <option value="agen" {{ old('type', $customer->type ?? '') === 'agen' ? 'selected' : '' }}>
+                        ðŸ¢ B2B / Agen
+                    </option>
                 </select>
+                @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -65,7 +72,7 @@
             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg">
                 {{ isset($customer) ? 'Simpan Perubahan' : 'Tambah Customer' }}
             </button>
-            <a href="{{ route('master.customers.index') }}" class="text-gray-500 hover:text-gray-700 text-sm">Batal</a>
+            <a href="{{ route(($routePrefix ?? 'master.') . 'customers.index') }}" class="text-gray-500 hover:text-gray-700 text-sm">Batal</a>
         </div>
     </form>
 </div>

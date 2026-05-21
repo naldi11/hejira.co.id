@@ -59,7 +59,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($stocks as $item)
                     @php 
-                        $qty = $item->current_stock ?? 0;
+                        $qty = (int) ($item->current_stock ?? 0);
                         $isLow = $qty <= $item->stock_min;
                     @endphp
                     <tr class="hover:bg-gray-50 transition-colors">
@@ -128,7 +128,8 @@
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">Stok Fisik Sebenarnya (Final) <span class="text-red-500">*</span></label>
                                             <div class="flex items-center gap-2">
-                                                <input type="number" name="quantity" x-model="quantity" min="0" step="0.001" required
+                                                <input type="number" name="quantity" x-model.number="quantity" min="0" step="1" required
+                                                       @change="quantity = Math.max(0, Math.round(quantity || 0))"
                                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none text-right">
                                                 <span class="text-sm text-gray-500 w-12" x-text="selectedProduct?.unit_name"></span>
                                             </div>

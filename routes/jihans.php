@@ -14,6 +14,28 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
 
         Route::get('/dashboard', fn () => view('jihans.dashboard'))->name('dashboard');
 
+        // Master Data (Scoped to Jihans)
+        Route::prefix('master')->name('master.')->group(function () {
+            Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
+            Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
+            Route::resource('products',  \App\Http\Controllers\Master\ProductController::class)->except(['show']);
+            
+            Route::get('categories',               [\App\Http\Controllers\Master\ProductCategoryController::class, 'index'])->name('categories.index');
+            Route::post('categories',              [\App\Http\Controllers\Master\ProductCategoryController::class, 'store'])->name('categories.store');
+            Route::put('categories/{category}',    [\App\Http\Controllers\Master\ProductCategoryController::class, 'update'])->name('categories.update');
+            Route::delete('categories/{category}', [\App\Http\Controllers\Master\ProductCategoryController::class, 'destroy'])->name('categories.destroy');
+
+            Route::get('units',           [\App\Http\Controllers\Master\UnitController::class, 'index'])->name('units.index');
+            Route::post('units',          [\App\Http\Controllers\Master\UnitController::class, 'store'])->name('units.store');
+            Route::put('units/{unit}',    [\App\Http\Controllers\Master\UnitController::class, 'update'])->name('units.update');
+            Route::delete('units/{unit}', [\App\Http\Controllers\Master\UnitController::class, 'destroy'])->name('units.destroy');
+
+            Route::get('brands',            [\App\Http\Controllers\Master\BrandController::class, 'index'])->name('brands.index');
+            Route::post('brands',           [\App\Http\Controllers\Master\BrandController::class, 'store'])->name('brands.store');
+            Route::put('brands/{brand}',    [\App\Http\Controllers\Master\BrandController::class, 'update'])->name('brands.update');
+            Route::delete('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'destroy'])->name('brands.destroy');
+        });
+
         // Produksi Tortilla
         Route::resource('productions', ProductionController::class)->except(['edit', 'update', 'destroy']);
 
@@ -21,6 +43,9 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
         Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
         Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+
+        // Riwayat Transaksi
+        Route::resource('transactions', \App\Http\Controllers\Jihans\TransactionController::class)->only(['index', 'show']);
 
         // Transaksi Pending
         Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');

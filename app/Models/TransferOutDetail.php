@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Gudang\Unit as GudangUnit;
+use App\Models\Gudang\Product as GudangProduct;
 
 class TransferOutDetail extends Model
 {
@@ -15,6 +17,6 @@ class TransferOutDetail extends Model
     ];
 
     public function transfer(): BelongsTo { return $this->belongsTo(TransferOut::class, 'transfer_id'); }
-    public function product(): BelongsTo  { return $this->belongsTo(Product::class); }
-    public function unit(): BelongsTo     { return $this->belongsTo(Unit::class); }
+    public function product(): BelongsTo  { return $this->belongsTo(GudangProduct::class); }
+    public function unit(): BelongsTo     { return $this->belongsTo(GudangUnit::class); }
 }

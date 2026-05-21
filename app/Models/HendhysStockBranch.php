@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Hendhys\Unit as HendhysUnit;
+use App\Models\Hendhys\Product as HendhysProduct;
 
 class HendhysStockBranch extends Model
 {
@@ -13,6 +15,6 @@ class HendhysStockBranch extends Model
     protected $fillable = ['branch_id', 'product_id', 'quantity', 'unit_id', 'last_updated'];
 
     public function branch(): BelongsTo  { return $this->belongsTo(Branch::class); }
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
-    public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
+    public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class); }
+    public function unit(): BelongsTo    { return $this->belongsTo(HendhysUnit::class); }
 }

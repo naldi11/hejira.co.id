@@ -41,9 +41,9 @@ class HendhysDashboardController extends Controller
             ->get();
 
         // Produk Terlaris (Top 5)
-        $topProducts = HendhysTransactionDetail::join('master_products', 'hendhys_transaction_details.product_id', '=', 'master_products.id')
-            ->select('master_products.name', DB::raw('SUM(hendhys_transaction_details.quantity) as total_sold'))
-            ->groupBy('hendhys_transaction_details.product_id', 'master_products.name')
+        $topProducts = HendhysTransactionDetail::join('hendhys_products', 'hendhys_transaction_details.product_id', '=', 'hendhys_products.id')
+            ->select('hendhys_products.name', DB::raw('SUM(hendhys_transaction_details.quantity) as total_sold'))
+            ->groupBy('hendhys_transaction_details.product_id', 'hendhys_products.name')
             ->orderByDesc('total_sold')
             ->take(5)
             ->get();

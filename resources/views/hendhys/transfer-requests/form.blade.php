@@ -1,6 +1,6 @@
 @extends('layouts.hendhys')
 @section('title', 'Buat Request ke Gudang')
-@section('page-title', 'Form Pengajuan Bahan Baku')
+@section('page-title', 'Form Pengajuan Stok')
 
 @section('content')
 <div class="max-w-4xl mx-auto" x-data="requestForm()">
@@ -27,7 +27,7 @@
 
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">Daftar Bahan Baku</h3>
+                    <h3 class="text-lg font-bold text-gray-800">Daftar Produk / Barang</h3>
                     <button type="button" @click="addItem" class="text-sm bg-amber-50 text-[#d97706] hover:bg-amber-100 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         Tambah Baris
@@ -38,7 +38,7 @@
                     <table class="w-full text-left">
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                                <th class="pb-3 pt-2 px-2 font-medium">Bahan Baku</th>
+                                <th class="pb-3 pt-2 px-2 font-medium">Produk / Barang</th>
                                 <th class="pb-3 pt-2 px-2 font-medium w-32">Jumlah</th>
                                 <th class="pb-3 pt-2 px-2 font-medium w-32">Satuan</th>
                                 <th class="pb-3 pt-2 px-2 font-medium w-16"></th>
@@ -49,7 +49,7 @@
                                 <tr class="border-b border-gray-100 last:border-0">
                                     <td class="py-3 px-2">
                                         <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
+                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] text-gray-800 bg-white">
                                             <option value="">-- Pilih Barang --</option>
                                             @foreach($products as $p)
                                                 <option value="{{ $p->id }}">{{ $p->name }}</option>
@@ -57,14 +57,15 @@
                                         </select>
                                     </td>
                                     <td class="py-3 px-2">
-                                        <input type="number" step="0.01" min="0.01" :name="`items[${index}][quantity]`" x-model="item.qty" required placeholder="0.00"
-                                               class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
+                                        <input type="number" step="1" min="1" :name="`items[${index}][quantity]`" x-model.number="item.qty" required placeholder="1"
+                                               @change="item.qty = Math.max(1, Math.round(item.qty || 1))"
+                                               class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] text-gray-800 bg-white">
                                     </td>
                                     <td class="py-3 px-2">
                                         <select :name="`items[${index}][unit_id]`" x-model="item.unit_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
+                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] text-gray-800 bg-white">
                                             @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->code }}</option>
+                                                <option value="{{ $u->id }}">{{ $u->abbreviation }} — {{ $u->name }}</option>
                                             @endforeach
                                         </select>
                                     </td>

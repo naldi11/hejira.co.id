@@ -3,74 +3,119 @@
 @section('page-title', 'Catat Hasil Produksi Bakery')
 
 @section('content')
-<div class="max-w-4xl mx-auto" x-data="productionForm()">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <form action="{{ route('hendhys.productions.store') }}" method="POST">
-            @csrf
-            
-            <div class="p-6 border-b border-gray-100 bg-[#faf7f5]">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface" x-data="productionForm()">
+
+        @if ($errors->any())
+            <div class="mb-md bg-error-container text-on-error-container p-sm rounded-lg shadow-sm border border-error/20">
+                <div class="flex items-start gap-sm">
+                    <span class="material-symbols-outlined text-error mt-[2px]">error</span>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Produksi <span class="text-red-500">*</span></label>
-                        <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
-                               class="w-full border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] bg-white">
-                        @error('date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <h4 class="font-bold text-sm mb-xs">Terdapat beberapa kesalahan:</h4>
+                        <ul class="list-disc pl-md text-sm text-on-error-container/90 space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <form action="{{ route('hendhys.productions.store') }}" method="POST" class="space-y-lg">
+            @csrf
+
+            {{-- Header Info --}}
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
+                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant rounded-t-xl">
+                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
+                        Informasi Produksi</h3>
+                </div>
+
+                <div class="p-md grid grid-cols-1 md:grid-cols-2 gap-md">
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tanggal Produksi
+                            <span class="text-error">*</span></label>
+                        <div
+                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                            <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
+                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                        <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Opsional (misal: Sesi Siang)"
-                               class="w-full border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] bg-white">
-                        @error('notes') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Catatan</label>
+                        <div
+                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                            <input type="text" name="notes" value="{{ old('notes') }}"
+                                placeholder="Opsional (misal: Sesi Siang)"
+                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">Daftar Produk Jadi</h3>
-                    <button type="button" @click="addItem" class="text-sm bg-amber-50 text-[#d97706] hover:bg-amber-100 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            {{-- Daftar Produk Jadi --}}
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
+                <div
+                    class="px-md py-sm bg-surface-container-low border-b border-outline-variant rounded-t-xl flex items-center justify-between">
+                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
+                        Daftar Produk Jadi</h3>
+                    <button type="button" @click="addItem"
+                        class="text-sm bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">add</span>
                         Tambah Baris
                     </button>
                 </div>
 
-                <div class="overflow-x-auto overflow-visible">
+                <div class="overflow-x-auto overflow-visible p-md">
                     <table class="w-full text-left">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                                <th class="pb-3 pt-2 px-2 font-medium">Produk</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-32">Kuantitas</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-32">Satuan</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-16"></th>
+                            <tr
+                                class="text-on-surface-variant text-label-sm font-bold uppercase tracking-wider border-b border-outline-variant">
+                                <th class="pb-3 pt-2 px-2">Produk</th>
+                                <th class="pb-3 pt-2 px-2 w-32">Kuantitas</th>
+                                <th class="pb-3 pt-2 px-2 w-32">Satuan</th>
+                                <th class="pb-3 pt-2 px-2 w-16 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="(item, index) in items" :key="item.id">
-                                <tr class="border-b border-gray-100 last:border-0">
+                                <tr
+                                    class="border-b border-outline-variant/30 last:border-0 hover:bg-surface-container-lowest transition-colors">
                                     <td class="py-3 px-2">
-                                        <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
-                                            <option value="">-- Pilih Produk --</option>
-                                            @foreach($products as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <div
+                                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                                            <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
+                                                class="bg-transparent border-none focus:ring-0 w-full font-body-sm text-body-sm text-on-surface py-sm px-sm outline-none">
+                                                <option value="">-- Pilih Produk --</option>
+                                                @foreach($products as $p)
+                                                    <option value="{{ $p->id }}">{{ $p->code }} - {{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </td>
                                     <td class="py-3 px-2">
-                                        <input type="number" step="0.01" min="0.01" :name="`items[${index}][quantity_produced]`" x-model="item.qty" required
-                                               class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
+                                        <div
+                                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                                            <input type="number" step="0.01" min="0.01"
+                                                :name="`items[${index}][quantity_produced]`" x-model="item.qty" required
+                                                class="bg-transparent border-none focus:ring-0 w-full font-body-sm text-body-sm text-on-surface py-sm px-sm outline-none">
+                                        </div>
                                     </td>
                                     <td class="py-3 px-2">
-                                        <select :name="`items[${index}][unit_id]`" x-model="item.unit_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
-                                            @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->code }}</option>
-                                            @endforeach
-                                        </select>
+                                        <div
+                                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                                            <select :name="`items[${index}][unit_id]`" x-model="item.unit_id" required
+                                                class="bg-transparent border-none focus:ring-0 w-full font-body-sm text-body-sm text-on-surface py-sm px-sm outline-none">
+                                                @foreach($units as $u)
+                                                    <option value="{{ $u->id }}">{{ $u->abbreviation }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </td>
                                     <td class="py-3 px-2 text-center">
-                                        <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <button type="button" @click="removeItem(index)" x-show="items.length > 1"
+                                            class="text-error hover:bg-error-container p-2 rounded-lg transition-colors flex items-center justify-center mx-auto">
+                                            <span class="material-symbols-outlined text-[20px]">delete</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -78,39 +123,39 @@
                         </tbody>
                     </table>
                 </div>
-
-                @if($errors->has('items.*'))
-                    <div class="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200">
-                        Terdapat kesalahan pada input item produk. Pastikan semua baris terisi dengan benar.
-                    </div>
-                @endif
             </div>
 
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                <a href="{{ route('hendhys.productions.index') }}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Batal</a>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-[#d97706] hover:bg-[#b45309] rounded-lg transition-colors shadow-sm">
+            {{-- Action Buttons --}}
+            <div class="flex items-center justify-end gap-md pb-lg">
+                <a href="{{ route('hendhys.productions.index') }}"
+                    class="inline-flex items-center gap-sm px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    Batal
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">save</span>
                     Simpan Produksi
                 </button>
             </div>
         </form>
     </div>
-</div>
 
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('productionForm', () => ({
-        items: [{ id: Date.now(), product_id: '', qty: '', unit_id: '' }],
-        
-        addItem() {
-            this.items.push({ id: Date.now(), product_id: '', qty: '', unit_id: '' });
-        },
-        
-        removeItem(index) {
-            if(this.items.length > 1) {
-                this.items.splice(index, 1);
-            }
-        }
-    }))
-})
-</script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('productionForm', () => ({
+                items: [{ id: Date.now(), product_id: '', qty: '', unit_id: '' }],
+
+                addItem() {
+                    this.items.push({ id: Date.now(), product_id: '', qty: '', unit_id: '' });
+                },
+
+                removeItem(index) {
+                    if (this.items.length > 1) {
+                        this.items.splice(index, 1);
+                    }
+                }
+            }))
+        })
+    </script>
 @endsection

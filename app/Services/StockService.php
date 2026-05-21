@@ -281,10 +281,10 @@ class StockService
         ]);
     }
 
-    // ── GRN: update HPP on master_products ───────────────────────────────────
+    // ── GRN: update HPP on gudang_products ───────────────────────────────────
 
     public function updateProductHpp(int $productId, float $hppPrice): void
     {
-        Product::where('id', $productId)->update(['hpp' => $hppPrice]);
+        \App\Models\Gudang\Product::where('id', $productId)->update(['hpp' => $hppPrice]);
     }
 }

@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('gudang_transfer_request_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('request_id')->constrained('gudang_transfer_requests')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained('master_products');
+            $table->foreignId('product_id')->constrained('gudang_products');
             $table->decimal('quantity_requested', 15, 3);
             $table->decimal('quantity_approved', 15, 3)->nullable();
-            $table->foreignId('unit_id')->constrained('master_units');
+            $table->foreignId('unit_id')->constrained('gudang_units');
             $table->text('notes')->nullable();
         });
     }

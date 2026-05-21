@@ -27,9 +27,9 @@ class JihansDashboardController extends Controller
             ->get();
 
         // Produk Terlaris (Top 5)
-        $topProducts = JihansTransactionDetail::join('master_products', 'jihans_transaction_details.product_id', '=', 'master_products.id')
-            ->select('master_products.name', DB::raw('SUM(jihans_transaction_details.quantity) as total_sold'))
-            ->groupBy('jihans_transaction_details.product_id', 'master_products.name')
+        $topProducts = JihansTransactionDetail::join('jihans_products', 'jihans_transaction_details.product_id', '=', 'jihans_products.id')
+            ->select('jihans_products.name', DB::raw('SUM(jihans_transaction_details.quantity) as total_sold'))
+            ->groupBy('jihans_transaction_details.product_id', 'jihans_products.name')
             ->orderByDesc('total_sold')
             ->take(5)
             ->get();

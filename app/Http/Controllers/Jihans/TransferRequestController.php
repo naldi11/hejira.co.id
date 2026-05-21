@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Models\Jihans\Product;
 use App\Models\TransferRequest;
-use App\Models\Unit;
+use App\Models\Jihans\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
@@ -37,9 +37,7 @@ class TransferRequestController extends Controller
 
     public function create()
     {
-        // Hanya produk dengan jenis bahan_baku atau lainnya
         $products = Product::where('status', 'active')
-            ->whereIn('jenis', ['bahan_baku', 'lainnya'])
             ->with('unit')
             ->orderBy('name')
             ->get();
@@ -55,9 +53,9 @@ class TransferRequestController extends Controller
             'date'               => 'required|date',
             'notes'              => 'nullable|string',
             'items'              => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
+            'items.*.product_id' => 'required|exists:jihans_products,id',
             'items.*.quantity'   => 'required|numeric|min:0.001',
-            'items.*.unit_id'    => 'required|exists:master_units,id',
+            'items.*.unit_id'    => 'required|exists:jihans_units,id',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -79,6 +77,7 @@ class TransferRequestController extends Controller
                 ]);
             }
 
+            event(new \App\Events\TransferRequestCreated($transferRequest));
             $this->logger->log('create', 'jihans.transfer_request', "Request stok Jihan's ke Gudang: {$transferRequest->request_number}", $transferRequest);
         });
 

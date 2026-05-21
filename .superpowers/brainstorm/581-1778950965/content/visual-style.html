@@ -1,0 +1,111 @@
+<h2>Visual Style: Tampilan seperti apa?</h2>
+<p class="subtitle">Pilih arah desain untuk semua view Admin Gudang (sidebar indigo sudah ada, ini untuk konten utamanya)</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="clean" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;min-height:180px;">
+      <!-- Clean & Light mockup -->
+      <div style="background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);margin-bottom:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:#f1f5f9;border-radius:6px;padding:10px;">
+            <div style="font-size:10px;color:#64748b;margin-bottom:4px;">TOTAL STOK</div>
+            <div style="font-size:18px;font-weight:700;color:#1e293b;">248</div>
+            <div style="font-size:9px;color:#22c55e;">↑ 12 hari ini</div>
+          </div>
+          <div style="flex:1;background:#f1f5f9;border-radius:6px;padding:10px;">
+            <div style="font-size:10px;color:#64748b;margin-bottom:4px;">PO AKTIF</div>
+            <div style="font-size:18px;font-weight:700;color:#1e293b;">7</div>
+            <div style="font-size:9px;color:#f59e0b;">3 pending</div>
+          </div>
+          <div style="flex:1;background:#fff3cd;border-radius:6px;padding:10px;border:1px solid #fde68a;">
+            <div style="font-size:10px;color:#92400e;margin-bottom:4px;">STOK MENIPIS</div>
+            <div style="font-size:18px;font-weight:700;color:#b45309;">5</div>
+            <div style="font-size:9px;color:#d97706;">butuh restock</div>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border-radius:6px;height:40px;display:flex;align-items:center;padding:0 10px;gap:4px;">
+          <div style="width:30%;height:20px;background:#c7d2fe;border-radius:3px;"></div>
+          <div style="width:20%;height:14px;background:#e0e7ff;border-radius:3px;"></div>
+          <div style="width:25%;height:17px;background:#c7d2fe;border-radius:3px;"></div>
+          <div style="width:15%;height:12px;background:#e0e7ff;border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Clean & Light</h3>
+      <p>Putih dominan, kartu abu-abu lembut, tipografi bersih. Profesional dan mudah dibaca. Cocok untuk admin yang kerja seharian.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="bold" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;min-height:180px;">
+      <!-- Bold Dark mockup -->
+      <div style="padding:4px;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:8px;padding:10px;">
+            <div style="font-size:10px;color:#c7d2fe;margin-bottom:4px;">TOTAL STOK</div>
+            <div style="font-size:18px;font-weight:700;color:#fff;">248</div>
+            <div style="font-size:9px;color:#a5b4fc;">↑ 12 hari ini</div>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#0891b2,#0e7490);border-radius:8px;padding:10px;">
+            <div style="font-size:10px;color:#a5f3fc;margin-bottom:4px;">PO AKTIF</div>
+            <div style="font-size:18px;font-weight:700;color:#fff;">7</div>
+            <div style="font-size:9px;color:#67e8f9;">3 pending</div>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#d97706,#b45309);border-radius:8px;padding:10px;">
+            <div style="font-size:10px;color:#fde68a;margin-bottom:4px;">STOK MENIPIS</div>
+            <div style="font-size:18px;font-weight:700;color:#fff;">5</div>
+            <div style="font-size:9px;color:#fcd34d;">butuh restock</div>
+          </div>
+        </div>
+        <div style="background:#1e293b;border-radius:6px;height:40px;display:flex;align-items:center;padding:0 10px;gap:4px;">
+          <div style="width:30%;height:20px;background:#3730a3;border-radius:3px;"></div>
+          <div style="width:20%;height:14px;background:#4338ca;border-radius:3px;"></div>
+          <div style="width:25%;height:17px;background:#3730a3;border-radius:3px;"></div>
+          <div style="width:15%;height:12px;background:#4338ca;border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Bold Dark</h3>
+      <p>Background gelap, kartu gradient warna-warni. Terasa modern dan "tech". Lebih intens secara visual, cocok untuk layar monitoring.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="warm" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fffbf5;padding:16px;min-height:180px;">
+      <!-- Warm & Earthy mockup -->
+      <div style="background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:#fef3c7;border-radius:6px;padding:10px;border-left:3px solid #f59e0b;">
+            <div style="font-size:10px;color:#92400e;margin-bottom:4px;">TOTAL STOK</div>
+            <div style="font-size:18px;font-weight:700;color:#78350f;">248</div>
+            <div style="font-size:9px;color:#b45309;">↑ 12 hari ini</div>
+          </div>
+          <div style="flex:1;background:#dcfce7;border-radius:6px;padding:10px;border-left:3px solid #16a34a;">
+            <div style="font-size:10px;color:#14532d;margin-bottom:4px;">PO AKTIF</div>
+            <div style="font-size:18px;font-weight:700;color:#14532d;">7</div>
+            <div style="font-size:9px;color:#15803d;">3 pending</div>
+          </div>
+          <div style="flex:1;background:#fee2e2;border-radius:6px;padding:10px;border-left:3px solid #dc2626;">
+            <div style="font-size:10px;color:#7f1d1d;margin-bottom:4px;">STOK MENIPIS</div>
+            <div style="font-size:18px;font-weight:700;color:#991b1b;">5</div>
+            <div style="font-size:9px;color:#b91c1c;">butuh restock</div>
+          </div>
+        </div>
+        <div style="background:#fef9f0;border-radius:6px;height:40px;display:flex;align-items:center;padding:0 10px;gap:4px;">
+          <div style="width:30%;height:20px;background:#fde68a;border-radius:3px;"></div>
+          <div style="width:20%;height:14px;background:#fef3c7;border-radius:3px;"></div>
+          <div style="width:25%;height:17px;background:#fde68a;border-radius:3px;"></div>
+          <div style="width:15%;height:12px;background:#fef3c7;border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Warm & Earthy</h3>
+      <p>Putih hangat, kartu pastel kuning/hijau/merah, border kiri berwarna. Lebih "lokal" dan tidak terlalu korporat. Enak di mata.</p>
+    </div>
+  </div>
+
+</div>

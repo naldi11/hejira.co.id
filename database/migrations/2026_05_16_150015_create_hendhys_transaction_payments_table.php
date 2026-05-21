@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('reference_number', 100)->nullable();
             $table->string('bank_name', 100)->nullable();
             $table->text('notes')->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
     }
 

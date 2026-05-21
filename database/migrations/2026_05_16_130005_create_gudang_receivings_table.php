@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('grn_number', 30)->unique();
             $table->foreignId('po_id')->nullable()->constrained('gudang_purchase_orders')->nullOnDelete();
-            $table->foreignId('supplier_id')->constrained('master_suppliers');
+            $table->foreignId('supplier_id')->constrained('gudang_suppliers');
             $table->date('date');
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->constrained('master_users');

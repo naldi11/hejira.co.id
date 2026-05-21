@@ -9,7 +9,7 @@ class Brand extends Model
 {
     protected $table = 'master_brands';
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'entity_scope'];
 
     public function products(): HasMany
     {

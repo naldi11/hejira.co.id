@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Gudang;
 use App\Http\Controllers\Controller;
 use App\Models\GudangStock;
 use App\Models\GudangStockMovement;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\Gudang\Product;
+use App\Models\Gudang\Unit;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -20,25 +20,25 @@ class StockController extends Controller
 
     public function index(Request $request)
     {
-        // Join master_products with gudang_stock (left join — show all products)
+        // Join gudang_products with gudang_stock (left join — show all products)
         $q = Product::with(['unit', 'category'])
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
-            ->where('master_products.status', 'active')
-            ->where('master_products.product_type', 'INV');
+            ->leftJoin('gudang_stock', 'gudang_products.id', '=', 'gudang_stock.product_id')
+            ->select('gudang_products.*', 'gudang_stock.quantity as current_stock')
+            ->where('gudang_products.status', 'active')
+            ->where('gudang_products.product_type', 'INV');
 
         if ($search = $request->search) {
-            $q->where(fn ($w) => $w->where('master_products.name', 'like', "%$search%")
-                                   ->orWhere('master_products.code', 'like', "%$search%"));
+            $q->where(fn ($w) => $w->where('gudang_products.name', 'like', "%$search%")
+                                   ->orWhere('gudang_products.code', 'like', "%$search%"));
         }
 
-        if ($request->filled('jenis')) $q->where('master_products.jenis', $request->jenis);
+        if ($request->filled('jenis')) $q->where('gudang_products.jenis', $request->jenis);
 
         if ($request->low_stock === '1') {
-            $q->whereRaw('COALESCE(gudang_stock.quantity, 0) <= master_products.stock_min');
+            $q->whereRaw('COALESCE(gudang_stock.quantity, 0) <= gudang_products.stock_min');
         }
 
-        $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
+        $stocks = $q->orderBy('gudang_products.name')->paginate(20)->withQueryString();
         $units  = Unit::orderBy('name')->get();
 
         return view('gudang.stock.index', compact('stocks', 'units'));
@@ -63,9 +63,9 @@ class StockController extends Controller
     public function adjust(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|exists:master_products,id',
-            'unit_id'    => 'required|exists:master_units,id',
-            'quantity'   => 'required|numeric|min:0',
+            'product_id' => 'required|exists:gudang_products,id',
+            'unit_id'    => 'required|exists:gudang_units,id',
+            'quantity'   => 'required|integer|min:0',
             'notes'      => 'required|string|max:200',
         ]);
 

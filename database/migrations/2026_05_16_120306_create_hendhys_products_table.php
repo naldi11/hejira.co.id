@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('master_products', function (Blueprint $table) {
+        Schema::create('hendhys_products', function (Blueprint $table) {
             $table->id();
             $table->string('code', 20)->unique();
             $table->string('barcode', 50)->unique()->nullable();
             $table->string('name', 200);
-            $table->foreignId('category_id')->constrained('master_product_categories');
-            $table->foreignId('unit_id')->constrained('master_units');
-            $table->foreignId('brand_id')->nullable()->constrained('master_brands')->nullOnDelete();
+            $table->foreignId('category_id')->constrained('hendhys_product_categories');
+            $table->foreignId('unit_id')->constrained('hendhys_units');
+            $table->foreignId('brand_id')->nullable()->constrained('hendhys_brands')->nullOnDelete();
             $table->string('rack', 20)->nullable();
             $table->enum('jenis', ['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minuman', 'snack', 'selai', 'property', 'lainnya']);
             $table->decimal('hpp', 15, 2)->default(0);
@@ -35,6 +35,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('master_products');
+        Schema::dropIfExists('hendhys_products');
     }
 };

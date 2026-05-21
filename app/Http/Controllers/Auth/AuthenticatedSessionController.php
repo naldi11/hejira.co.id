@@ -40,10 +40,14 @@ class AuthenticatedSessionController extends Controller
 
     private function redirectRoute(User $user): string
     {
-        if ($user->hasRole('owner'))                          return route('owner.dashboard');
-        if ($user->hasRole('admin_gudang'))                   return route('gudang.dashboard');
-        if ($user->hasRole(['kasir_jihans', 'admin_jihans'])) return route('jihans.dashboard');
-        if ($user->hasRole('kasir_hendhys'))                  return route('hendhys.dashboard');
+        if ($user->hasRole('owner'))
+            return route('owner.dashboard');
+        if ($user->hasRole('admin_gudang'))
+            return route('gudang.dashboard');
+        if ($user->hasRole(['kasir_jihans', 'admin_jihans']))
+            return route('jihans.dashboard');
+        if ($user->hasRole('kasir_hendhys'))
+            return route('hendhys.pos.index');
 
         return route('login');
     }

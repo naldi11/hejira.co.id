@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('hendhys_production_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('production_id')->constrained('hendhys_productions')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained('master_products');
+            $table->foreignId('product_id')->constrained('hendhys_products');
             $table->decimal('quantity_produced', 15, 3);
-            $table->foreignId('unit_id')->constrained('master_units');
+            $table->foreignId('unit_id')->constrained('hendhys_units');
             $table->text('notes')->nullable();
         });
     }

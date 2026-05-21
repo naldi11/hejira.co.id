@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Hendhys;
 use App\Http\Controllers\Controller;
 use App\Models\HendhysProduction;
 use App\Models\HendhysProductionDetail;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\Hendhys\Product;
+use App\Models\Hendhys\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -50,9 +50,7 @@ class ProductionController extends Controller
         }
 
         // Get products that are manufactured by Hendhys
-        // Asumsi: barang yang diproduksi Hendhys adalah 'bahan_jadi' atau spesifik kategori bakery
         $products = Product::where('status', 'active')
-            ->where('jenis', 'bahan_jadi')
             ->orderBy('name')
             ->get();
             
@@ -71,9 +69,9 @@ class ProductionController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
+            'items.*.product_id' => 'required|exists:hendhys_products,id',
             'items.*.quantity_produced' => 'required|numeric|min:0.01',
-            'items.*.unit_id' => 'required|exists:master_units,id',
+            'items.*.unit_id' => 'required|exists:hendhys_units,id',
         ]);
 
         try {
@@ -81,7 +79,6 @@ class ProductionController extends Controller
                 $production = HendhysProduction::create([
                     'production_number' => $this->numbers->generateYearly('HND-PRD', 'hendhys_productions', 'production_number'),
                     'date' => $request->date,
-                    'total_items' => count($request->items),
                     'notes' => $request->notes,
                     'created_by' => auth()->id()
                 ]);
@@ -100,7 +97,7 @@ class ProductionController extends Controller
                         $item['unit_id'],
                         $item['quantity_produced'],
                         null, // branch_id null = Pusat
-                        'produksi',
+                        'production',
                         $production->id,
                         auth()->id()
                     );

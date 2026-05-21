@@ -128,15 +128,19 @@
                             </template>
                         </ul>
                         
-                        <div class="mt-4 p-3 bg-blue-50 text-blue-700 text-sm rounded-lg flex gap-2">
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <p>Untuk melanjutkan transaksi, silakan input ulang barang di halaman Kasir, atau hapus pending ini jika batal.</p>
+                        <div class="mt-4 flex flex-col sm:flex-row justify-end gap-3">
+                            <button @click="modalOpen = false" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Tutup</button>
+                            <button @click="resumeTransaction" class="px-5 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                Lanjutkan ke Kasir
+                            </button>
                         </div>
                     </div>
                 </template>
             </div>
             
-            <div class="p-5 border-t border-gray-100 bg-gray-50 flex justify-end">
+            
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end" x-show="isLoading || !detailData">
                 <button @click="modalOpen = false" class="px-5 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm">Tutup</button>
             </div>
         </div>
@@ -175,6 +179,46 @@
             
             formatCurrency(value) {
                 return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+            },
+
+            async resumeTransaction() {
+                if(!this.detailData || !this.detailData.id) return;
+                if(!confirm('Lanjutkan transaksi ini ke kasir? Transaksi pending ini akan dihapus dari daftar Hold.')) return;
+
+                const cartItems = this.detailData.details.map(item => ({
+                    product_id: item.product_id,
+                    product_name: item.product_name,
+                    product_code: '',
+                    price: Number(item.price),
+                    quantity: Number(item.quantity),
+                    unit_name: item.unit ? item.unit.abbreviation : '',
+                    max_stock: 9999,
+                    discount: 0,
+                    total: Number(item.total)
+                }));
+
+                const resumeData = {
+                    items: cartItems,
+                    customerType: this.detailData.customer_type || 'retail',
+                    customerId: this.detailData.customer_id || '',
+                    notes: this.detailData.notes || ''
+                };
+
+                localStorage.setItem('jihans_resume_cart', JSON.stringify(resumeData));
+
+                try {
+                    await fetch(`/jihans/pending/${this.detailData.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+
+                window.location.href = '{{ route("jihans.pos.index") }}';
             }
         }));
     });

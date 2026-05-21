@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
 use App\Models\JihansProduction;
-use App\Models\Product;
-use App\Models\Unit;
+use App\Models\Jihans\Product;
+use App\Models\Jihans\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -38,12 +38,9 @@ class ProductionController extends Controller
 
     public function create()
     {
-        // Hanya produk dengan jenis bahan_jadi atau yang mengandung kata Tortilla
+        // Semua produk aktif
         $products = Product::where('status', 'active')
-            ->where(function($q) {
-                $q->where('jenis', 'bahan_jadi')
-                  ->orWhere('name', 'like', '%Tortilla%');
-            })
+            ->orderBy('name')
             ->with('unit')
             ->get();
             
@@ -56,10 +53,10 @@ class ProductionController extends Controller
     {
         $request->validate([
             'date'              => 'required|date',
-            'product_id'        => 'required|exists:master_products,id',
+            'product_id'        => 'required|exists:jihans_products,id',
             'size'              => 'required|in:kecil,sedang,besar',
             'quantity_produced' => 'required|numeric|min:0.001',
-            'unit_id'           => 'required|exists:master_units,id',
+            'unit_id'           => 'required|exists:jihans_units,id',
             'notes'             => 'nullable|string',
         ]);
 

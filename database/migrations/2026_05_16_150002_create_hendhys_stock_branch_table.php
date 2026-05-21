@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('hendhys_stock_branch', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained('master_branches');
-            $table->foreignId('product_id')->constrained('master_products');
+            $table->foreignId('product_id')->constrained('hendhys_products');
             $table->decimal('quantity', 15, 3)->default(0);
-            $table->foreignId('unit_id')->constrained('master_units');
+            $table->foreignId('unit_id')->constrained('hendhys_units');
             $table->timestamp('last_updated')->useCurrent()->useCurrentOnUpdate();
 
             $table->unique(['branch_id', 'product_id']);

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
+use App\Models\Jihans\Customer;
 use App\Models\JihansStock;
 use App\Models\JihansTransaction;
 use App\Models\JihansTransactionDetail;
-use App\Models\Product;
+use App\Models\Jihans\Product;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -26,37 +26,46 @@ class PosController extends Controller
     {
         // Get products that are available in Jihans Stock
         $products = Product::where('status', 'active')
-            ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->where('jihans_stock.quantity', '>', 0)
-            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+            ->leftJoin('jihans_stock', 'jihans_products.id', '=', 'jihans_stock.product_id')
+            ->select('jihans_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
             ->with(['unit', 'category'])
             ->get();
 
-        $customers = Customer::where('is_active', true)->get();
+        // Kirim semua pelanggan aktif, filter tipe dilakukan di frontend
+        $customers = Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'phone']);
 
-        return view('jihans.pos.index', compact('products', 'customers'));
+        // Tipe unik pelanggan untuk dropdown (render via Blade agar tidak ada race condition Alpine.js)
+        $customerTypeLabels = ['retail' => 'Retail (Umum)', 'agen' => 'B2B / Agen'];
+        $customerTypes = $customers->pluck('type')->unique()->values()->map(fn($t) => [
+            'value' => $t,
+            'label' => $customerTypeLabels[$t] ?? ucfirst($t),
+        ]);
+
+        return view('jihans.pos.index', compact('products', 'customers', 'customerTypes'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id'       => 'nullable|exists:master_customers,id',
+            'transaction_date'  => 'nullable|date',
+            'customer_id'       => 'nullable|exists:jihans_customers,id',
             'customer_name'     => 'nullable|string|max:150',
             'customer_type'     => 'required|in:retail,agen',
             'ppn_type'          => 'required|in:none,include,exclude',
             'ppn_rate'          => 'required|numeric|min:0',
             'subtotal'          => 'required|numeric|min:0',
             'discount_amount'   => 'required|numeric|min:0',
+            'extra_discount'    => 'nullable|numeric|min:0',
             'tax_amount'        => 'required|numeric|min:0',
             'other_costs'       => 'required|numeric|min:0',
             'grand_total'       => 'required|numeric|min:0',
             'payment_method'    => 'required|in:cash,transfer',
-            'amount_paid'       => 'required|numeric|min:0', // Validasi minimal senilai grand_total jika lunas
+            'amount_paid'       => 'required|numeric|min:0',
             'bank_name'         => 'nullable|string|max:100',
             'reference_number'  => 'nullable|string|max:100',
             'notes'             => 'nullable|string',
             'items'             => 'required|array|min:1',
-            'items.*.product_id'=> 'required|exists:master_products,id',
+            'items.*.product_id'=> 'required|exists:jihans_products,id',
             'items.*.quantity'  => 'required|numeric|min:0.001',
             'items.*.price'     => 'required|numeric|min:0',
             'items.*.discount'  => 'nullable|numeric|min:0',
@@ -74,7 +83,7 @@ class PosController extends Controller
         $transaction = DB::transaction(function () use ($request) {
             $trx = JihansTransaction::create([
                 'transaction_number' => $this->numbers->generateYearly('JHS-INV', 'jihans_transactions', 'transaction_number'),
-                'date'               => now()->toDateString(),
+                'date'               => $request->transaction_date ?? now()->toDateString(),
                 'time'               => now()->toTimeString(),
                 'customer_id'        => $request->customer_id,
                 'customer_name'      => $request->customer_name ?? 'Pelanggan Umum',
@@ -82,7 +91,7 @@ class PosController extends Controller
                 'ppn_type'           => $request->ppn_type,
                 'ppn_rate'           => $request->ppn_rate,
                 'subtotal'           => $request->subtotal,
-                'discount_amount'    => $request->discount_amount,
+                'discount_amount'    => $request->discount_amount + ($request->extra_discount ?? 0),
                 'tax_amount'         => $request->tax_amount,
                 'other_costs'        => $request->other_costs,
                 'grand_total'        => $request->grand_total,

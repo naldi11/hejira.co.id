@@ -9,6 +9,9 @@ class UnitSeeder extends Seeder
 {
     public function run(): void
     {
+        $prefixes = ['gudang', 'jihans', 'hendhys'];
+        foreach ($prefixes as $prefix) {
+
         $units = [
             ['name' => 'Pak',       'abbreviation' => 'PAK'],
             ['name' => 'Pieces',    'abbreviation' => 'PCS'],
@@ -27,10 +30,11 @@ class UnitSeeder extends Seeder
         ];
 
         foreach ($units as $unit) {
-            DB::table('master_units')->insertOrIgnore(array_merge($unit, [
+            DB::table($prefix . '_units')->insertOrIgnore(array_merge($unit, [
                 'created_at' => now(),
                 'updated_at' => now(),
             ]));
+        }
         }
     }
 }

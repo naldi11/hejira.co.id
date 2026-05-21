@@ -125,7 +125,10 @@
                     <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-50 text-amber-700 text-base font-medium hover:bg-amber-100 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm" @click="closeModal">
                         Tutup
                     </button>
-                    <p class="text-xs text-gray-400 mt-3 sm:mt-0 sm:flex sm:items-center">Note: Fitur Lanjutkan (Resume) ke keranjang belum tersedia, hubungi IT untuk integrasi.</p>
+                    <button type="button" @click="resumeTransaction" class="w-full inline-flex justify-center items-center gap-2 rounded-md shadow-sm px-4 py-2 bg-gradient-to-r from-[#5a3821] to-[#3a2310] text-white text-base font-medium hover:from-[#4a2e1b] hover:to-[#2d1608] focus:outline-none sm:mt-0 mt-3 sm:w-auto sm:text-sm transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Lanjutkan ke Kasir
+                    </button>
                 </div>
             </div>
         </div>
@@ -159,6 +162,46 @@ document.addEventListener('alpine:init', () => {
         
         formatCurrency(val) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+        },
+
+        async resumeTransaction() {
+            if(!this.detailData || !this.detailData.id) return;
+            if(!confirm('Lanjutkan transaksi ini ke kasir? Transaksi pending ini akan dihapus dari daftar Hold.')) return;
+
+            const cartItems = this.detailData.details.map(item => ({
+                id: Date.now() + Math.random(),
+                product_id: item.product_id,
+                name: item.product_name,
+                price: Number(item.price),
+                price_agen: Number(item.price), 
+                unit_id: item.unit_id,
+                unit_code: item.unit ? item.unit.abbreviation : '',
+                qty: Number(item.quantity),
+                max_stock: 9999 
+            }));
+
+            const resumeData = {
+                items: cartItems,
+                customerType: this.detailData.customer_type || 'retail',
+                customerId: this.detailData.customer_id || '',
+                notes: this.detailData.notes || ''
+            };
+
+            localStorage.setItem('hendhys_resume_cart', JSON.stringify(resumeData));
+
+            try {
+                await fetch(`{{ url('hendhys/pending') }}/${this.detailData.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+
+            window.location.href = '{{ route("hendhys.pos.index") }}';
         }
     }));
 });

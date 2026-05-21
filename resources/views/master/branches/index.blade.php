@@ -1,4 +1,4 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', 'Cabang')
 @section('page-title', 'Master Data — Cabang')
 
@@ -8,7 +8,7 @@
         <h2 class="text-lg font-semibold text-gray-800">Cabang Hendhys</h2>
         <p class="text-sm text-gray-400">{{ $branches->total() }} cabang</p>
     </div>
-    <a href="{{ route('master.branches.create') }}"
+    <a href="{{ route(($routePrefix ?? 'master.') . 'branches.create') }}"
        class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Cabang
@@ -47,8 +47,8 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                     <div class="flex items-center justify-end gap-2">
-                        <a href="{{ route('master.branches.edit', $branch) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
-                        <form method="POST" action="{{ route('master.branches.destroy', $branch) }}"
+                        <a href="{{ route(($routePrefix ?? 'master.') . 'branches.edit', $branch) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
+                        <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'branches.destroy', $branch) }}"
                               onsubmit="return confirm('Hapus cabang {{ $branch->name }}?')">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>

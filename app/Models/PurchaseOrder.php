@@ -24,7 +24,7 @@ class PurchaseOrder extends Model
         ];
     }
 
-    public function supplier(): BelongsTo   { return $this->belongsTo(Supplier::class); }
+    public function supplier(): BelongsTo   { return $this->belongsTo(\App\Models\Gudang\Supplier::class); }
     public function creator(): BelongsTo    { return $this->belongsTo(User::class, 'created_by'); }
     public function details(): HasMany      { return $this->hasMany(PoDetail::class, 'po_id'); }
     public function receivings(): HasMany   { return $this->hasMany(Receiving::class, 'po_id'); }

@@ -1,6 +1,6 @@
 @extends('layouts.hendhys')
 @section('title', 'Request ke Gudang')
-@section('page-title', 'Request Bahan Baku ke Gudang')
+@section('page-title', 'Request Stok ke Gudang')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-sm border border-gray-200">

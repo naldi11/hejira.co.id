@@ -3,108 +3,215 @@
 @section('page-title', 'Form Pengajuan Stok ke Pusat')
 
 @section('content')
-<div class="max-w-4xl mx-auto" x-data="branchRequestForm()">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <form action="{{ route('hendhys.branch-requests.store') }}" method="POST">
-            @csrf
-            
-            <div class="p-6 border-b border-gray-100 bg-[#faf7f5]">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Request <span class="text-red-500">*</span></label>
-                        <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
-                               class="w-full border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] bg-white">
-                        @error('date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan</label>
-                        <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Misal: Stok Bolu habis"
-                               class="w-full border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] bg-white">
-                        @error('notes') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+    <div class="p-margin-mobile md:p-margin-desktop w-full overflow-y-auto h-full space-y-md" x-data="branchRequestForm()">
+
+        <div class="flex items-center justify-between">
+            <a href="{{ route('hendhys.branch-requests.index') }}"
+                class="text-on-surface-variant hover:text-on-surface font-medium text-sm flex items-center gap-1 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Kembali ke Daftar
+            </a>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden mb-lg">
+            <form action="{{ route('hendhys.branch-requests.store') }}" method="POST" id="requestForm">
+                @csrf
+
+                <div class="p-md border-b border-outline-variant bg-surface-container-low">
+                    <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">feed</span>
+                        Informasi Request
+                    </h3>
+                </div>
+
+                <div class="p-md bg-surface-container-lowest">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                        <div>
+                            <label class="block font-label-md text-label-md font-bold text-on-surface-variant mb-xs">Tanggal
+                                Request <span class="text-error">*</span></label>
+                            <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
+                                class="w-full font-body-md text-body-md bg-surface-container border border-outline-variant focus:border-primary focus:ring-0 rounded-lg text-on-surface px-sm py-sm">
+                            @error('date') <p class="text-error font-body-sm text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block font-label-md text-label-md font-bold text-on-surface-variant mb-xs">Catatan
+                                Tambahan</label>
+                            <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Misal: Stok Bolu habis"
+                                class="w-full font-body-md text-body-md bg-surface-container border border-outline-variant focus:border-primary focus:ring-0 rounded-lg text-on-surface px-sm py-sm">
+                            @error('notes') <p class="text-error font-body-sm text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">Daftar Produk Jadi</h3>
-                    <button type="button" @click="addItem" class="text-sm bg-amber-50 text-[#d97706] hover:bg-amber-100 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Tambah Baris
+                <div class="bg-surface-container-lowest border-t border-outline-variant">
+                    <div
+                        class="p-md border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+                        <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">inventory_2</span>
+                            Daftar Produk Diminta
+                        </h3>
+                        <button type="button" @click="addItem"
+                            class="inline-flex items-center gap-xs px-md py-xs bg-primary-container text-on-primary-container font-label-sm text-[12px] font-bold rounded-full hover:opacity-90 transition-opacity">
+                            <span class="material-symbols-outlined text-[16px]">add</span> Tambah Baris
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-surface-container-low border-b border-outline-variant">
+                                    <th
+                                        class="px-md py-sm font-label-md text-label-md text-on-surface-variant font-semibold w-1/3">
+                                        Produk Bakery</th>
+                                    <th
+                                        class="px-md py-sm font-label-md text-label-md text-on-surface-variant font-semibold w-40 text-center">
+                                        Kuantitas</th>
+                                    <th
+                                        class="px-md py-sm font-label-md text-label-md text-on-surface-variant font-semibold w-40">
+                                        Satuan</th>
+                                    <th class="px-xs py-sm w-16 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-surface-container">
+                                <template x-for="(item, index) in items" :key="item.id">
+                                    <tr class="hover:bg-surface-container transition-colors items-start">
+                                        <input type="hidden" :name="`items[${index}][product_id]`" :value="item.product_id">
+                                        <input type="hidden" :name="`items[${index}][unit_id]`" :value="item.unit_id">
+
+                                        <td class="px-md py-sm align-top align-middle">
+                                            <div wire:ignore>
+                                                <select x-model="item.product_id" @change="updateItemDetails(index)"
+                                                    required x-init="$nextTick(() => { 
+                                                        let ts = new TomSelect($el, {
+                                                            create: false,
+                                                            placeholder: '-- Pilih Produk --',
+                                                            onChange: function(value) {
+                                                                item.product_id = value;
+                                                                $el.dispatchEvent(new Event('change'));
+                                                            }
+                                                        });
+                                                    })"
+                                                    class="w-full border-b border-outline-variant focus:border-primary focus:ring-0 bg-transparent text-sm py-1 max-w-[300px]">
+                                                    <option value="">-- Pilih Produk --</option>
+                                                    @foreach($products as $p)
+                                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </td>
+
+                                        <td class="px-md py-sm align-middle text-center">
+                                            <input type="number" step="1" min="1" :name="`items[${index}][quantity]`"
+                                                x-model.number="item.qty" required placeholder="1"
+                                                @change="item.qty = Math.max(1, Math.round(item.qty || 1))"
+                                                class="w-[100px] text-center text-sm border border-outline-variant rounded-md focus:border-primary focus:ring-0 bg-surface-container-lowest font-bold text-on-surface mx-auto block"
+                                                :disabled="!item.product_id">
+                                        </td>
+
+                                        <td class="px-md py-sm align-middle">
+                                            <span class="text-sm text-on-surface-variant font-bold"
+                                                x-text="item.unit_code"></span>
+                                        </td>
+
+                                        <td class="px-xs py-sm text-center align-middle">
+                                            <button type="button" @click="removeItem(index)" x-show="items.length > 1"
+                                                class="text-error hover:bg-error-container p-1 rounded-full transition-colors flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">close</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="p-md border-t border-outline-variant bg-surface-container-low flex justify-end gap-3">
+                    <a href="{{ route('hendhys.branch-requests.index') }}"
+                        class="px-5 py-2.5 text-sm font-medium text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-container transition-colors shadow-sm">Batal</a>
+                    <button type="button" @click="submitForm"
+                        class="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-on-primary-fixed-variant rounded-lg transition-colors shadow-sm">
+                        Ajukan ke Pusat
                     </button>
                 </div>
-
-                <div class="overflow-x-auto overflow-visible">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                                <th class="pb-3 pt-2 px-2 font-medium">Produk Bakery</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-32">Kuantitas</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-32">Satuan</th>
-                                <th class="pb-3 pt-2 px-2 font-medium w-16"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(item, index) in items" :key="item.id">
-                                <tr class="border-b border-gray-100 last:border-0">
-                                    <td class="py-3 px-2">
-                                        <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
-                                            <option value="">-- Pilih Produk --</option>
-                                            @foreach($products as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td class="py-3 px-2">
-                                        <input type="number" step="0.01" min="0.01" :name="`items[${index}][quantity]`" x-model="item.qty" required placeholder="0.00"
-                                               class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
-                                    </td>
-                                    <td class="py-3 px-2">
-                                        <select :name="`items[${index}][unit_id]`" x-model="item.unit_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706]">
-                                            @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->code }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                <a href="{{ route('hendhys.branch-requests.index') }}" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Batal</a>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-[#d97706] hover:bg-[#b45309] rounded-lg transition-colors shadow-sm">
-                    Ajukan ke Pusat
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('branchRequestForm', () => ({
-        items: [{ id: Date.now(), product_id: '', qty: '', unit_id: '' }],
-        
-        addItem() {
-            this.items.push({ id: Date.now(), product_id: '', qty: '', unit_id: '' });
-        },
-        
-        removeItem(index) {
-            if(this.items.length > 1) {
-                this.items.splice(index, 1);
+    @push('styles')
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+        <style>
+            .ts-control {
+                border-radius: 0.5rem;
+                background: var(--color-surface-container-lowest);
+                border-color: var(--color-outline-variant);
             }
-        }
-    }))
-})
-</script>
+
+            .ts-control.focus {
+                border-color: var(--color-primary);
+                box-shadow: 0 0 0 1px var(--color-primary);
+            }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+        <script>
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('branchRequestForm', () => ({
+                    products: {{ Js::from($products->load('unit')) }},
+                    items: [{ id: Date.now(), product_id: '', qty: '', unit_id: '', unit_code: '-' }],
+
+                    addItem() {
+                        this.items.push({ id: Date.now(), product_id: '', qty: '', unit_id: '', unit_code: '-' });
+                    },
+
+                    removeItem(index) {
+                        if (this.items.length > 1) {
+                            this.items.splice(index, 1);
+                        }
+                    },
+
+                    updateItemDetails(index) {
+                        const item = this.items[index];
+                        if (item.product_id) {
+                            const product = this.products.find(p => p.id == item.product_id);
+                            if (product) {
+                                item.unit_id = product.unit_id;
+                                item.unit_code = product.unit ? product.unit.abbreviation : '-';
+                            }
+                        } else {
+                            item.unit_id = '';
+                            item.unit_code = '-';
+                        }
+                    },
+
+                    submitForm() {
+                        const form = document.getElementById('requestForm');
+                        if (!form.reportValidity()) return;
+
+                        let selected = new Set();
+                        for (let item of this.items) {
+                            if (!item.product_id) {
+                                alert('Silakan pilih produk pada semua baris yang aktif.');
+                                return;
+                            }
+                            if (selected.has(item.product_id)) {
+                                alert('Produk tidak boleh duplikat di beberapa baris.');
+                                return;
+                            }
+                            selected.add(item.product_id);
+
+                            if (!item.qty || parseFloat(item.qty) <= 0) {
+                                alert('Tentukan kuantitas kirim pada semua baris yang aktif.');
+                                return;
+                            }
+                        }
+
+                        form.submit();
+                    }
+                }))
+            })
+        </script>
+    @endpush
 @endsection

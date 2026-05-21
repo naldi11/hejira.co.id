@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Jihans\Product as JihansProduct;
 
 class JihansStockMovement extends Model
 {
@@ -25,7 +26,7 @@ class JihansStockMovement extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(JihansProduct::class);
     }
 
     public function creator(): BelongsTo

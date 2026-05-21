@@ -20,7 +20,7 @@ class Receiving extends Model
     }
 
     public function po(): BelongsTo         { return $this->belongsTo(PurchaseOrder::class, 'po_id'); }
-    public function supplier(): BelongsTo   { return $this->belongsTo(Supplier::class); }
+    public function supplier(): BelongsTo   { return $this->belongsTo(\App\Models\Gudang\Supplier::class); }
     public function creator(): BelongsTo    { return $this->belongsTo(User::class, 'created_by'); }
     public function details(): HasMany      { return $this->hasMany(ReceivingDetail::class, 'receiving_id'); }
 }

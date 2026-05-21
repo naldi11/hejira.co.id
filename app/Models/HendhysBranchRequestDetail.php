@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Hendhys\Unit as HendhysUnit;
+use App\Models\Hendhys\Product as HendhysProduct;
 
 class HendhysBranchRequestDetail extends Model
 {
     protected $table = 'hendhys_branch_request_details';
+    public $timestamps = false;
 
     protected $fillable = [
         'request_id', 'product_id', 'quantity_requested', 'quantity_approved', 'unit_id'
@@ -20,11 +23,11 @@ class HendhysBranchRequestDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(HendhysProduct::class);
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(HendhysUnit::class);
     }
 }

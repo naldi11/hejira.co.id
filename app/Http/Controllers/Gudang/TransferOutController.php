@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Gudang;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GudangStock;
-use App\Models\Product;
+use App\Models\Gudang\Product;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
-use App\Models\Unit;
+use App\Models\Gudang\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -42,9 +42,9 @@ class TransferOutController extends Controller
     {
         $products  = Product::where('status', 'active')
             ->with(['unit'])
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
-            ->orderBy('master_products.name')
+            ->leftJoin('gudang_stock', 'gudang_products.id', '=', 'gudang_stock.product_id')
+            ->select('gudang_products.*', 'gudang_stock.quantity as current_stock')
+            ->orderBy('gudang_products.name')
             ->get();
 
         $units    = Unit::orderBy('name')->get();
@@ -69,9 +69,9 @@ class TransferOutController extends Controller
             'request_id'         => 'nullable|exists:gudang_transfer_requests,id',
             'notes'              => 'nullable|string',
             'items'              => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity'   => 'required|numeric|min:0.001',
-            'items.*.unit_id'    => 'required|exists:master_units,id',
+            'items.*.product_id' => 'required|exists:gudang_products,id',
+            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.unit_id'    => 'required|exists:gudang_units,id',
             'items.*.hpp_price'  => 'required|numeric|min:0',
         ]);
 
@@ -81,8 +81,9 @@ class TransferOutController extends Controller
             $product = Product::find($item['product_id']);
 
             if ($item['quantity'] > $stock) {
+                $availableStock = (int) $stock;
                 return back()->withErrors([
-                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: {$stock}",
+                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: {$availableStock}",
                 ])->withInput();
             }
         }

@@ -75,6 +75,8 @@ class TransferRequestController extends Controller
 
             $this->logger->log('approve', 'gudang.transfer_request',
                 "Approve request: {$transferRequest->request_number}", $transferRequest);
+                
+            event(new \App\Events\TransferRequestStatusChanged($transferRequest));
         });
 
         return back()->with('success', "Request {$transferRequest->request_number} berhasil di-approve.");

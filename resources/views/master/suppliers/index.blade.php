@@ -1,4 +1,4 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', 'Supplier')
 @section('page-title', 'Master Data — Supplier')
 
@@ -8,7 +8,7 @@
         <h2 class="text-lg font-semibold text-gray-800">Supplier</h2>
         <p class="text-sm text-gray-400">{{ $suppliers->total() }} data</p>
     </div>
-    <a href="{{ route('master.suppliers.create') }}"
+    <a href="{{ route(($routePrefix ?? 'master.') . 'suppliers.create') }}"
        class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Supplier
@@ -26,7 +26,7 @@
     </select>
     <button type="submit" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg">Cari</button>
     @if(request('search') || request('status') !== null)
-    <a href="{{ route('master.suppliers.index') }}" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 text-sm px-3 py-2 rounded-lg">Reset</a>
+    <a href="{{ route(($routePrefix ?? 'master.') . 'suppliers.index') }}" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 text-sm px-3 py-2 rounded-lg">Reset</a>
     @endif
 </form>
 
@@ -57,9 +57,9 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                     <div class="flex items-center justify-end gap-2">
-                        <a href="{{ route('master.suppliers.edit', $supplier) }}"
+                        <a href="{{ route(($routePrefix ?? 'master.') . 'suppliers.edit', $supplier) }}"
                            class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
-                        <form method="POST" action="{{ route('master.suppliers.destroy', $supplier) }}"
+                        <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'suppliers.destroy', $supplier) }}"
                               onsubmit="return confirm('Hapus supplier {{ $supplier->name }}?')">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>

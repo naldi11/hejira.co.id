@@ -11,7 +11,7 @@ class Customer extends Model
 
     protected $table = 'master_customers';
 
-    protected $fillable = ['code', 'name', 'type', 'phone', 'email', 'address', 'notes', 'is_active'];
+    protected $fillable = ['code', 'name', 'type', 'phone', 'email', 'address', 'notes', 'is_active', 'entity_scope'];
 
     protected function casts(): array
     {

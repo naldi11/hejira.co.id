@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             BranchSeeder::class,
             UnitSeeder::class,
             UserSeeder::class,
+            //DummyDataSeeder::class,
         ]);
     }
 }

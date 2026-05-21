@@ -46,7 +46,7 @@
                     </svg>
                 </div>
                 <input id="password" 
-                       class="block w-full pl-10 pr-12 py-3 border-gray-200 rounded-xl bg-white/50 border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-••••••••" 
+                       class="block w-full pl-10 pr-12 py-3 border-gray-200 rounded-xl bg-white/50 border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
                        :type="show ? 'text' : 'password'"
                        name="password"
                        required autocomplete="current-password" />
@@ -76,7 +76,7 @@
         </div>
 
         <div>
-            <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]">
+            <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] ">
                 {{ __('Masuk ke Dashboard') }}
             </button>
         </div>

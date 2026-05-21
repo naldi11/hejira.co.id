@@ -27,6 +27,7 @@ class TransferRequest extends Model
 
     public function branch(): BelongsTo       { return $this->belongsTo(Branch::class); }
     public function requester(): BelongsTo    { return $this->belongsTo(User::class, 'requested_by'); }
+    public function creator(): BelongsTo      { return $this->belongsTo(User::class, 'requested_by'); }
     public function approver(): BelongsTo     { return $this->belongsTo(User::class, 'approved_by'); }
     public function details(): HasMany        { return $this->hasMany(TransferRequestDetail::class, 'request_id'); }
     public function transferOuts(): HasMany   { return $this->hasMany(TransferOut::class, 'request_id'); }

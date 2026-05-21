@@ -1,67 +1,201 @@
 @extends('layouts.hendhys')
 @section('title', 'Ketersediaan Stok')
-@section('page-title', 'Stok Barang ' . (auth()->user()->branch->type === 'pusat' ? 'Pusat Bakery' : 'Cabang ' . auth()->user()->branch->name))
+@section('page-title', $isPusat ? 'Stok Pusat & Cabang' : 'Stok ' . auth()->user()->branch->name)
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
-    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <form action="{{ route('hendhys.stock.index') }}" method="GET" class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Kode / Nama Produk..." class="text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] min-w-[250px]">
-            <button type="submit" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium">Cari</button>
-            @if(request()->filled('search'))
-                <a href="{{ route('hendhys.stock.index') }}" class="text-sm text-red-500 hover:text-red-700">Reset</a>
-            @endif
-        </form>
-        <a href="{{ route('hendhys.stock.movements') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg transition-colors text-sm font-medium whitespace-nowrap flex items-center gap-2">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Histori Mutasi Stok
-        </a>
-    </div>
-    
-    <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                    <th class="p-4 font-medium w-24">Kode</th>
-                    <th class="p-4 font-medium">Nama Produk Bakery</th>
-                    <th class="p-4 font-medium text-right">Kuantitas Fisik</th>
-                    <th class="p-4 font-medium">Satuan Dasar</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 text-sm">
-                @forelse($stocks as $stock)
-                <tr class="hover:bg-amber-50/50 transition-colors">
-                    <td class="p-4 font-medium text-gray-500">{{ $stock->code }}</td>
-                    <td class="p-4 font-bold text-gray-800">{{ $stock->name }}</td>
-                    <td class="p-4 text-right">
-                        @php
-                            $qty = (float) $stock->current_stock;
-                        @endphp
-                        @if($qty <= 0)
-                            <span class="px-2 py-1 bg-red-100 text-red-700 rounded font-bold text-xs">Habis (0)</span>
-                        @elseif($qty <= 10)
-                            <span class="font-bold text-red-600 text-base">{{ $qty }}</span>
-                        @else
-                            <span class="font-bold text-gray-800 text-base">{{ $qty }}</span>
+    <div class="p-margin-mobile md:p-margin-desktop w-full overflow-y-auto h-full bg-surface space-y-md">
+
+        {{-- ===== STOK PUSAT (selalu tampil) ===== --}}
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+            <div
+                class="p-md bg-surface-container-low border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+                <div class="flex items-center gap-sm">
+                    @if($isPusat)
+                        <span
+                            class="bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold px-sm py-[2px] rounded-full">PUSAT
+                            BAKERY</span>
+                    @else
+                        <span
+                            class="bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm font-bold px-sm py-[2px] rounded-full">{{ strtoupper(auth()->user()->branch->name) }}</span>
+                    @endif
+                    <h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Stok Tersedia</h2>
+                </div>
+                <div class="flex items-center gap-sm flex-wrap">
+                    <form action="{{ route('hendhys.stock.index') }}" method="GET" class="flex items-center gap-sm">
+                        @if(request()->filled('branch_id'))
+                            <input type="hidden" name="branch_id" value="{{ request('branch_id') }}">
                         @endif
-                    </td>
-                    <td class="p-4 text-gray-600">{{ $stock->unit->code ?? '-' }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="p-8 text-center text-gray-500">
-                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        <p>Data stok tidak ditemukan.</p>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        <div class="relative min-w-[180px]">
+                            <span
+                                class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari produk..."
+                                class="w-full pl-xl pr-sm py-sm bg-surface-container border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
+                        </div>
+                        <button type="submit"
+                            class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant transition-colors shadow-sm">Cari</button>
+                        @if(request()->filled('search'))
+                            <a href="{{ route('hendhys.stock.index') }}"
+                                class="text-error hover:text-error/80 font-label-sm text-[13px] ml-xs">Reset</a>
+                        @endif
+                    </form>
+
+                    @if(!$isPusat)
+                        <a href="{{ route('hendhys.branch-requests.index') }}"
+                            class="px-md py-sm bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg hover:bg-secondary-fixed transition-colors flex items-center gap-xs shadow-sm shadow-secondary/20">
+                            <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            Request Stok
+                        </a>
+                    @endif
+
+                    <a href="{{ route('hendhys.stock.movements') }}"
+                        class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors flex items-center gap-xs shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">history</span>
+                        Histori Mutasi
+                    </a>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-low border-b border-outline-variant">
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold w-24">
+                                Kode</th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
+                                Produk</th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                Stok</th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Satuan
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-surface-container">
+                        @forelse($stocks as $stock)
+                            <tr class="hover:bg-surface-container transition-colors">
+                                <td class="px-md py-sm font-mono text-xs text-on-surface-variant">{{ $stock->code }}</td>
+                                <td class="px-md py-sm font-bold text-on-surface">{{ $stock->name }}</td>
+                                <td class="px-md py-sm text-right">
+                                    @php $qty = (float) $stock->current_stock; @endphp
+                                    @if($qty <= 0)
+                                        <span
+                                            class="px-sm py-[2px] bg-error-container text-on-error-container rounded font-bold text-xs">Habis
+                                            (0)</span>
+                                    @elseif($qty <= 10)
+                                        <span class="font-bold text-error text-base">{{ $qty }}</span>
+                                    @else
+                                        <span class="font-bold text-on-surface text-base">{{ $qty }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-md py-sm text-on-surface-variant">{{ $stock->unit->abbreviation ?? '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-4xl text-outline mb-xs block">inventory_2</span>
+                                    <p>Data stok tidak ditemukan.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($stocks->hasPages())
+                <div class="p-md border-t border-outline-variant">{{ $stocks->links() }}</div>
+            @endif
+        </div>
+
+        {{-- ===== STOK PER CABANG (hanya untuk Pusat) ===== --}}
+        @if($isPusat)
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden mt-md">
+                <div
+                    class="p-md bg-secondary-container border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+                    <div class="flex items-center gap-sm">
+                        <span
+                            class="bg-surface text-on-surface font-label-sm text-label-sm font-bold px-sm py-[2px] rounded-full shadow-sm">STOK
+                            CABANG</span>
+                        <h2 class="font-headline-sm text-headline-sm font-bold text-on-secondary-container">
+                            @if($selectedBranchId)
+                                Stok - {{ $branches->firstWhere('id', $selectedBranchId)?->name ?? 'Cabang' }}
+                            @else
+                                Semua Cabang
+                            @endif
+                        </h2>
+                    </div>
+                    {{-- Filter Cabang --}}
+                    <form action="{{ route('hendhys.stock.index') }}" method="GET" class="flex items-center gap-sm flex-wrap">
+                        @if(request()->filled('search'))
+                            <input type="hidden" name="search" value="{{ request('search') }}">
+                        @endif
+                        <select name="branch_id" onchange="this.form.submit()"
+                            class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                            <option value="">- Semua Cabang -</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if($selectedBranchId)
+                            <a href="{{ route('hendhys.stock.index') }}"
+                                class="font-label-sm text-[13px] text-error hover:text-error/80">Reset Filter</a>
+                        @endif
+                    </form>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-surface-container-low border-b border-outline-variant">
+                                <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold w-24">
+                                    Kode</th>
+                                <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
+                                    Produk</th>
+                                <th
+                                    class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                    Stok Cabang</th>
+                                <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Satuan
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-surface-container">
+                            @forelse($branchStocks as $item)
+                                <tr class="hover:bg-surface-container transition-colors">
+                                    <td class="px-md py-sm font-mono text-xs text-on-surface-variant">{{ $item->code }}</td>
+                                    <td class="px-md py-sm font-bold text-on-surface">{{ $item->name }}</td>
+                                    <td class="px-md py-sm text-right">
+                                        @php $qty = (float) $item->current_stock; @endphp
+                                        @if($qty <= 0)
+                                            <span
+                                                class="px-sm py-[2px] bg-error-container text-on-error-container rounded font-bold text-xs">Habis
+                                                (0)</span>
+                                        @elseif($qty <= 10)
+                                            <span class="font-bold text-error text-base">{{ $qty }}</span>
+                                        @else
+                                            <span class="font-bold text-on-surface text-base">{{ $qty }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-md py-sm text-on-surface-variant">{{ $item->unit->abbreviation ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="p-xl text-center text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-4xl text-outline mb-xs block">inventory_2</span>
+                                        <p class="font-body-md">
+                                            {{ $selectedBranchId ? 'Tidak ada stok untuk cabang ini.' : 'Pilih cabang untuk melihat stok.' }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if(isset($branchStocks) && $branchStocks->hasPages())
+                    <div class="p-md border-t border-outline-variant">
+                        {{ $branchStocks->appends(request()->except('branch_page'))->links() }}</div>
+                @endif
+            </div>
+        @endif
+
     </div>
-    @if($stocks->hasPages())
-    <div class="p-4 border-t border-gray-100">
-        {{ $stocks->links() }}
-    </div>
-    @endif
-</div>
 @endsection

@@ -12,7 +12,7 @@ class HendhysBranchRequest extends Model
 
     protected $fillable = [
         'request_number', 'branch_id', 'date', 'status', 
-        'notes', 'approval_notes', 'created_by', 'approved_by'
+        'notes', 'rejection_reason', 'requested_by', 'approved_by', 'approved_at'
     ];
 
     public function branch(): BelongsTo
@@ -25,9 +25,14 @@ class HendhysBranchRequest extends Model
         return $this->hasMany(HendhysBranchRequestDetail::class, 'request_id');
     }
 
+    public function requester(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'requested_by');
     }
 
     public function approver(): BelongsTo

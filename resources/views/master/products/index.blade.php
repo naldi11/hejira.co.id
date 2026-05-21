@@ -1,98 +1,190 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', 'Produk')
 @section('page-title', 'Master Data — Produk')
 
 @section('content')
-<div class="flex items-center justify-between mt-4 mb-5">
-    <div>
-        <h2 class="text-lg font-semibold text-gray-800">Produk</h2>
-        <p class="text-sm text-gray-400">{{ $products->total() }} data</p>
+    <div class="p-margin-mobile md:p-margin-desktop w-full overflow-y-auto h-full bg-surface">
+
+        {{-- Page Header --}}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-lg gap-md">
+            <div>
+                <h2 class="font-headline-md text-headline-md text-on-background">Daftar Produk</h2>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-xs">{{ $products->total() }} produk terdaftar
+                </p>
+            </div>
+            <a href="{{ route(($routePrefix ?? 'master.') . 'products.create') }}"
+                class="inline-flex items-center gap-sm px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant  transition-all self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Tambah Produk
+            </a>
+        </div>
+
+        {{-- Filters --}}
+        <form method="GET" class="flex flex-wrap gap-sm mb-lg">
+            <div class="relative flex-1 min-w-[180px]">
+                <span
+                    class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode..."
+                    class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
+            </div>
+            <select name="jenis"
+                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                <option value="">Semua Jenis</option>
+                @foreach(['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minuman', 'snack', 'selai', 'property', 'lainnya'] as $j)
+                    <option value="{{ $j }}" {{ request('jenis') === $j ? 'selected' : '' }}>
+                        {{ ucwords(str_replace('_', ' ', $j)) }}</option>
+                @endforeach
+            </select>
+            <select name="entity_scope"
+                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                <option value="">Semua Entitas</option>
+                <option value="gudang" {{ request('entity_scope') === 'gudang' ? 'selected' : '' }}>Gudang</option>
+                <option value="jihans" {{ request('entity_scope') === 'jihans' ? 'selected' : '' }}>Jihan's</option>
+                <option value="hendhys" {{ request('entity_scope') === 'hendhys' ? 'selected' : '' }}>Hendhys</option>
+                <option value="all" {{ request('entity_scope') === 'all' ? 'selected' : '' }}>Semua</option>
+            </select>
+            <select name="status"
+                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                <option value="">Semua Status</option>
+                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
+                <option value="discontinued" {{ request('status') === 'discontinued' ? 'selected' : '' }}>Discontinue</option>
+            </select>
+            <button type="submit"
+                class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors ">
+                <span class="material-symbols-outlined text-[18px] align-middle">filter_list</span>
+                Filter
+            </button>
+            @if(request()->hasAny(['search', 'jenis', 'entity_scope', 'status']))
+                <a href="{{ route(($routePrefix ?? 'master.') . 'products.index') }}"
+                    class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                    Reset
+                </a>
+            @endif
+        </form>
+
+        {{-- Table --}}
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-low border-b border-outline-variant">
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Kode
+                            </th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
+                                Produk</th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">
+                                Kategori</th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Jenis
+                            </th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                HPP</th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                Harga Jual</th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">
+                                Status</th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-surface-container">
+                        @forelse($products as $product)
+                            <tr class="hover:bg-surface-container-lowest/80 transition-colors group">
+                                <td class="px-md py-sm font-mono text-xs text-on-surface-variant">{{ $product->code }}</td>
+                                <td class="px-md py-sm">
+                                    <div class="flex items-center gap-sm">
+                                        {{-- Product Image or Placeholder --}}
+                                        <div
+                                            class="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-high flex-shrink-0 flex items-center justify-center">
+                                            @if($product->image)
+                                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
+                                                    class="w-full h-full object-cover">
+                                            @else
+                                                <span class="material-symbols-outlined text-outline-variant text-[20px]">cake</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="font-label-lg text-label-lg font-bold text-on-surface">
+                                                {{ $product->name }}</p>
+                                            <p class="font-label-sm text-label-sm text-on-surface-variant">
+                                                {{ $product->unit->abbreviation ?? '-' }} Â·
+                                                {{ $product->brand->name ?? 'Tanpa Brand' }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-md py-sm font-body-md text-body-md text-on-surface-variant">
+                                    {{ $product->category->name ?? '-' }}</td>
+                                <td class="px-md py-sm">
+                                    <span
+                                        class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim">
+                                        {{ ucwords(str_replace('_', ' ', $product->jenis)) }}
+                                    </span>
+                                </td>
+                                <td class="px-md py-sm text-right font-body-md text-body-md text-on-surface-variant">
+                                    {{ number_format($product->hpp, 0, ',', '.') }}</td>
+                                <td class="px-md py-sm text-right font-label-lg text-label-lg font-bold text-primary">
+                                    {{ number_format($product->selling_price, 0, ',', '.') }}</td>
+                                <td class="px-md py-sm text-center">
+                                    @if($product->status === 'active')
+                                        <span
+                                            class="inline-flex items-center gap-xs px-sm py-xs rounded-full font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>
+                                            Aktif
+                                        </span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center gap-xs px-sm py-xs rounded-full font-label-sm text-label-sm bg-error-container text-on-error-container border border-error/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-error inline-block"></span>
+                                            Discontinue
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-md py-sm text-right">
+                                    <div class="flex items-center justify-end gap-sm">
+                                        <a href="{{ route(($routePrefix ?? 'master.') . 'products.edit', $product) }}"
+                                            class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high transition-colors  shadow-sm">
+                                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                                            Edit
+                                        </a>
+                                        <form method="POST"
+                                            action="{{ route(($routePrefix ?? 'master.') . 'products.destroy', $product) }}"
+                                            onsubmit="return confirm('Hapus produk {{ $product->name }}?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-error rounded-lg font-label-sm text-label-sm hover:bg-error-container transition-colors  shadow-sm">
+                                                <span class="material-symbols-outlined text-[14px]">delete</span>
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8"
+                                    class="px-md py-xl text-center text-on-surface-variant bg-surface-container-lowest">
+                                    <span
+                                        class="material-symbols-outlined text-[48px] text-outline opacity-40 mb-sm block">inventory_2</span>
+                                    <p class="font-label-lg text-label-lg font-medium">Tidak ada data produk.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Pagination --}}
+            @if($products->hasPages())
+                <div
+                    class="bg-surface-container-low border-t border-outline-variant px-md py-sm text-on-surface-variant font-label-sm text-label-sm">
+                    {{ $products->links() }}
+                </div>
+            @endif
+        </div>
+
     </div>
-    <a href="{{ route('master.products.create') }}"
-       class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Tambah Produk
-    </a>
-</div>
-
-<form method="GET" class="flex flex-wrap gap-2 mb-4">
-    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode, barcode..."
-           class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-    <select name="jenis" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-        <option value="">Semua Jenis</option>
-        @foreach(['frozen','tortilla','bakery','bahan_baku','aksesoris','minuman','snack','selai','property','lainnya'] as $j)
-        <option value="{{ $j }}" {{ request('jenis') === $j ? 'selected' : '' }}>{{ ucwords(str_replace('_',' ',$j)) }}</option>
-        @endforeach
-    </select>
-    <select name="entity_scope" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-        <option value="">Semua Entitas</option>
-        <option value="gudang"  {{ request('entity_scope') === 'gudang'  ? 'selected' : '' }}>Gudang</option>
-        <option value="jihans"  {{ request('entity_scope') === 'jihans'  ? 'selected' : '' }}>Jihan's</option>
-        <option value="hendhys" {{ request('entity_scope') === 'hendhys' ? 'selected' : '' }}>Hendhys</option>
-        <option value="all"     {{ request('entity_scope') === 'all'     ? 'selected' : '' }}>Semua</option>
-    </select>
-    <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-        <option value="">Semua Status</option>
-        <option value="active"       {{ request('status') === 'active'       ? 'selected' : '' }}>Aktif</option>
-        <option value="discontinued" {{ request('status') === 'discontinued' ? 'selected' : '' }}>Discontinue</option>
-    </select>
-    <button type="submit" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg">Cari</button>
-    @if(request()->hasAny(['search','jenis','entity_scope','status']))
-    <a href="{{ route('master.products.index') }}" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 text-sm px-3 py-2 rounded-lg">Reset</a>
-    @endif
-</form>
-
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Kode</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nama</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Kategori</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Jenis</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">HPP</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga Jual</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Aksi</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            @forelse($products as $product)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $product->code }}</td>
-                <td class="px-4 py-3">
-                    <p class="font-medium text-gray-800">{{ $product->name }}</p>
-                    <p class="text-xs text-gray-400">{{ $product->unit->abbreviation }} · {{ $product->brand->name ?? '-' }}</p>
-                </td>
-                <td class="px-4 py-3 text-gray-500">{{ $product->category->name }}</td>
-                <td class="px-4 py-3">
-                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                        {{ ucwords(str_replace('_',' ', $product->jenis)) }}
-                    </span>
-                </td>
-                <td class="px-4 py-3 text-right text-gray-600">{{ number_format($product->hpp, 0, ',', '.') }}</td>
-                <td class="px-4 py-3 text-right font-medium text-gray-800">{{ number_format($product->selling_price, 0, ',', '.') }}</td>
-                <td class="px-4 py-3 text-center">
-                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $product->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
-                        {{ $product->status === 'active' ? 'Aktif' : 'Discontinue' }}
-                    </span>
-                </td>
-                <td class="px-4 py-3 text-right">
-                    <div class="flex items-center justify-end gap-2">
-                        <a href="{{ route('master.products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
-                        <form method="POST" action="{{ route('master.products.destroy', $product) }}"
-                              onsubmit="return confirm('Hapus produk {{ $product->name }}?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            @empty
-            <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">Tidak ada data produk.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
-<div class="mt-4">{{ $products->links() }}</div>
 @endsection

@@ -30,7 +30,7 @@
             <div class="flex items-center justify-between p-md border-b border-surface-variant">
                 <h2 class="font-headline-md text-headline-md text-primary">Checkout</h2>
                 <a href="{{ route('hendhys.pos.index') }}"
-                    class="p-base rounded-full hover:bg-surface-container transition-colors text-on-surface-variant active:scale-95">
+                    class="p-base rounded-full hover:bg-surface-container transition-colors text-on-surface-variant ">
                     <span class="material-symbols-outlined text-headline-md">close</span>
                 </a>
             </div>
@@ -57,7 +57,7 @@
                             <!-- Tunai -->
                             <label class="cursor-pointer">
                                 <input type="radio" value="cash" x-model="paymentMethod" class="peer sr-only">
-                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all active:scale-95"
+                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all "
                                     :class="paymentMethod === 'cash' ? 'border-primary bg-secondary-container bg-opacity-10 text-primary shadow-level-2' : 'border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant'">
                                     <span class="material-symbols-outlined mb-base"
                                         :class="paymentMethod === 'cash' ? 'icon-fill' : ''"
@@ -68,7 +68,7 @@
                             <!-- QRIS/Transfer -->
                             <label class="cursor-pointer">
                                 <input type="radio" value="transfer" x-model="paymentMethod" class="peer sr-only">
-                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all active:scale-95"
+                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all "
                                     :class="paymentMethod === 'transfer' ? 'border-primary bg-secondary-container bg-opacity-10 text-primary shadow-level-2' : 'border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant'">
                                     <span class="material-symbols-outlined mb-base"
                                         :class="paymentMethod === 'transfer' ? 'icon-fill' : ''"
@@ -84,16 +84,16 @@
                         <h4 class="font-label-lg text-label-lg text-on-surface-variant mb-sm">Pilih Nominal Cepat</h4>
                         <div class="flex flex-wrap gap-sm">
                             <button type="button" @click="amountPaid = cartData.grandTotal"
-                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors active:scale-95">Uang
+                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors ">Uang
                                 Pas</button>
                             <button type="button" @click="amountPaid = 50000"
-                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors active:scale-95">Rp
+                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors ">Rp
                                 50.000</button>
                             <button type="button" @click="amountPaid = 100000"
-                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors active:scale-95">Rp
+                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors ">Rp
                                 100.000</button>
                             <button type="button" @click="amountPaid = 200000"
-                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors active:scale-95">Rp
+                                class="px-md py-sm rounded-full bg-surface-container border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors ">Rp
                                 200.000</button>
                         </div>
                         <div
@@ -194,7 +194,7 @@
                     <div class="p-md bg-surface-container-lowest shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.02)]">
                         <button @click="processCheckout"
                             :disabled="isLoading || (paymentMethod === 'cash' && amountPaid < (cartData?cartData.grandTotal:0))"
-                            class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-md rounded-lg shadow-level-2 hover:bg-on-primary-fixed-variant transition-all active:scale-[0.98] flex items-center justify-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-md rounded-lg shadow-level-2 hover:bg-on-primary-fixed-variant transition-all  flex items-center justify-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             <span x-show="!isLoading" class="material-symbols-outlined icon-fill">check_circle</span>
                             <span x-show="!isLoading">Selesaikan Pesanan & Cetak</span>
                             <span x-show="isLoading" class="flex items-center gap-2">

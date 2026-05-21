@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Gudang\Unit as GudangUnit;
+use App\Models\Gudang\Product as GudangProduct;
 
 class GudangStockMovement extends Model
 {
@@ -16,6 +18,6 @@ class GudangStockMovement extends Model
         'notes', 'created_by', 'created_at',
     ];
 
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
+    public function product(): BelongsTo { return $this->belongsTo(GudangProduct::class); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
 }

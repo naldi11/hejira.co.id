@@ -9,7 +9,7 @@ class ProductCategory extends Model
 {
     protected $table = 'master_product_categories';
 
-    protected $fillable = ['name', 'entity'];
+    protected $fillable = ['name', 'entity_scope'];
 
     public function products(): HasMany
     {

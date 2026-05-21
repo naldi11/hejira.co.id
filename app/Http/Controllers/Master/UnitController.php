@@ -3,46 +3,63 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Unit;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 
 class UnitController extends Controller
 {
-    public function __construct(private ActivityLogService $logger) {}
+    use ScopesMasterData;
+
+    public function __construct(private ActivityLogService $logger)
+    {
+    }
 
     public function index(Request $request)
     {
-        $q = Unit::withCount('products');
+        $info = $this->getScopeInfo($request);
+        $q = $this->getModelClass('Unit', $info['scope'])::withCount('products')->whereIn('entity_scope', [$info['scope'], 'all']);
 
         if ($search = $request->search) {
-            $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
-                                   ->orWhere('abbreviation', 'like', "%$search%"));
+            $q->where(fn($w) => $w->where('name', 'like', "%$search%")
+                ->orWhere('abbreviation', 'like', "%$search%"));
         }
 
         $units = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('master.units.index', compact('units'));
+        return view('master.units.index', [
+            'units' => $units,
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
     public function store(Request $request)
     {
+        $info = $this->getScopeInfo($request);
         $data = $request->validate([
-            'name'         => 'required|string|max:50',
+            'name' => 'required|string|max:50',
             'abbreviation' => 'required|string|max:10',
         ]);
 
-        $unit = Unit::create($data);
+        $data['entity_scope'] = $info['scope'];
+
+        $unit = $this->getModelClass('Unit', $info['scope'])::create($data);
         $this->logger->log('create', 'master.unit', "Tambah satuan: {$unit->name}", $unit);
 
         return back()->with('success', "Satuan {$unit->name} berhasil ditambahkan.");
     }
 
-    public function update(Request $request, Unit $unit)
+    public function update(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $unit = $this->getModelClass('Unit', $info['scope'])::findOrFail($id);
+
+
         $data = $request->validate([
-            'name'         => 'required|string|max:50',
+            'name' => 'required|string|max:50',
             'abbreviation' => 'required|string|max:10',
+
         ]);
 
         $unit->update($data);
@@ -51,8 +68,12 @@ class UnitController extends Controller
         return back()->with('success', "Satuan {$unit->name} berhasil diperbarui.");
     }
 
-    public function destroy(Unit $unit)
+    public function destroy(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $unit = $this->getModelClass('Unit', $info['scope'])::findOrFail($id);
+
+
         if ($unit->products()->count() > 0) {
             return back()->with('error', "Satuan {$unit->name} tidak bisa dihapus karena masih digunakan produk.");
         }

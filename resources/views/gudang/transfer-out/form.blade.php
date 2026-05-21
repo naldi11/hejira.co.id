@@ -9,12 +9,12 @@
         branchId: '{{ old('branch_id', $transferRequest && $transferRequest->from_entity === 'hendhys' ? $transferRequest->branch_id : '') }}',
         
         @if($transferRequest)
-        items: {{ $transferRequest->details->filter(fn($d) => $d->quantity_approved > $d->quantity_sent)->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'stock'=>$d->product->current_stock??0,'quantity_approved'=>$d->quantity_approved,'quantity_sent'=>$d->quantity_sent,'quantity'=>max(0,$d->quantity_approved - $d->quantity_sent),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>$d->product->hpp])->values()->toJson() }},
+        items: {{ $transferRequest->details->filter(fn($d) => $d->quantity_approved > $d->quantity_sent)->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'stock'=>(int)($d->product->current_stock??0),'quantity_approved'=>$d->quantity_approved,'quantity_sent'=>$d->quantity_sent,'quantity'=>max(0,$d->quantity_approved - $d->quantity_sent),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>$d->product->hpp])->values()->toJson() }},
         @else
         items: [],
         @endif
         
-        products: {{ $products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'stock'=>$p->current_stock??0,'unit_id'=>$p->unit_id,'unit_name'=>$p->unit->abbreviation,'hpp'=>$p->hpp])->toJson() }},
+        products: {{ $products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'stock'=>(int)($p->current_stock??0),'unit_id'=>$p->unit_id,'unit_name'=>$p->unit->abbreviation,'hpp'=>$p->hpp])->toJson() }},
         
         addItem() {
             this.items.push({ product_id:'', product_name:'', stock:0, quantity:1, unit_id:'', unit_name:'', hpp_price:0 });
@@ -167,7 +167,8 @@
                             </td>
                             <td class="py-2 px-2">
                                 <input type="number" :name="`items[${i}][quantity]`" x-model.number="item.quantity"
-                                       min="0.001" :max="item.stock" step="0.001" required
+                                       min="1" :max="item.stock" step="1" required
+                                       @change="item.quantity = Math.max(1, Math.round(item.quantity || 1))"
                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:ring-2 focus:ring-indigo-300 focus:outline-none"
                                        :class="item.quantity > item.stock ? 'border-red-500 ring-1 ring-red-500' : ''">
                             </td>

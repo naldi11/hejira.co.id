@@ -12,6 +12,7 @@ class NumberGeneratorService
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
+            ->orderByRaw("LENGTH($column) DESC")
             ->orderBy($column, 'desc')
             ->value($column);
 
@@ -30,6 +31,7 @@ class NumberGeneratorService
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
+            ->orderByRaw("LENGTH($column) DESC")
             ->orderBy($column, 'desc')
             ->value($column);
 

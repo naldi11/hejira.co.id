@@ -26,12 +26,11 @@
                     </div>
                     {{-- Cart Toggle (semua layar) --}}
                     <button
-                        class="flex items-center gap-xs px-sm py-sm rounded-lg font-label-lg shadow-sm active:scale-95 shrink-0 border transition-colors"
+                        class="flex items-center gap-xs px-sm py-sm rounded-lg font-label-lg shadow-sm  shrink-0 border transition-colors"
                         :class="cartOpen
-                            ? 'bg-primary text-on-primary border-primary'
-                            : 'bg-surface-container border-outline-variant text-on-surface hover:bg-surface-container-high'"
-                        @click="cartOpen = !cartOpen"
-                        :title="cartOpen ? 'Sembunyikan Pesanan' : 'Tampilkan Pesanan'">
+                                ? 'bg-primary text-on-primary border-primary'
+                                : 'bg-surface-container border-outline-variant text-on-surface hover:bg-surface-container-high'"
+                        @click="cartOpen = !cartOpen" :title="cartOpen ? 'Sembunyikan Pesanan' : 'Tampilkan Pesanan'">
                         <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
                         <span x-show="cart.length > 0" x-text="cart.length"
                             class="rounded-full px-1.5 py-0 text-xs font-bold leading-none"
@@ -42,10 +41,10 @@
                 <div class="flex gap-sm overflow-x-auto pb-xs scrollbar-hide mt-sm">
                     <template x-for="category in categories" :key="category.id">
                         <button @click="selectedCategory = category.id"
-                            class="px-md py-xs font-label-lg text-label-lg rounded-full whitespace-nowrap transition-all border active:scale-95"
+                            class="px-md py-xs font-label-lg text-label-lg rounded-full whitespace-nowrap transition-all border "
                             :class="selectedCategory === category.id
-                                    ? 'bg-secondary-container text-on-secondary-container border-secondary-container'
-                                    : 'bg-surface-container text-on-surface-variant border-outline-variant hover:bg-surface-container-high'"
+                                        ? 'bg-secondary-container text-on-secondary-container border-secondary-container'
+                                        : 'bg-surface-container text-on-surface-variant border-outline-variant hover:bg-surface-container-high'"
                             x-text="category.name">
                         </button>
                     </template>
@@ -59,10 +58,10 @@
                     <template x-for="product in filteredProducts" :key="product.id">
                         <div class="group relative border rounded-xl overflow-hidden flex flex-col cursor-pointer transition-all duration-200"
                             :class="{
-                                 'border-primary bg-primary-fixed shadow-md ring-2 ring-primary/30': isProductInCart(product.id),
-                                 'border-outline-variant bg-surface-container-lowest hover:shadow-lg hover:border-outline': !isProductInCart(product.id) && getDisplayStock(product.id) > 0,
-                                 'border-outline-variant bg-surface-container-lowest opacity-60': getDisplayStock(product.id) <= 0
-                             }" @click="getDisplayStock(product.id) > 0 ? addToCart(product) : null">
+                                     'border-primary bg-primary-fixed shadow-md ring-2 ring-primary/30': isProductInCart(product.id),
+                                     'border-outline-variant bg-surface-container-lowest hover:shadow-lg hover:border-outline': !isProductInCart(product.id) && getDisplayStock(product.id) > 0,
+                                     'border-outline-variant bg-surface-container-lowest opacity-60': getDisplayStock(product.id) <= 0
+                                 }" @click="getDisplayStock(product.id) > 0 ? addToCart(product) : null">
 
                             {{-- Image --}}
                             <div class="relative aspect-[4/3] bg-surface-container-low overflow-hidden">
@@ -107,10 +106,10 @@
                                     </div>
                                     <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                                         :class="{
-                                             'bg-primary text-on-primary': isProductInCart(product.id),
-                                             'bg-primary-container text-on-primary-container group-hover:bg-primary group-hover:text-on-primary': !isProductInCart(product.id) && getDisplayStock(product.id) > 0,
-                                             'bg-surface-container text-outline cursor-not-allowed': getDisplayStock(product.id) <= 0
-                                         }">
+                                                 'bg-primary text-on-primary': isProductInCart(product.id),
+                                                 'bg-primary-container text-on-primary-container group-hover:bg-primary group-hover:text-on-primary': !isProductInCart(product.id) && getDisplayStock(product.id) > 0,
+                                                 'bg-surface-container text-outline cursor-not-allowed': getDisplayStock(product.id) <= 0
+                                             }">
                                         <span class="material-symbols-outlined text-[18px]"
                                             x-text="getDisplayStock(product.id) <= 0 ? 'block' : 'add'"></span>
                                     </div>
@@ -164,52 +163,50 @@
                 </div>
 
                 {{-- Customer Info: Manual Input + Autocomplete --}}
-                <div class="shrink-0 px-sm pt-sm pb-xs bg-surface border-b border-outline-variant space-y-xs" @click.outside="customerSuggestions = []">
+                <div class="shrink-0 px-sm pt-sm pb-xs bg-surface border-b border-outline-variant space-y-xs"
+                    @click.outside="customerSuggestions = []">
                     {{-- Nama Pelanggan --}}
                     <div class="relative">
-                        <div class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs">
+                        <div
+                            class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs">
                             <span class="material-symbols-outlined text-outline text-[16px] shrink-0 mr-xs">person</span>
-                            <input
-                                type="text"
-                                x-model="customerName"
-                                @input.debounce.400ms="searchCustomers()"
+                            <input type="text" x-model="customerName" @input.debounce.400ms="searchCustomers()"
                                 @keydown.escape="customerSuggestions = []"
                                 @focus="customerName.length >= 2 && searchCustomers()"
                                 placeholder="Nama Pelanggan (opsional)"
                                 class="w-full bg-transparent border-none focus:ring-0 text-[12px] font-medium text-on-surface placeholder-on-surface-variant py-sm px-0 outline-none"
-                                autocomplete="off"
-                            />
-                            <button x-show="customerName" @click="customerName = ''; customerPhone = ''; customerSuggestions = []"
+                                autocomplete="off" />
+                            <button x-show="customerName"
+                                @click="customerName = ''; customerPhone = ''; customerSuggestions = []"
                                 class="shrink-0 text-outline hover:text-on-surface transition-colors">
                                 <span class="material-symbols-outlined text-[14px]">close</span>
                             </button>
                         </div>
                         {{-- Autocomplete Dropdown --}}
                         <div x-show="customerSuggestions.length > 0"
-                             class="absolute left-0 right-0 top-full z-50 bg-surface-container-lowest border border-outline-variant rounded-b-lg shadow-lg overflow-hidden">
+                            class="absolute left-0 right-0 top-full z-50 bg-surface-container-lowest border border-outline-variant rounded-b-lg shadow-lg overflow-hidden">
                             <template x-for="(s, i) in customerSuggestions" :key="i">
-                                <button
-                                    @click="selectCustomer(s)"
+                                <button @click="selectCustomer(s)"
                                     class="w-full flex items-center gap-sm px-sm py-xs hover:bg-surface-container text-left transition-colors border-b border-outline-variant/50 last:border-0">
-                                    <span class="material-symbols-outlined text-[14px] text-on-surface-variant shrink-0">history</span>
+                                    <span
+                                        class="material-symbols-outlined text-[14px] text-on-surface-variant shrink-0">history</span>
                                     <div class="min-w-0">
-                                        <p class="font-label-sm text-label-sm font-bold text-on-surface truncate" x-text="s.customer_name"></p>
-                                        <p class="text-[10px] text-on-surface-variant" x-text="s.customer_phone || 'Tanpa nomor telp'"></p>
+                                        <p class="font-label-sm text-label-sm font-bold text-on-surface truncate"
+                                            x-text="s.customer_name"></p>
+                                        <p class="text-[10px] text-on-surface-variant"
+                                            x-text="s.customer_phone || 'Tanpa nomor telp'"></p>
                                     </div>
                                 </button>
                             </template>
                         </div>
                     </div>
                     {{-- Nomor Telp --}}
-                    <div class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs mb-xs">
+                    <div
+                        class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs mb-xs">
                         <span class="material-symbols-outlined text-outline text-[16px] shrink-0 mr-xs">call</span>
-                        <input
-                            type="tel"
-                            x-model="customerPhone"
-                            placeholder="Nomor Telp (opsional)"
+                        <input type="tel" x-model="customerPhone" placeholder="Nomor Telp (opsional)"
                             class="w-full bg-transparent border-none focus:ring-0 text-[12px] font-medium text-on-surface placeholder-on-surface-variant py-sm px-0 outline-none"
-                            autocomplete="off"
-                        />
+                            autocomplete="off" />
                     </div>
                 </div>
 
@@ -233,23 +230,24 @@
                                         x-text="formatCurrency(getItemPrice(item))"></span>
                                 </div>
                                 <button @click="removeFromCart(index)"
-                                    class="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-error-container hover:text-error transition-colors active:scale-95 mt-0.5"
+                                    class="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-error-container hover:text-error transition-colors  mt-0.5"
                                     title="Hapus">
                                     <span class="material-symbols-outlined text-[16px]">close</span>
                                 </button>
                             </div>
                             {{-- Baris 2: Qty Controls + Total --}}
                             <div class="flex items-center justify-between gap-sm">
-                                <div class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden shrink-0">
+                                <div
+                                    class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden shrink-0">
                                     <button @click="updateQty(index, -1)"
-                                        class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-error active:scale-95 transition-colors">
+                                        class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-error  transition-colors">
                                         <span class="material-symbols-outlined text-[18px]">remove</span>
                                     </button>
                                     <input type="number" x-model.number="item.qty" @change="validateQty(index)"
                                         class="w-10 text-center bg-transparent border-none border-x border-outline-variant p-0 h-8 focus:ring-0 text-on-surface outline-none font-bold text-sm"
                                         min="1" :max="item.max_stock">
                                     <button @click="updateQty(index, 1)"
-                                        class="w-8 h-8 flex items-center justify-center text-primary hover:bg-primary-container active:scale-95 transition-colors">
+                                        class="w-8 h-8 flex items-center justify-center text-primary hover:bg-primary-container  transition-colors">
                                         <span class="material-symbols-outlined text-[18px]">add</span>
                                     </button>
                                 </div>
@@ -298,7 +296,7 @@
                             <span class="material-symbols-outlined">pause_circle</span>
                         </button>
                         <button @click="goToCheckout" :disabled="cart.length === 0 || isLoading"
-                            class="flex-1 h-12 bg-primary text-on-primary rounded-xl font-bold text-sm flex justify-center items-center gap-xs shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-50">
+                            class="flex-1 h-12 bg-primary text-on-primary rounded-xl font-bold text-sm flex justify-center items-center gap-xs shadow-md hover:bg-on-primary-fixed-variant  transition-all disabled:opacity-50">
                             <span class="material-symbols-outlined icon-fill">payments</span>
                             Bayar Sekarang
                         </button>
@@ -318,7 +316,7 @@
                 search: '',
                 cart: [],
                 heldQty: {},
-                cartOpen: window.innerWidth >= 768,
+                cartOpen: false,
                 customerName: '',
                 customerPhone: '',
                 customerSuggestions: [],
@@ -353,7 +351,7 @@
                     if (!product) return 0;
                     const dbStock = Number(product.current_stock);
                     const cartQty = this.cart.filter(i => i.product_id === productId)
-                                             .reduce((s, i) => s + i.qty, 0);
+                        .reduce((s, i) => s + i.qty, 0);
                     const held = Number(this.heldQty[productId] || 0);
                     return Math.max(0, dbStock - cartQty - held);
                 },

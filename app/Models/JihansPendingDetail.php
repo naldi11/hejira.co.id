@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Jihans\Product as JihansProduct;
+use App\Models\Jihans\Unit as JihansUnit;
 
 class JihansPendingDetail extends Model
 {
@@ -28,11 +30,11 @@ class JihansPendingDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(JihansProduct::class);
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(JihansUnit::class);
     }
 }

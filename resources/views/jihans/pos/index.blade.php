@@ -1,494 +1,768 @@
 @extends('layouts.jihans')
-@section('title', 'POS Kasir')
-@section('page-title', 'Point of Sales (POS)')
+@section('title', 'POS Kasir Desktop')
+@section('page-title', 'Point of Sales (Mode iPOS Profesional)')
 
 @section('content')
-<div class="h-[calc(100vh-140px)] flex flex-col md:flex-row gap-6" x-data="posSystem()">
-    {{-- Kiri: Produk & Pencarian --}}
-    <div class="w-full md:w-7/12 lg:w-2/3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-        {{-- Search Bar --}}
-        <div class="p-4 border-b border-gray-100 bg-gray-50 flex gap-3">
-            <div class="relative flex-1">
-                <input type="text" x-model="searchQuery" placeholder="Cari nama produk atau kode..." 
-                       class="w-full pl-10 pr-4 py-2.5 rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-            <button @click="openPendingModal()" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border border-yellow-200 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Load Pending
-            </button>
-        </div>
+    <style>
+        /* Styling khusus menyerupai iPOS Desktop */
+        .ipos-window {
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            border-top-color: #fff;
+            border-left-color: #fff;
+            border-bottom-color: #999;
+            border-right-color: #999;
+        }
 
-        {{-- Product Grid --}}
-        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar bg-gray-50/30">
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                <template x-for="product in filteredProducts" :key="product.id">
-                    <div @click="addToCart(product)" 
-                         class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-orange-500 hover:shadow-md transition-all group flex flex-col h-full relative overflow-hidden">
-                        {{-- Stock Badge --}}
-                        <div class="absolute top-0 right-0 bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg border-b border-l border-orange-200">
-                            Stok: <span x-text="product.current_stock"></span>
-                        </div>
-                        
-                        <div class="w-12 h-12 bg-orange-50 rounded-lg border border-orange-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                            <span class="text-xl">📦</span>
-                        </div>
-                        <h3 class="font-medium text-gray-800 text-sm leading-tight flex-1" x-text="product.name"></h3>
-                        <p class="text-xs text-gray-500 font-mono mt-1 mb-2" x-text="product.code"></p>
-                        
-                        <div class="mt-auto pt-3 border-t border-gray-100">
-                            <p class="font-bold text-orange-600 text-sm" x-text="formatCurrency(product.selling_price)"></p>
-                        </div>
-                    </div>
-                </template>
-                
-                <div x-show="filteredProducts.length === 0" class="col-span-full py-12 text-center text-gray-500">
-                    Produk tidak ditemukan atau stok kosong.
-                </div>
-            </div>
-        </div>
-    </div>
+        .ipos-table th {
+            background: linear-gradient(to bottom, #f9f9f9, #e0e0e0);
+            border: 1px solid #ccc;
+            font-size: 12px;
+            color: #333;
+            padding: 4px 8px;
+            text-align: left;
+        }
 
-    {{-- Kanan: Cart & Checkout --}}
-    <div class="w-full md:w-5/12 lg:w-1/3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative">
-        {{-- Loader overlay saat proses --}}
-        <div x-show="isProcessing" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-            <svg class="animate-spin w-10 h-10 text-orange-600 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p class="font-medium text-gray-800">Memproses Transaksi...</p>
-        </div>
+        .ipos-table td {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            font-size: 13px;
+            padding: 5px 8px;
+            height: 29px;
+        }
 
-        {{-- Customer Info --}}
-        <div class="p-4 border-b border-gray-100 bg-gray-50 space-y-3">
-            <div>
-                <select x-model="customerType" class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm font-medium">
-                    <option value="retail">Pelanggan Retail (Umum)</option>
-                    <option value="agen">Pelanggan B2B / Agen</option>
-                </select>
-            </div>
-            <div x-show="customerType === 'agen'">
-                <select x-model="customerId" class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
-                    <option value="">-- Pilih Data Agen --</option>
-                    @foreach($customers as $c)
-                        <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->phone }})</option>
+        .ipos-table tbody tr.active-row td {
+            background-color: #0078d7;
+            color: #fff;
+        }
+
+        .ipos-input {
+            border: 1px solid #999;
+            border-top-color: #666;
+            border-left-color: #666;
+            padding: 2px 6px;
+            font-size: 13px;
+            width: 100%;
+            background-color: #fff;
+        }
+
+        .ipos-input:focus {
+            outline: none;
+            background-color: #ffffcc;
+        }
+
+        .ipos-button {
+            background: linear-gradient(to bottom, #f0f0f0, #d4d4d4);
+            border: 1px solid #999;
+            border-radius: 3px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+        }
+
+        .ipos-button:hover {
+            background: linear-gradient(to bottom, #e8e8e8, #c4c4c4);
+        }
+
+        .ipos-button:active {
+            background: #c4c4c4;
+            border-top-color: #666;
+            border-left-color: #666;
+        }
+    </style>
+
+    <div class="w-full ipos-window p-2 flex flex-col" style="height: calc(100vh - 90px); min-height: 700px;"
+        x-data="posSystem()" @keydown.window="handleGlobalKeydown($event)">
+
+        {{-- Top Section --}}
+        <div class="flex gap-4 mb-2">
+            {{-- Left Form --}}
+            <div class="w-1/2 bg-white border border-gray-400 p-3 grid grid-cols-[100px_1fr] gap-y-2 items-center">
+                <label class="text-xs font-semibold">No. Transaksi</label>
+                <input type="text" class="ipos-input bg-gray-200" value="[AUTO]" disabled>
+
+                <label class="text-xs font-semibold">Tanggal</label>
+                <input type="date" x-model="transactionDate" class="ipos-input">
+
+                <label class="text-xs font-semibold">Tipe Plg</label>
+                <select x-model="customerType" @change="customerId = ''; customerName = ''" class="ipos-input">
+                    <option value="">-- Pilih Tipe --</option>
+                    @foreach($customerTypes as $type)
+                        <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
                     @endforeach
                 </select>
-            </div>
-            <div x-show="customerType === 'retail'">
-                <input type="text" x-model="customerName" placeholder="Nama Pelanggan (Opsional)" class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
-            </div>
-        </div>
 
-        {{-- Cart Items --}}
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-0">
-            <template x-if="cart.length === 0">
-                <div class="h-full flex flex-col items-center justify-center text-gray-400 p-6 text-center">
-                    <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    <p>Keranjang kosong.</p>
-                    <p class="text-xs mt-1">Pilih produk di sebelah kiri.</p>
+                <label class="text-xs font-semibold">Pelanggan</label>
+                <div class="flex gap-1">
+                    <template x-if="customerType !== ''">
+                        <div class="flex-1">
+                            <template x-if="filteredCustomers.length > 0">
+                                <select x-model="customerId"
+                                    @change="customerName = $el.options[$el.selectedIndex].dataset.name || ''"
+                                    class="ipos-input w-full">
+                                    <option value="" data-name="">-- Pilih Pelanggan --</option>
+                                    <template x-for="c in filteredCustomers" :key="c.id">
+                                        <option :value="c.id" :data-name="c.name"
+                                            x-text="c.name + (c.phone ? ' | ' + c.phone : '')"></option>
+                                    </template>
+                                </select>
+                            </template>
+                            <template x-if="filteredCustomers.length === 0">
+                                <input type="text" x-model="customerName"
+                                    placeholder="Belum ada pelanggan tipe ini (ketik manual)" class="ipos-input w-full">
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="customerType === ''">
+                        <input type="text" disabled placeholder="Pilih tipe dulu..."
+                            class="ipos-input flex-1 bg-gray-100 cursor-not-allowed">
+                    </template>
                 </div>
-            </template>
 
-            <ul class="divide-y divide-gray-100">
-                <template x-for="(item, index) in cart" :key="index">
-                    <li class="p-4 hover:bg-gray-50 group">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-medium text-gray-800 text-sm leading-tight flex-1" x-text="item.product_name"></h4>
-                            <button @click="removeFromCart(index)" class="text-gray-400 hover:text-red-500 p-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-between mt-2">
-                            <div class="flex items-center gap-2">
-                                <button @click="updateQuantity(index, -1)" class="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-100 hover:text-orange-700 font-bold">-</button>
-                                <input type="number" x-model.number="item.quantity" @change="validateQuantity(index)" class="w-12 h-6 text-center text-sm border-none bg-transparent p-0 font-medium focus:ring-0">
-                                <button @click="updateQuantity(index, 1)" class="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-orange-100 hover:text-orange-700 font-bold">+</button>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500"><span x-text="formatCurrency(item.price)"></span> / <span x-text="item.unit_name"></span></p>
-                                <p class="font-bold text-gray-900 text-sm" x-text="formatCurrency(item.total)"></p>
-                            </div>
-                        </div>
-                        {{-- Opsi Diskon Per Item --}}
-                        <div class="mt-2 pt-2 border-t border-dashed border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <label class="text-[10px] font-semibold uppercase text-gray-500">Diskon (Rp)</label>
-                                <input type="number" x-model.number="item.discount" @change="recalculateTotals()" class="w-20 h-6 text-right text-xs border-gray-300 rounded focus:ring-orange-500 focus:border-orange-500 px-1 py-0 shadow-sm" placeholder="0">
-                            </div>
-                        </div>
-                    </li>
-                </template>
-            </ul>
-        </div>
-
-        {{-- Calculation Summary --}}
-        <div class="p-4 border-t border-gray-200 bg-white space-y-2 text-sm shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <div class="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span class="font-medium text-gray-800" x-text="formatCurrency(subtotal)"></span>
-            </div>
-            
-            {{-- PPN Options --}}
-            <div class="flex justify-between items-center text-gray-600 py-1">
-                <div class="flex items-center gap-2">
-                    <span>PPN (11%)</span>
-                    <select x-model="ppnType" @change="recalculateTotals()" class="h-6 py-0 pl-1 pr-6 text-xs border-gray-300 rounded focus:ring-orange-500">
-                        <option value="none">Tanpa PPN</option>
-                        <option value="exclude">PPN Exclude (+)</option>
-                        <option value="include">PPN Include (Dalam harga)</option>
-                    </select>
-                </div>
-                <span class="font-medium text-gray-800" x-text="ppnType === 'exclude' ? formatCurrency(taxAmount) : (ppnType === 'include' ? 'Inc.' : 'Rp 0')"></span>
+                <label class="text-xs font-semibold">Keterangan</label>
+                <input type="text" x-model="notes" class="ipos-input">
             </div>
 
-            {{-- Biaya Lain --}}
-            <div class="flex justify-between items-center text-gray-600">
-                <span>Biaya Lain/Ongkir</span>
-                <input type="number" x-model.number="otherCosts" @change="recalculateTotals()" class="w-24 h-6 text-right text-xs border-gray-300 rounded focus:ring-orange-500 px-1 py-0" placeholder="0">
-            </div>
-
-            <div class="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100 mt-2">
-                <span>Total</span>
-                <span class="text-orange-600" x-text="formatCurrency(grandTotal)"></span>
+            {{-- Right Total Display --}}
+            <div class="w-1/2 flex flex-col items-end justify-end p-4 bg-black border-[3px] border-gray-600 rounded">
+                <span class="text-green-500 font-bold text-lg mb-1">TOTAL</span>
+                <span class="text-green-500 font-mono font-bold text-6xl tracking-wider leading-none"
+                    x-text="formatCurrency(grandTotal)"></span>
             </div>
         </div>
 
-        {{-- Actions --}}
-        <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-2">
-            <button @click="holdTransaction()" :disabled="cart.length === 0" class="flex-1 bg-white border border-yellow-400 text-yellow-700 py-3 rounded-xl font-bold hover:bg-yellow-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm text-sm">
-                HOLD (Pending)
-            </button>
-            <button @click="openPaymentModal()" :disabled="cart.length === 0" class="flex-[2] bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm text-sm">
-                BAYAR LUNAS
-            </button>
+        {{-- Middle Section: Table --}}
+        <div class="bg-white border border-gray-400 overflow-auto relative" style="flex: 1 1 0; min-height: 310px;">
+            <table class="w-full ipos-table whitespace-nowrap">
+                <thead>
+                    <tr>
+                        <th class="w-10 text-center">No</th>
+                        <th class="w-24">Kode Item</th>
+                        <th class="w-32">Barcode</th>
+                        <th>Keterangan</th>
+                        <th class="w-20 text-center">Jml</th>
+                        <th class="w-20 text-center">Satuan</th>
+                        <th class="w-28 text-right">Harga</th>
+                        <th class="w-24 text-right">Potongan</th>
+                        <th class="w-32 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(item, index) in cart" :key="index">
+                        <tr :class="{'active-row': selectedCartIndex === index}" @click="selectedCartIndex = index">
+                            <td class="text-center" x-text="index + 1"></td>
+                            <td x-text="item.product_code"></td>
+                            <td x-text="item.barcode"></td>
+                            <td x-text="item.product_name"></td>
+                            <td class="text-center p-0">
+                                <input type="number" x-model.number="item.quantity" @change="validateQuantity(index)"
+                                    @focus="selectedCartIndex = index"
+                                    class="w-full text-center outline-none bg-transparent" min="1" step="1">
+                            </td>
+                            <td class="text-center" x-text="item.unit_name"></td>
+                            <td class="text-right p-0">
+                                <input type="number" x-model.number="item.price" @change="validateQuantity(index)"
+                                    @focus="selectedCartIndex = index" class="w-full text-right outline-none bg-transparent"
+                                    min="0">
+                            </td>
+                            <td class="text-right p-0">
+                                <input type="number" x-model.number="item.discount" @change="validateQuantity(index)"
+                                    @focus="selectedCartIndex = index" class="w-full text-right outline-none bg-transparent"
+                                    min="0">
+                            </td>
+                            <td class="text-right font-bold" x-text="formatCurrency(item.total)"></td>
+                        </tr>
+                    </template>
+                    <tr x-show="cart.length === 0">
+                        <td colspan="9" class="text-center text-gray-400 py-10">
+                            Tekan <b class="text-gray-600">[Ins]</b> atau tombol <b>[Tambah]</b> untuk mencari item
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-    </div>
 
-    {{-- Payment Modal --}}
-    <div x-show="showPaymentModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showPaymentModal = false"></div>
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" x-transition.scale.origin.bottom>
-            <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h3 class="font-bold text-gray-800 text-lg">Penyelesaian Pembayaran</h3>
-                <button @click="showPaymentModal = false" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        {{-- Bottom Section --}}
+        <div class="mt-2 flex gap-4">
+            {{-- Summaries --}}
+            <div class="w-1/3 bg-white border border-gray-400 p-2 grid grid-cols-[100px_1fr] gap-y-1 items-center">
+                <label class="text-xs font-semibold">Sub Total</label>
+                <input type="text" class="ipos-input bg-gray-200 text-right font-bold" :value="formatCurrency(subtotal)"
+                    disabled>
+
+                <label class="text-xs font-semibold">Diskon Item</label>
+                <input type="text" class="ipos-input bg-gray-200 text-right text-red-600"
+                    :value="formatCurrency(discountAmount)" disabled title="Total diskon per item dari kolom Potongan">
+
+                <label class="text-xs font-semibold">Pot. Tambahan</label>
+                <input type="number" x-model.number="extraDiscount" @change="recalculateTotals()" min="0" step="1"
+                    class="ipos-input text-right text-red-600 font-bold" placeholder="0">
+
+                <label class="text-xs font-semibold">Pajak (PPN)</label>
+                <select x-model="ppnType" @change="recalculateTotals()" class="ipos-input">
+                    <option value="none">Tanpa PPN</option>
+                    <option value="include">Include PPN (harga sdh termasuk)</option>
+                    <option value="exclude">Exclude PPN (+11% dari subtotal)</option>
+                </select>
+                <label class="text-xs font-semibold text-gray-500" x-show="ppnType === 'include'">Info PPN</label>
+                <span class="text-xs text-gray-500" x-show="ppnType === 'include'"
+                    x-text="'PPN ≈ ' + formatCurrency(subtotal - (subtotal / 1.11))"></span>
+                <label class="text-xs font-semibold" x-show="ppnType === 'exclude'">Nilai PPN</label>
+                <input type="text" x-show="ppnType === 'exclude'" class="ipos-input bg-gray-200 text-right"
+                    :value="formatCurrency(taxAmount)" disabled>
+
+                <label class="text-xs font-semibold text-lg">Total Akhir</label>
+                <input type="text" class="ipos-input bg-yellow-100 text-right font-bold text-lg"
+                    :value="formatCurrency(grandTotal)" disabled>
+            </div>
+
+            {{-- Actions --}}
+            <div class="w-2/3 flex flex-wrap gap-2 items-end justify-end">
+                <button class="ipos-button" @click="openSearchModal()">
+                    <span class="text-lg">➕</span>
+                    <span>Tambah [Ins]</span>
                 </button>
-            </div>
-            
-            <div class="p-6 space-y-5">
-                <div class="text-center bg-orange-50 p-4 rounded-xl border border-orange-100">
-                    <p class="text-sm font-semibold text-orange-800 uppercase tracking-wider mb-1">Total Tagihan</p>
-                    <p class="text-3xl font-bold text-gray-900" x-text="formatCurrency(grandTotal)"></p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="cursor-pointer">
-                        <input type="radio" x-model="paymentMethod" value="cash" class="peer sr-only">
-                        <div class="p-3 border-2 rounded-xl text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50 transition-all">
-                            <span class="block text-2xl mb-1">💵</span>
-                            <span class="font-semibold text-gray-700 text-sm">Tunai (Cash)</span>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" x-model="paymentMethod" value="transfer" class="peer sr-only">
-                        <div class="p-3 border-2 rounded-xl text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:bg-gray-50 transition-all">
-                            <span class="block text-2xl mb-1">🏦</span>
-                            <span class="font-semibold text-gray-700 text-sm">Transfer Bank</span>
-                        </div>
-                    </label>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Diterima (Rp)</label>
-                    <input type="number" x-model.number="amountPaid" class="w-full text-lg font-bold rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm py-3">
-                    
-                    {{-- Uang Kembalian --}}
-                    <div class="mt-2 text-right">
-                        <p class="text-sm text-gray-500">Kembalian: 
-                            <span class="font-bold text-green-600 ml-1" x-text="amountPaid > grandTotal ? formatCurrency(amountPaid - grandTotal) : 'Rp 0'"></span>
-                        </p>
-                    </div>
-                </div>
-
-                <div x-show="paymentMethod === 'transfer'" class="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Bank Tujuan</label>
-                        <input type="text" x-model="bankName" placeholder="Misal: BCA / Mandiri" class="w-full text-sm rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">No. Referensi / Mutasi</label>
-                        <input type="text" x-model="referenceNumber" class="w-full text-sm rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
-                    <textarea x-model="notes" rows="2" class="w-full text-sm rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"></textarea>
-                </div>
-            </div>
-
-            <div class="p-5 border-t border-gray-100 bg-gray-50">
-                <button @click="processTransaction()" :disabled="amountPaid < grandTotal || isProcessing" class="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold hover:bg-black transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    PROSES & CETAK STRUK
+                <button class="ipos-button" @click="removeFromCart(selectedCartIndex)"
+                    :disabled="cart.length === 0 || selectedCartIndex === null">
+                    <span class="text-lg text-red-500">âŒ</span>
+                    <span>Hapus [Del]</span>
+                </button>
+                <button class="ipos-button" @click="holdTransaction()" :disabled="cart.length === 0">
+                    <span class="text-lg text-blue-500">â³</span>
+                    <span>Pending [F5]</span>
+                </button>
+                <a href="{{ route('jihans.pending.index') }}" class="ipos-button text-center no-underline">
+                    <span class="text-lg text-orange-500">📋</span>
+                    <span>Daftar<br>Pending [F6]</span>
+                </a>
+                <div class="w-px h-12 bg-gray-400 mx-2"></div>
+                <button class="ipos-button bg-green-100" @click="openPaymentModal()" :disabled="cart.length === 0">
+                    <span class="text-2xl text-green-600">💵</span>
+                    <span class="font-bold">BAYAR [END]</span>
                 </button>
             </div>
         </div>
+
+        {{-- MODAL SEARCH ITEM --}}
+        <div x-show="showSearchModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" style="display: none;">
+            <div class="bg-white rounded border border-gray-500 shadow-2xl w-[850px] flex flex-col"
+                @click.away="closeSearchModal()">
+                <div class="bg-blue-800 text-white px-3 py-1.5 flex justify-between items-center">
+                    <span class="font-bold text-sm">Daftar Item
+                        <span x-show="selectedProducts.length > 0"
+                            class="ml-2 bg-yellow-400 text-blue-900 text-xs font-bold px-2 py-0.5 rounded-full"
+                            x-text="selectedProducts.length + ' dipilih'"></span>
+                    </span>
+                    <button @click="closeSearchModal()" class="text-white hover:text-red-300 font-bold">X</button>
+                </div>
+                <div class="p-3 bg-gray-100 border-b border-gray-300 flex gap-2 items-center">
+                    <input type="text" x-model="searchQuery" x-ref="searchInput" @keydown="handleSearchKeydown($event)"
+                        placeholder="Ketik nama item atau barcode lalu tekan [Enter] atau panah [Bawah]"
+                        class="ipos-input flex-1 py-1.5 px-3">
+                    <span class="text-xs text-gray-500 whitespace-nowrap">Spasi = centang, Enter = tambah</span>
+                </div>
+                <div class="h-[400px] overflow-auto bg-white">
+                    <table class="w-full ipos-table whitespace-nowrap">
+                        <thead>
+                            <tr>
+                                <th class="w-8 text-center">
+                                    <input type="checkbox" @change="toggleSelectAll($event.target.checked)" class="w-3 h-3">
+                                </th>
+                                <th>Kode Item</th>
+                                <th>Barcode</th>
+                                <th>Nama Item</th>
+                                <th class="text-center">Stok</th>
+                                <th class="text-center">Satuan</th>
+                                <th class="text-right">Harga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(product, index) in filteredProducts" :key="product.id">
+                                <tr :class="{'active-row': selectedSearchIndex === index, 'bg-blue-50': isProductSelected(product.id)}"
+                                    @click="selectedSearchIndex = index; toggleProductSelect(product)"
+                                    @dblclick="selectMultipleItems()">
+                                    <td class="text-center p-1">
+                                        <input type="checkbox" :checked="isProductSelected(product.id)"
+                                            @click.stop="toggleProductSelect(product)" class="w-3 h-3">
+                                    </td>
+                                    <td x-text="product.code"></td>
+                                    <td x-text="product.barcode"></td>
+                                    <td x-text="product.name"></td>
+                                    <td class="text-center" x-text="product.current_stock"></td>
+                                    <td class="text-center" x-text="product.unit ? product.unit.abbreviation : ''"></td>
+                                    <td class="text-right" x-text="formatCurrency(product.selling_price)"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredProducts.length === 0">
+                                <td colspan="7" class="text-center py-8 text-gray-500">Data tidak ditemukan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-2 bg-gray-200 border-t border-gray-400 flex justify-between items-center">
+                    <span class="text-xs text-gray-600">
+                        Klik = sorot &nbsp;|&nbsp; Spasi/Centang = pilih &nbsp;|&nbsp; Enter = tambah ke keranjang
+                        &nbsp;|&nbsp; Dblclick = langsung tambah 1 item
+                    </span>
+                    <div class="flex gap-2">
+                        <button @click="selectMultipleItems()" :disabled="selectedProducts.length === 0"
+                            :class="selectedProducts.length > 0 ? 'bg-blue-200 hover:bg-blue-300' : 'opacity-50 cursor-not-allowed'"
+                            class="ipos-button inline-flex flex-row gap-1">
+                            ✔️ Pilih
+                            <span x-show="selectedProducts.length > 0" x-text="'(' + selectedProducts.length + ')'"
+                                class="font-bold"></span>
+                        </button>
+                        <button @click="closeSearchModal()" class="ipos-button inline-flex flex-row gap-1">
+                            ✖️ Batal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- MODAL PAYMENT --}}
+        <div x-show="showPaymentModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" style="display: none;">
+            <div class="bg-white rounded border border-gray-500 shadow-2xl w-[400px] flex flex-col"
+                @click.away="showPaymentModal = false">
+                <div class="bg-green-700 text-white px-3 py-1.5 flex justify-between items-center cursor-move">
+                    <span class="font-bold text-sm">Pembayaran</span>
+                    <button @click="showPaymentModal = false" class="text-white hover:text-red-300 font-bold">X</button>
+                </div>
+                <div class="p-4 bg-gray-100 flex flex-col gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Total Tagihan</label>
+                        <input type="text" class="ipos-input text-right text-2xl font-bold text-red-600 bg-white py-2"
+                            :value="formatCurrency(grandTotal)" disabled>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Metode Pembayaran</label>
+                        <select x-model="paymentMethod" class="ipos-input py-1.5">
+                            <option value="cash">Tunai (Cash)</option>
+                            <option value="transfer">Transfer Bank</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Nominal Diterima [F8]</label>
+                        <input type="number" x-model.number="amountPaid" x-ref="amountInput"
+                            @keydown.enter="processTransaction()"
+                            class="ipos-input text-right text-2xl font-bold text-blue-600 py-2">
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold text-gray-600">Kembali: </span>
+                        <span class="text-lg font-bold text-green-600"
+                            x-text="amountPaid > grandTotal ? formatCurrency(amountPaid - grandTotal) : 'Rp 0'"></span>
+                    </div>
+
+                    <div x-show="paymentMethod === 'transfer'" class="mt-2 pt-2 border-t border-gray-300 space-y-2">
+                        <input type="text" x-model="bankName" placeholder="Bank Tujuan (BCA/Mandiri)" class="ipos-input">
+                        <input type="text" x-model="referenceNumber" placeholder="No Referensi" class="ipos-input">
+                    </div>
+                </div>
+                <div class="p-2 bg-gray-200 border-t border-gray-400 text-right">
+                    <button @click="processTransaction()" :disabled="isProcessing"
+                        class="ipos-button inline-flex flex-row gap-1 bg-green-200">
+                        <span x-show="!isProcessing">Simpan & Cetak [Enter]</span>
+                        <span x-show="isProcessing">Memproses...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
 
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('posSystem', () => ({
-            products: @json($products),
-            searchQuery: '',
-            cart: [],
-            
-            customerType: 'retail',
-            customerId: '',
-            customerName: '',
-            
-            subtotal: 0,
-            discountAmount: 0, // total diskon item
-            ppnType: 'none',
-            taxAmount: 0,
-            otherCosts: 0,
-            grandTotal: 0,
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('posSystem', () => ({
+                products: @json($products),
+                customers: @json($customers),
+                cart: [],
+                customerType: '',
+                customerId: '',
+                customerName: '',
+                notes: '',
 
-            // Payment
-            showPaymentModal: false,
-            paymentMethod: 'cash',
-            amountPaid: 0,
-            bankName: '',
-            referenceNumber: '',
-            notes: '',
-            
-            isProcessing: false,
+                subtotal: 0,
+                discountAmount: 0,
+                extraDiscount: 0,
+                ppnType: 'none',
+                taxAmount: 0,
+                otherCosts: 0,
+                grandTotal: 0,
+                transactionDate: '{{ date('Y-m-d') }}',
 
-            get filteredProducts() {
-                if (this.searchQuery === '') return this.products;
-                const query = this.searchQuery.toLowerCase();
-                return this.products.filter(p => 
-                    p.name.toLowerCase().includes(query) || 
-                    (p.code && p.code.toLowerCase().includes(query))
-                );
-            },
+                selectedCartIndex: null,
 
-            addToCart(product) {
-                // Check if already in cart
-                const existingIndex = this.cart.findIndex(item => item.product_id === product.id);
-                
-                if (existingIndex > -1) {
-                    if (this.cart[existingIndex].quantity < product.current_stock) {
+                // Search Modal
+                showSearchModal: false,
+                searchQuery: '',
+                selectedSearchIndex: 0,
+                selectedProducts: [],  // multi-select
+
+                // Payment Modal
+                showPaymentModal: false,
+                paymentMethod: 'cash',
+                amountPaid: 0,
+                bankName: '',
+                referenceNumber: '',
+                isProcessing: false,
+
+                init() {
+                    const resumeData = localStorage.getItem('jihans_resume_cart');
+                    if (resumeData) {
+                        try {
+                            const data = JSON.parse(resumeData);
+                            this.cart = data.items || [];
+                            this.customerType = data.customerType || 'retail';
+                            this.customerId = data.customerId || '';
+                            this.notes = data.notes || '';
+                            this.recalculateTotals();
+                            localStorage.removeItem('jihans_resume_cart');
+                        } catch (e) { }
+                    }
+                },
+
+                // Tipe unik dari master pelanggan (dinamis dari data)
+                get customerTypes() {
+                    const labelMap = { 'retail': 'Retail (Umum)', 'agen': 'B2B / Agen' };
+                    const types = [...new Set(this.customers.map(c => c.type))];
+                    return types.map(t => ({
+                        value: t,
+                        label: labelMap[t] || (t.charAt(0).toUpperCase() + t.slice(1))
+                    }));
+                },
+
+                // Pelanggan difilter berdasarkan tipe yang dipilih
+                get filteredCustomers() {
+                    if (!this.customerType) return [];
+                    return this.customers.filter(c => c.type === this.customerType);
+                },
+
+                get filteredProducts() {
+                    if (this.searchQuery === '') return this.products;
+                    const query = this.searchQuery.toLowerCase();
+                    return this.products.filter(p =>
+                        p.name.toLowerCase().includes(query) ||
+                        (p.code && p.code.toLowerCase().includes(query)) ||
+                        (p.barcode && p.barcode.toLowerCase().includes(query))
+                    );
+                },
+
+                handleGlobalKeydown(e) {
+                    // Ignore if in inputs that are not body unless specific keys
+                    const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+
+                    if (e.key === 'Insert') {
+                        e.preventDefault();
+                        this.openSearchModal();
+                    } else if (e.key === 'Delete' && !this.showSearchModal && !this.showPaymentModal && this.selectedCartIndex !== null) {
+                        e.preventDefault();
+                        this.removeFromCart(this.selectedCartIndex);
+                    } else if (e.key === 'End' && !this.showSearchModal && !this.showPaymentModal) {
+                        e.preventDefault();
+                        this.openPaymentModal();
+                    } else if (e.key === 'F5') {
+                        e.preventDefault();
+                        this.holdTransaction();
+                    } else if (e.key === 'F6') {
+                        e.preventDefault();
+                        window.location.href = "{{ route('jihans.pending.index') }}";
+                    } else if (e.key === 'F8') {
+                        e.preventDefault();
+                        if (this.showPaymentModal) {
+                            setTimeout(() => this.$refs.amountInput.focus(), 100);
+                        } else {
+                            this.openPaymentModal();
+                        }
+                    }
+                },
+
+                openSearchModal() {
+                    this.showSearchModal = true;
+                    this.searchQuery = '';
+                    this.selectedSearchIndex = 0;
+                    this.selectedProducts = [];
+                    setTimeout(() => {
+                        this.$refs.searchInput.focus();
+                    }, 100);
+                },
+
+                closeSearchModal() {
+                    this.showSearchModal = false;
+                },
+
+                handleSearchKeydown(e) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (this.selectedSearchIndex < this.filteredProducts.length - 1) {
+                            this.selectedSearchIndex++;
+                            this.scrollToActiveRow();
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (this.selectedSearchIndex > 0) {
+                            this.selectedSearchIndex--;
+                            this.scrollToActiveRow();
+                        }
+                    } else if (e.key === ' ') {
+                        // Spasi = toggle centang produk yang disorot
+                        const product = this.filteredProducts[this.selectedSearchIndex];
+                        if (product) { e.preventDefault(); this.toggleProductSelect(product); }
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (this.selectedProducts.length > 0) {
+                            this.selectMultipleItems();
+                        } else {
+                            const product = this.filteredProducts[this.selectedSearchIndex];
+                            if (product) { this.selectItem(product); }
+                        }
+                    }
+                },
+
+                isProductSelected(productId) {
+                    return this.selectedProducts.some(p => p.id === productId);
+                },
+
+                toggleProductSelect(product) {
+                    const idx = this.selectedProducts.findIndex(p => p.id === product.id);
+                    if (idx > -1) {
+                        this.selectedProducts.splice(idx, 1);
+                    } else {
+                        this.selectedProducts.push(product);
+                    }
+                },
+
+                toggleSelectAll(checked) {
+                    if (checked) {
+                        this.selectedProducts = [...this.filteredProducts];
+                    } else {
+                        this.selectedProducts = [];
+                    }
+                },
+
+                selectMultipleItems() {
+                    if (this.selectedProducts.length === 0) return;
+                    this.selectedProducts.forEach(product => this.selectItem(product));
+                    this.selectedProducts = [];
+                    this.closeSearchModal();
+                },
+
+                scrollToActiveRow() {
+                    // Simplistic scroll mechanism can be added here
+                },
+
+                selectItem(product) {
+                    if (Number(product.current_stock) <= 0) {
+                        alert('Stok produk ini masih kosong!');
+                        return;
+                    }
+
+                    const existingIndex = this.cart.findIndex(item => item.product_id === product.id);
+                    if (existingIndex > -1) {
                         this.cart[existingIndex].quantity++;
                         this.validateQuantity(existingIndex);
                     } else {
-                        alert('Stok tidak mencukupi!');
+                        this.cart.push({
+                            product_id: product.id,
+                            product_name: product.name,
+                            product_code: product.code,
+                            barcode: product.barcode,
+                            price: parseFloat(product.selling_price) || 0,
+                            quantity: 1,
+                            unit_name: product.unit ? product.unit.abbreviation : '',
+                            max_stock: parseFloat(product.current_stock),
+                            discount: 0,
+                            total: parseFloat(product.selling_price) || 0
+                        });
                     }
-                } else {
-                    this.cart.push({
-                        product_id: product.id,
-                        product_name: product.name,
-                        product_code: product.code,
-                        price: parseFloat(product.selling_price) || 0,
-                        quantity: 1,
-                        unit_name: product.unit ? product.unit.abbreviation : '',
-                        max_stock: parseFloat(product.current_stock),
-                        discount: 0,
-                        total: parseFloat(product.selling_price) || 0
-                    });
-                }
-                
-                this.recalculateTotals();
-            },
+                    this.recalculateTotals();
+                    this.closeSearchModal();
+                },
 
-            updateQuantity(index, delta) {
-                const item = this.cart[index];
-                const newQty = parseFloat(item.quantity) + delta;
-                
-                if (newQty > 0 && newQty <= item.max_stock) {
-                    item.quantity = newQty;
-                    this.validateQuantity(index);
-                } else if (newQty > item.max_stock) {
-                    alert('Stok maksimum: ' + item.max_stock);
-                    item.quantity = item.max_stock;
-                    this.validateQuantity(index);
-                }
-            },
+                validateQuantity(index) {
+                    const item = this.cart[index];
+                    // Paksa selalu bilangan bulat, minimal 1
+                    item.quantity = Math.max(1, Math.round(parseFloat(item.quantity) || 1));
 
-            validateQuantity(index) {
-                const item = this.cart[index];
-                if (item.quantity <= 0) item.quantity = 1;
-                if (item.quantity > item.max_stock) item.quantity = item.max_stock;
-                
-                if (item.discount > (item.price * item.quantity)) {
-                    item.discount = 0;
-                }
-                
-                item.total = (item.quantity * item.price) - item.discount;
-                this.recalculateTotals();
-            },
+                    if (item.discount > (item.price * item.quantity)) {
+                        item.discount = 0;
+                    }
 
-            removeFromCart(index) {
-                this.cart.splice(index, 1);
-                this.recalculateTotals();
-            },
+                    item.total = (item.quantity * item.price) - item.discount;
+                    this.recalculateTotals();
+                },
 
-            recalculateTotals() {
-                this.subtotal = 0;
-                this.discountAmount = 0;
-                
-                this.cart.forEach(item => {
-                    item.total = (item.quantity * item.price) - parseFloat(item.discount || 0);
-                    this.subtotal += item.total;
-                    this.discountAmount += parseFloat(item.discount || 0);
-                });
+                removeFromCart(index) {
+                    if (index === null || index < 0) return;
+                    this.cart.splice(index, 1);
+                    this.selectedCartIndex = null;
+                    this.recalculateTotals();
+                },
 
-                let baseTaxAmount = this.subtotal;
-                
-                if (this.ppnType === 'exclude') {
-                    this.taxAmount = baseTaxAmount * 0.11;
-                } else {
-                    this.taxAmount = 0;
-                }
+                recalculateTotals() {
+                    this.subtotal = 0;
+                    this.discountAmount = 0;
 
-                this.grandTotal = this.subtotal + this.taxAmount + parseFloat(this.otherCosts || 0);
-                
-                // Set default payment amount if cash
-                if(this.paymentMethod === 'cash' && !this.showPaymentModal) {
-                     this.amountPaid = this.grandTotal;
-                }
-            },
-
-            openPaymentModal() {
-                if (this.cart.length === 0) return;
-                if (this.customerType === 'agen' && !this.customerId) {
-                    alert('Silakan pilih data Agen terlebih dahulu.');
-                    return;
-                }
-                this.amountPaid = this.grandTotal;
-                this.showPaymentModal = true;
-            },
-
-            formatCurrency(value) {
-                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
-            },
-
-            async processTransaction() {
-                if (this.amountPaid < this.grandTotal) {
-                    alert('Uang pembayaran kurang dari total tagihan.');
-                    return;
-                }
-
-                this.isProcessing = true;
-
-                try {
-                    const response = await fetch('{{ route("jihans.pos.store") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            customer_id: this.customerId,
-                            customer_name: this.customerName,
-                            customer_type: this.customerType,
-                            ppn_type: this.ppnType,
-                            ppn_rate: 11,
-                            subtotal: this.subtotal,
-                            discount_amount: this.discountAmount,
-                            tax_amount: this.taxAmount,
-                            other_costs: this.otherCosts,
-                            grand_total: this.grandTotal,
-                            payment_method: this.paymentMethod,
-                            amount_paid: this.amountPaid,
-                            bank_name: this.bankName,
-                            reference_number: this.referenceNumber,
-                            notes: this.notes,
-                            items: this.cart.map(i => ({
-                                product_id: i.product_id,
-                                quantity: i.quantity,
-                                price: i.price,
-                                discount: i.discount,
-                                total: i.total
-                            }))
-                        })
+                    this.cart.forEach(item => {
+                        item.total = (item.quantity * item.price) - parseFloat(item.discount || 0);
+                        this.subtotal += item.total;
+                        this.discountAmount += parseFloat(item.discount || 0);
                     });
 
-                    const data = await response.json();
+                    const afterItemDiscount = this.subtotal - parseFloat(this.extraDiscount || 0);
 
-                    if (response.ok && data.success) {
-                        // Redirect to receipt
-                        window.location.href = data.redirect;
+                    if (this.ppnType === 'exclude') {
+                        this.taxAmount = afterItemDiscount * 0.11;
                     } else {
-                        throw new Error(data.error || 'Terjadi kesalahan saat memproses transaksi.');
+                        this.taxAmount = 0;
                     }
 
-                } catch (error) {
-                    alert(error.message);
-                    this.isProcessing = false;
-                    this.showPaymentModal = false;
-                }
-            },
+                    // Include PPN: harga sudah termasuk PPN, grand total tidak berubah
+                    this.grandTotal = Math.max(0, afterItemDiscount + this.taxAmount + parseFloat(this.otherCosts || 0));
 
-            async holdTransaction() {
-                if (this.cart.length === 0) return;
-                
-                if (this.customerType === 'agen' && !this.customerId) {
-                    alert('Silakan pilih data Agen terlebih dahulu.');
-                    return;
-                }
+                    if (this.paymentMethod === 'cash' && !this.showPaymentModal) {
+                        this.amountPaid = this.grandTotal;
+                    }
+                },
 
-                if (!confirm('Simpan transaksi ini sebagai pending?')) return;
+                openPaymentModal() {
+                    if (this.cart.length === 0) return;
+                    if (this.customerType === 'agen' && !this.customerId) {
+                        alert('Silakan pilih data Agen terlebih dahulu.');
+                        return;
+                    }
+                    this.amountPaid = this.grandTotal;
+                    this.showPaymentModal = true;
+                    setTimeout(() => {
+                        this.$refs.amountInput.focus();
+                        this.$refs.amountInput.select();
+                    }, 100);
+                },
 
-                this.isProcessing = true;
+                formatCurrency(value) {
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+                },
 
-                try {
-                    const response = await fetch('{{ route("jihans.pending.store") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            customer_id: this.customerId,
-                            customer_name: this.customerName,
-                            customer_type: this.customerType,
-                            notes: this.notes,
-                            items: this.cart.map(i => ({
-                                product_id: i.product_id,
-                                quantity: i.quantity,
-                                price: i.price,
-                                discount: i.discount,
-                                total: i.total
-                            }))
-                        })
-                    });
+                async processTransaction() {
+                    if (this.amountPaid < this.grandTotal) {
+                        alert('Uang pembayaran kurang dari total tagihan.');
+                        return;
+                    }
 
-                    const data = await response.json();
+                    this.isProcessing = true;
 
-                    if (response.ok && data.success) {
-                        alert(data.message);
-                        // Reset form
-                        this.cart = [];
-                        this.recalculateTotals();
-                        this.customerName = '';
-                        this.notes = '';
+                    try {
+                        const response = await fetch('{{ route("jihans.pos.store") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                transaction_date: this.transactionDate,
+                                customer_id: this.customerId,
+                                customer_name: this.customerName,
+                                customer_type: this.customerType,
+                                ppn_type: this.ppnType,
+                                ppn_rate: 11,
+                                subtotal: this.subtotal,
+                                discount_amount: this.discountAmount,
+                                extra_discount: parseFloat(this.extraDiscount || 0),
+                                tax_amount: this.taxAmount,
+                                other_costs: this.otherCosts,
+                                grand_total: this.grandTotal,
+                                payment_method: this.paymentMethod,
+                                amount_paid: this.amountPaid,
+                                bank_name: this.bankName,
+                                reference_number: this.referenceNumber,
+                                notes: this.notes,
+                                items: this.cart.map(i => ({
+                                    product_id: i.product_id,
+                                    quantity: i.quantity,
+                                    price: i.price,
+                                    discount: i.discount,
+                                    total: i.total
+                                }))
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            window.location.href = data.redirect;
+                        } else {
+                            throw new Error(data.error || 'Terjadi kesalahan saat memproses transaksi.');
+                        }
+
+                    } catch (error) {
+                        alert(error.message);
                         this.isProcessing = false;
-                    } else {
-                        throw new Error(data.message || 'Terjadi kesalahan.');
+                        this.showPaymentModal = false;
                     }
-                } catch (error) {
-                    alert(error.message);
-                    this.isProcessing = false;
+                },
+
+                async holdTransaction() {
+                    if (this.cart.length === 0) return;
+
+                    if (this.customerType === 'agen' && !this.customerId) {
+                        alert('Silakan pilih data Agen terlebih dahulu.');
+                        return;
+                    }
+
+                    if (!confirm('Simpan transaksi ini sebagai pending?')) return;
+
+                    this.isProcessing = true;
+
+                    try {
+                        const response = await fetch('{{ route("jihans.pending.store") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                customer_id: this.customerId,
+                                customer_name: this.customerName,
+                                customer_type: this.customerType,
+                                notes: this.notes,
+                                items: this.cart.map(i => ({
+                                    product_id: i.product_id,
+                                    quantity: i.quantity,
+                                    price: i.price,
+                                    discount: i.discount,
+                                    total: i.total
+                                }))
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            alert(data.message);
+                            this.cart = [];
+                            this.recalculateTotals();
+                            this.customerName = '';
+                            this.notes = '';
+                            this.isProcessing = false;
+                        } else {
+                            throw new Error(data.message || 'Terjadi kesalahan.');
+                        }
+                    } catch (error) {
+                        alert(error.message);
+                        this.isProcessing = false;
+                    }
                 }
-            },
-            
-            openPendingModal() {
-                window.location.href = '{{ route("jihans.pending.index") }}';
-            }
-        }));
-    });
-</script>
+            }));
+        });
+    </script>
 @endsection

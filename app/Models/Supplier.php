@@ -11,7 +11,7 @@ class Supplier extends Model
 
     protected $table = 'master_suppliers';
 
-    protected $fillable = ['code', 'name', 'contact_person', 'phone', 'email', 'address', 'notes', 'is_active'];
+    protected $fillable = ['code', 'name', 'contact_person', 'phone', 'email', 'address', 'notes', 'is_active', 'entity_scope'];
 
     protected function casts(): array
     {

@@ -3,17 +3,21 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductCategory;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 
 class ProductCategoryController extends Controller
 {
-    public function __construct(private ActivityLogService $logger) {}
+    use ScopesMasterData;
+
+    public function __construct(private ActivityLogService $logger)
+    {
+    }
 
     public function index(Request $request)
     {
-        $q = ProductCategory::withCount('products');
+        $info = $this->getScopeInfo($request);
+        $q = $this->getModelClass('ProductCategory', $info['scope'])::withCount('products')->whereIn('entity_scope', [$info['scope'], 'all']);
 
         if ($search = $request->search) {
             $q->where('name', 'like', "%$search%");
@@ -21,27 +25,38 @@ class ProductCategoryController extends Controller
 
         $categories = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('master.categories.index', compact('categories'));
+        return view('master.categories.index', [
+            'categories' => $categories,
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
     public function store(Request $request)
     {
+        $info = $this->getScopeInfo($request);
         $data = $request->validate([
-            'name'   => 'required|string|max:100',
-            'entity' => 'required|in:gudang,jihans,hendhys,all',
+            'name' => 'required|string|max:100',
         ]);
 
-        $category = ProductCategory::create($data);
+        $data['entity_scope'] = $info['scope'];
+
+        $category = $this->getModelClass('ProductCategory', $info['scope'])::create($data);
         $this->logger->log('create', 'master.category', "Tambah kategori: {$category->name}", $category);
 
         return back()->with('success', "Kategori {$category->name} berhasil ditambahkan.");
     }
 
-    public function update(Request $request, ProductCategory $category)
+    public function update(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $category = $this->getModelClass('ProductCategory', $info['scope'])::findOrFail($id);
+
+
         $data = $request->validate([
-            'name'   => 'required|string|max:100',
-            'entity' => 'required|in:gudang,jihans,hendhys,all',
+            'name' => 'required|string|max:100',
+
         ]);
 
         $category->update($data);
@@ -50,8 +65,12 @@ class ProductCategoryController extends Controller
         return back()->with('success', "Kategori {$category->name} berhasil diperbarui.");
     }
 
-    public function destroy(ProductCategory $category)
+    public function destroy(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $category = $this->getModelClass('ProductCategory', $info['scope'])::findOrFail($id);
+
+
         if ($category->products()->count() > 0) {
             return back()->with('error', "Kategori {$category->name} tidak bisa dihapus karena masih digunakan produk.");
         }

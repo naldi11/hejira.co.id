@@ -114,15 +114,15 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-3 font-medium text-gray-800">{{ $item->product->name }}</td>
-                            <td class="px-5 py-3 text-center text-gray-600">{{ number_format($item->quantity_requested, 3, ',', '.') }}</td>
+                            <td class="px-5 py-3 text-center text-gray-600">{{ (int) $item->quantity_requested }}</td>
                             <td class="px-5 py-3 text-center font-bold {{ $item->quantity_approved > 0 ? 'text-indigo-600' : 'text-gray-400' }}">
-                                {{ $transferRequest->status === 'pending' ? '?' : number_format($item->quantity_approved, 3, ',', '.') }}
+                                {{ $transferRequest->status === 'pending' ? '?' : (int) $item->quantity_approved }}
                             </td>
                             <td class="px-5 py-3 text-center text-gray-500">{{ $item->unit->abbreviation ?? '-' }}</td>
                             <td class="px-5 py-3 text-center">
                                 @if(in_array($transferRequest->status, ['approved', 'partial', 'completed']))
                                     <span class="inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold {{ $sisaKirim > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' }}">
-                                        {{ number_format($sisaKirim, 3, ',', '.') }}
+                                        {{ (int) $sisaKirim }}
                                     </span>
                                 @else
                                     -
@@ -190,9 +190,9 @@
                                                 {{ $item->product->name }}
                                                 <input type="hidden" name="items[{{$idx}}][id]" value="{{ $item->id }}">
                                             </td>
-                                            <td class="px-3 py-2 text-center text-gray-500">{{ $item->quantity_requested }} {{ $item->unit->abbreviation ?? '' }}</td>
+                                            <td class="px-3 py-2 text-center text-gray-500">{{ (int) $item->quantity_requested }} {{ $item->unit->abbreviation ?? '' }}</td>
                                             <td class="px-3 py-2">
-                                                <input type="number" name="items[{{$idx}}][quantity_approved]" value="{{ $item->quantity_requested }}" min="0" step="0.001" required
+                                                <input type="number" name="items[{{$idx}}][quantity_approved]" value="{{ (int) $item->quantity_requested }}" min="0" step="1" required
                                                        class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none text-center">
                                             </td>
                                         </tr>

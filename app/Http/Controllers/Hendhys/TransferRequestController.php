@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Models\Hendhys\Product;
 use App\Models\TransferRequest;
 use App\Models\TransferRequestDetail;
-use App\Models\Unit;
+use App\Models\Hendhys\Unit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,9 +58,9 @@ class TransferRequestController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_id' => 'required|exists:master_units,id',
+            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_id' => 'required|exists:hendhys_units,id',
         ]);
 
         try {
@@ -72,7 +72,7 @@ class TransferRequestController extends Controller
                     'date' => $request->date,
                     'status' => 'pending',
                     'notes' => $request->notes,
-                    'created_by' => auth()->id()
+                    'requested_by' => auth()->id()
                 ]);
 
                 foreach ($request->items as $item) {
@@ -83,6 +83,8 @@ class TransferRequestController extends Controller
                         'unit_id' => $item['unit_id']
                     ]);
                 }
+
+                event(new \App\Events\TransferRequestCreated($tr));
             });
 
             return redirect()->route('hendhys.transfer-requests.index')

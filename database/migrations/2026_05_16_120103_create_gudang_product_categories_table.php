@@ -8,15 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('master_brands', function (Blueprint $table) {
+        Schema::create('gudang_product_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
+            $table->enum('entity', ['gudang', 'jihans', 'hendhys', 'all'])->default('all');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('master_brands');
+        Schema::dropIfExists('gudang_product_categories');
     }
 };

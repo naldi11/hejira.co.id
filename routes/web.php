@@ -19,4 +19,8 @@ Route::get('/dashboard', function () {
     return redirect()->route('login');
 })->middleware('auth')->name('dashboard');
 
+Route::middleware('auth')->group(function() {
+    Route::get('/api/notifications/counts', [\App\Http\Controllers\Api\NotificationController::class, 'getCounts'])->name('api.notifications.counts');
+});
+
 require __DIR__.'/auth.php';

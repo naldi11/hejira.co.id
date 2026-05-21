@@ -108,27 +108,32 @@
     </style>
     @stack('styles')
 </head>
-<body class="flex h-screen overflow-hidden antialiased bg-background text-on-background font-body-md" x-data="{ sidebarOpen: window.innerWidth >= 768, isMobile: window.innerWidth < 768 }" @resize.window="isMobile = window.innerWidth < 768;">
+<body class="flex h-screen overflow-hidden antialiased bg-background text-on-background font-body-md print:block print:h-auto print:overflow-visible print:bg-white" x-data="{ sidebarOpen: {{ request()->routeIs('hendhys.pos.*') ? 'false' : 'window.innerWidth >= 768' }}, isMobile: window.innerWidth < 768 }" @resize.window="isMobile = window.innerWidth < 768;">
 
     @php
         $isPusat = auth()->user()->branch->type === 'pusat';
     @endphp
 
     {{-- Mobile Overlay --}}
-    <div x-show="sidebarOpen && isMobile" x-cloak class="fixed inset-0 z-40 bg-inverse-surface bg-opacity-40 backdrop-blur-sm md:hidden transition-opacity" @click="sidebarOpen = false"></div>
+    <div x-show="sidebarOpen && isMobile" x-cloak class="fixed inset-0 z-40 bg-inverse-surface bg-opacity-40 backdrop-blur-sm md:hidden transition-opacity print:hidden" @click="sidebarOpen = false"></div>
 
     <!-- SideNavBar -->
-    <nav class="fixed inset-y-0 left-0 z-50 w-64 bg-surface-container flex flex-col h-full py-md px-sm border-r border-outline-variant shadow-lg transition-transform duration-300 ease-in-out"
+    <nav class="fixed inset-y-0 left-0 z-50 w-64 bg-surface-container flex flex-col h-full py-md px-sm border-r border-outline-variant shadow-lg transition-transform duration-300 ease-in-out print:hidden"
          :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
         
-        <div class="mb-lg px-sm">
-            <h1 class="font-headline-md text-headline-md font-black text-primary-container">Hendhys Bakery</h1>
-            <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">{{ $isPusat ? 'Pusat Manufaktur' : 'Cabang ' . auth()->user()->branch->name }}</p>
+        <div class="mb-sm px-sm flex items-center gap-2">
+            <img src="{{ asset('logo/hendhys-logo.png') }}" alt="Logo Hendhys" class="w-14 h-14 object-contain drop-shadow-sm rounded" onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-[14px] font-black text-primary-container leading-tight">Hendhy's Brownies</h1>
+                <p class="text-[10px] font-bold text-on-surface-variant mt-[2px] tracking-wide uppercase">
+                    {{ $isPusat ? 'PUSAT' : 'CABANG ' . auth()->user()->branch->name }}
+                </p>
+            </div>
         </div>
         
         <ul class="flex flex-col gap-xs flex-grow overflow-y-auto custom-scrollbar">
             <li>
-                <a href="{{ route('hendhys.dashboard') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.dashboard') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.dashboard') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.dashboard') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.dashboard') ? 'fill' : '' }}" data-icon="dashboard">dashboard</span>
                     Dashboard
                 </a>
@@ -136,19 +141,19 @@
 
             <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Penjualan</li>
             <li>
-                <a href="{{ route('hendhys.pos.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.pos.index') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.pos.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.pos.index') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.pos.index') ? 'fill' : '' }}">point_of_sale</span>
                     POS Kasir
                 </a>
             </li>
             <li>
-                <a href="{{ route('hendhys.transactions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.transactions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.transactions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transactions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transactions.*') ? 'fill' : '' }}" data-icon="receipt_long">receipt_long</span>
                     Riwayat Transaksi
                 </a>
             </li>
             <li>
-                <a href="{{ route('hendhys.pending.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.pending.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.pending.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.pending.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.pending.*') ? 'fill' : '' }}">pause_circle</span>
                     Transaksi Pending
                 </a>
@@ -156,7 +161,7 @@
 
             <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Inventory</li>
             <li>
-                <a href="{{ route('hendhys.stock.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.stock.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.stock.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.stock.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.stock.*') ? 'fill' : '' }}" data-icon="inventory_2">inventory_2</span>
                     Stok Produk
                 </a>
@@ -164,24 +169,30 @@
             
             @if($isPusat)
             <li>
-                <a href="{{ route('hendhys.productions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.productions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.productions.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.productions.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.productions.*') ? 'fill' : '' }}">factory</span>
                     Produksi Bakery
                 </a>
             </li>
             <li>
-                <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'fill' : '' }}">local_shipping</span>
                     Distribusi
                 </a>
             </li>
+            @endif
+
             <li>
-                <a href="{{ route('hendhys.branch-requests.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all active:scale-[0.98] duration-200 {{ request()->routeIs('hendhys.branch-requests.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
-                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.branch-requests.*') ? 'fill' : '' }}">inbox</span>
-                    Permintaan Cabang
+                <a href="{{ route('hendhys.branch-requests.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.branch-requests.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    @if($isPusat)
+                        <span class="material-symbols-outlined {{ request()->routeIs('hendhys.branch-requests.*') ? 'fill' : '' }}">inbox</span>
+                        Permintaan Cabang
+                    @else
+                        <span class="material-symbols-outlined {{ request()->routeIs('hendhys.branch-requests.*') ? 'fill' : '' }}">add_shopping_cart</span>
+                        Minta Stok
+                    @endif
                 </a>
             </li>
-            @endif
 
             @if($isPusat)
             <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Master Data</li>
@@ -190,14 +201,14 @@
                     <span class="flex items-center gap-sm"><span class="material-symbols-outlined" data-icon="settings">settings</span>Master Data</span>
                     <span class="material-symbols-outlined transition-transform" :class="masterOpen ? 'rotate-180' : ''">expand_more</span>
                 </button>
-                <div x-show="masterOpen" x-collapse x-cloak class="pl-xl mt-1 space-y-1">
+                <div x-show="masterOpen" x-collapse x-cloak class="mt-1 space-y-1">
                     @foreach([
                         ['route' => 'hendhys.master.products.index',   'label' => 'Produk'],
                         ['route' => 'hendhys.master.categories.index',  'label' => 'Kategori'],
                         ['route' => 'hendhys.master.units.index',       'label' => 'Satuan'],
                         ['route' => 'hendhys.master.brands.index',      'label' => 'Brand'],
                     ] as $item)
-                        <a href="{{ route($item['route']) }}" class="block px-sm py-xs rounded text-[13px] {{ request()->routeIs($item['route']) ? 'text-primary font-bold bg-primary-fixed' : 'text-on-surface-variant hover:bg-surface-container-high' }}">{{ $item['label'] }}</a>
+                        <a href="{{ route($item['route']) }}" class="block pl-[44px] pr-sm py-[8px] rounded-lg text-[13px] transition-colors {{ request()->routeIs($item['route']) ? 'text-on-secondary-container font-bold bg-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $item['label'] }}</a>
                     @endforeach
                 </div>
             </li>
@@ -207,25 +218,25 @@
         <div class="mt-auto">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="w-full flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-error-container hover:text-error transition-all rounded-lg font-label-lg text-label-lg active:scale-[0.98] duration-200">
+                <button type="submit" class="w-full flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-error-container hover:text-error transition-all rounded-lg font-label-lg text-label-lg  duration-200">
                     <span class="material-symbols-outlined" data-icon="logout">logout</span>
                     Logout
                 </button>
             </form>
         </div>
     </nav>
-    {{-- Sidebar spacer — mirrors nav width to push content --}}
-    <div class="shrink-0 transition-all duration-300 ease-in-out h-full" :class="sidebarOpen ? 'w-64' : 'w-0'"></div>
+    {{-- Sidebar spacer --}}
+    <div class="shrink-0 transition-all duration-300 ease-in-out h-full print:hidden" :class="sidebarOpen ? 'w-64' : 'w-0'"></div>
     <!-- Main Flex Area after Nav -->
-    <div class="flex-1 flex min-w-0 h-full w-full relative transition-all duration-300" @yield('wrapper-attributes', '')>
+    <div class="flex-1 flex min-w-0 h-full w-full relative transition-all duration-300 print:block print:w-full print:h-auto" @yield('wrapper-attributes', '')>
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col min-w-0 bg-surface overflow-auto relative z-10 h-full w-full">
+        <main class="flex-1 flex flex-col min-w-0 bg-surface overflow-auto relative z-10 h-full w-full print:block print:w-full print:h-auto print:overflow-visible print:bg-white">
         
-        <header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-20 z-40 bg-surface border-b border-outline-variant shrink-0">
+        <header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-20 z-40 bg-surface border-b border-outline-variant shrink-0 print:hidden">
             <div class="flex items-center gap-md">
                 {{-- Sidebar Toggle - visible always --}}
                 <button @click="sidebarOpen = !sidebarOpen"
-                        class="text-primary hover:bg-surface-container-low p-xs rounded-lg transition-colors active:scale-95 duration-150 shrink-0"
+                        class="text-primary hover:bg-surface-container-low p-xs rounded-lg transition-colors  duration-150 shrink-0"
                         title="Toggle Sidebar">
                     <span class="material-symbols-outlined" x-text="sidebarOpen ? 'menu_open' : 'menu'">menu</span>
                 </button>

@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Supplier;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
+    use ScopesMasterData;
+
     public function __construct(
         private NumberGeneratorService $numbers,
         private ActivityLogService $logger
@@ -17,7 +18,8 @@ class SupplierController extends Controller
 
     public function index(Request $request)
     {
-        $q = Supplier::query();
+        $info = $this->getScopeInfo($request);
+        $q = $this->getModelClass('Supplier', $info['scope'])::query()->whereIn('entity_scope', [$info['scope'], 'all']);
 
         if ($search = $request->search) {
             $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
@@ -31,16 +33,27 @@ class SupplierController extends Controller
 
         $suppliers = $q->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('master.suppliers.index', compact('suppliers'));
+        return view('master.suppliers.index', [
+            'suppliers' => $suppliers,
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('master.suppliers.form');
+        $info = $this->getScopeInfo($request);
+        return view('master.suppliers.form', [
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
     public function store(Request $request)
     {
+        $info = $this->getScopeInfo($request);
         $data = $request->validate([
             'name'            => 'required|string|max:150',
             'contact_person'  => 'nullable|string|max:100',
@@ -49,24 +62,41 @@ class SupplierController extends Controller
             'address'         => 'nullable|string',
             'notes'           => 'nullable|string',
             'is_active'       => 'boolean',
+            
         ]);
 
-        $data['code']      = $this->numbers->generate('SUP', 'master_suppliers', 'code');
+        $tableName = strtolower($info['scope']) . '_suppliers';
+        $data['code']      = $this->numbers->generate('SUP', $tableName, 'code');
+        $data['created_by'] = auth()->id();
         $data['is_active'] = $request->boolean('is_active', true);
+        
 
-        $supplier = Supplier::create($data);
+        $supplier = $this->getModelClass('Supplier', $info['scope'])::create($data);
         $this->logger->log('create', 'master.supplier', "Tambah supplier: {$supplier->name}", $supplier);
 
-        return redirect()->route('master.suppliers.index')->with('success', "Supplier {$supplier->name} berhasil ditambahkan.");
+        return redirect()->route($info['route'].'suppliers.index')->with('success', "Supplier {$supplier->name} berhasil ditambahkan.");
     }
 
-    public function edit(Supplier $supplier)
+    public function edit(Request $request, $id)
     {
-        return view('master.suppliers.form', compact('supplier'));
+        $info = $this->getScopeInfo($request);
+        $supplier = $this->getModelClass('Supplier', $info['scope'])::findOrFail($id);
+        
+
+        return view('master.suppliers.form', [
+            'supplier' => $supplier,
+            'layout' => $info['layout'],
+            'routePrefix' => $info['route'],
+            'currentScope' => $info['scope']
+        ]);
     }
 
-    public function update(Request $request, Supplier $supplier)
+    public function update(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $supplier = $this->getModelClass('Supplier', $info['scope'])::findOrFail($id);
+        
+
         $data = $request->validate([
             'name'            => 'required|string|max:150',
             'contact_person'  => 'nullable|string|max:100',
@@ -75,23 +105,30 @@ class SupplierController extends Controller
             'address'         => 'nullable|string',
             'notes'           => 'nullable|string',
             'is_active'       => 'boolean',
+            
         ]);
 
         $old = $supplier->toArray();
         $data['is_active'] = $request->boolean('is_active', true);
+        if($request->filled('entity_scope')) 
+        
         $supplier->update($data);
 
         $this->logger->log('update', 'master.supplier', "Update supplier: {$supplier->name}", $supplier, $old, $supplier->fresh()->toArray());
 
-        return redirect()->route('master.suppliers.index')->with('success', "Supplier {$supplier->name} berhasil diperbarui.");
+        return redirect()->route($info['route'].'suppliers.index')->with('success', "Supplier {$supplier->name} berhasil diperbarui.");
     }
 
-    public function destroy(Supplier $supplier)
+    public function destroy(Request $request, $id)
     {
+        $info = $this->getScopeInfo($request);
+        $supplier = $this->getModelClass('Supplier', $info['scope'])::findOrFail($id);
+        
+
         $name = $supplier->name;
         $supplier->delete();
         $this->logger->log('delete', 'master.supplier', "Hapus supplier: $name");
 
-        return redirect()->route('master.suppliers.index')->with('success', "Supplier $name berhasil dihapus.");
+        return redirect()->route($info['route'].'suppliers.index')->with('success', "Supplier $name berhasil dihapus.");
     }
 }

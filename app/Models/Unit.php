@@ -9,7 +9,7 @@ class Unit extends Model
 {
     protected $table = 'master_units';
 
-    protected $fillable = ['name', 'abbreviation'];
+    protected $fillable = ['name', 'abbreviation', 'entity_scope'];
 
     public function products(): HasMany
     {

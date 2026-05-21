@@ -1,10 +1,10 @@
-@extends('layouts.gudang')
+@extends($layout ?? 'layouts.gudang')
 @section('title', isset($supplier) ? 'Edit Supplier' : 'Tambah Supplier')
 @section('page-title', 'Master Data — ' . (isset($supplier) ? 'Edit Supplier' : 'Tambah Supplier'))
 
 @section('content')
 <div class="max-w-2xl mt-4">
-    <form method="POST" action="{{ isset($supplier) ? route('master.suppliers.update', $supplier) : route('master.suppliers.store') }}"
+    <form method="POST" action="{{ isset($supplier) ? route(($routePrefix ?? 'master.') . 'suppliers.update', $supplier) : route(($routePrefix ?? 'master.') . 'suppliers.store') }}"
           class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         @csrf
         @if(isset($supplier)) @method('PUT') @endif
@@ -64,7 +64,7 @@
                     class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg">
                 {{ isset($supplier) ? 'Simpan Perubahan' : 'Tambah Supplier' }}
             </button>
-            <a href="{{ route('master.suppliers.index') }}" class="text-gray-500 hover:text-gray-700 text-sm">Batal</a>
+            <a href="{{ route(($routePrefix ?? 'master.') . 'suppliers.index') }}" class="text-gray-500 hover:text-gray-700 text-sm">Batal</a>
         </div>
     </form>
 </div>
