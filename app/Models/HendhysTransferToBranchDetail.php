@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Hendhys\Unit as HendhysUnit;
+use App\Models\Hendhys\Product as HendhysProduct;
 
 class HendhysTransferToBranchDetail extends Model
 {
     protected $table = 'hendhys_transfer_to_branch_details';
+    public $timestamps = false;
 
     protected $fillable = [
-        'transfer_id', 'product_id', 'quantity', 'unit_id'
+        'transfer_id', 'product_id', 'quantity', 'received_quantity', 'unit_id'
     ];
 
     public function transfer(): BelongsTo
@@ -20,11 +23,11 @@ class HendhysTransferToBranchDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(HendhysProduct::class);
     }
 
     public function unit(): BelongsTo
     {
-        return $this->belongsTo(Unit::class);
+        return $this->belongsTo(HendhysUnit::class);
     }
 }

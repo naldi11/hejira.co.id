@@ -11,8 +11,9 @@ class HendhysTransferToBranch extends Model
     protected $table = 'hendhys_transfer_to_branch';
 
     protected $fillable = [
-        'transfer_number', 'request_id', 'branch_id', 'date', 
-        'status', 'notes', 'created_by', 'received_by'
+        'transfer_number', 'request_id', 'branch_id', 'date',
+        'status', 'notes', 'receive_notes', 'receive_photo',
+        'created_by', 'received_by'
     ];
 
     public function branchRequest(): BelongsTo
