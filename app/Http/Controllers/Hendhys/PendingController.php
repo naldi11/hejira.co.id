@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
+use App\Models\Hendhys\Customer;
 use App\Models\HendhysPendingDetail;
 use App\Models\HendhysPendingTransaction;
 use App\Services\NumberGeneratorService;
@@ -41,9 +41,10 @@ class PendingController extends Controller
     {
         $request->validate([
             'customer_type' => 'required|in:retail,agen',
+            'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
         ]);
 
@@ -56,23 +57,25 @@ class PendingController extends Controller
                     'pending_number' => $this->numbers->generateYearly('HPND', 'hendhys_pending_transactions', 'pending_number'),
                     'branch_id' => $branchId,
                     'date' => now()->toDateString(),
-                    'customer_id' => $request->customer_id,
+                    'customer_id' => null,
                     'customer_name' => $request->customer_name,
-                    'customer_type' => $request->customer_type,
+                    'customer_phone' => $request->customer_phone,
+                    'customer_type' => 'retail',
                     'notes' => $request->notes,
                     'created_by' => $user->id
                 ]);
 
                 foreach ($request->items as $item) {
+                    $product = \App\Models\Hendhys\Product::find($item['product_id']);
                     HendhysPendingDetail::create([
-                        'pending_id' => $pending->id,
-                        'product_id' => $item['product_id'],
-                        'product_name' => \App\Models\Product::find($item['product_id'])->name,
-                        'quantity' => $item['quantity'],
-                        'unit_id' => \App\Models\Product::find($item['product_id'])->unit_id,
-                        'price' => $item['price'],
-                        'discount_amount' => $item['discount'] ?? 0,
-                        'total' => $item['total']
+                        'pending_id'      => $pending->id,
+                        'product_id'      => $item['product_id'],
+                        'product_name'    => $product?->name ?? '',
+                        'quantity'        => $item['quantity'],
+                        'unit_id'         => $product?->unit_id,
+                        'price'           => $item['price'],
+                        'discount_percent' => 0,
+                        'total'           => $item['total']
                     ]);
                 }
             });
