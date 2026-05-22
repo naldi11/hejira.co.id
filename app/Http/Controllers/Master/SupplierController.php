@@ -65,9 +65,10 @@ class SupplierController extends Controller
             
         ]);
 
-        $tableName = strtolower($info['scope']) . '_suppliers';
+        $tableName = 'master_suppliers';
         $data['code']      = $this->numbers->generate('SUP', $tableName, 'code');
         $data['created_by'] = auth()->id();
+        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
         $data['is_active'] = $request->boolean('is_active', true);
         
 

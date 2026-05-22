@@ -9,8 +9,7 @@ class MasterSupplierCustomerSeeder extends Seeder
 {
     public function run(): void
     {
-        $prefixes = ['gudang', 'jihans', 'hendhys'];
-        foreach ($prefixes as $prefix) {
+        
 
         $suppliers = [
             ['code' => 'SPL-001', 'name' => 'PT. Frozen Makmur', 'phone' => '081122334455', 'address' => 'Jl. Industri No. 1'],
@@ -19,7 +18,7 @@ class MasterSupplierCustomerSeeder extends Seeder
         ];
 
         foreach ($suppliers as $supplier) {
-            DB::table($prefix . '_suppliers')->updateOrInsert(
+            DB::table('master_suppliers')->updateOrInsert(
                 ['code' => $supplier['code']],
                 array_merge($supplier, ['created_at' => now(), 'updated_at' => now()])
             );
@@ -34,11 +33,10 @@ class MasterSupplierCustomerSeeder extends Seeder
         ];
 
         foreach ($customers as $customer) {
-            DB::table($prefix . '_customers')->updateOrInsert(
+            DB::table('master_customers')->updateOrInsert(
                 ['code' => $customer['code']],
                 array_merge($customer, ['created_at' => now(), 'updated_at' => now()])
             );
-        }
         }
     }
 }

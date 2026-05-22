@@ -60,6 +60,8 @@ Route::middleware(['auth', 'role:admin_gudang'])
 
         Route::resource('suppliers', SupplierController::class)->except(['show']);
         Route::resource('customers', CustomerController::class)->except(['show']);
+        Route::get('products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
+        Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
         Route::resource('products',  ProductController::class)->except(['show']);
         Route::resource('branches',  BranchController::class)->except(['show']);
         Route::resource('users',     App\Http\Controllers\Master\UserController::class)->except(['show']);

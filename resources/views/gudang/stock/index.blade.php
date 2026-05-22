@@ -24,18 +24,13 @@
             <form method="GET" action="{{ route('gudang.stock.index') }}" class="flex-1 flex gap-3">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk atau kode..." 
                        class="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                <select name="jenis" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                    <option value="">Semua Jenis</option>
-                    <option value="bahan_baku" {{ request('jenis') == 'bahan_baku' ? 'selected' : '' }}>Bahan Baku</option>
-                    <option value="bahan_jadi" {{ request('jenis') == 'bahan_jadi' ? 'selected' : '' }}>Bahan Jadi</option>
-                    <option value="lainnya" {{ request('jenis') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
-                </select>
+                
                 <label class="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100">
                     <input type="checkbox" name="low_stock" value="1" {{ request('low_stock') == '1' ? 'checked' : '' }} class="rounded text-indigo-600 focus:ring-indigo-500">
                     Stok Menipis
                 </label>
                 <button type="submit" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium">Filter</button>
-                @if(request()->anyFilled(['search', 'jenis', 'low_stock']))
+                @if(request()->anyFilled(['search', 'low_stock']))
                     <a href="{{ route('gudang.stock.index') }}" class="text-gray-400 hover:text-red-500 px-2 py-2 flex items-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </a>
@@ -49,7 +44,7 @@
                     <tr>
                         <th class="px-4 py-3 font-medium">Kode</th>
                         <th class="px-4 py-3 font-medium">Nama Produk</th>
-                        <th class="px-4 py-3 font-medium">Kategori / Jenis</th>
+                        <th class="px-4 py-3 font-medium">Kategori</th>
                         <th class="px-4 py-3 font-medium text-right">Stok Min</th>
                         <th class="px-4 py-3 font-medium text-right">Stok Saat Ini</th>
                         <th class="px-4 py-3 font-medium">Satuan</th>

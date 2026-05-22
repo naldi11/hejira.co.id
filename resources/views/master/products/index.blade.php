@@ -27,14 +27,7 @@
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode..."
                     class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
             </div>
-            <select name="jenis"
-                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
-                <option value="">Semua Jenis</option>
-                @foreach(['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minuman', 'snack', 'selai', 'property', 'lainnya'] as $j)
-                    <option value="{{ $j }}" {{ request('jenis') === $j ? 'selected' : '' }}>
-                        {{ ucwords(str_replace('_', ' ', $j)) }}</option>
-                @endforeach
-            </select>
+            
             <select name="entity_scope"
                 class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
                 <option value="">Semua Entitas</option>
@@ -54,7 +47,7 @@
                 <span class="material-symbols-outlined text-[18px] align-middle">filter_list</span>
                 Filter
             </button>
-            @if(request()->hasAny(['search', 'jenis', 'entity_scope', 'status']))
+            @if(request()->hasAny(['search', 'entity_scope', 'status']))
                 <a href="{{ route(($routePrefix ?? 'master.') . 'products.index') }}"
                     class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
                     <span class="material-symbols-outlined text-[16px]">close</span>
@@ -75,8 +68,7 @@
                                 Produk</th>
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">
                                 Kategori</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Jenis
-                            </th>
+                            
                             <th
                                 class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
                                 HPP</th>
@@ -187,4 +179,36 @@
         </div>
 
     </div>
+
+    {{-- Import Modal --}}
+    <div id="importModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-black bg-opacity-50" aria-hidden="true" onclick="document.getElementById('importModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-surface rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto bg-primary-container rounded-full">
+                        <span class="material-symbols-outlined text-on-primary-container">upload_file</span>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-5">
+                        <h3 class="text-lg font-medium leading-6 text-on-surface" id="modal-title">Import Data Produk</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-on-surface-variant">Upload file Excel (.xlsx, .xls) atau CSV yang sesuai dengan format template. Produk dengan Barcode atau Nama yang sama akan otomatis di-update.</p>
+                        </div>
+                    </div>
+                </div>
+                <form action="{{ route(($routePrefix ?? 'master.') . 'products.import') }}" method="POST" enctype="multipart/form-data" class="mt-5 sm:mt-6">
+                    @csrf
+                    <div class="mb-4">
+                        <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="block w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary hover:file:text-on-primary transition-colors">
+                    </div>
+                    <div class="flex gap-3 justify-end mt-4">
+                        <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" class="px-4 py-2 bg-surface-container text-on-surface rounded-lg font-medium hover:bg-surface-container-high transition-colors">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-primary text-on-primary rounded-lg font-medium hover:bg-on-primary-fixed-variant transition-colors">Upload & Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection

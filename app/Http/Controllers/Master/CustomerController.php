@@ -20,6 +20,7 @@ class CustomerController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $q = $this->getModelClass('Customer', $info['scope'])::query();
+        $q->whereIn('entity_scope', [$info['scope'], 'all']);
 
         if ($search = $request->search) {
             $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
@@ -69,9 +70,10 @@ class CustomerController extends Controller
             
         ]);
 
-        $tableName = strtolower($info['scope']) . '_customers';
+        $tableName = 'master_customers';
         $data['code']      = $this->numbers->generate('CST', $tableName, 'code');
         $data['created_by'] = auth()->id();
+        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
         $data['is_active'] = $request->boolean('is_active', true);
         
 

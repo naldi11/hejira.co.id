@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseOrder;
-use App\Models\Gudang\Supplier;
-use App\Models\Gudang\Product;
-use App\Models\Gudang\Unit;
+use App\Models\Supplier;
+use App\Models\Product;
+use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
@@ -38,7 +38,7 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $products  = Product::where('status', 'active')->with('unit')->orderBy('name')->get();
+        $products  = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->with('unit')->orderBy('name')->get();
         $units     = Unit::orderBy('name')->get();
 
         return view('gudang.purchase-orders.form', compact('suppliers', 'products', 'units'));
@@ -47,14 +47,14 @@ class PurchaseOrderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'supplier_id'          => 'required|exists:gudang_suppliers,id',
+            'supplier_id'          => 'required|exists:master_suppliers,id',
             'date'                 => 'required|date',
             'expected_date'        => 'nullable|date|after_or_equal:date',
             'notes'                => 'nullable|string',
             'items'                => 'required|array|min:1',
-            'items.*.product_id'   => 'required|exists:gudang_products,id',
+            'items.*.product_id'   => 'required|exists:master_products,id',
             'items.*.quantity'     => 'required|numeric|min:0.001',
-            'items.*.unit_id'      => 'required|exists:gudang_units,id',
+            'items.*.unit_id'      => 'required|exists:master_units,id',
             'items.*.price'        => 'required|numeric|min:0',
         ]);
 
@@ -103,7 +103,7 @@ class PurchaseOrderController extends Controller
 
         $po->load('details');
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $products  = Product::where('status', 'active')->with('unit')->orderBy('name')->get();
+        $products  = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->with('unit')->orderBy('name')->get();
         $units     = Unit::orderBy('name')->get();
 
         return view('gudang.purchase-orders.form', compact('po', 'suppliers', 'products', 'units'));
@@ -114,14 +114,14 @@ class PurchaseOrderController extends Controller
         abort_if(!$po->isEditable(), 403, 'PO sudah tidak bisa diedit.');
 
         $request->validate([
-            'supplier_id'          => 'required|exists:gudang_suppliers,id',
+            'supplier_id'          => 'required|exists:master_suppliers,id',
             'date'                 => 'required|date',
             'expected_date'        => 'nullable|date|after_or_equal:date',
             'notes'                => 'nullable|string',
             'items'                => 'required|array|min:1',
-            'items.*.product_id'   => 'required|exists:gudang_products,id',
+            'items.*.product_id'   => 'required|exists:master_products,id',
             'items.*.quantity'     => 'required|numeric|min:0.001',
-            'items.*.unit_id'      => 'required|exists:gudang_units,id',
+            'items.*.unit_id'      => 'required|exists:master_units,id',
             'items.*.price'        => 'required|numeric|min:0',
         ]);
 

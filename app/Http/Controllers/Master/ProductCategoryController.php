@@ -40,7 +40,7 @@ class ProductCategoryController extends Controller
             'name' => 'required|string|max:100',
         ]);
 
-        $data['entity_scope'] = $info['scope'];
+        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
 
         $category = $this->getModelClass('ProductCategory', $info['scope'])::create($data);
         $this->logger->log('create', 'master.category', "Tambah kategori: {$category->name}", $category);

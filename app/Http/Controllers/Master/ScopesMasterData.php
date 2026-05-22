@@ -24,7 +24,7 @@ trait ScopesMasterData
             'jihans'  => 'Jihans',
             default   => 'Gudang',
         };
-        return "App\\Models\\{$namespace}\\{$modelName}";
+        return "App\\Models\\{$modelName}";
     }
 
     protected function getModel(string $modelName, string $scope)

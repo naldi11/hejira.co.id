@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Gudang;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GudangStock;
-use App\Models\Gudang\Product;
+use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
-use App\Models\Gudang\Unit;
+use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -40,11 +40,11 @@ class TransferOutController extends Controller
 
     public function create(Request $request)
     {
-        $products  = Product::where('status', 'active')
+        $products  = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['gudang', 'all'])
             ->with(['unit'])
-            ->leftJoin('gudang_stock', 'gudang_products.id', '=', 'gudang_stock.product_id')
-            ->select('gudang_products.*', 'gudang_stock.quantity as current_stock')
-            ->orderBy('gudang_products.name')
+            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
+            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
+            ->orderBy('master_products.name')
             ->get();
 
         $units    = Unit::orderBy('name')->get();
@@ -69,9 +69,9 @@ class TransferOutController extends Controller
             'request_id'         => 'nullable|exists:gudang_transfer_requests,id',
             'notes'              => 'nullable|string',
             'items'              => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:gudang_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity'   => 'required|integer|min:1',
-            'items.*.unit_id'    => 'required|exists:gudang_units,id',
+            'items.*.unit_id'    => 'required|exists:master_units,id',
             'items.*.hpp_price'  => 'required|numeric|min:0',
         ]);
 

@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('jihans_pending_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pending_id')->constrained('jihans_pending_transactions')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained('jihans_products');
+            $table->foreignId('product_id')->constrained('master_products');
             $table->string('product_name', 200);
             $table->decimal('quantity', 15, 3);
-            $table->foreignId('unit_id')->constrained('jihans_units');
+            $table->foreignId('unit_id')->constrained('master_units');
             $table->decimal('price', 15, 2);
             $table->decimal('discount_percent', 5, 2)->default(0);
             $table->decimal('total', 15, 2);

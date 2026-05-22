@@ -281,7 +281,7 @@ class StockService
         ]);
     }
 
-    // ── GRN: update HPP on gudang_products ───────────────────────────────────
+    // ── GRN: update HPP on master_products ───────────────────────────────────
 
     public function updateProductHpp(int $productId, float $hppPrice): void
     {

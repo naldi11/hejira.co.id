@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('gudang_purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->string('po_number', 30)->unique();
-            $table->foreignId('supplier_id')->constrained('gudang_suppliers');
+            $table->foreignId('supplier_id')->constrained('master_suppliers');
             $table->date('date');
             $table->date('expected_date')->nullable();
             $table->enum('status', ['draft', 'sent', 'partial', 'received', 'cancelled'])->default('draft');

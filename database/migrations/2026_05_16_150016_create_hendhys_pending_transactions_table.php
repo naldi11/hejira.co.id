@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('pending_number', 30)->unique();
             $table->foreignId('branch_id')->nullable()->constrained('master_branches')->nullOnDelete();
             $table->date('date');
-            $table->foreignId('customer_id')->nullable()->constrained('hendhys_customers')->nullOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained('master_customers')->nullOnDelete();
             $table->string('customer_name', 150)->nullable();
             $table->enum('customer_type', ['retail', 'agen'])->default('retail');
             $table->text('notes')->nullable();

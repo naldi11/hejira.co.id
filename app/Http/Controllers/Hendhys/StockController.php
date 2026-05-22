@@ -7,7 +7,7 @@ use App\Models\Branch;
 use App\Models\HendhysStockBranch;
 use App\Models\HendhysStockMovement;
 use App\Models\HendhysStockPusat;
-use App\Models\Hendhys\Product;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
@@ -20,18 +20,18 @@ class StockController extends Controller
         if ($isPusat) {
             // --- PUSAT: stok milik pusat ---
             $q = Product::where('status', 'active')
-                ->leftJoin('hendhys_stock_pusat', 'hendhys_products.id', '=', 'hendhys_stock_pusat.product_id')
-                ->select('hendhys_products.*', 'hendhys_stock_pusat.quantity as current_stock')
+                ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
+                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {
                 $q->where(function ($w) use ($search) {
-                    $w->where('hendhys_products.name', 'like', "%$search%")
-                        ->orWhere('hendhys_products.code', 'like', "%$search%");
+                    $w->where('master_products.name', 'like', "%$search%")
+                        ->orWhere('master_products.code', 'like', "%$search%");
                 });
             }
 
-            $stocks = $q->orderBy('hendhys_products.name')->paginate(20)->withQueryString();
+            $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
 
             // Daftar cabang aktif beserta stok masing-masing
             $branches = Branch::where('is_active', true)
@@ -41,8 +41,8 @@ class StockController extends Controller
 
             // Stok per cabang yang difilter
             $selectedBranchId = $request->branch_id;
-            $branchStocksQuery = Product::where('hendhys_products.status', 'active')
-                ->join('hendhys_stock_branch', 'hendhys_products.id', '=', 'hendhys_stock_branch.product_id')
+            $branchStocksQuery = Product::where('master_products.status', 'active')
+                ->join('hendhys_stock_branch', 'master_products.id', '=', 'hendhys_stock_branch.product_id')
                 ->with(['unit']);
 
             if ($selectedBranchId) {
@@ -51,14 +51,14 @@ class StockController extends Controller
 
             if ($search = $request->search) {
                 $branchStocksQuery->where(function ($w) use ($search) {
-                    $w->where('hendhys_products.name', 'like', "%$search%")
-                        ->orWhere('hendhys_products.code', 'like', "%$search%");
+                    $w->where('master_products.name', 'like', "%$search%")
+                        ->orWhere('master_products.code', 'like', "%$search%");
                 });
             }
 
             $branchStocks = $branchStocksQuery
-                ->select('hendhys_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.branch_id')
-                ->orderBy('hendhys_products.name')
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.branch_id')
+                ->orderBy('master_products.name')
                 ->paginate(20, ['*'], 'branch_page')
                 ->withQueryString();
 
@@ -67,20 +67,20 @@ class StockController extends Controller
             // --- CABANG: hanya stok milik branch sendiri ---
             $q = Product::where('status', 'active')
                 ->leftJoin('hendhys_stock_branch', function ($join) use ($user) {
-                    $join->on('hendhys_products.id', '=', 'hendhys_stock_branch.product_id')
+                    $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
                         ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
                 })
-                ->select('hendhys_products.*', 'hendhys_stock_branch.quantity as current_stock')
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {
                 $q->where(function ($w) use ($search) {
-                    $w->where('hendhys_products.name', 'like', "%$search%")
-                        ->orWhere('hendhys_products.code', 'like', "%$search%");
+                    $w->where('master_products.name', 'like', "%$search%")
+                        ->orWhere('master_products.code', 'like', "%$search%");
                 });
             }
 
-            $stocks = $q->orderBy('hendhys_products.name')->paginate(20)->withQueryString();
+            $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
 
             return view('hendhys.stock.index', compact('stocks', 'user', 'isPusat'));
         }

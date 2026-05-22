@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Jihans\Product as JihansProduct;
+use App\Models\Product as JihansProduct;
 use App\Models\Jihans\Unit as JihansUnit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

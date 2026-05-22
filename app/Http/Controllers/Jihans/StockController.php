@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
 use App\Models\JihansStockMovement;
-use App\Models\Jihans\Product;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class StockController extends Controller
@@ -12,22 +12,22 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $q = Product::where('status', 'active')
-            ->leftJoin('jihans_stock', 'jihans_products.id', '=', 'jihans_stock.product_id')
-            ->select('jihans_products.*', 'jihans_stock.quantity as current_stock')
+            ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
+            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
             ->with(['unit', 'category']);
 
         if ($search = $request->search) {
             $q->where(function($w) use ($search) {
-                $w->where('jihans_products.name', 'like', "%$search%")
-                  ->orWhere('jihans_products.code', 'like', "%$search%");
+                $w->where('master_products.name', 'like', "%$search%")
+                  ->orWhere('master_products.code', 'like', "%$search%");
             });
         }
 
         if ($request->filled('jenis')) {
-            $q->where('jihans_products.jenis', $request->jenis);
+            $q->where('master_products.jenis', $request->jenis);
         }
 
-        $stocks = $q->orderBy('jihans_products.name')->paginate(20)->withQueryString();
+        $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
 
         return view('jihans.stock.index', compact('stocks'));
     }

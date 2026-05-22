@@ -9,8 +9,7 @@ class MasterCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $prefixes = ['gudang', 'jihans', 'hendhys'];
-        foreach ($prefixes as $prefix) {
+        
 
         $categories = [
             // Kategori Hendhys & Umum
@@ -31,11 +30,10 @@ class MasterCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            DB::table($prefix . '_product_categories')->updateOrInsert(
+            DB::table('master_product_categories')->updateOrInsert(
                 ['name' => $category['name']],
                 ['entity' => $category['entity'], 'created_at' => now(), 'updated_at' => now()]
             );
-        }
         }
     }
 }

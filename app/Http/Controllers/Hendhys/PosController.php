@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hendhys\Product;
+use App\Models\Product;
 use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
 use App\Models\HendhysTransactionPayment;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,19 +24,19 @@ class PosController extends Controller
     {
         $user = auth()->user();
         
-        $q = Product::where('status', 'active');
+        $q = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['hendhys', 'all']);
 
         if ($user->branch->type === 'pusat') {
-            $q->leftJoin('hendhys_stock_pusat', 'hendhys_products.id', '=', 'hendhys_stock_pusat.product_id')
-              ->select('hendhys_products.*', DB::raw('COALESCE(hendhys_stock_pusat.quantity, 0) as current_stock'));
+            $q->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
+              ->select('master_products.*', DB::raw('COALESCE(hendhys_stock_pusat.quantity, 0) as current_stock'));
         } else {
             $q->leftJoin('hendhys_stock_branch', function($join) use ($user) {
-                $join->on('hendhys_products.id', '=', 'hendhys_stock_branch.product_id')
+                $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
                      ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
-            })->select('hendhys_products.*', DB::raw('COALESCE(hendhys_stock_branch.quantity, 0) as current_stock'));
+            })->select('master_products.*', DB::raw('COALESCE(hendhys_stock_branch.quantity, 0) as current_stock'));
         }
 
-        $products = $q->with('unit')->get();
+        $products = $q->with(['unit', 'tieredPrices'])->get();
 
         return view('hendhys.pos.index', compact('products'));
     }
@@ -105,7 +106,7 @@ class PosController extends Controller
             'payment_method' => 'required|in:cash,transfer',
             'amount_paid' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -196,4 +197,11 @@ class PosController extends Controller
         $transaction->load(['details.unit', 'payments', 'creator']);
         return view('hendhys.pos.receipt', compact('transaction'));
     }
+
+    public function invoice($id)
+    {
+        $transaction = HendhysTransaction::findOrFail($id);
+        return $this->invoiceService->generateHendhysInvoice($transaction);
+    }
+
 }

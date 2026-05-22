@@ -9,7 +9,7 @@ class GudangTransactionSeeder extends Seeder
 {
     public function run(): void
     {
-        $products = DB::table('jihans_products')
+        $products = DB::table('master_products')
                       ->whereIn('entity_scope', ['gudang', 'all'])
                       ->get();
 

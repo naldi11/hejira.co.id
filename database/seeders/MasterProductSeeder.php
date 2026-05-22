@@ -9,13 +9,12 @@ class MasterProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $prefixes = ['gudang', 'jihans', 'hendhys'];
-        foreach ($prefixes as $prefix) {
+        
 
         // Helper to get ID by name
-        $getCatId = fn($name) => DB::table($prefix . '_product_categories')->where('name', $name)->value('id');
-        $getUnitId = fn($abbr) => DB::table($prefix . '_units')->where('abbreviation', $abbr)->value('id');
-        $getBrandId = fn($name) => DB::table($prefix . '_brands')->where('name', $name)->value('id');
+        $getCatId = fn($name) => DB::table('master_product_categories')->where('name', $name)->value('id');
+        $getUnitId = fn($abbr) => DB::table('master_units')->where('abbreviation', $abbr)->value('id');
+        $getBrandId = fn($name) => DB::table('master_brands')->where('name', $name)->value('id');
 
         // Categories
         $catSnack = $getCatId('Snack');
@@ -54,11 +53,10 @@ class MasterProductSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
-            DB::table($prefix . '_products')->updateOrInsert(
+            DB::table('master_products')->updateOrInsert(
                 ['code' => $product['code']],
                 array_merge($product, ['created_at' => now(), 'updated_at' => now()])
             );
-        }
         }
     }
 }

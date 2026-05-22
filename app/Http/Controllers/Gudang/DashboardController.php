@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
-use App\Models\Gudang\Product;
+use App\Models\Product;
 use App\Models\Branch;
 use App\Models\PurchaseOrder;
 use App\Models\TransferRequest;

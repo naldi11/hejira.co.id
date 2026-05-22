@@ -89,10 +89,10 @@
         </div>
         <div class="p-0">
             @php
-                $lowStocks = \App\Models\Jihans\Product::where('status', 'active')
-                    ->join('jihans_stock', 'jihans_products.id', '=', 'jihans_stock.product_id')
+                $lowStocks = \App\Models\Product::where('status', 'active')->whereIn('master_products.entity_scope', ['jihans', 'all'])
+                    ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
                     ->where('jihans_stock.quantity', '<=', 50)
-                    ->select('jihans_products.*', 'jihans_stock.quantity as current_stock')
+                    ->select('master_products.*', 'jihans_stock.quantity as current_stock')
                     ->take(5)
                     ->get();
             @endphp

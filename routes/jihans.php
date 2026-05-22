@@ -18,6 +18,8 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::prefix('master')->name('master.')->group(function () {
             Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
             Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
+            Route::get('products/template', [\App\Http\Controllers\Master\ProductController::class, 'downloadTemplate'])->name('products.template');
+            Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');
             Route::resource('products',  \App\Http\Controllers\Master\ProductController::class)->except(['show']);
             
             Route::get('categories',               [\App\Http\Controllers\Master\ProductCategoryController::class, 'index'])->name('categories.index');

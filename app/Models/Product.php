@@ -46,4 +46,9 @@ class Product extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function tieredPrices()
+    {
+        return $this->hasMany(MasterProductTieredPrice::class)->orderBy('min_qty', 'desc');
+    }
 }

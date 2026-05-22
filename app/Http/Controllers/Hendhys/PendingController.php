@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hendhys\Customer;
+use App\Models\Customer;
 use App\Models\HendhysPendingDetail;
 use App\Models\HendhysPendingTransaction;
 use App\Services\NumberGeneratorService;
@@ -43,7 +43,7 @@ class PendingController extends Controller
             'customer_type' => 'required|in:retail,agen',
             'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
         ]);

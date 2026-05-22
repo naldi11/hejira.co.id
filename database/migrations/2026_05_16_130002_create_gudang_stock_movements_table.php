@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('gudang_stock_movements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained('gudang_products');
+            $table->foreignId('product_id')->constrained('master_products');
             $table->enum('type', ['in', 'out']);
             $table->enum('source', ['purchase_receiving', 'transfer_out', 'adjustment']);
             $table->unsignedBigInteger('reference_id')->nullable();

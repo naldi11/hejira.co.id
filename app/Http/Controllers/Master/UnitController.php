@@ -42,7 +42,7 @@ class UnitController extends Controller
             'abbreviation' => 'required|string|max:10',
         ]);
 
-        $data['entity_scope'] = $info['scope'];
+        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
 
         $unit = $this->getModelClass('Unit', $info['scope'])::create($data);
         $this->logger->log('create', 'master.unit', "Tambah satuan: {$unit->name}", $unit);

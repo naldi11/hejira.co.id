@@ -127,18 +127,18 @@
         <div class="p-0">
             @php
                 if($isPusat) {
-                    $lowStocks = \App\Models\Hendhys\Product::where('status', 'active')
-                        ->join('hendhys_stock_pusat', 'hendhys_products.id', '=', 'hendhys_stock_pusat.product_id')
+                    $lowStocks = \App\Models\Product::where('status', 'active')->whereIn('master_products.entity_scope', ['hendhys', 'all'])
+                        ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
                         ->where('hendhys_stock_pusat.quantity', '<=', 10)
-                        ->select('hendhys_products.*', 'hendhys_stock_pusat.quantity as current_stock')
+                        ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
                         ->take(5)
                         ->get();
                 } else {
-                    $lowStocks = \App\Models\Hendhys\Product::where('status', 'active')
-                        ->join('hendhys_stock_branch', 'hendhys_products.id', '=', 'hendhys_stock_branch.product_id')
+                    $lowStocks = \App\Models\Product::where('status', 'active')->whereIn('master_products.entity_scope', ['hendhys', 'all'])
+                        ->join('hendhys_stock_branch', 'master_products.id', '=', 'hendhys_stock_branch.product_id')
                         ->where('hendhys_stock_branch.branch_id', $branchId)
                         ->where('hendhys_stock_branch.quantity', '<=', 5)
-                        ->select('hendhys_products.*', 'hendhys_stock_branch.quantity as current_stock')
+                        ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock')
                         ->take(5)
                         ->get();
                 }

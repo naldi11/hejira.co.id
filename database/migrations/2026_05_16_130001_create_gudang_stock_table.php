@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('gudang_stock', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->unique()->constrained('gudang_products');
+            $table->foreignId('product_id')->unique()->constrained('master_products');
             $table->decimal('quantity', 15, 3)->default(0);
-            $table->foreignId('unit_id')->constrained('gudang_units');
+            $table->foreignId('unit_id')->constrained('master_units');
             $table->timestamp('last_updated')->useCurrent()->useCurrentOnUpdate();
         });
     }

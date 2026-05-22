@@ -59,9 +59,9 @@ class TransferToBranchController extends Controller
         $branches = \App\Models\Branch::where('type', 'cabang')->where('is_active', true)->orderBy('name')->get();
         // Hanya ambil produk yang ada stoknya di pusat
         $products = \App\Models\Hendhys\Product::where('status', 'active')
-            ->join('hendhys_stock_pusat', 'hendhys_products.id', '=', 'hendhys_stock_pusat.product_id')
+            ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
             ->with('unit')
-            ->select('hendhys_products.*', 'hendhys_stock_pusat.quantity as current_stock')
+            ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
             ->where('hendhys_stock_pusat.quantity', '>', 0)
             ->get();
 
@@ -80,9 +80,9 @@ class TransferToBranchController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_id' => 'required|exists:hendhys_units,id',
+            'items.*.unit_id' => 'required|exists:master_units,id',
             'items.*.detail_id' => 'nullable|exists:hendhys_branch_request_details,id',
         ]);
 

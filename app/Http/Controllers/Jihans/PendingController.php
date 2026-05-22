@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use App\Models\JihansPendingTransaction;
 use App\Models\JihansPendingDetail;
-use App\Models\Jihans\Product;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,12 +28,12 @@ class PendingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id'       => 'nullable|exists:jihans_customers,id',
+            'customer_id'       => 'nullable|exists:master_customers,id',
             'customer_name'     => 'nullable|string|max:150',
             'customer_type'     => 'required|in:retail,agen',
             'notes'             => 'nullable|string',
             'items'             => 'required|array|min:1',
-            'items.*.product_id'=> 'required|exists:jihans_products,id',
+            'items.*.product_id'=> 'required|exists:master_products,id',
             'items.*.quantity'  => 'required|numeric|min:0.001',
             'items.*.price'     => 'required|numeric|min:0',
             'items.*.discount'  => 'nullable|numeric|min:0',

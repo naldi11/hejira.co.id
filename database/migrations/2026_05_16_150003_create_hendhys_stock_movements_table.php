@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('hendhys_stock_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('master_branches')->nullOnDelete();
-            $table->foreignId('product_id')->constrained('hendhys_products');
+            $table->foreignId('product_id')->constrained('master_products');
             $table->enum('type', ['in', 'out']);
             $table->enum('source', ['transfer_gudang', 'production', 'transfer_to_branch', 'return_from_branch', 'pos_sale', 'adjustment']);
             $table->unsignedBigInteger('reference_id')->nullable();

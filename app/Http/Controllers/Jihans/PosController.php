@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jihans\Customer;
+use App\Models\Customer;
 use App\Models\JihansStock;
 use App\Models\JihansTransaction;
 use App\Models\JihansTransactionDetail;
-use App\Models\Jihans\Product;
+use App\Models\Product;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,20 +20,21 @@ class PosController extends Controller
     public function __construct(
         private NumberGeneratorService $numbers,
         private StockService $stock,
-        private ActivityLogService $logger
+        private ActivityLogService $logger,
+        private InvoiceService $invoiceService
     ) {}
 
     public function index()
     {
         // Get products that are available in Jihans Stock
-        $products = Product::where('status', 'active')
-            ->leftJoin('jihans_stock', 'jihans_products.id', '=', 'jihans_stock.product_id')
-            ->select('jihans_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
-            ->with(['unit', 'category'])
+        $products = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['jihans', 'all'])
+            ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
+            ->select('master_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
+            ->with(['unit', 'category', 'tieredPrices'])
             ->get();
 
         // Kirim semua pelanggan aktif, filter tipe dilakukan di frontend
-        $customers = Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type', 'phone']);
+        $customers = Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])->orderBy('name')->get(['id', 'name', 'type', 'phone']);
 
         // Tipe unik pelanggan untuk dropdown (render via Blade agar tidak ada race condition Alpine.js)
         $customerTypeLabels = ['retail' => 'Retail (Umum)', 'agen' => 'B2B / Agen'];
@@ -48,7 +50,7 @@ class PosController extends Controller
     {
         $request->validate([
             'transaction_date'  => 'nullable|date',
-            'customer_id'       => 'nullable|exists:jihans_customers,id',
+            'customer_id'       => 'nullable|exists:master_customers,id',
             'customer_name'     => 'nullable|string|max:150',
             'customer_type'     => 'required|in:retail,agen',
             'ppn_type'          => 'required|in:none,include,exclude',
@@ -65,7 +67,7 @@ class PosController extends Controller
             'reference_number'  => 'nullable|string|max:100',
             'notes'             => 'nullable|string',
             'items'             => 'required|array|min:1',
-            'items.*.product_id'=> 'required|exists:jihans_products,id',
+            'items.*.product_id'=> 'required|exists:master_products,id',
             'items.*.quantity'  => 'required|numeric|min:0.001',
             'items.*.price'     => 'required|numeric|min:0',
             'items.*.discount'  => 'nullable|numeric|min:0',
@@ -153,4 +155,11 @@ class PosController extends Controller
         $transaction->load(['details.product.unit', 'payments', 'creator', 'customer']);
         return view('jihans.pos.receipt', compact('transaction'));
     }
+
+    public function invoice($id)
+    {
+        $transaction = JihansTransaction::findOrFail($id);
+        return $this->invoiceService->generateJihansInvoice($transaction);
+    }
+
 }

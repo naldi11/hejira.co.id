@@ -40,7 +40,7 @@ class BrandController extends Controller
             'name' => 'required|string|max:100',
         ]);
 
-        $data['entity_scope'] = $info['scope'];
+        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
 
         $brand = $this->getModelClass('Brand', $info['scope'])::create($data);
         $this->logger->log('create', 'master.brand', "Tambah brand: {$brand->name}", $brand);

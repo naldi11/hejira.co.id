@@ -9,8 +9,7 @@ class MasterBrandSeeder extends Seeder
 {
     public function run(): void
     {
-        $prefixes = ['gudang', 'jihans', 'hendhys'];
-        foreach ($prefixes as $prefix) {
+        
 
         $brands = [
             'Tanpa Brand',
@@ -25,11 +24,10 @@ class MasterBrandSeeder extends Seeder
         ];
 
         foreach ($brands as $brand) {
-            DB::table($prefix . '_brands')->updateOrInsert(
+            DB::table('master_brands')->updateOrInsert(
                 ['name' => $brand],
                 ['created_at' => now(), 'updated_at' => now()]
             );
-        }
         }
     }
 }

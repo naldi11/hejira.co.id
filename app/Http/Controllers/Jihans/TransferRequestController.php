@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
-use App\Models\Gudang\Product as GudangProduct;
+use App\Models\Product;
 use App\Models\TransferRequest;
 use App\Models\Gudang\Unit as GudangUnit;
 use App\Services\ActivityLogService;
@@ -38,7 +38,7 @@ class TransferRequestController extends Controller
 
     public function create()
     {
-        $products = GudangProduct::where('status', 'active')->with('unit')->orderBy('name')->get();
+        $products = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->with('unit')->orderBy('name')->get();
 
         $units = GudangUnit::all();
 
@@ -51,9 +51,9 @@ class TransferRequestController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:gudang_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|numeric|min:0.001',
-            'items.*.unit_id' => 'required|exists:gudang_units,id',
+            'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
         DB::transaction(function () use ($request) {

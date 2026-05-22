@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Hendhys;
 use App\Http\Controllers\Controller;
 use App\Models\HendhysProduction;
 use App\Models\HendhysProductionDetail;
-use App\Models\Hendhys\Product;
-use App\Models\Hendhys\Unit;
+use App\Models\Product;
+use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -69,9 +69,9 @@ class ProductionController extends Controller
             'date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:hendhys_products,id',
+            'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity_produced' => 'required|numeric|min:0.01',
-            'items.*.unit_id' => 'required|exists:hendhys_units,id',
+            'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
         try {
