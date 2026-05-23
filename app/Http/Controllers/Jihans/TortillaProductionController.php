@@ -67,7 +67,12 @@ class TortillaProductionController extends Controller
         ]);
 
         $rates = ProductionRate::where('entity_scope', 'jihans')->first();
-        
+
+        if (!$rates) {
+            return redirect()->route('jihans.master.production-rates.edit')
+                ->with('error', 'Tarif produksi Jihans tidak ditemukan. Harap atur tarif terlebih dahulu.');
+        }
+
         DB::transaction(function () use ($request, $rates) {
             $session = JihansTortillaSession::create([
                 'session_number' => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
@@ -100,28 +105,32 @@ class TortillaProductionController extends Controller
             }
 
             // Agregasi total per varian dan update stok Jihans
-            $details = collect($request->details);
+            $collectedDetails = collect($request->details);
             $variantMap = [
-                [$rates->tb_product_id,     (int) $details->sum('tb_qty')],
-                [$rates->ts_product_id,     (int) $details->sum('ts_qty')],
-                [$rates->tk_product_id,     (int) $details->sum('tk_qty')],
-                [$rates->tc_product_id,     (int) $details->sum('tc_qty')],
-                [$rates->kribab_product_id, (int) $details->sum('kribab_qty')],
+                [$rates->tb_product_id,     (int) $collectedDetails->sum('tb_qty')],
+                [$rates->ts_product_id,     (int) $collectedDetails->sum('ts_qty')],
+                [$rates->tk_product_id,     (int) $collectedDetails->sum('tk_qty')],
+                [$rates->tc_product_id,     (int) $collectedDetails->sum('tc_qty')],
+                [$rates->kribab_product_id, (int) $collectedDetails->sum('kribab_qty')],
             ];
 
+            // Eager-load semua product sekaligus untuk hindari N+1 query
+            $productIds = collect($variantMap)
+                ->filter(fn ($v) => $v[0] && $v[1] > 0)
+                ->pluck(0)
+                ->unique();
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
             foreach ($variantMap as [$productId, $totalQty]) {
-                if ($productId && $totalQty > 0) {
-                    $product = Product::find($productId);
-                    if ($product) {
-                        $this->stockService->creditJihans(
-                            $productId,
-                            $product->unit_id,
-                            $totalQty,
-                            'production',
-                            $session->id,
-                            auth()->id()
-                        );
-                    }
+                if ($productId && $totalQty > 0 && $products->has($productId)) {
+                    $this->stockService->creditJihans(
+                        $productId,
+                        $products[$productId]->unit_id,
+                        $totalQty,
+                        'production',
+                        $session->id,
+                        auth()->id()
+                    );
                 }
             }
 
