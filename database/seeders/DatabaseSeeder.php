@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             UserSeeder::class,
             //DummyDataSeeder::class,
+            ProductionRateSeeder::class,
         ]);
     }
 }
