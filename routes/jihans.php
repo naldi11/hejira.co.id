@@ -48,9 +48,6 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::get('tortilla/recap/export', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'exportRecap'])->name('tortilla.recap.export');
         Route::resource('tortilla', \App\Http\Controllers\Jihans\TortillaProductionController::class)->except(['edit', 'update', 'destroy']);
 
-        // Produksi Umum (Lainnya)
-        Route::resource('productions', ProductionController::class)->except(['edit', 'update', 'destroy']);
-
         // POS Kasir
         Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
         Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
