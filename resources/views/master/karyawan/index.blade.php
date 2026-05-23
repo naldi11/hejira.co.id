@@ -27,7 +27,7 @@
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama karyawan..."
                 class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
         </div>
-        <select name="status" class="border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-body-md py-sm px-sm focus:ring-0 focus:border-primary outline-none">
+        <select name="status" class="border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-body-md py-sm pl-sm pr-8 focus:ring-0 focus:border-primary outline-none">
             <option value="">Semua Status</option>
             <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
             <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
