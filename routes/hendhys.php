@@ -38,6 +38,8 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             Route::post('brands', [\App\Http\Controllers\Master\BrandController::class, 'store'])->name('brands.store');
             Route::put('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'update'])->name('brands.update');
             Route::delete('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'destroy'])->name('brands.destroy');
+
+            Route::resource('payment-methods', \App\Http\Controllers\Master\PaymentMethodController::class)->except(['show']);
         });
 
         // Produksi (khusus pusat)

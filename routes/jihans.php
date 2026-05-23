@@ -36,6 +36,11 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::post('brands',           [\App\Http\Controllers\Master\BrandController::class, 'store'])->name('brands.store');
             Route::put('brands/{brand}',    [\App\Http\Controllers\Master\BrandController::class, 'update'])->name('brands.update');
             Route::delete('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'destroy'])->name('brands.destroy');
+
+            Route::resource('payment-methods', \App\Http\Controllers\Master\PaymentMethodController::class)->except(['show']);
+            Route::resource('karyawan', \App\Http\Controllers\Master\KaryawanController::class)->except(['show']);
+            Route::get('production-rates', [\App\Http\Controllers\Master\ProductionRateController::class, 'edit'])->name('production-rates.edit');
+            Route::put('production-rates', [\App\Http\Controllers\Master\ProductionRateController::class, 'update'])->name('production-rates.update');
         });
 
         // Produksi Tortilla
