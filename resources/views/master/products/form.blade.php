@@ -352,6 +352,18 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
+                            Sumber Stok
+                            <span class="text-outline font-normal normal-case"> — dari mana stok produk ini?</span>
+                        </label>
+                        <select name="source_type"
+                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
+                            <option value="purchased" {{ old('source_type', $product->source_type ?? 'purchased') === 'purchased' ? 'selected' : '' }}>Dari Supplier / Gudang</option>
+                            <option value="produced" {{ old('source_type', $product->source_type ?? '') === 'produced' ? 'selected' : '' }}>Produksi Sendiri</option>
+                        </select>
+                        @error('source_type') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Status</label>
                         <select name="status"
                             class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
