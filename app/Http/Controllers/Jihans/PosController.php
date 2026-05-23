@@ -36,14 +36,20 @@ class PosController extends Controller
         // Kirim semua pelanggan aktif, filter tipe dilakukan di frontend
         $customers = Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])->orderBy('name')->get(['id', 'name', 'type', 'phone']);
 
-        // Tipe unik pelanggan untuk dropdown (render via Blade agar tidak ada race condition Alpine.js)
+        // Tipe unik pelanggan untuk dropdown
         $customerTypeLabels = ['retail' => 'Retail (Umum)', 'agen' => 'B2B / Agen'];
         $customerTypes = $customers->pluck('type')->unique()->values()->map(fn($t) => [
             'value' => $t,
             'label' => $customerTypeLabels[$t] ?? ucfirst($t),
         ]);
 
-        return view('jihans.pos.index', compact('products', 'customers', 'customerTypes'));
+        // Metode Pembayaran Aktif
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+            ->whereIn('entity_scope', ['jihans', 'all'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image']);
+
+        return view('jihans.pos.index', compact('products', 'customers', 'customerTypes', 'paymentMethods'));
     }
 
     public function store(Request $request)
@@ -61,9 +67,8 @@ class PosController extends Controller
             'tax_amount'        => 'required|numeric|min:0',
             'other_costs'       => 'required|numeric|min:0',
             'grand_total'       => 'required|numeric|min:0',
-            'payment_method'    => 'required|in:cash,transfer',
+            'payment_method_id' => 'required|exists:master_payment_methods,id',
             'amount_paid'       => 'required|numeric|min:0',
-            'bank_name'         => 'nullable|string|max:100',
             'reference_number'  => 'nullable|string|max:100',
             'notes'             => 'nullable|string',
             'items'             => 'required|array|min:1',
@@ -127,11 +132,12 @@ class PosController extends Controller
 
             // Catat Pembayaran
             $trx->payments()->create([
-                'payment_method'   => $request->payment_method,
-                'amount'           => $request->amount_paid,
-                'reference_number' => $request->reference_number,
-                'bank_name'        => $request->bank_name,
-                'notes'            => null,
+                'payment_method_id' => $request->payment_method_id,
+                'payment_method'    => null, // Menghindari enum jika field baru diisi
+                'amount'            => $request->amount_paid,
+                'reference_number'  => $request->reference_number,
+                'bank_name'         => null, // Diambil dari payment_method_id relasi
+                'notes'             => null,
             ]);
 
             $this->logger->log('create', 'jihans.pos', "Transaksi POS Kasir Jihan's: {$trx->transaction_number}", $trx);
@@ -152,7 +158,7 @@ class PosController extends Controller
 
     public function receipt(JihansTransaction $transaction)
     {
-        $transaction->load(['details.product.unit', 'payments', 'creator', 'customer']);
+        $transaction->load(['details.unit', 'payments.method', 'creator']);
         return view('jihans.pos.receipt', compact('transaction'));
     }
 

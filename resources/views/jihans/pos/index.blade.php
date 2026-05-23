@@ -340,11 +340,29 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold block mb-1">Metode Pembayaran</label>
-                        <select x-model="paymentMethod" class="ipos-input py-1.5">
-                            <option value="cash">Tunai (Cash)</option>
-                            <option value="transfer">Transfer Bank</option>
+                        <select x-model="paymentMethodId" class="ipos-input py-1.5" @change="updatePaymentMethodInfo()">
+                            <template x-for="pm in paymentMethods" :key="pm.id">
+                                <option :value="pm.id" x-text="pm.name"></option>
+                            </template>
                         </select>
                     </div>
+
+                    <div x-show="selectedPaymentMethod && selectedPaymentMethod.bank_name" 
+                         class="bg-blue-50 border border-blue-200 p-2 rounded text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Bank:</span>
+                            <span class="font-bold" x-text="selectedPaymentMethod.bank_name"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">No. Rek:</span>
+                            <span class="font-bold" x-text="selectedPaymentMethod.account_number"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">A/N:</span>
+                            <span class="font-bold" x-text="selectedPaymentMethod.account_name"></span>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="text-xs font-semibold block mb-1">Nominal Diterima [F8]</label>
                         <input type="number" x-model.number="amountPaid" x-ref="amountInput"
@@ -357,9 +375,8 @@
                             x-text="amountPaid > grandTotal ? formatCurrency(amountPaid - grandTotal) : 'Rp 0'"></span>
                     </div>
 
-                    <div x-show="paymentMethod === 'transfer'" class="mt-2 pt-2 border-t border-gray-300 space-y-2">
-                        <input type="text" x-model="bankName" placeholder="Bank Tujuan (BCA/Mandiri)" class="ipos-input">
-                        <input type="text" x-model="referenceNumber" placeholder="No Referensi" class="ipos-input">
+                    <div class="mt-2 pt-2 border-t border-gray-300">
+                        <input type="text" x-model="referenceNumber" placeholder="No. Referensi / Catatan Bayar" class="ipos-input">
                     </div>
                 </div>
                 <div class="p-2 bg-gray-200 border-t border-gray-400 text-right">
@@ -404,13 +421,19 @@
 
                 // Payment Modal
                 showPaymentModal: false,
-                paymentMethod: 'cash',
+                paymentMethods: @json($paymentMethods),
+                paymentMethodId: '',
+                selectedPaymentMethod: null,
                 amountPaid: 0,
-                bankName: '',
                 referenceNumber: '',
                 isProcessing: false,
 
                 init() {
+                    if (this.paymentMethods.length > 0) {
+                        this.paymentMethodId = this.paymentMethods[0].id;
+                        this.updatePaymentMethodInfo();
+                    }
+
                     const resumeData = localStorage.getItem('jihans_resume_cart');
                     if (resumeData) {
                         try {
@@ -423,6 +446,10 @@
                             localStorage.removeItem('jihans_resume_cart');
                         } catch (e) { }
                     }
+                },
+
+                updatePaymentMethodInfo() {
+                    this.selectedPaymentMethod = this.paymentMethods.find(pm => pm.id == this.paymentMethodId);
                 },
 
                 // Tipe unik dari master pelanggan (dinamis dari data)
@@ -696,9 +723,8 @@
                                 tax_amount: this.taxAmount,
                                 other_costs: this.otherCosts,
                                 grand_total: this.grandTotal,
-                                payment_method: this.paymentMethod,
+                                payment_method_id: this.paymentMethodId,
                                 amount_paid: this.amountPaid,
-                                bank_name: this.bankName,
                                 reference_number: this.referenceNumber,
                                 notes: this.notes,
                                 items: this.cart.map(i => ({

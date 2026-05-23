@@ -12,6 +12,7 @@ class JihansTransactionPayment extends Model
 
     protected $fillable = [
         'transaction_id',
+        'payment_method_id',
         'payment_method',
         'amount',
         'reference_number',
@@ -23,5 +24,10 @@ class JihansTransactionPayment extends Model
     public function transaction(): BelongsTo
     {
         return $this->belongsTo(JihansTransaction::class, 'transaction_id');
+    }
+
+    public function method(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id')->withTrashed();
     }
 }

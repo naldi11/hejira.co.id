@@ -85,18 +85,18 @@
         <div class="border-t border-dashed border-gray-300 pt-3 text-[11px] text-gray-600 space-y-1">
             @foreach($transaction->payments as $payment)
             <div class="flex justify-between font-medium">
-                <span class="uppercase">BAYAR ({{ $payment->payment_method }})</span>
+                <span class="uppercase">BAYAR ({{ $payment->method->name ?? ucfirst($payment->payment_method) }})</span>
                 <span>{{ number_format($payment->amount, 0, ',', '.') }}</span>
             </div>
-            @if($payment->payment_method === 'cash')
+            @if($payment->payment_method === 'cash' || (isset($payment->method) && stripos($payment->method->name, 'tunai') !== false))
                 <div class="flex justify-between">
                     <span>KEMBALI</span>
                     <span>{{ number_format(max(0, $payment->amount - $transaction->grand_total), 0, ',', '.') }}</span>
                 </div>
-            @else
+            @endif
+            @if($payment->reference_number)
                 <div class="flex justify-between text-[10px]">
-                    <span>Bank: {{ $payment->bank_name ?: '-' }}</span>
-                    <span>Ref: {{ $payment->reference_number ?: '-' }}</span>
+                    <span>Ref: {{ $payment->reference_number }}</span>
                 </div>
             @endif
             @endforeach

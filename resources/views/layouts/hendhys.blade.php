@@ -203,10 +203,11 @@
                 </button>
                 <div x-show="masterOpen" x-collapse x-cloak class="mt-1 space-y-1">
                     @foreach([
-                        ['route' => 'hendhys.master.products.index',   'label' => 'Produk'],
-                        ['route' => 'hendhys.master.categories.index',  'label' => 'Kategori'],
-                        ['route' => 'hendhys.master.units.index',       'label' => 'Satuan'],
-                        ['route' => 'hendhys.master.brands.index',      'label' => 'Brand'],
+                        ['route' => 'hendhys.master.products.index',          'label' => 'Produk'],
+                        ['route' => 'hendhys.master.categories.index',        'label' => 'Kategori'],
+                        ['route' => 'hendhys.master.units.index',             'label' => 'Satuan'],
+                        ['route' => 'hendhys.master.brands.index',            'label' => 'Brand'],
+                        ['route' => 'hendhys.master.payment-methods.index',   'label' => 'Metode Bayar'],
                     ] as $item)
                         <a href="{{ route($item['route']) }}" class="block pl-[44px] pr-sm py-[8px] rounded-lg text-[13px] transition-colors {{ request()->routeIs($item['route']) ? 'text-on-secondary-container font-bold bg-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $item['label'] }}</a>
                     @endforeach

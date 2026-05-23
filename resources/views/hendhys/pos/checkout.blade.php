@@ -54,33 +54,46 @@
                     <div>
                         <h3 class="font-title-lg text-title-lg text-on-surface mb-md">Metode Pembayaran</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-sm">
-                            <!-- Tunai -->
-                            <label class="cursor-pointer">
-                                <input type="radio" value="cash" x-model="paymentMethod" class="peer sr-only">
-                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all "
-                                    :class="paymentMethod === 'cash' ? 'border-primary bg-secondary-container bg-opacity-10 text-primary shadow-level-2' : 'border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant'">
-                                    <span class="material-symbols-outlined mb-base"
-                                        :class="paymentMethod === 'cash' ? 'icon-fill' : ''"
-                                        style="font-size: 32px;">payments</span>
-                                    <span class="font-label-lg text-label-lg">Tunai</span>
-                                </div>
-                            </label>
-                            <!-- QRIS/Transfer -->
-                            <label class="cursor-pointer">
-                                <input type="radio" value="transfer" x-model="paymentMethod" class="peer sr-only">
-                                <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all "
-                                    :class="paymentMethod === 'transfer' ? 'border-primary bg-secondary-container bg-opacity-10 text-primary shadow-level-2' : 'border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant'">
-                                    <span class="material-symbols-outlined mb-base"
-                                        :class="paymentMethod === 'transfer' ? 'icon-fill' : ''"
-                                        style="font-size: 32px;">qr_code_scanner</span>
-                                    <span class="font-label-lg text-label-lg">Non-Tunai</span>
-                                </div>
-                            </label>
+                            <template x-for="pm in paymentMethods" :key="pm.id">
+                                <label class="cursor-pointer">
+                                    <input type="radio" :value="pm.id" x-model="paymentMethodId" class="peer sr-only">
+                                    <div class="flex flex-col items-center justify-center p-md rounded-lg border transition-all h-full"
+                                        :class="paymentMethodId == pm.id ? 'border-primary bg-secondary-container bg-opacity-10 text-primary shadow-level-2' : 'border-outline-variant bg-surface hover:bg-surface-container-low text-on-surface-variant'">
+                                        
+                                        <template x-if="pm.image">
+                                            <img :src="'/storage/' + pm.image" class="w-10 h-10 object-contain mb-base">
+                                        </template>
+                                        <template x-if="!pm.image">
+                                            <span class="material-symbols-outlined mb-base"
+                                                :class="paymentMethodId == pm.id ? 'icon-fill' : ''"
+                                                style="font-size: 32px;" x-text="pm.bank_name ? 'account_balance' : 'payments'"></span>
+                                        </template>
+
+                                        <span class="font-label-lg text-label-lg text-center" x-text="pm.name"></span>
+                                    </div>
+                                </label>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Cash Quick Buttons (Visible when Tunai is selected) -->
-                    <div x-show="paymentMethod === 'cash'" class="animate-fade-in space-y-sm">
+                    <!-- Selected Method Info -->
+                    <div x-show="selectedMethod && selectedMethod.bank_name" class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm">
+                        <div class="flex justify-between border-b border-blue-100 pb-1 mb-1">
+                            <span class="text-blue-600 font-medium">Bank / Nama:</span>
+                            <span class="font-bold text-blue-900" x-text="selectedMethod.bank_name"></span>
+                        </div>
+                        <div class="flex justify-between border-b border-blue-100 pb-1 mb-1">
+                            <span class="text-blue-600 font-medium">No. Rekening:</span>
+                            <span class="font-bold text-blue-900" x-text="selectedMethod.account_number"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-blue-600 font-medium">Atas Nama:</span>
+                            <span class="font-bold text-blue-900" x-text="selectedMethod.account_name"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cash Quick Buttons (Visible when "Tunai" is part of the name or bank_name is null) -->
+                    <div x-show="selectedMethod && !selectedMethod.bank_name" class="animate-fade-in space-y-sm">
                         <h4 class="font-label-lg text-label-lg text-on-surface-variant mb-sm">Pilih Nominal Cepat</h4>
                         <div class="flex flex-wrap gap-sm">
                             <button type="button" @click="amountPaid = cartData.grandTotal"
@@ -220,9 +233,10 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('checkoutSystem', () => ({
                 cartData: null,
-                paymentMethod: 'cash',
+                paymentMethods: @json($paymentMethods),
+                paymentMethodId: '',
+                selectedMethod: null,
                 amountPaid: 0,
-                bankName: '',
                 refNumber: '',
                 isLoading: false,
 
@@ -246,9 +260,19 @@
                         }
                     }
 
-                    this.$watch('paymentMethod', value => {
-                        if (value === 'cash' && this.cartData && this.amountPaid < this.cartData.grandTotal) {
-                            this.amountPaid = this.cartData.grandTotal;
+                    if (this.paymentMethods.length > 0) {
+                        this.paymentMethodId = this.paymentMethods[0].id;
+                        this.selectedMethod = this.paymentMethods[0];
+                    }
+
+                    this.$watch('paymentMethodId', id => {
+                        this.selectedMethod = this.paymentMethods.find(m => m.id == id);
+                        if (this.selectedMethod && !this.selectedMethod.bank_name) {
+                            if (this.cartData && this.amountPaid < this.cartData.grandTotal) {
+                                this.amountPaid = this.cartData.grandTotal;
+                            }
+                        } else {
+                            this.amountPaid = this.cartData ? this.cartData.grandTotal : 0;
                         }
                     });
                 },
@@ -258,9 +282,10 @@
                 },
 
                 async processCheckout() {
-                    if (!this.cartData) return;
+                    if (!this.cartData || !this.selectedMethod) return;
 
-                    if (this.paymentMethod === 'cash' && this.amountPaid < this.cartData.grandTotal) {
+                    const isCash = !this.selectedMethod.bank_name;
+                    if (isCash && this.amountPaid < this.cartData.grandTotal) {
                         alert('Uang pembayaran kurang!');
                         return;
                     }
@@ -278,10 +303,9 @@
                         tax_amount: this.cartData.taxAmount,
                         other_costs: 0,
                         grand_total: this.cartData.grandTotal,
-                        payment_method: this.paymentMethod,
+                        payment_method_id: this.paymentMethodId,
                         amount_paid: this.amountPaid,
-                        bank_name: this.paymentMethod === 'transfer' ? this.bankName : null,
-                        reference_number: this.paymentMethod === 'transfer' ? this.refNumber : null,
+                        reference_number: this.refNumber,
                         items: this.cartData.items.map(item => ({
                             product_id: item.product_id,
                             quantity: item.qty,

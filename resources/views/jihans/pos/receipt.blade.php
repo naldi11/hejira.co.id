@@ -365,7 +365,7 @@
                 @php $payment = $transaction->payments->first(); @endphp
                 @if($payment)
                     <span class="badge" style="background:#d1fae5;color:#065f46">LUNAS</span>
-                    &nbsp; {{ ucfirst($payment->payment_method) }}
+                    &nbsp; {{ $payment->method->name ?? ucfirst($payment->payment_method) }}
                 @else
                     <span class="badge" style="background:#fee2e2;color:#b91c1c">BELUM DIBAYAR</span>
                 @endif
@@ -452,7 +452,7 @@
             </div>
             @if($payment)
             <div class="totals-row payment-info">
-                <span class="label">Bayar ({{ ucfirst($payment->payment_method) }})</span>
+                <span class="label">Bayar ({{ $payment->method->name ?? ucfirst($payment->payment_method) }})</span>
                 <span class="value">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
             </div>
             <div class="totals-row payment-info">

@@ -38,12 +38,23 @@ class PosController extends Controller
 
         $products = $q->with(['unit', 'tieredPrices'])->get();
 
-        return view('hendhys.pos.index', compact('products'));
+        // Metode Pembayaran Aktif
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+            ->whereIn('entity_scope', ['hendhys', 'all'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image']);
+
+        return view('hendhys.pos.index', compact('products', 'paymentMethods'));
     }
 
     public function checkout()
     {
-        return view('hendhys.pos.checkout');
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+            ->whereIn('entity_scope', ['hendhys', 'all'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image']);
+
+        return view('hendhys.pos.checkout', compact('paymentMethods'));
     }
 
     public function heldStock()
@@ -103,7 +114,7 @@ class PosController extends Controller
         $request->validate([
             'customer_type' => 'required|in:retail,agen',
             'customer_phone' => 'nullable|string|max:20',
-            'payment_method' => 'required|in:cash,transfer',
+            'payment_method_id' => 'required|exists:master_payment_methods,id',
             'amount_paid' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
@@ -162,9 +173,10 @@ class PosController extends Controller
 
                 HendhysTransactionPayment::create([
                     'transaction_id' => $transaction->id,
-                    'payment_method' => $request->payment_method,
+                    'payment_method_id' => $request->payment_method_id,
+                    'payment_method' => null,
                     'amount' => $request->amount_paid,
-                    'bank_name' => $request->bank_name,
+                    'bank_name' => null,
                     'reference_number' => $request->reference_number
                 ]);
 
@@ -194,7 +206,7 @@ class PosController extends Controller
             abort(403);
         }
 
-        $transaction->load(['details.unit', 'payments', 'creator']);
+        $transaction->load(['details.unit', 'payments.method', 'creator']);
         return view('hendhys.pos.receipt', compact('transaction'));
     }
 
