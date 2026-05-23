@@ -66,15 +66,55 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <label class="block font-label-sm text-on-surface-variant mb-xs">Gambar QR / Logo Bank <span class="text-on-surface-variant/60 font-label-sm">(opsional, max 2MB)</span></label>
-                    @if(isset($method) && $method->image)
-                        <div class="mb-xs">
-                            <img src="{{ Storage::url($method->image) }}" class="h-16 object-contain border border-outline-variant rounded-lg p-xs" alt="Gambar saat ini">
+                    
+                    <div x-data="{ 
+                        isDropping: false, 
+                        imagePreview: '{{ isset($method) && $method->image ? Storage::url($method->image) : '' }}',
+                        handleFile(file) {
+                            if (!file || !file.type.startsWith('image/')) return;
+                            const reader = new FileReader();
+                            reader.onload = (e) => this.imagePreview = e.target.result;
+                            reader.readAsDataURL(file);
+                        }
+                    }" class="relative">
+                        
+                        <!-- Drop Zone -->
+                        <div 
+                            @dragover.prevent="isDropping = true" 
+                            @dragleave.prevent="isDropping = false" 
+                            @drop.prevent="isDropping = false; $refs.imageInput.files = $event.dataTransfer.files; handleFile($event.dataTransfer.files[0])"
+                            @click="$refs.imageInput.click()"
+                            :class="isDropping ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-low'"
+                            class="group relative flex flex-col items-center justify-center w-full min-h-[160px] border-2 border-dashed rounded-xl cursor-pointer transition-all hover:border-primary hover:bg-primary/5"
+                        >
+                            <!-- Preview Image -->
+                            <template x-if="imagePreview">
+                                <div class="relative w-full h-full p-4 flex flex-col items-center">
+                                    <img :src="imagePreview" class="max-h-40 object-contain rounded-lg shadow-sm border border-outline-variant bg-white">
+                                    <p class="mt-2 text-xs text-primary font-medium group-hover:underline">Klik atau seret untuk ganti gambar</p>
+                                </div>
+                            </template>
+
+                            <!-- Empty State -->
+                            <template x-if="!imagePreview">
+                                <div class="flex flex-col items-center p-6 text-center">
+                                    <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                        <span class="material-symbols-outlined text-on-surface-variant text-[28px]">add_a_photo</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-on-surface">Klik untuk pilih gambar atau seret file ke sini</p>
+                                    <p class="text-xs text-on-surface-variant mt-1">PNG, JPG, atau WEBP (Maks. 2MB)</p>
+                                </div>
+                            </template>
+
+                            <!-- Progress Bar Overlay (if uploading, but here it's just local) -->
                         </div>
-                    @endif
-                    <input type="file" name="image" accept="image/*"
-                        class="w-full text-sm text-on-surface-variant file:mr-sm file:py-xs file:px-sm file:rounded-lg file:border-0 file:text-sm file:bg-primary-container file:text-on-primary-container hover:file:bg-primary hover:file:text-on-primary transition-colors">
+
+                        <!-- Real Hidden Input -->
+                        <input type="file" name="image" x-ref="imageInput" accept="image/*" class="hidden"
+                            @change="handleFile($event.target.files[0])">
+                    </div>
                     @error('image')<p class="text-error font-label-sm mt-xs">{{ $message }}</p>@enderror
                 </div>
 
