@@ -104,6 +104,52 @@
                                     class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none resize-none">{{ old('notes', $rate->notes ?? '') }}</textarea>
                             </div>
                         </div>
+
+                        {{-- Mapping Produk ke Stok — hanya tampil untuk Jihans --}}
+                        @if($currentScope === 'jihans')
+                        <div class="border-t border-outline-variant pt-md mt-md">
+                            <h4 class="font-label-md text-label-md font-semibold text-on-surface-variant mb-xs uppercase tracking-wider">
+                                Mapping Varian ke Produk Stok
+                            </h4>
+                            <p class="font-body-sm text-body-sm text-on-surface-variant mb-md">
+                                Pilih produk yang stoknya bertambah otomatis saat produksi tortilla disimpan.
+                            </p>
+
+                            @if($producedProducts->isEmpty())
+                                <div class="bg-surface-container-low rounded-lg p-sm flex items-center gap-sm border border-outline-variant">
+                                    <span class="material-symbols-outlined text-outline">info</span>
+                                    <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                        Belum ada produk Jihans dengan Sumber Stok "Produksi Sendiri".
+                                        <a href="{{ route($routePrefix . 'products.create') }}" class="underline font-medium text-primary">Buat produk</a> terlebih dahulu.
+                                    </p>
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+                                    @foreach([
+                                        ['tb_product_id',     'TB — Tortilla Besar'],
+                                        ['ts_product_id',     'TS — Tortilla Sedang'],
+                                        ['tk_product_id',     'TK — Tortilla Kecil'],
+                                        ['tc_product_id',     'TC — Tortilla Catering'],
+                                        ['kribab_product_id', 'KRIBAB — Sisa Potongan'],
+                                    ] as [$field, $label])
+                                        <div>
+                                            <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">{{ $label }}</label>
+                                            <select name="{{ $field }}"
+                                                class="w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest py-sm px-sm">
+                                                <option value="">— Belum di-mapping —</option>
+                                                @foreach($producedProducts as $prod)
+                                                    <option value="{{ $prod->id }}"
+                                                        {{ old($field, $rate?->{$field}) == $prod->id ? 'selected' : '' }}>
+                                                        {{ $prod->name }}{{ $prod->unit ? ' ('.$prod->unit->abbreviation.')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                        @endif
                     </div>
 
                     <div class="px-md py-sm bg-surface-container-low border-t border-outline-variant flex justify-between items-center">
@@ -114,7 +160,7 @@
                         </p>
                         <button type="submit" class="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant transition-all">
                             <span class="material-symbols-outlined text-[18px]">save</span>
-                            Simpan Tarif
+                            Simpan Tarif & Mapping
                         </button>
                     </div>
                 </div>
