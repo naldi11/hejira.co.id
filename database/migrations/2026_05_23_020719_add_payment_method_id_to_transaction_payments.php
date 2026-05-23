@@ -38,6 +38,8 @@ return new class extends Migration
             $table->dropColumn('payment_method_id');
         });
 
+        // Clean NULLs before restoring NOT NULL constraint
+        DB::statement("UPDATE `jihans_transaction_payments` SET `payment_method` = 'cash' WHERE `payment_method` IS NULL");
         DB::statement("ALTER TABLE `jihans_transaction_payments` MODIFY `payment_method` ENUM('cash','transfer') NOT NULL");
 
         Schema::table('hendhys_transaction_payments', function (Blueprint $table) {
@@ -45,6 +47,7 @@ return new class extends Migration
             $table->dropColumn('payment_method_id');
         });
 
+        DB::statement("UPDATE `hendhys_transaction_payments` SET `payment_method` = 'cash' WHERE `payment_method` IS NULL");
         DB::statement("ALTER TABLE `hendhys_transaction_payments` MODIFY `payment_method` ENUM('cash','transfer') NOT NULL");
     }
 };

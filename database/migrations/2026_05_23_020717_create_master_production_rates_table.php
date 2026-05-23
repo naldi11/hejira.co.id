@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('tk_rate', 15, 2)->default(0);
             $table->decimal('tc_rate', 15, 2)->default(0);
             $table->decimal('kribab_rate', 15, 2)->default(0);
+            $table->index('entity_scope');
             $table->text('notes')->nullable();
             $table->foreignId('updated_by')->nullable()->constrained('master_users');
             $table->timestamps();
