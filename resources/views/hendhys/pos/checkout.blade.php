@@ -293,7 +293,7 @@
                     this.isLoading = true;
 
                     const payload = {
-                        customer_type: 'retail',
+                        customer_type: this.cartData.customerType || 'Pelanggan Individual',
                         customer_id: null,
                         customer_name: this.cartData.customerName || '',
                         customer_phone: this.cartData.customerPhone || '',

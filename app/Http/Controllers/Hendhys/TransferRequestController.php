@@ -63,6 +63,18 @@ class TransferRequestController extends Controller
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
+        // Blokir produk produksi sendiri dari Transfer Request
+        $producedNames = Product::whereIn('id', collect($request->items)->pluck('product_id'))
+            ->where('source_type', 'produced')
+            ->pluck('name');
+
+        if ($producedNames->isNotEmpty()) {
+            return back()->withInput()->withErrors([
+                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa diminta dari Gudang: '
+                           . $producedNames->implode(', '),
+            ]);
+        }
+
         try {
             DB::transaction(function () use ($request) {
                 $tr = TransferRequest::create([

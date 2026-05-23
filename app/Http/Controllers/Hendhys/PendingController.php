@@ -40,7 +40,7 @@ class PendingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'customer_type' => 'required|in:retail,agen',
+            'customer_type' => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
@@ -60,7 +60,7 @@ class PendingController extends Controller
                     'customer_id' => null,
                     'customer_name' => $request->customer_name,
                     'customer_phone' => $request->customer_phone,
-                    'customer_type' => 'retail',
+                    'customer_type' => $request->customer_type ?? 'Pelanggan Individual',
                     'notes' => $request->notes,
                     'created_by' => $user->id
                 ]);

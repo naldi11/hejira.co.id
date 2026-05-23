@@ -48,7 +48,7 @@
             <div>{{ $transaction->customer->phone }}</div>
             <div>{{ $transaction->customer->address }}</div>
         @endif
-        <div>Kategori: {{ ucfirst($transaction->customer_type) }}</div>
+        <div>Kategori: {{ $transaction->customer_type }}</div>
     </div>
 
     <table>

@@ -37,10 +37,9 @@ class PosController extends Controller
         $customers = Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])->orderBy('name')->get(['id', 'name', 'type', 'phone']);
 
         // Tipe unik pelanggan untuk dropdown
-        $customerTypeLabels = ['retail' => 'Retail (Umum)', 'agen' => 'B2B / Agen'];
         $customerTypes = $customers->pluck('type')->unique()->values()->map(fn($t) => [
             'value' => $t,
-            'label' => $customerTypeLabels[$t] ?? ucfirst($t),
+            'label' => $t,
         ]);
 
         // Metode Pembayaran Aktif
@@ -58,7 +57,7 @@ class PosController extends Controller
             'transaction_date'  => 'nullable|date',
             'customer_id'       => 'nullable|exists:master_customers,id',
             'customer_name'     => 'nullable|string|max:150',
-            'customer_type'     => 'required|in:retail,agen',
+            'customer_type'     => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'ppn_type'          => 'required|in:none,include,exclude',
             'ppn_rate'          => 'required|numeric|min:0',
             'subtotal'          => 'required|numeric|min:0',

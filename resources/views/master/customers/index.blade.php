@@ -30,8 +30,9 @@
             <select name="type"
                 class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
                 <option value="">Semua Tipe</option>
-                <option value="retail" {{ request('type') === 'retail' ? 'selected' : '' }}>Retail (Umum)</option>
-                <option value="agen" {{ request('type') === 'agen' ? 'selected' : '' }}>B2B / Agen</option>
+                <option value="Pelanggan Individual" {{ request('type') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
+                <option value="Pelanggan Retail" {{ request('type') === 'Pelanggan Retail' ? 'selected' : '' }}>Retail</option>
+                <option value="Pelanggan Agen" {{ request('type') === 'Pelanggan Agen' ? 'selected' : '' }}>Agen</option>
             </select>
             <select name="status"
                 class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
@@ -92,12 +93,15 @@
                                     </div>
                                 </td>
                                 <td class="px-md py-sm">
-                                    @if(strtolower($customer->type) === 'agen')
+                                    @if(str_contains(strtolower($customer->type), 'agen'))
                                         <span
                                             class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim">Agen</span>
-                                    @else
+                                    @elseif(str_contains(strtolower($customer->type), 'retail'))
                                         <span
                                             class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim">Retail</span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed-variant border border-primary-fixed-dim">Individual</span>
                                     @endif
                                 </td>
                                 <td class="px-md py-sm font-body-md text-body-md text-on-surface-variant">

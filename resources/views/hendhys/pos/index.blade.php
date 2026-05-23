@@ -165,6 +165,17 @@
                 {{-- Customer Info: Manual Input + Autocomplete --}}
                 <div class="shrink-0 px-sm pt-sm pb-xs bg-surface border-b border-outline-variant space-y-xs"
                     @click.outside="customerSuggestions = []">
+                    {{-- Tipe Pelanggan --}}
+                    <div
+                        class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs">
+                        <span class="material-symbols-outlined text-outline text-[16px] shrink-0 mr-xs">group</span>
+                        <select x-model="customerType"
+                            class="w-full bg-transparent border-none focus:ring-0 text-[12px] font-medium text-on-surface py-sm px-0 outline-none">
+                            <option value="Pelanggan Individual">Pelanggan Individual</option>
+                            <option value="Pelanggan Retail">Pelanggan Retail</option>
+                            <option value="Pelanggan Agen">Pelanggan Agen</option>
+                        </select>
+                    </div>
                     {{-- Nama Pelanggan --}}
                     <div class="relative">
                         <div
@@ -317,6 +328,7 @@
                 cart: [],
                 heldQty: {},
                 cartOpen: false,
+                customerType: 'Pelanggan Individual',
                 customerName: '',
                 customerPhone: '',
                 customerSuggestions: [],
@@ -362,6 +374,7 @@
                         try {
                             const data = JSON.parse(resumeData);
                             this.cart = data.items || [];
+                            this.customerType = data.customerType || 'Pelanggan Individual';
                             this.customerName = data.customerName || '';
                             this.customerPhone = data.customerPhone || '';
                             if (this.cart.length > 0 && window.innerWidth >= 768) this.cartOpen = true;
@@ -487,7 +500,7 @@
                     const payload = {
                         customer_name: this.customerName,
                         customer_phone: this.customerPhone,
-                        customer_type: 'retail',
+                        customer_type: this.customerType,
                         customer_id: null,
                         notes,
                         items: this.cart.map(i => ({
@@ -524,7 +537,8 @@
                         items: this.cart.map(i => ({ ...i, price: this.getItemPrice(i), total: this.getItemTotal(i) })),
                         subtotal: this.subtotal, discount: this.discount, ppnType: this.ppnType,
                         taxAmount: this.taxAmount, grandTotal: this.grandTotal,
-                        customerName: this.customerName, customerPhone: this.customerPhone
+                        customerName: this.customerName, customerPhone: this.customerPhone,
+                        customerType: this.customerType
                     }));
                     window.location.href = '{{ route("hendhys.pos.checkout") }}';
                 }

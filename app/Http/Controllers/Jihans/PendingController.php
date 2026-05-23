@@ -30,7 +30,7 @@ class PendingController extends Controller
         $request->validate([
             'customer_id'       => 'nullable|exists:master_customers,id',
             'customer_name'     => 'nullable|string|max:150',
-            'customer_type'     => 'required|in:retail,agen',
+            'customer_type'     => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'notes'             => 'nullable|string',
             'items'             => 'required|array|min:1',
             'items.*.product_id'=> 'required|exists:master_products,id',

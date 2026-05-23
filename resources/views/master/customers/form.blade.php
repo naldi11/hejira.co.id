@@ -53,8 +53,9 @@
                     <div>
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tipe Customer <span class="text-error">*</span></label>
                         <select name="type" class="w-full border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-body-md py-sm px-sm focus:ring-0 focus:border-primary outline-none">
-                            <option value="retail" {{ old('type', $customer->type ?? 'retail') === 'retail' ? 'selected' : '' }}>Retail (Umum / Perorangan)</option>
-                            <option value="agen"   {{ old('type', $customer->type ?? '') === 'agen'   ? 'selected' : '' }}>B2B / Agen</option>
+                            <option value="Pelanggan Individual" {{ old('type', $customer->type ?? 'Pelanggan Individual') === 'Pelanggan Individual' ? 'selected' : '' }}>Pelanggan Individual</option>
+                            <option value="Pelanggan Retail"     {{ old('type', $customer->type ?? '') === 'Pelanggan Retail'     ? 'selected' : '' }}>Pelanggan Retail</option>
+                            <option value="Pelanggan Agen"       {{ old('type', $customer->type ?? '') === 'Pelanggan Agen'       ? 'selected' : '' }}>Pelanggan Agen</option>
                         </select>
                         @error('type') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p> @enderror
                     </div>

@@ -199,7 +199,7 @@
 
                 const resumeData = {
                     items: cartItems,
-                    customerType: this.detailData.customer_type || 'retail',
+                    customerType: this.detailData.customer_type || 'Pelanggan Retail',
                     customerId: this.detailData.customer_id || '',
                     notes: this.detailData.notes || ''
                 };

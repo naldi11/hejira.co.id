@@ -439,7 +439,7 @@
                         try {
                             const data = JSON.parse(resumeData);
                             this.cart = data.items || [];
-                            this.customerType = data.customerType || 'retail';
+                            this.customerType = data.customerType || 'Pelanggan Retail';
                             this.customerId = data.customerId || '';
                             this.notes = data.notes || '';
                             this.recalculateTotals();
@@ -454,11 +454,10 @@
 
                 // Tipe unik dari master pelanggan (dinamis dari data)
                 get customerTypes() {
-                    const labelMap = { 'retail': 'Retail (Umum)', 'agen': 'B2B / Agen' };
                     const types = [...new Set(this.customers.map(c => c.type))];
                     return types.map(t => ({
                         value: t,
-                        label: labelMap[t] || (t.charAt(0).toUpperCase() + t.slice(1))
+                        label: t
                     }));
                 },
 
@@ -678,7 +677,7 @@
 
                 openPaymentModal() {
                     if (this.cart.length === 0) return;
-                    if (this.customerType === 'agen' && !this.customerId) {
+                    if (this.customerType === 'Pelanggan Agen' && !this.customerId) {
                         alert('Silakan pilih data Agen terlebih dahulu.');
                         return;
                     }
@@ -755,7 +754,7 @@
                 async holdTransaction() {
                     if (this.cart.length === 0) return;
 
-                    if (this.customerType === 'agen' && !this.customerId) {
+                    if (this.customerType === 'Pelanggan Agen' && !this.customerId) {
                         alert('Silakan pilih data Agen terlebih dahulu.');
                         return;
                     }

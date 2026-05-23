@@ -93,7 +93,7 @@
 | id | BIGINT UNSIGNED PK | |
 | code | VARCHAR(20) UNIQUE | Auto: CST-0001 |
 | name | VARCHAR(150) | |
-| type | ENUM('retail','agen') | |
+| type | VARCHAR(255) | Pelanggan Individual, Pelanggan Retail, Pelanggan Agen |
 | phone | VARCHAR(20) NULL | |
 | email | VARCHAR(100) NULL | |
 | address | TEXT NULL | |
@@ -443,7 +443,7 @@
 | time | TIME | |
 | customer_id | BIGINT UNSIGNED FK → master_customers NULL | |
 | customer_name | VARCHAR(150) NULL | Walk-in / snapshot |
-| customer_type | ENUM('retail','agen') DEFAULT 'retail' | |
+| customer_type | VARCHAR(255) | Pelanggan Individual, Pelanggan Retail, Pelanggan Agen |
 | ppn_type | ENUM('none','include','exclude') DEFAULT 'none' | |
 | ppn_rate | DECIMAL(5,2) DEFAULT 11.00 | |
 | subtotal | DECIMAL(15,2) DEFAULT 0 | Sebelum diskon & pajak |
@@ -497,7 +497,7 @@
 | date | DATE | |
 | customer_id | BIGINT UNSIGNED FK → master_customers NULL | |
 | customer_name | VARCHAR(150) NULL | |
-| customer_type | ENUM('retail','agen') DEFAULT 'retail' | |
+| customer_type | VARCHAR(255) | Pelanggan Individual, Pelanggan Retail, Pelanggan Agen |
 | notes | TEXT NULL | |
 | created_by | BIGINT UNSIGNED FK → master_users | |
 | created_at | TIMESTAMP | |
@@ -701,7 +701,7 @@ INDEX: UNIQUE(branch_id, product_id)
 | time | TIME | |
 | customer_id | BIGINT UNSIGNED FK → master_customers NULL | |
 | customer_name | VARCHAR(150) NULL | Walk-in / snapshot |
-| customer_type | ENUM('retail','agen') DEFAULT 'retail' | |
+| customer_type | VARCHAR(255) | Pelanggan Individual, Pelanggan Retail, Pelanggan Agen |
 | ppn_type | ENUM('none','include','exclude') DEFAULT 'none' | |
 | ppn_rate | DECIMAL(5,2) DEFAULT 11.00 | |
 | subtotal | DECIMAL(15,2) DEFAULT 0 | |
@@ -756,7 +756,7 @@ INDEX: UNIQUE(branch_id, product_id)
 | date | DATE | |
 | customer_id | BIGINT UNSIGNED FK → master_customers NULL | |
 | customer_name | VARCHAR(150) NULL | |
-| customer_type | ENUM('retail','agen') DEFAULT 'retail' | |
+| customer_type | VARCHAR(255) | Pelanggan Individual, Pelanggan Retail, Pelanggan Agen |
 | notes | TEXT NULL | |
 | created_by | BIGINT UNSIGNED FK → master_users | |
 | created_at | TIMESTAMP | |

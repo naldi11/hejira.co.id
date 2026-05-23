@@ -25,11 +25,11 @@ class MasterSupplierCustomerSeeder extends Seeder
         }
 
         $customers = [
-            ['code' => 'CST-001', 'name' => 'Budi Retail', 'type' => 'retail', 'phone' => '081234567890'],
-            ['code' => 'CST-002', 'name' => 'Siti Agen Frozen', 'type' => 'agen', 'phone' => '089876543210'],
-            ['code' => 'CST-003', 'name' => 'Toko Jaya', 'type' => 'retail', 'phone' => '085612341234'],
-            ['code' => 'CST-004', 'name' => 'Distributor Makanan', 'type' => 'agen', 'phone' => '081199887766'],
-            ['code' => 'CST-005', 'name' => 'Pelanggan Umum', 'type' => 'retail', 'phone' => '-'],
+            ['code' => 'CST-001', 'name' => 'Budi Santoso', 'type' => 'Pelanggan Individual', 'phone' => '081234567890'],
+            ['code' => 'CST-002', 'name' => 'Siti Agen Frozen', 'type' => 'Pelanggan Agen', 'phone' => '089876543210'],
+            ['code' => 'CST-003', 'name' => 'Toko Retail Jaya', 'type' => 'Pelanggan Retail', 'phone' => '085612341234'],
+            ['code' => 'CST-004', 'name' => 'Distributor Makanan', 'type' => 'Pelanggan Agen', 'phone' => '081199887766'],
+            ['code' => 'CST-005', 'name' => 'Pelanggan Umum', 'type' => 'Pelanggan Individual', 'phone' => '-'],
         ];
 
         foreach ($customers as $customer) {

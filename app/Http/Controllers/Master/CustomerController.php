@@ -61,7 +61,7 @@ class CustomerController extends Controller
         $info = $this->getScopeInfo($request);
         $data = $request->validate([
             'name'      => 'required|string|max:150',
-            'type'      => 'required|in:retail,agen',
+            'type'      => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'phone'     => 'nullable|string|max:20',
             'email'     => 'nullable|email|max:100',
             'address'   => 'nullable|string',
@@ -108,7 +108,7 @@ class CustomerController extends Controller
 
         $data = $request->validate([
             'name'         => 'required|string|max:150',
-            'type'         => 'required|in:retail,agen',
+            'type'         => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'phone'        => 'nullable|string|max:20',
             'email'        => 'nullable|email|max:100',
             'address'      => 'nullable|string',

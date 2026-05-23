@@ -88,6 +88,18 @@ class TransferOutController extends Controller
             }
         }
 
+        // Blokir produk produksi sendiri dari Transfer Out
+        $producedNames = Product::whereIn('id', collect($request->items)->pluck('product_id'))
+            ->where('source_type', 'produced')
+            ->pluck('name');
+
+        if ($producedNames->isNotEmpty()) {
+            return back()->withInput()->withErrors([
+                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa dikirim dari Gudang: '
+                           . $producedNames->implode(', '),
+            ]);
+        }
+
         DB::transaction(function () use ($request) {
             $transfer = TransferOut::create([
                 'transfer_number' => $this->numbers->generateYearly('GDG-TRF', 'gudang_transfer_out', 'transfer_number'),
