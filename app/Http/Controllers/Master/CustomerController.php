@@ -73,8 +73,11 @@ class CustomerController extends Controller
         $tableName = 'master_customers';
         $data['code']      = $this->numbers->generate('CST', $tableName, 'code');
         $data['created_by'] = auth()->id();
-        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['entity_scope']    = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['visible_gudang']  = $request->boolean('visible_gudang',  in_array($info['scope'], ['gudang']));
+        $data['visible_jihans']  = $request->boolean('visible_jihans',  in_array($info['scope'], ['gudang','jihans']));
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys', in_array($info['scope'], ['gudang','hendhys']));
+        $data['is_active']       = $request->boolean('is_active', true);
         
 
         $customer = $this->getModelClass('Customer', $info['scope'])::create($data);
@@ -104,18 +107,22 @@ class CustomerController extends Controller
         
 
         $data = $request->validate([
-            'name'      => 'required|string|max:150',
-            'type'      => 'required|in:retail,agen',
-            'phone'     => 'nullable|string|max:20',
-            'email'     => 'nullable|email|max:100',
-            'address'   => 'nullable|string',
-            'notes'     => 'nullable|string',
-            'is_active' => 'boolean',
-            
+            'name'         => 'required|string|max:150',
+            'type'         => 'required|in:retail,agen',
+            'phone'        => 'nullable|string|max:20',
+            'email'        => 'nullable|email|max:100',
+            'address'      => 'nullable|string',
+            'notes'        => 'nullable|string',
+            'is_active'    => 'boolean',
+            'entity_scope' => 'nullable|in:all,gudang,jihans,hendhys',
         ]);
 
         $old = $customer->toArray();
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active']       = $request->boolean('is_active', true);
+        $data['entity_scope']    = $request->input('entity_scope', $customer->entity_scope);
+        $data['visible_gudang']  = $request->boolean('visible_gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans');
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
         $customer->update($data);
 
         $this->logger->log('update', 'master.customer', "Update customer: {$customer->name}", $customer, $old, $customer->fresh()->toArray());

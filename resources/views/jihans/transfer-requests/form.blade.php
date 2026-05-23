@@ -64,7 +64,7 @@
                                     </select>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <input type="number" step="0.001" min="0.001" x-model="item.quantity" :name="'items['+index+'][quantity]'" required
+                                    <input type="number" step="1" min="1" x-model="item.quantity" :name="'items['+index+'][quantity]'" @input="item.quantity = Math.floor(item.quantity)" required
                                            class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm" placeholder="0">
                                 </td>
                                 <td class="px-4 py-3">

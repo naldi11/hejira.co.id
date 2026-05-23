@@ -133,7 +133,7 @@
                             @endif
                             <td class="py-2 px-2">
                                 <input type="number" :name="`items[${i}][quantity]`" x-model="item.quantity"
-                                       @input="calcTotal(i)" min="0" step="0.001" required
+                                       @input="item.quantity = Math.floor(item.quantity); calcTotal(i)" min="1" step="1" required
                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:ring-2 focus:ring-indigo-300 focus:outline-none">
                             </td>
                             <td class="py-2 px-2">

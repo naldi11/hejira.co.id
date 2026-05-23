@@ -55,7 +55,7 @@ class ReceiptController extends Controller
 
         $request->validate([
             'received_quantities'   => 'required|array|min:1',
-            'received_quantities.*' => 'required|numeric|min:0',
+            'received_quantities.*' => 'required|integer|min:1',
             'receive_notes'         => 'nullable|string|max:1000',
             'receive_photo'         => 'nullable|image|max:5120',
         ]);

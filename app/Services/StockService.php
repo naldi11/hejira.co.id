@@ -25,7 +25,7 @@ class StockService
     public function creditGudang(
         int    $productId,
         int    $unitId,
-        float  $qty,
+        int    $qty,
         string $source,
         int    $referenceId,
         ?int   $userId = null,
@@ -36,7 +36,7 @@ class StockService
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = $before + $qty;
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
@@ -57,7 +57,7 @@ class StockService
 
     public function debitGudang(
         int    $productId,
-        float  $qty,
+        int    $qty,
         string $source,
         int    $referenceId,
         ?int   $userId = null,
@@ -65,7 +65,7 @@ class StockService
     ): void {
         $stock = GudangStock::where('product_id', $productId)->firstOrFail();
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
@@ -87,7 +87,7 @@ class StockService
     public function adjustGudang(
         int    $productId,
         int    $unitId,
-        float  $newQty,
+        int    $newQty,
         ?int   $userId = null,
         ?string $notes = null
     ): void {
@@ -96,7 +96,7 @@ class StockService
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $diff   = $newQty - $before;
         $type   = $diff >= 0 ? 'in' : 'out';
 
@@ -159,7 +159,7 @@ class StockService
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = $before + $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
@@ -170,7 +170,7 @@ class StockService
     {
         $stock = JihansStock::where('product_id', $productId)->firstOrFail();
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
@@ -230,7 +230,7 @@ class StockService
             );
         }
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = $before + $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
@@ -245,7 +245,7 @@ class StockService
             $stock = HendhysStockPusat::where('product_id', $productId)->firstOrFail();
         }
 
-        $before = (float) $stock->quantity;
+        $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 

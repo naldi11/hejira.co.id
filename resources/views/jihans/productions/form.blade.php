@@ -68,7 +68,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Kuantitas Hasil (Qty) <span
                                 class="text-red-500">*</span></label>
                         <div class="flex gap-2">
-                            <input type="number" step="0.001" min="0.001" name="quantity_produced"
+                            <input type="number" step="1" min="1" name="quantity_produced"
                                 value="{{ old('quantity_produced') }}" required
                                 class="flex-1 rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm"
                                 placeholder="0">

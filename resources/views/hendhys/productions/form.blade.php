@@ -96,8 +96,8 @@
                                     <td class="py-3 px-2">
                                         <div
                                             class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                                            <input type="number" step="0.01" min="0.01"
-                                                :name="`items[${index}][quantity_produced]`" x-model="item.qty" required
+                                            <input type="number" step="1" min="1"
+                                                :name="`items[${index}][quantity_produced]`" x-model="item.qty" @input="item.qty = Math.floor(item.qty)" required
                                                 class="bg-transparent border-none focus:ring-0 w-full font-body-sm text-body-sm text-on-surface py-sm px-sm outline-none">
                                         </div>
                                     </td>

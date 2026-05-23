@@ -150,9 +150,9 @@
                                     </td>
 
                                     <td class="px-md py-sm align-middle">
-                                        <input type="number" step="0.01" min="0.01" :max="item.max_stock"
+                                        <input type="number" step="1" min="1" :max="item.max_stock"
                                             :name="`items[${index}][quantity]`"
-                                            x-model="item.quantity" required
+                                            x-model="item.quantity" @input="item.quantity = Math.floor(item.quantity)" required
                                             class="w-full text-right text-sm border border-outline-variant rounded-md focus:border-primary focus:ring-0 bg-surface-container-lowest font-bold text-on-surface"
                                             :disabled="!item.product_id">
                                     </td>

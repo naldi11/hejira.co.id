@@ -37,14 +37,14 @@
                                 <span class="block text-[10px] text-on-surface-variant uppercase font-mono">{{ $detail->product->code }}</span>
                             </td>
                             <td class="py-3 px-4 text-center text-on-surface-variant">
-                                {{ (float) $detail->quantity }} {{ $detail->unit->abbreviation ?? '' }}
+                                {{ (int) $detail->quantity }} {{ $detail->unit->abbreviation ?? '' }}
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
-                                    <input type="number" name="received_quantities[{{ $detail->id }}]" 
-                                           value="{{ (float) $detail->quantity }}" 
-                                           max="{{ (float) $detail->quantity }}" 
-                                           min="0" step="0.001" required
+                                    <input type="number" name="received_quantities[{{ $detail->id }}]"
+                                           value="{{ (int) $detail->quantity }}"
+                                           max="{{ (int) $detail->quantity }}"
+                                           min="1" step="1" required
                                            class="w-full text-center bg-surface-container-low border border-outline-variant rounded-md focus:border-primary focus:ring-primary text-sm font-bold text-on-surface">
                                 </div>
                             </td>

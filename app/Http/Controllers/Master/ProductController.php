@@ -26,7 +26,8 @@ class ProductController extends Controller
         $info = $this->getScopeInfo($request);
         $modelClass = $this->getModelClass('Product', $info['scope']);
 
-        $q = $modelClass::with(['category', 'unit', 'brand'])->whereIn('entity_scope', [$info['scope'], 'all']);
+        $q = $modelClass::with(['category', 'unit', 'brand', 'tieredPrices'])
+            ->where('visible_' . $info['scope'], true);
 
         if ($search = $request->search) {
             $q->where(fn($w) => $w->where('name', 'like', "%$search%")
@@ -34,9 +35,9 @@ class ProductController extends Controller
                 ->orWhere('barcode', 'like', "%$search%"));
         }
 
-        
-        if ($request->filled('entity_scope'))
-            $q->where('entity_scope', $request->entity_scope);
+        if ($request->filled('visibility')) {
+            $q->where('visible_' . $request->visibility, true);
+        }
         if ($request->filled('status'))
             $q->where('status', $request->status);
 
@@ -84,14 +85,16 @@ class ProductController extends Controller
             'stock_min' => 'required|integer|min:0',
             'ppn_type' => 'required|in:none,include,exclude',
             'ppn_rate' => 'required|numeric|min:0|max:100',
-            'product_type' => 'required|in:INV,NON',
-            'status' => 'required|in:active,discontinued',
-            'entity_scope' => 'required|in:all,gudang,jihans,hendhys',
-            'notes' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'tiered_prices' => 'nullable|array',
+            'product_type'       => 'required|in:INV,NON',
+            'status'             => 'required|in:active,discontinued',
+            'visible_gudang'     => 'boolean',
+            'visible_jihans'     => 'boolean',
+            'visible_hendhys'    => 'boolean',
+            'notes'              => 'nullable|string',
+            'image'              => 'nullable|image|max:2048',
+            'tiered_prices'      => 'nullable|array',
             'tiered_prices.*.min_qty' => 'required_with:tiered_prices|numeric|min:1',
-            'tiered_prices.*.price' => 'required_with:tiered_prices|numeric|min:0',
+            'tiered_prices.*.price'   => 'required_with:tiered_prices|numeric|min:0',
         ], [
             'barcode.unique' => 'Gagal menyimpan produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
@@ -100,9 +103,13 @@ class ProductController extends Controller
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $data['code'] = $this->numbers->generate('PRD', $tableName, 'code');
-        $data['created_by'] = auth()->id();
-        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['code']            = $this->numbers->generate('PRD', $tableName, 'code');
+        $data['created_by']      = auth()->id();
+        $data['visible_gudang']  = $request->boolean('visible_gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans');
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
+        // Simpan entity_scope dari entitas aktif untuk kompatibilitas
+        $data['entity_scope']    = $info['scope'] === 'gudang' ? 'all' : $info['scope'];
 
         
         $product = $this->getModelClass('Product', $info['scope'])::create($data);
@@ -162,14 +169,16 @@ class ProductController extends Controller
             'stock_min' => 'required|integer|min:0',
             'ppn_type' => 'required|in:none,include,exclude',
             'ppn_rate' => 'required|numeric|min:0|max:100',
-            'product_type' => 'required|in:INV,NON',
-            'status' => 'required|in:active,discontinued',
-            'entity_scope' => 'required|in:all,gudang,jihans,hendhys',
-            'notes' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'tiered_prices' => 'nullable|array',
+            'product_type'    => 'required|in:INV,NON',
+            'status'          => 'required|in:active,discontinued',
+            'visible_gudang'  => 'boolean',
+            'visible_jihans'  => 'boolean',
+            'visible_hendhys' => 'boolean',
+            'notes'           => 'nullable|string',
+            'image'           => 'nullable|image|max:2048',
+            'tiered_prices'   => 'nullable|array',
             'tiered_prices.*.min_qty' => 'required_with:tiered_prices|numeric|min:1',
-            'tiered_prices.*.price' => 'required_with:tiered_prices|numeric|min:0',
+            'tiered_prices.*.price'   => 'required_with:tiered_prices|numeric|min:0',
         ], [
             'barcode.unique' => 'Gagal memperbarui produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
@@ -181,8 +190,12 @@ class ProductController extends Controller
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
+        $data['visible_gudang']  = $request->boolean('visible_gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans');
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
+
         $old = $product->toArray();
-        
+
         $product->update($data);
         
         $product->tieredPrices()->delete();

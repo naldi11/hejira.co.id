@@ -55,7 +55,7 @@ class ProductionController extends Controller
             'date'              => 'required|date',
             'product_id'        => 'required|exists:master_products,id',
             'size'              => 'required|in:kecil,sedang,besar',
-            'quantity_produced' => 'required|numeric|min:0.001',
+            'quantity_produced' => 'required|integer|min:1',
             'unit_id'           => 'required|exists:master_units,id',
             'notes'             => 'nullable|string',
         ]);

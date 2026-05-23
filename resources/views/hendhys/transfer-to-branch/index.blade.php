@@ -14,7 +14,7 @@
                 <form action="{{ route('hendhys.transfer-to-branch.index') }}" method="GET"
                     class="flex flex-wrap items-center gap-sm w-full sm:w-auto">
                     <select name="status"
-                        class="px-sm py-sm border border-outline-variant rounded-lg font-body-sm text-body-sm focus:ring-0 focus:border-primary outline-none bg-surface-container-lowest text-on-surface">
+                        class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg font-body-sm text-body-sm focus:ring-0 focus:border-primary outline-none bg-surface-container-lowest text-on-surface">
                         <option value="">Semua Status</option>
                         <option value="sent" {{ request('status') == 'sent' ? 'selected' : '' }}>Dalam Perjalanan (Sent)
                         </option>

@@ -71,6 +71,14 @@
             class="space-y-lg" enctype="multipart/form-data">
             @csrf
             @if(isset($product)) @method('PUT') @endif
+            
+            @php
+                $scope = $currentScope ?? 'gudang';
+                $isNew = !isset($product);
+                $defGudang  = old('visible_gudang',  $isNew ? ($scope === 'gudang')                        : (bool)$product->visible_gudang);
+                $defJihans  = old('visible_jihans',  $isNew ? in_array($scope, ['gudang','jihans'])        : (bool)$product->visible_jihans);
+                $defHendhys = old('visible_hendhys', $isNew ? in_array($scope, ['gudang','hendhys'])       : (bool)$product->visible_hendhys);
+            @endphp
 
             {{-- Section: Informasi Dasar --}}
             <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
@@ -245,9 +253,59 @@
                         <div
                             class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
                             <input type="number" name="stock_min" value="{{ old('stock_min', $product->stock_min ?? 0) }}"
-                                min="0" required
+                                min="0" step="1" required
                                 class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Section: Harga Bertingkat --}}
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
+                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+                    <div>
+                        <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Harga Bertingkat</h3>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Opsional — harga berbeda berdasarkan jumlah pembelian. Jika diisi, harga ini yang dipakai di POS. Jika kosong, pakai Harga Jual di atas.</p>
+                    </div>
+                    <button type="button" id="addTierBtn"
+                        class="inline-flex items-center gap-xs px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">add</span>
+                        Tambah Tier
+                    </button>
+                </div>
+                <div class="p-md">
+                    {{-- Header kolom --}}
+                    <div class="hidden sm:grid grid-cols-[1fr_1fr_auto] gap-sm mb-xs px-xs">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">Min. Qty (beli ≥ angka ini)</span>
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">Harga per Satuan (Rp)</span>
+                        <span class="w-8"></span>
+                    </div>
+                    <div id="tierContainer" class="space-y-sm">
+                        @php
+                            $existingTiers = old('tiered_prices', isset($product) ? $product->tieredPrices->map(fn($t) => ['min_qty' => $t->min_qty, 'price' => $t->price])->toArray() : []);
+                        @endphp
+                        @forelse($existingTiers as $i => $tier)
+                            <div class="tier-row grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-sm items-center">
+                                <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                                    <input type="number" name="tiered_prices[{{ $i }}][min_qty]"
+                                        value="{{ $tier['min_qty'] }}" min="1" placeholder="cth: 50"
+                                        class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                                </div>
+                                <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                                    <input type="number" name="tiered_prices[{{ $i }}][price]"
+                                        value="{{ $tier['price'] }}" min="0" placeholder="cth: 142000"
+                                        class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                                </div>
+                                <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg text-error hover:bg-error-container transition-colors shrink-0">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
+                        @empty
+                            <p id="emptyTierMsg" class="font-label-sm text-label-sm text-on-surface-variant text-center py-md">
+                                Belum ada harga bertingkat. Klik "Tambah Tier" untuk menambahkan.
+                            </p>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -260,43 +318,75 @@
                 </div>
                 <div class="p-md grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-md">
                     <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tipe PPN</label>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
+                            Tipe PPN
+                            <span class="text-outline font-normal normal-case"> — cara PPN dihitung di struk</span>
+                        </label>
                         <select name="ppn_type"
                             class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            @foreach(['none' => 'Tanpa PPN', 'include' => 'Include PPN', 'exclude' => 'Exclude PPN'] as $val => $lbl)
-                                <option value="{{ $val }}" {{ old('ppn_type', $product->ppn_type ?? 'none') === $val ? 'selected' : '' }}>{{ $lbl }}</option>
-                            @endforeach
+                            <option value="none"  {{ old('ppn_type', $product->ppn_type ?? 'none') === 'none'    ? 'selected' : '' }}>Tanpa PPN — harga akhir = harga jual</option>
+                            <option value="include" {{ old('ppn_type', $product->ppn_type ?? '') === 'include' ? 'selected' : '' }}>Include — PPN sudah termasuk dalam harga</option>
+                            <option value="exclude" {{ old('ppn_type', $product->ppn_type ?? '') === 'exclude' ? 'selected' : '' }}>Exclude — PPN ditambahkan di atas harga</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Rate PPN (%)</label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
+                            Rate PPN (%)
+                            <span class="text-outline font-normal normal-case"> — default 11% sesuai aturan Indonesia</span>
+                        </label>
+                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
                             <input type="number" name="ppn_rate" value="{{ old('ppn_rate', $product->ppn_rate ?? 11) }}"
                                 min="0" max="100" step="0.01"
                                 class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
                         </div>
                     </div>
                     <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tipe Produk</label>
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
+                            Tipe Produk
+                            <span class="text-outline font-normal normal-case"> — apakah stok ditrack?</span>
+                        </label>
                         <select name="product_type"
                             class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="INV" {{ old('product_type', $product->product_type ?? 'INV') === 'INV' ? 'selected' : '' }}>INV — Inventory Tracked</option>
-                            <option value="NON" {{ old('product_type', $product->product_type ?? '') === 'NON' ? 'selected' : '' }}>NON — Non-Inventory</option>
+                            <option value="INV" {{ old('product_type', $product->product_type ?? 'INV') === 'INV' ? 'selected' : '' }}>INV — Stok dicatat &amp; ditrack</option>
+                            <option value="NON" {{ old('product_type', $product->product_type ?? '') === 'NON' ? 'selected' : '' }}>NON — Stok tidak ditrack (jasa / non-fisik)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Status</label>
                         <select name="status"
                             class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="active" {{ old('status', $product->status ?? 'active') === 'active' ? 'selected' : '' }}>Dijual</option>
-                            <option value="discontinued" {{ old('status', $product->status ?? '') === 'discontinued' ? 'selected' : '' }}>Tidak Dijual</option>
+                            <option value="active" {{ old('status', $product->status ?? 'active') === 'active' ? 'selected' : '' }}>Aktif — produk dijual</option>
+                            <option value="discontinued" {{ old('status', $product->status ?? '') === 'discontinued' ? 'selected' : '' }}>Tidak Dijual — sembunyikan dari POS</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-2 xl:col-span-2">
+                    {{-- Visibilitas Entitas --}}
+                    <div class="sm:col-span-2 xl:col-span-3">
+                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-sm">
+                            Tampilkan di Entitas
+                            <span class="text-outline font-normal normal-case"> — otomatis dari login, centang manual jika perlu multi-entitas</span>
+                        </label>
+                        <div class="flex flex-wrap gap-md">
+                            @foreach([
+                                ['visible_gudang',  'Gudang Tempua',   'warehouse',  $defGudang],
+                                ['visible_jihans',  "Jihan's Food",    'storefront', $defJihans],
+                                ['visible_hendhys', 'Hendhys Brownies','cake',       $defHendhys],
+                            ] as [$fieldName, $label, $icon, $checked])
+                                <label x-data="{ on: {{ $checked ? 'true' : 'false' }} }"
+                                    :class="on ? 'border-primary bg-primary-container' : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container'"
+                                    class="flex items-center gap-sm cursor-pointer px-md py-sm rounded-xl border-2 transition-all select-none">
+                                    <input type="checkbox" name="{{ $fieldName }}" value="1"
+                                        x-model="on"
+                                        class="w-4 h-4 rounded accent-primary focus:ring-primary focus:ring-offset-0 border-outline-variant">
+                                    <span class="material-symbols-outlined text-[18px]" :class="on ? 'text-primary' : 'text-outline'">{{ $icon }}</span>
+                                    <span class="font-label-md text-label-md" :class="on ? 'font-semibold text-primary' : 'text-on-surface-variant'">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2 xl:col-span-3">
                         <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Catatan</label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
                             <input type="text" name="notes" value="{{ old('notes', $product->notes ?? '') }}"
                                 placeholder="Catatan tambahan (opsional)"
                                 class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
@@ -332,7 +422,48 @@
                         maxOptions: null
                     });
                 });
+
+                document.getElementById('addTierBtn').addEventListener('click', function () {
+                    const emptyMsg = document.getElementById('emptyTierMsg');
+                    if (emptyMsg) emptyMsg.remove();
+
+                    const container = document.getElementById('tierContainer');
+                    const index = container.querySelectorAll('.tier-row').length;
+                    const row = document.createElement('div');
+                    row.className = 'tier-row grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-sm items-center';
+                    row.innerHTML = `
+                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                            <input type="number" name="tiered_prices[${index}][min_qty]" min="1" placeholder="cth: 50"
+                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                        </div>
+                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                            <input type="number" name="tiered_prices[${index}][price]" min="0" placeholder="cth: 142000"
+                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                        </div>
+                        <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
+                            class="flex items-center justify-center w-8 h-8 rounded-lg text-error hover:bg-error-container transition-colors shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                        </button>`;
+                    container.appendChild(row);
+                    row.querySelector('input').focus();
+                });
             });
+
+            function reindexTiers() {
+                document.querySelectorAll('.tier-row').forEach((row, i) => {
+                    row.querySelectorAll('input').forEach(input => {
+                        input.name = input.name.replace(/\[\d+\]/, `[${i}]`);
+                    });
+                });
+                if (document.querySelectorAll('.tier-row').length === 0) {
+                    const container = document.getElementById('tierContainer');
+                    const p = document.createElement('p');
+                    p.id = 'emptyTierMsg';
+                    p.className = 'font-label-sm text-label-sm text-on-surface-variant text-center py-md';
+                    p.textContent = 'Belum ada harga bertingkat. Klik "Tambah Tier" untuk menambahkan.';
+                    container.appendChild(p);
+                }
+            }
         </script>
     @endpush
 @endsection

@@ -68,9 +68,9 @@
                                 <input type="hidden" name="items[{{ $index }}][detail_id]" value="{{ $detail->id }}">
                                 
                                 <td class="py-3 px-4 font-medium text-gray-800 border-r border-gray-200">{{ $detail->product->name }}</td>
-                                <td class="py-3 px-4 text-right font-bold text-gray-600 border-r border-gray-200">{{ (float) $detail->quantity_requested }}</td>
+                                <td class="py-3 px-4 text-right font-bold text-gray-600 border-r border-gray-200">{{ (int) $detail->quantity_requested }}</td>
                                 <td class="py-2 px-2 border-r border-gray-200 bg-amber-50/30">
-                                    <input type="number" step="0.01" min="0" max="{{ $detail->quantity_requested }}" name="items[{{ $index }}][quantity]" value="{{ (float) $detail->quantity_requested }}" required
+                                    <input type="number" step="1" min="1" max="{{ (int) $detail->quantity_requested }}" name="items[{{ $index }}][quantity]" value="{{ (int) $detail->quantity_requested }}" required
                                            class="w-full text-right text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] font-bold text-[#d97706]">
                                 </td>
                                 <td class="py-3 px-4 text-gray-600">{{ $detail->unit->code }}</td>

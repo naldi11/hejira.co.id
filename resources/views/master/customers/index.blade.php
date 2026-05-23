@@ -28,13 +28,13 @@
                     class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
             </div>
             <select name="type"
-                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
                 <option value="">Semua Tipe</option>
                 <option value="retail" {{ request('type') === 'retail' ? 'selected' : '' }}>Retail (Umum)</option>
                 <option value="agen" {{ request('type') === 'agen' ? 'selected' : '' }}>B2B / Agen</option>
             </select>
             <select name="status"
-                class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
                 <option value="">Semua Status</option>
                 <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
                 <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>

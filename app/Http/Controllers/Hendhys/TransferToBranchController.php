@@ -81,7 +81,7 @@ class TransferToBranchController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
             'items.*.detail_id' => 'nullable|exists:hendhys_branch_request_details,id',
         ]);
@@ -226,7 +226,7 @@ class TransferToBranchController extends Controller
 
         $request->validate([
             'received_quantities'   => 'required|array|min:1',
-            'received_quantities.*' => 'required|numeric|min:0',
+            'received_quantities.*' => 'required|integer|min:1',
             'receive_notes'         => 'nullable|string|max:1000',
             'receive_photo'         => 'nullable|image|max:5120',
         ]);

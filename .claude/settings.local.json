@@ -20,7 +20,13 @@
       "Bash(ssh -V)",
       "Bash(npm run *)",
       "Bash(git push *)",
-      "Bash(xargs grep -l \"Tambah Item\\\\|purchase.order\\\\|po\")"
+      "Bash(xargs grep -l \"Tambah Item\\\\|purchase.order\\\\|po\")",
+      "Bash(php *)",
+      "Bash(composer show *)",
+      "Bash(dir C:/laragon/www/project-ketua/database/migrations/2026_05_23*)",
+      "Bash(git *)",
+      "Bash(php -r \"echo PHP_VERSION;\")",
+      "Bash(Rename-Item *)"
     ]
   }
 }

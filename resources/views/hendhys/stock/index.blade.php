@@ -128,7 +128,7 @@
                             <input type="hidden" name="search" value="{{ request('search') }}">
                         @endif
                         <select name="branch_id" onchange="this.form.submit()"
-                            class="px-sm py-sm border border-outline-variant rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
+                            class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
                             <option value="">- Semua Cabang -</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ $selectedBranchId == $branch->id ? 'selected' : '' }}>

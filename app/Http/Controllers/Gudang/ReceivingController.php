@@ -63,7 +63,7 @@ class ReceivingController extends Controller
             'notes'              => 'nullable|string',
             'items'              => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity'   => 'required|numeric|min:0.001',
+            'items.*.quantity'   => 'required|integer|min:1',
             'items.*.unit_id'    => 'required|exists:master_units,id',
             'items.*.hpp_price'  => 'required|numeric|min:0',
         ]);
@@ -79,12 +79,13 @@ class ReceivingController extends Controller
             ]);
 
             foreach ($request->items as $item) {
+                $qty = (int)$item['quantity'];
                 $receiving->details()->create([
                     'product_id' => $item['product_id'],
-                    'quantity'   => $item['quantity'],
+                    'quantity'   => $qty,
                     'unit_id'    => $item['unit_id'],
                     'hpp_price'  => $item['hpp_price'],
-                    'total'      => $item['quantity'] * $item['hpp_price'],
+                    'total'      => $qty * (float)$item['hpp_price'],
                     'notes'      => $item['notes'] ?? null,
                 ]);
 
@@ -92,7 +93,7 @@ class ReceivingController extends Controller
                 $this->stock->creditGudang(
                     $item['product_id'],
                     $item['unit_id'],
-                    $item['quantity'],
+                    $qty,
                     'purchase_receiving',
                     $receiving->id,
                     auth()->id()
@@ -128,7 +129,7 @@ class ReceivingController extends Controller
         foreach ($items as $item) {
             $detail = $po->details->where('product_id', $item['product_id'])->first();
             if ($detail) {
-                $detail->increment('quantity_received', $item['quantity']);
+                $detail->increment('quantity_received', (int)$item['quantity']);
             }
         }
 

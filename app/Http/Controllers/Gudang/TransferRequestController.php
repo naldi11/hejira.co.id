@@ -48,7 +48,7 @@ class TransferRequestController extends Controller
         $request->validate([
             'items'                    => 'required|array',
             'items.*.id'               => 'required|exists:gudang_transfer_request_details,id',
-            'items.*.quantity_approved'=> 'required|numeric|min:0',
+            'items.*.quantity_approved' => 'required|integer|min:1',
             'notes'                    => 'nullable|string',
         ]);
 

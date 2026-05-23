@@ -17,7 +17,7 @@ class UnitController extends Controller
     public function index(Request $request)
     {
         $info = $this->getScopeInfo($request);
-        $q = $this->getModelClass('Unit', $info['scope'])::withCount('products')->whereIn('entity_scope', [$info['scope'], 'all']);
+        $q = $this->getModelClass('Unit', $info['scope'])::withCount('products')->where('visible_' . $info['scope'], true);
 
         if ($search = $request->search) {
             $q->where(fn($w) => $w->where('name', 'like', "%$search%")
@@ -42,7 +42,10 @@ class UnitController extends Controller
             'abbreviation' => 'required|string|max:10',
         ]);
 
-        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['entity_scope']    = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['visible_gudang']  = $request->boolean('visible_gudang',  $info['scope'] === 'gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans',  in_array($info['scope'], ['gudang', 'jihans']));
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys', in_array($info['scope'], ['gudang', 'hendhys']));
 
         $unit = $this->getModelClass('Unit', $info['scope'])::create($data);
         $this->logger->log('create', 'master.unit', "Tambah satuan: {$unit->name}", $unit);
@@ -57,10 +60,17 @@ class UnitController extends Controller
 
 
         $data = $request->validate([
-            'name' => 'required|string|max:50',
+            'name'         => 'required|string|max:50',
             'abbreviation' => 'required|string|max:10',
-
+            'entity_scope' => 'nullable|in:all,gudang,jihans,hendhys',
         ]);
+
+        if ($request->filled('entity_scope')) {
+            $data['entity_scope'] = $request->entity_scope;
+        }
+        $data['visible_gudang']  = $request->boolean('visible_gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans');
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
 
         $unit->update($data);
         $this->logger->log('update', 'master.unit', "Update satuan: {$unit->name}", $unit);

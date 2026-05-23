@@ -17,7 +17,7 @@ class ProductCategoryController extends Controller
     public function index(Request $request)
     {
         $info = $this->getScopeInfo($request);
-        $q = $this->getModelClass('ProductCategory', $info['scope'])::withCount('products')->whereIn('entity_scope', [$info['scope'], 'all']);
+        $q = $this->getModelClass('ProductCategory', $info['scope'])::withCount('products')->where('visible_' . $info['scope'], true);
 
         if ($search = $request->search) {
             $q->where('name', 'like', "%$search%");
@@ -40,7 +40,10 @@ class ProductCategoryController extends Controller
             'name' => 'required|string|max:100',
         ]);
 
-        $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['entity_scope']    = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
+        $data['visible_gudang']  = $request->boolean('visible_gudang',  $info['scope'] === 'gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans',  in_array($info['scope'], ['gudang', 'jihans']));
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys', in_array($info['scope'], ['gudang', 'hendhys']));
 
         $category = $this->getModelClass('ProductCategory', $info['scope'])::create($data);
         $this->logger->log('create', 'master.category', "Tambah kategori: {$category->name}", $category);
@@ -55,9 +58,16 @@ class ProductCategoryController extends Controller
 
 
         $data = $request->validate([
-            'name' => 'required|string|max:100',
-
+            'name'         => 'required|string|max:100',
+            'entity_scope' => 'nullable|in:all,gudang,jihans,hendhys',
         ]);
+
+        if ($request->filled('entity_scope')) {
+            $data['entity_scope'] = $request->entity_scope;
+        }
+        $data['visible_gudang']  = $request->boolean('visible_gudang');
+        $data['visible_jihans']  = $request->boolean('visible_jihans');
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
 
         $category->update($data);
         $this->logger->log('update', 'master.category', "Update kategori: {$category->name}", $category);

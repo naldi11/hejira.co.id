@@ -83,16 +83,16 @@
                             </td>
                             <td class="px-md py-sm text-right">
                                 <span class="font-label-lg text-label-lg text-on-surface-variant">
-                                    {{ floatval($detail->quantity) }}
+                                    {{ intval($detail->quantity) }}
                                 </span>
                             </td>
                             <td class="px-md py-sm">
                                 <input type="number"
                                     name="received_quantities[{{ $detail->id }}]"
-                                    value="{{ old('received_quantities.' . $detail->id, (float)$detail->quantity) }}"
-                                    min="0"
-                                    max="{{ (float)$detail->quantity }}"
-                                    step="0.001"
+                                    value="{{ old('received_quantities.' . $detail->id, (int)$detail->quantity) }}"
+                                    min="1"
+                                    max="{{ (int)$detail->quantity }}"
+                                    step="1"
                                     required
                                     class="w-full text-right text-sm border border-outline-variant rounded-lg px-sm py-xs focus:border-primary focus:ring-0 bg-surface font-bold text-on-surface">
                             </td>

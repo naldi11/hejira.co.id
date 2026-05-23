@@ -15,15 +15,20 @@ class Product extends Model
     protected $fillable = [
         'code', 'barcode', 'name', 'category_id', 'unit_id', 'brand_id',
         'rack', 'jenis', 'hpp', 'selling_price', 'stock_min',
-        'ppn_type', 'ppn_rate', 'product_type', 'entity_scope', 'status', 'notes', 'image', 'created_by',
+        'ppn_type', 'ppn_rate', 'product_type', 'entity_scope',
+        'visible_gudang', 'visible_jihans', 'visible_hendhys',
+        'status', 'notes', 'image', 'created_by',
     ];
 
     protected function casts(): array
     {
         return [
-            'hpp'           => 'decimal:2',
-            'selling_price' => 'decimal:2',
-            'ppn_rate'      => 'decimal:2',
+            'hpp'             => 'decimal:2',
+            'selling_price'   => 'decimal:2',
+            'ppn_rate'        => 'decimal:2',
+            'visible_gudang'  => 'boolean',
+            'visible_jihans'  => 'boolean',
+            'visible_hendhys' => 'boolean',
         ];
     }
 

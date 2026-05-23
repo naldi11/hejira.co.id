@@ -53,13 +53,13 @@ class PurchaseOrderController extends Controller
             'notes'                => 'nullable|string',
             'items'                => 'required|array|min:1',
             'items.*.product_id'   => 'required|exists:master_products,id',
-            'items.*.quantity'     => 'required|numeric|min:0.001',
+            'items.*.quantity'     => 'required|integer|min:1',
             'items.*.unit_id'      => 'required|exists:master_units,id',
             'items.*.price'        => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request) {
-            $total = collect($request->items)->sum(fn ($i) => $i['quantity'] * $i['price']);
+            $total = collect($request->items)->sum(fn ($i) => (int)$i['quantity'] * (float)$i['price']);
 
             $po = PurchaseOrder::create([
                 'po_number'    => $this->numbers->generateYearly('GDG-PO', 'gudang_purchase_orders', 'po_number'),
@@ -75,11 +75,11 @@ class PurchaseOrderController extends Controller
             foreach ($request->items as $item) {
                 $po->details()->create([
                     'product_id'        => $item['product_id'],
-                    'quantity_ordered'  => $item['quantity'],
+                    'quantity_ordered'  => (int)$item['quantity'],
                     'quantity_received' => 0,
                     'unit_id'           => $item['unit_id'],
                     'price'             => $item['price'],
-                    'total'             => $item['quantity'] * $item['price'],
+                    'total'             => (int)$item['quantity'] * (float)$item['price'],
                     'notes'             => $item['notes'] ?? null,
                 ]);
             }
@@ -120,13 +120,13 @@ class PurchaseOrderController extends Controller
             'notes'                => 'nullable|string',
             'items'                => 'required|array|min:1',
             'items.*.product_id'   => 'required|exists:master_products,id',
-            'items.*.quantity'     => 'required|numeric|min:0.001',
+            'items.*.quantity'     => 'required|integer|min:1',
             'items.*.unit_id'      => 'required|exists:master_units,id',
             'items.*.price'        => 'required|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $po) {
-            $total = collect($request->items)->sum(fn ($i) => $i['quantity'] * $i['price']);
+            $total = collect($request->items)->sum(fn ($i) => (int)$i['quantity'] * (float)$i['price']);
 
             $po->update([
                 'supplier_id'   => $request->supplier_id,
@@ -142,11 +142,11 @@ class PurchaseOrderController extends Controller
             foreach ($request->items as $item) {
                 $po->details()->create([
                     'product_id'        => $item['product_id'],
-                    'quantity_ordered'  => $item['quantity'],
+                    'quantity_ordered'  => (int)$item['quantity'],
                     'quantity_received' => 0,
                     'unit_id'           => $item['unit_id'],
                     'price'             => $item['price'],
-                    'total'             => $item['quantity'] * $item['price'],
+                    'total'             => (int)$item['quantity'] * (float)$item['price'],
                     'notes'             => $item['notes'] ?? null,
                 ]);
             }

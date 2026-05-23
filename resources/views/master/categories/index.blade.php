@@ -62,10 +62,12 @@
                             x-data="{ editOpen: false }">
                             <td class="px-md py-sm font-label-lg text-label-lg font-bold text-on-surface">{{ $cat->name }}</td>
                             <td class="px-md py-sm">
-                                <span
-                                    class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim">
-                                    {{ ucfirst($cat->entity_scope ?? $cat->entity ?? 'All') }}
-                                </span>
+                                <div class="flex flex-wrap gap-xs">
+                                    @if($cat->visible_gudang)  <span class="inline-flex items-center gap-xs px-xs py-[2px] rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim text-[11px]"><span class="material-symbols-outlined text-[12px]">warehouse</span>Gudang</span> @endif
+                                    @if($cat->visible_jihans)  <span class="inline-flex items-center gap-xs px-xs py-[2px] rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim text-[11px]"><span class="material-symbols-outlined text-[12px]">storefront</span>Jihan's</span> @endif
+                                    @if($cat->visible_hendhys) <span class="inline-flex items-center gap-xs px-xs py-[2px] rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim text-[11px]"><span class="material-symbols-outlined text-[12px]">cake</span>Hendhys</span> @endif
+                                    @if(!$cat->visible_gudang && !$cat->visible_jihans && !$cat->visible_hendhys) <span class="inline-flex items-center px-xs py-[2px] rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant border border-outline-variant text-[11px]">—</span> @endif
+                                </div>
                             </td>
                             <td class="px-md py-sm text-center font-body-md text-body-md text-on-surface-variant">
                                 {{ $cat->products_count }}</td>
@@ -91,14 +93,15 @@
                                 <div x-show="editOpen" x-cloak class="mt-sm text-left">
                                     <form method="POST"
                                         action="{{ route(($routePrefix ?? 'master.') . 'categories.update', $cat) }}"
-                                        class="flex gap-sm items-center">
+                                        class="flex flex-wrap gap-sm items-center">
                                         @csrf @method('PUT')
                                         <input type="text" name="name" value="{{ $cat->name }}" required
-                                            class="flex-1 bg-surface-container-low border-b border-primary focus:ring-0 font-body-md text-body-md text-on-surface px-sm py-xs rounded-t-sm outline-none">
+                                            class="flex-1 min-w-[140px] bg-surface-container-low border-b border-primary focus:ring-0 font-body-md text-body-md text-on-surface px-sm py-xs rounded-t-sm outline-none">
+                                        @include('master.partials.visibility-checkboxes', ['scope' => $currentScope ?? 'gudang', 'model' => $cat, 'isNew' => false])
                                         <button type="submit"
-                                            class="px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant ">Simpan</button>
+                                            class="px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant">Simpan</button>
                                         <button type="button" @click="editOpen = false"
-                                            class="px-sm py-xs bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high ">Batal</button>
+                                            class="px-sm py-xs bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high">Batal</button>
                                     </form>
                                 </div>
                             </td>
@@ -133,20 +136,22 @@
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
+            @php $defaultScope = ($currentScope ?? 'gudang') === 'gudang' ? 'all' : ($currentScope ?? 'all'); @endphp
             <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'categories.store') }}" class="space-y-md">
                 @csrf
                 <div>
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Nama Kategori <span
-                            class="text-error">*</span></label>
-                    <div
-                        class="bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all">
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Nama Kategori <span class="text-error">*</span></label>
+                    <div class="bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all">
                         <input type="text" name="name" required placeholder="cth: Roti Tawar"
                             class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
                     </div>
                 </div>
+                <div>
+                    <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tampilkan di Entitas</label>
+                    @include('master.partials.visibility-checkboxes', ['scope' => $defaultScope, 'model' => null, 'isNew' => true])
+                </div>
                 <div class="flex gap-sm pt-xs">
-                    <button type="submit"
-                        class="flex-1 bg-primary text-on-primary py-sm rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant  transition-all">Tambah</button>
+                    <button type="submit" class="flex-1 bg-primary text-on-primary py-sm rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant transition-all">Tambah</button>
                     <button type="button" onclick="document.getElementById('modal-add').classList.add('hidden')"
                         class="flex-1 border border-outline-variant text-on-surface-variant py-sm rounded-lg font-label-lg text-label-lg hover:bg-surface-container transition-colors">Batal</button>
                 </div>
