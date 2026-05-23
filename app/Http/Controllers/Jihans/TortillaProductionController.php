@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\JihansTortillaSession;
 use App\Models\JihansTortillaSessionDetail;
 use App\Models\Karyawan;
+use App\Models\Product;
 use App\Models\ProductionRate;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -17,7 +19,8 @@ class TortillaProductionController extends Controller
 {
     public function __construct(
         private NumberGeneratorService $numbers,
-        private ActivityLogService $logger
+        private ActivityLogService $logger,
+        private StockService $stockService
     ) {}
 
     public function index(Request $request)
@@ -96,10 +99,36 @@ class TortillaProductionController extends Controller
                 ]);
             }
 
+            // Agregasi total per varian dan update stok Jihans
+            $details = collect($request->details);
+            $variantMap = [
+                [$rates->tb_product_id,     (int) $details->sum('tb_qty')],
+                [$rates->ts_product_id,     (int) $details->sum('ts_qty')],
+                [$rates->tk_product_id,     (int) $details->sum('tk_qty')],
+                [$rates->tc_product_id,     (int) $details->sum('tc_qty')],
+                [$rates->kribab_product_id, (int) $details->sum('kribab_qty')],
+            ];
+
+            foreach ($variantMap as [$productId, $totalQty]) {
+                if ($productId && $totalQty > 0) {
+                    $product = Product::find($productId);
+                    if ($product) {
+                        $this->stockService->creditJihans(
+                            $productId,
+                            $product->unit_id,
+                            $totalQty,
+                            'production',
+                            $session->id,
+                            auth()->id()
+                        );
+                    }
+                }
+            }
+
             $this->logger->log('create', 'jihans.tortilla', "Input produksi tortilla: {$session->session_number}", $session);
         });
 
-        return redirect()->route('jihans.tortilla.index')->with('success', 'Data produksi tortilla berhasil disimpan.');
+        return redirect()->route('jihans.tortilla.index')->with('success', 'Data produksi tortilla berhasil disimpan dan stok telah diperbarui.');
     }
 
     public function show(JihansTortillaSession $tortilla)
