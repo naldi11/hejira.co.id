@@ -12,6 +12,7 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $q = Product::where('status', 'active')
+            ->visibleInJihans()
             ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
             ->select('master_products.*', 'jihans_stock.quantity as current_stock')
             ->with(['unit', 'category']);

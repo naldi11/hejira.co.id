@@ -148,10 +148,29 @@ class TortillaProductionController extends Controller
 
     public function recap(Request $request)
     {
-        $dateFrom = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : Carbon::now()->startOfWeek();
-        $dateTo   = $request->filled('date_to')   ? Carbon::parse($request->date_to)->endOfDay()   : Carbon::now()->endOfWeek();
+        $noFilter = !$request->filled('date_from') && !$request->filled('date_to') && !$request->filled('periode');
 
-        $recap = JihansTortillaSessionDetail::select(
+        // Shortcut periode
+        $periode = $request->periode;
+        if ($periode === 'hari') {
+            $dateFrom = Carbon::today()->startOfDay();
+            $dateTo   = Carbon::today()->endOfDay();
+        } elseif ($periode === 'minggu') {
+            $dateFrom = Carbon::now()->startOfWeek();
+            $dateTo   = Carbon::now()->endOfWeek();
+        } elseif ($periode === 'bulan') {
+            $dateFrom = Carbon::now()->startOfMonth();
+            $dateTo   = Carbon::now()->endOfMonth();
+        } elseif ($request->filled('date_from') || $request->filled('date_to')) {
+            $dateFrom = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : Carbon::createFromDate(2000, 1, 1)->startOfDay();
+            $dateTo   = $request->filled('date_to')   ? Carbon::parse($request->date_to)->endOfDay()   : Carbon::now()->endOfDay();
+        } else {
+            // Default: semua data
+            $dateFrom = null;
+            $dateTo   = null;
+        }
+
+        $query = JihansTortillaSessionDetail::select(
                 'karyawan_id',
                 DB::raw('COUNT(DISTINCT session_id) as hadir_count'),
                 DB::raw('SUM(tb_qty) as total_tb'),
@@ -161,20 +180,36 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(kribab_qty) as total_kribab'),
                 DB::raw('SUM(total_amount) as total_gaji')
             )
-            ->whereHas('session', function($q) use ($dateFrom, $dateTo) {
-                $q->whereBetween('date', [$dateFrom, $dateTo]);
+            ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
+                $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
             })
             ->with('karyawan')
-            ->groupBy('karyawan_id')
-            ->get();
+            ->groupBy('karyawan_id');
 
-        return view('jihans.tortilla.recap', compact('recap', 'dateFrom', 'dateTo'));
+        $recap = $query->get();
+
+        return view('jihans.tortilla.recap', compact('recap', 'dateFrom', 'dateTo', 'periode', 'noFilter'));
     }
 
     public function exportRecap(Request $request)
     {
-        $dateFrom = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : Carbon::now()->startOfWeek();
-        $dateTo   = $request->filled('date_to')   ? Carbon::parse($request->date_to)->endOfDay()   : Carbon::now()->endOfWeek();
+        $periode = $request->periode;
+        if ($periode === 'hari') {
+            $dateFrom = Carbon::today()->startOfDay();
+            $dateTo   = Carbon::today()->endOfDay();
+        } elseif ($periode === 'minggu') {
+            $dateFrom = Carbon::now()->startOfWeek();
+            $dateTo   = Carbon::now()->endOfWeek();
+        } elseif ($periode === 'bulan') {
+            $dateFrom = Carbon::now()->startOfMonth();
+            $dateTo   = Carbon::now()->endOfMonth();
+        } elseif ($request->filled('date_from') || $request->filled('date_to')) {
+            $dateFrom = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : null;
+            $dateTo   = $request->filled('date_to')   ? Carbon::parse($request->date_to)->endOfDay()   : Carbon::now()->endOfDay();
+        } else {
+            $dateFrom = null;
+            $dateTo   = null;
+        }
 
         $recap = JihansTortillaSessionDetail::select(
                 'karyawan_id',
@@ -186,14 +221,16 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(kribab_qty) as total_kribab'),
                 DB::raw('SUM(total_amount) as total_gaji')
             )
-            ->whereHas('session', function($q) use ($dateFrom, $dateTo) {
-                $q->whereBetween('date', [$dateFrom, $dateTo]);
+            ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
+                $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
             })
             ->with('karyawan')
             ->groupBy('karyawan_id')
             ->get();
 
-        $period = $dateFrom->format('d M Y') . ' - ' . $dateTo->format('d M Y');
+        $period = ($dateFrom && $dateTo)
+            ? $dateFrom->format('d M Y') . ' - ' . $dateTo->format('d M Y')
+            : 'Semua Data';
         $filename = "Rekap_Gaji_Tortilla_{$dateFrom->format('Ymd')}_{$dateTo->format('Ymd')}.xlsx";
 
         return \Maatwebsite\Excel\Facades\Excel::download(

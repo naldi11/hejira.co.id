@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Gudang\Unit as GudangUnit;
-use App\Models\Gudang\Product as GudangProduct;
+use App\Models\Unit;
+use App\Models\Product;
 
 class ReceivingDetail extends Model
 {
@@ -13,10 +13,10 @@ class ReceivingDetail extends Model
     public    $timestamps = false;
 
     protected $fillable = [
-        'receiving_id', 'product_id', 'quantity', 'unit_id', 'hpp_price', 'total', 'notes',
+        'receiving_id', 'product_id', 'quantity_ordered', 'quantity', 'unit_id', 'hpp_price', 'total', 'notes', 'kondisi',
     ];
 
-    public function product(): BelongsTo    { return $this->belongsTo(GudangProduct::class); }
-    public function unit(): BelongsTo       { return $this->belongsTo(GudangUnit::class); }
+    public function product(): BelongsTo    { return $this->belongsTo(Product::class); }
+    public function unit(): BelongsTo       { return $this->belongsTo(Unit::class); }
     public function receiving(): BelongsTo  { return $this->belongsTo(Receiving::class); }
 }

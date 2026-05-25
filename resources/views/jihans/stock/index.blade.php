@@ -40,7 +40,9 @@
                     <th class="px-6 py-4 font-medium">Nama Produk</th>
                     <th class="px-6 py-4 font-medium">Kategori</th>
                     <th class="px-6 py-4 font-medium">Jenis</th>
+                    <th class="px-6 py-4 font-medium text-center">Sumber</th>
                     <th class="px-6 py-4 font-medium text-right">Stok Jihan's</th>
+                    <th class="px-6 py-4 font-medium text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -64,6 +66,17 @@
                             <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10">Lainnya</span>
                         @endif
                     </td>
+                    <td class="px-6 py-4 text-center">
+                        @if($stock->source_type === 'produced')
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10" title="Hasil Produksi Sendiri">
+                                Produksi
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-700/10" title="Suplai dari Gudang Utama">
+                                Gudang
+                            </span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 text-right">
                         @php
                             $qty = (float) ($stock->current_stock ?? 0);
@@ -77,6 +90,19 @@
                             <span class="font-bold {{ $qty > 0 ? 'text-gray-900' : 'text-red-600' }} text-base">{{ $qty }}</span>
                             <span class="text-gray-500 text-xs">{{ $stock->unit->abbreviation ?? '' }}</span>
                         </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        @if($stock->source_type === 'produced')
+                            <a href="{{ route('jihans.tortilla.create') }}" class="text-purple-600 hover:text-purple-900 font-medium text-xs flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                                Produksi
+                            </a>
+                        @else
+                            <a href="{{ route('jihans.transfer-requests.create') }}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-[16px]">local_shipping</span>
+                                Request
+                            </a>
+                        @endif
                     </td>
                 </tr>
                 @empty

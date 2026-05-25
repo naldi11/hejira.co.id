@@ -1,28 +1,59 @@
 @extends('layouts.jihans')
 @section('title', 'Rekap Gaji Karyawan')
-@section('page-title', 'Rekap Gaji Mingguan (Tortilla)')
+@section('page-title', 'Rekap Produksi & Gaji Tortilla')
 
 @section('content')
     <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface space-y-md">
 
         {{-- Filter Periode --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md space-y-md">
+
+            {{-- Tombol Shortcut Periode --}}
+            <div class="flex flex-wrap gap-sm">
+                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'hari']) }}"
+                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
+                        {{ $periode === 'hari' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
+                    Hari Ini
+                </a>
+                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'minggu']) }}"
+                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
+                        {{ $periode === 'minggu' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
+                    Minggu Ini
+                </a>
+                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'bulan']) }}"
+                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
+                        {{ $periode === 'bulan' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
+                    Bulan Ini
+                </a>
+                <a href="{{ route('jihans.tortilla.recap') }}"
+                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
+                        {{ $noFilter ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
+                    Semua Data
+                </a>
+            </div>
+
+            {{-- Custom Range --}}
             <form method="GET" class="flex flex-wrap items-end gap-md">
                 <div class="space-y-xs">
                     <label class="block font-label-sm text-label-sm text-on-surface-variant">Dari Tanggal</label>
-                    <input type="date" name="date_from" value="{{ $dateFrom->format('Y-m-d') }}"
+                    <input type="date" name="date_from" value="{{ $dateFrom ? $dateFrom->format('Y-m-d') : '' }}"
                         class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
                 </div>
                 <div class="space-y-xs">
                     <label class="block font-label-sm text-label-sm text-on-surface-variant">Sampai Tanggal</label>
-                    <input type="date" name="date_to" value="{{ $dateTo->format('Y-m-d') }}"
+                    <input type="date" name="date_to" value="{{ $dateTo ? $dateTo->format('Y-m-d') : '' }}"
                         class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
                 </div>
                 <button type="submit" class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant transition-all flex items-center gap-xs shadow-sm">
                     <span class="material-symbols-outlined text-[18px]">filter_list</span>
-                    Tampilkan Rekap
+                    Custom Range
                 </button>
-                <a href="{{ route('jihans.tortilla.recap.export', ['date_from' => $dateFrom->format('Y-m-d'), 'date_to' => $dateTo->format('Y-m-d')]) }}" 
+                @php
+                    $exportParams = $periode
+                        ? ['periode' => $periode]
+                        : ($dateFrom && $dateTo ? ['date_from' => $dateFrom->format('Y-m-d'), 'date_to' => $dateTo->format('Y-m-d')] : []);
+                @endphp
+                <a href="{{ route('jihans.tortilla.recap.export', $exportParams) }}"
                     class="px-md py-sm bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg hover:bg-secondary-fixed-dim transition-all flex items-center gap-xs shadow-sm">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                     Export Excel
@@ -34,8 +65,13 @@
         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
             <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
                 <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
-                    Periode: {{ $dateFrom->format('d M Y') }} — {{ $dateTo->format('d M Y') }}
+                    @if($noFilter)
+                        Semua Data Produksi
+                    @elseif($dateFrom && $dateTo)
+                        Periode: {{ $dateFrom->format('d M Y') }} — {{ $dateTo->format('d M Y') }}
+                    @endif
                 </h3>
+                <span class="font-label-sm text-label-sm text-on-surface-variant">{{ $recap->count() }} karyawan</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">

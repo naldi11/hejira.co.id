@@ -56,4 +56,32 @@ class Product extends Model
     {
         return $this->hasMany(MasterProductTieredPrice::class)->orderBy('min_qty', 'desc');
     }
+
+    // Scopes untuk visibilitas entitas
+    public function scopeVisibleInGudang($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('entity_scope', 'gudang')
+              ->orWhere('entity_scope', 'all')
+              ->orWhere('visible_gudang', true);
+        });
+    }
+
+    public function scopeVisibleInJihans($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('entity_scope', 'jihans')
+              ->orWhere('entity_scope', 'all')
+              ->orWhere('visible_jihans', true);
+        });
+    }
+
+    public function scopeVisibleInHendhys($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('entity_scope', 'hendhys')
+              ->orWhere('entity_scope', 'all')
+              ->orWhere('visible_hendhys', true);
+        });
+    }
 }

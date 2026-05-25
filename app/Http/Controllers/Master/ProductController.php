@@ -26,8 +26,16 @@ class ProductController extends Controller
         $info = $this->getScopeInfo($request);
         $modelClass = $this->getModelClass('Product', $info['scope']);
 
-        $q = $modelClass::with(['category', 'unit', 'brand', 'tieredPrices'])
-            ->where('visible_' . $info['scope'], true);
+        $q = $modelClass::with(['category', 'unit', 'brand', 'tieredPrices']);
+
+        // Terapkan scope visibilitas berdasarkan entitas login
+        if ($info['scope'] === 'hendhys') {
+            $q->visibleInHendhys();
+        } elseif ($info['scope'] === 'jihans') {
+            $q->visibleInJihans();
+        } else {
+            $q->visibleInGudang();
+        }
 
         if ($search = $request->search) {
             $q->where(fn($w) => $w->where('name', 'like', "%$search%")

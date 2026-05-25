@@ -27,7 +27,8 @@ class PosController extends Controller
     public function index()
     {
         // Get products that are available in Jihans Stock
-        $products = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['jihans', 'all'])
+        $products = Product::where('status', 'active')
+            ->visibleInJihans()
             ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
             ->select('master_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
             ->with(['unit', 'category', 'tieredPrices'])

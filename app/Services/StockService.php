@@ -285,6 +285,6 @@ class StockService
 
     public function updateProductHpp(int $productId, float $hppPrice): void
     {
-        \App\Models\Gudang\Product::where('id', $productId)->update(['hpp' => $hppPrice]);
+        \App\Models\Product::where('id', $productId)->update(['hpp' => $hppPrice]);
     }
 }

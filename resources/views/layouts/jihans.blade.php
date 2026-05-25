@@ -145,6 +145,12 @@
                 </a>
                 @endforeach
 
+                <a href="{{ route('jihans.reports.index') }}" 
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('jihans.reports.*') ? 'bg-orange-800 shadow-md text-white font-medium' : 'text-orange-100 hover:bg-orange-600/50 hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5m11 2a4 4 0 014 4v2m-3-3l3 3m0 0l-3 3M3 7h18M3 12h18M3 17h18"/></svg>
+                    <span class="text-sm">Laporan</span>
+                </a>
+
                 <div class="pt-5 pb-2">
                     <p class="px-3 text-[10px] font-bold text-orange-300 uppercase tracking-widest">Manufaktur</p>
                 </div>

@@ -26,7 +26,11 @@
       "Bash(dir C:/laragon/www/project-ketua/database/migrations/2026_05_23*)",
       "Bash(git *)",
       "Bash(php -r \"echo PHP_VERSION;\")",
-      "Bash(Rename-Item *)"
+      "Bash(Rename-Item *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\laragon\\\\www\\\\project-ketua\" -Directory)",
+      "Bash(Select-Object Name)",
+      "mcp__plugin_claude-mem_mcp-search__smart_outline",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

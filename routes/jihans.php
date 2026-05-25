@@ -71,4 +71,15 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
 
+        // Laporan
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/',           [\App\Http\Controllers\Jihans\ReportController::class, 'index'])->name('index');
+            Route::get('/laci',       [\App\Http\Controllers\Jihans\ReportController::class, 'laci'])->name('laci');
+            Route::get('/harian',     [\App\Http\Controllers\Jihans\ReportController::class, 'harian'])->name('harian');
+            Route::get('/mingguan',   [\App\Http\Controllers\Jihans\ReportController::class, 'mingguan'])->name('mingguan');
+            Route::get('/bulanan',    [\App\Http\Controllers\Jihans\ReportController::class, 'bulanan'])->name('bulanan');
+            Route::get('/pelanggan',  [\App\Http\Controllers\Jihans\ReportController::class, 'pelanggan'])->name('pelanggan');
+            Route::get('/pdf/{type}', [\App\Http\Controllers\Jihans\ReportController::class, 'pdf'])->name('pdf');
+        });
+
     });

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\TransferRequest;
 use App\Models\TransferRequestDetail;
-use App\Models\Gudang\Unit as GudangUnit;
+use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +42,12 @@ class TransferRequestController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $products = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->orderBy('name')->get();
-        $units = GudangUnit::all();
+        $products = Product::where('status', 'active')
+            ->where('source_type', 'purchased')
+            ->visibleInGudang()
+            ->orderBy('name')
+            ->get();
+        $units = Unit::all();
 
         return view('hendhys.transfer-requests.form', compact('products', 'units'));
     }

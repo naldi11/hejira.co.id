@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\TransferRequest;
-use App\Models\Gudang\Unit as GudangUnit;
+use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
@@ -38,9 +38,14 @@ class TransferRequestController extends Controller
 
     public function create()
     {
-        $products = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->with('unit')->orderBy('name')->get();
+        $products = Product::where('status', 'active')
+            ->where('source_type', 'purchased')
+            ->visibleInGudang()
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
 
-        $units = GudangUnit::all();
+        $units = Unit::all();
 
         return view('jihans.transfer-requests.form', compact('products', 'units'));
     }

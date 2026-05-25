@@ -40,7 +40,8 @@ class TransferOutController extends Controller
 
     public function create(Request $request)
     {
-        $products  = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['gudang', 'all'])
+        $products  = Product::where('status', 'active')
+            ->visibleInGudang()
             ->with(['unit'])
             ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
             ->select('master_products.*', 'gudang_stock.quantity as current_stock')

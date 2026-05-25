@@ -22,10 +22,10 @@ class StockController extends Controller
     {
         // Join master_products with gudang_stock (left join — show all products)
         $q = Product::with(['unit', 'category'])
+            ->visibleInGudang()
             ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
             ->select('master_products.*', 'gudang_stock.quantity as current_stock')
             ->where('master_products.status', 'active')
-            ->whereIn('master_products.entity_scope', ['gudang', 'all'])
             ->where('master_products.product_type', 'INV');
 
         if ($search = $request->search) {

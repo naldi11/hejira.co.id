@@ -38,7 +38,11 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $products  = Product::where('status', 'active')->whereIn('entity_scope', ['gudang', 'all'])->with('unit')->orderBy('name')->get();
+        $products  = Product::where('status', 'active')
+            ->visibleInGudang()
+            ->with('unit')
+            ->orderBy('name')
+            ->get();
         $units     = Unit::orderBy('name')->get();
 
         return view('gudang.purchase-orders.form', compact('suppliers', 'products', 'units'));
@@ -175,5 +179,12 @@ class PurchaseOrderController extends Controller
         $this->logger->log('update', 'gudang.po', "PO dibatalkan: {$po->po_number}", $po);
 
         return back()->with('success', "PO {$po->po_number} dibatalkan.");
+    }
+
+    public function print(PurchaseOrder $po)
+    {
+        $po->load(['supplier', 'details.product', 'details.unit', 'creator']);
+
+        return view('gudang.purchase-orders.print', compact('po'));
     }
 }

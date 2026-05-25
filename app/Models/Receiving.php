@@ -12,15 +12,25 @@ class Receiving extends Model
 
     protected $fillable = [
         'grn_number', 'po_id', 'supplier_id', 'date', 'notes', 'created_by',
+        'status', 'received_by_name', 'supplier_rep_name',
+        'kendala', 'closed_at', 'closed_by',
     ];
 
     protected function casts(): array
     {
-        return ['date' => 'date'];
+        return [
+            'date'      => 'date',
+            'closed_at' => 'datetime',
+        ];
     }
 
     public function po(): BelongsTo         { return $this->belongsTo(PurchaseOrder::class, 'po_id'); }
-    public function supplier(): BelongsTo   { return $this->belongsTo(\App\Models\Gudang\Supplier::class); }
+    public function supplier(): BelongsTo   { return $this->belongsTo(Supplier::class); }
     public function creator(): BelongsTo    { return $this->belongsTo(User::class, 'created_by'); }
+    public function closedBy(): BelongsTo   { return $this->belongsTo(User::class, 'closed_by'); }
     public function details(): HasMany      { return $this->hasMany(ReceivingDetail::class, 'receiving_id'); }
+    public function photos(): HasMany       { return $this->hasMany(ReceivingPhoto::class, 'receiving_id'); }
+
+    public function isOpen(): bool   { return $this->status === 'open'; }
+    public function isClosed(): bool { return $this->status === 'closed'; }
 }

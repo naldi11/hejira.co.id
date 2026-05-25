@@ -22,7 +22,7 @@ class ProductionRateController extends Controller
         $producedProducts = collect();
         if ($info['scope'] === 'jihans') {
             $producedProducts = Product::with('unit')
-                ->where('entity_scope', 'jihans')
+                ->visibleInJihans()
                 ->where('source_type', 'produced')
                 ->where('status', 'active')
                 ->orderBy('name')

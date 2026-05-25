@@ -63,11 +63,13 @@
                                 Kode</th>
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
                                 Produk</th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">Sumber</th>
                             <th
                                 class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
                                 Stok</th>
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Satuan
                             </th>
+                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-surface-container">
@@ -75,6 +77,13 @@
                             <tr class="hover:bg-surface-container transition-colors">
                                 <td class="px-md py-sm font-mono text-xs text-on-surface-variant">{{ $stock->code }}</td>
                                 <td class="px-md py-sm font-bold text-on-surface">{{ $stock->name }}</td>
+                                <td class="px-md py-sm text-center">
+                                    @if($stock->source_type === 'produced')
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">PRODUKSI</span>
+                                    @else
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">GUDANG</span>
+                                    @endif
+                                </td>
                                 <td class="px-md py-sm text-right">
                                     @php $qty = (float) $stock->current_stock; @endphp
                                     @if($qty <= 0)
@@ -88,6 +97,26 @@
                                     @endif
                                 </td>
                                 <td class="px-md py-sm text-on-surface-variant">{{ $stock->unit->abbreviation ?? '-' }}</td>
+                                <td class="px-md py-sm text-center">
+                                    @if($isPusat)
+                                        @if($stock->source_type === 'produced')
+                                            <a href="{{ route('hendhys.productions.create') }}" class="text-purple-600 hover:text-purple-900 flex items-center justify-center gap-1 text-xs font-bold">
+                                                <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                                                Produksi
+                                            </a>
+                                        @else
+                                            <a href="{{ route('hendhys.transfer-requests.create') }}" class="text-blue-600 hover:text-blue-900 flex items-center justify-center gap-1 text-xs font-bold">
+                                                <span class="material-symbols-outlined text-[16px]">local_shipping</span>
+                                                Request
+                                            </a>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('hendhys.branch-requests.index') }}" class="text-secondary hover:text-secondary-fixed flex items-center justify-center gap-1 text-xs font-bold">
+                                            <span class="material-symbols-outlined text-[16px]">shopping_cart</span>
+                                            Request
+                                        </a>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>

@@ -46,7 +46,7 @@ class BranchRequestController extends Controller
         }
 
         $products = Product::where('status', 'active')
-            ->whereIn('entity_scope', ['hendhys', 'all'])
+            ->visibleInHendhys()
             ->orderBy('name')
             ->get();
         $units = Unit::all();

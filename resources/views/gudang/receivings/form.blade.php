@@ -5,10 +5,10 @@
 @section('content')
 <div class="mt-4 max-w-5xl"
      x-data="{
-        items: {{ isset($po) ? $po->details->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'quantity_ordered'=>$d->quantity_ordered,'quantity_received_so_far'=>$d->quantity_received,'quantity'=>max(0,$d->quantity_ordered - $d->quantity_received),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>$d->price,'total'=>0,'notes'=>''])->toJson() : '[]' }},
+        items: {{ isset($po) ? $po->details->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'quantity_ordered'=>$d->quantity_ordered,'quantity_received_so_far'=>$d->quantity_received,'quantity'=>max(0,$d->quantity_ordered - $d->quantity_received),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>$d->price,'total'=>0,'notes'=>'','kondisi'=>''])->toJson() : '[]' }},
         products: {{ $products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'unit_id'=>$p->unit_id,'unit_name'=>$p->unit->abbreviation,'hpp'=>$p->hpp])->toJson() }},
         addItem() {
-            this.items.push({ product_id:'', product_name:'', quantity_ordered:0, quantity_received_so_far:0, quantity:1, unit_id:'', unit_name:'', hpp_price:0, total:0, notes:'' });
+            this.items.push({ product_id:'', product_name:'', quantity_ordered:0, quantity_received_so_far:0, quantity:1, unit_id:'', unit_name:'', hpp_price:0, total:0, notes:'', kondisi:'' });
         },
         removeItem(i) { this.items.splice(i,1); },
         onProductChange(i, productId) {
@@ -69,8 +69,23 @@
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
             </div>
             <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Catatan penerimaan atau nomor surat jalan supplier..."
+                <label class="block text-sm font-medium text-gray-700 mb-1">Catatan / No. Surat Jalan</label>
+                <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Nomor surat jalan atau catatan penerimaan..."
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penerima (Gudang)</label>
+                <input type="text" name="received_by_name" value="{{ old('received_by_name') }}" placeholder="Nama petugas gudang penerima..."
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Perwakilan Supplier</label>
+                <input type="text" name="supplier_rep_name" value="{{ old('supplier_rep_name') }}" placeholder="Nama pengirim dari supplier..."
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Kendala / Catatan Masalah</label>
+                <input type="text" name="kendala" value="{{ old('kendala') }}" placeholder="Isi jika ada kendala pada penerimaan ini..."
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
             </div>
         </div>
@@ -101,6 +116,7 @@
                         @endif
                         <th class="pb-2 text-center w-24">Qty Diterima</th>
                         <th class="pb-2 text-left w-20">Satuan</th>
+                        <th class="pb-2 text-center w-24">Kondisi</th>
                         <th class="pb-2 text-right w-32">Harga Beli</th>
                         <th class="pb-2 text-right w-32">Total</th>
                         @if(!isset($po))
@@ -139,6 +155,15 @@
                             <td class="py-2 px-2">
                                 <input type="hidden" :name="`items[${i}][unit_id]`" x-model="item.unit_id">
                                 <span x-text="item.unit_name || '-'" class="text-xs text-gray-500 font-mono"></span>
+                            </td>
+                            <td class="py-2 px-2">
+                                <select :name="`items[${i}][kondisi]`" x-model="item.kondisi"
+                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                                    <option value="">-</option>
+                                    <option value="baik">Baik</option>
+                                    <option value="rusak">Rusak</option>
+                                    <option value="kurang">Kurang</option>
+                                </select>
                             </td>
                             <td class="py-2 px-2">
                                 <input type="number" :name="`items[${i}][hpp_price]`" x-model="item.hpp_price"

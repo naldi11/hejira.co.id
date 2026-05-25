@@ -49,8 +49,10 @@ class ProductionController extends Controller
             abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
         }
 
-        // Get products that are manufactured by Hendhys
+        // Ambil produk hasil produksi sendiri yang terlihat di Hendhys
         $products = Product::where('status', 'active')
+            ->where('source_type', 'produced')
+            ->visibleInHendhys()
             ->orderBy('name')
             ->get();
             

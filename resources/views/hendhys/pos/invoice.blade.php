@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faktur - {{ $transaction->transaction_number }}</title>
+    @vite(['resources/css/app.css'])
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @page {
+            size: A5 portrait;   /* 148mm × 210mm */
+            margin: 8mm 10mm;
+        }
+
+        body {
+            font-family: 'Inter', 'Arial', sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            font-size: 11px;
+        }
+
+        /* ===== Wrapper ===== */
+        .page-wrapper {
+            max-width: 148mm;
+            margin: 20px auto;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 0;
+            min-height: 210mm;
+        }
+
+        /* ===== Header Strip ===== */
+        .header-strip {
+            background: #d97706;
+            height: 4px;
+        }
+
+        /* ===== Invoice Header ===== */
+        .invoice-header {
+            padding: 15px 20px 10px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .brand-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .brand-logo {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .brand-info .invoice-label {
+            font-size: 14px;
+            font-weight: 900;
+            color: #d97706;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .brand-info h1 {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1f2937;
+            line-height: 1.1;
+        }
+
+        .brand-info p {
+            font-size: 10px;
+            color: #4b5563;
+            margin-top: 1px;
+            line-height: 1.3;
+        }
+
+        .invoice-meta-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 20px;
+            background: #fffbeb;
+            border-top: 1px solid #fef3c7;
+            border-bottom: 1px solid #fef3c7;
+            font-size: 10px;
+            font-weight: 700;
+            color: #92400e;
+        }
+
+        /* ===== Customer Info ===== */
+        .meta-section {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .meta-item {
+            font-size: 10px;
+        }
+
+        .meta-item span {
+            display: block;
+            color: #6b7280;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8px;
+            margin-bottom: 2px;
+        }
+
+        .meta-item b {
+            color: #1f2937;
+            font-size: 11px;
+        }
+
+        /* ===== Items Table ===== */
+        .table-section {
+            padding: 10px 20px;
+            min-height: 80mm;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            border-bottom: 2px solid #d97706;
+        }
+
+        thead th {
+            padding: 6px 4px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #92400e;
+            text-align: left;
+        }
+
+        thead th.text-right { text-align: right; }
+        thead th.text-center { text-align: center; }
+
+        tbody td {
+            padding: 6px 4px;
+            font-size: 10px;
+            border-bottom: 1px solid #fef3c7;
+            vertical-align: middle;
+        }
+
+        td.no { width: 25px; text-align: center; color: #9ca3af; }
+        td.qty { width: 40px; text-align: center; font-weight: 700; }
+        td.unit { width: 40px; text-align: center; color: #6b7280; }
+        td.price { width: 80px; text-align: right; }
+        td.disc  { width: 70px; text-align: right; color: #dc2626; }
+        td.total { width: 90px; text-align: right; font-weight: 700; color: #1f2937; }
+        td.product-name { font-weight: 600; color: #111827; }
+
+        /* ===== Totals ===== */
+        .totals-section {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px 20px;
+            align-items: flex-end;
+        }
+
+        .payment-status {
+            width: 200px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border: 2px solid #d97706;
+            color: #d97706;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-bottom: 8px;
+            transform: rotate(-3deg);
+        }
+
+        .totals-box {
+            width: 240px;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 10px;
+        }
+
+        .totals-row.grand {
+            border-top: 2px solid #d97706;
+            margin-top: 4px;
+            padding-top: 8px;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .totals-row .label { color: #4b5563; font-weight: 600; }
+        .totals-row.grand .label { color: #1f2937; }
+
+        .totals-row .value { font-weight: 700; color: #1f2937; }
+        .totals-row.grand .value { color: #d97706; font-size: 14px; }
+
+        /* ===== Footer ===== */
+        .invoice-footer {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px dashed #fcd34d;
+        }
+
+        .footer-note {
+            font-size: 9px;
+            color: #6b7280;
+            line-height: 1.4;
+            max-width: 60%;
+        }
+
+        .signature-block {
+            text-align: center;
+            font-size: 10px;
+            color: #374151;
+        }
+
+        .signature-name {
+            font-weight: 800;
+            margin-top: 40px;
+            text-decoration: underline;
+        }
+
+        /* ===== Action Buttons ===== */
+        .action-bar {
+            max-width: 148mm;
+            margin: 0 auto 16px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 12px 0;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-back { background: #f3f4f6; color: #374151; }
+        .btn-back:hover { background: #e5e7eb; }
+        .btn-print { background: #d97706; color: white; }
+        .btn-print:hover { background: #b45309; }
+
+        @media print {
+            body { background: white; }
+            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; max-width: 100%; min-height: auto; }
+            .action-bar { display: none !important; }
+            .header-strip { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-bar print:hidden">
+    <a href="{{ route('hendhys.pos.index') }}" class="btn btn-back">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Kembali ke POS
+    </a>
+    <button onclick="window.print()" class="btn btn-print">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Cetak Faktur
+    </button>
+</div>
+
+<div class="page-wrapper">
+    <div class="header-strip"></div>
+
+    {{-- ===== HEADER ===== --}}
+    <div class="invoice-header">
+        <div class="brand-block">
+            <img src="{{ asset('logo/hendhys-logo.png') }}" alt="Hendhys Logo" class="brand-logo" onerror="this.style.display='none'">
+            <div class="brand-info">
+                <div class="invoice-label">FAKTUR PENJUALAN</div>
+                <h1>HENDHYS BROWNIES</h1>
+                @php
+                    $branch = auth()->user()->branch;
+                @endphp
+                <p>{{ $branch->name }}</p>
+                <p>{{ $branch->address }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-meta-bar">
+        <span>No: {{ $transaction->transaction_number }}</span>
+        <span>{{ \Carbon\Carbon::parse($transaction->date)->translatedFormat('d F Y') }} {{ $transaction->time }}</span>
+    </div>
+
+    {{-- ===== CUSTOMER INFO ===== --}}
+    <div class="meta-section">
+        <div class="meta-item">
+            <span>Pembeli / Customer:</span>
+            <b>{{ $transaction->customer_name ?: 'PELANGGAN UMUM' }}</b>
+        </div>
+        <div class="meta-item" style="text-align: right">
+            <span>Petugas Kasir:</span>
+            <b>{{ $transaction->creator->name ?? 'Kasir' }}</b>
+        </div>
+    </div>
+
+    {{-- ===== ITEMS TABLE ===== --}}
+    <div class="table-section">
+        <table>
+            <thead>
+                <tr>
+                    <th class="text-center" style="width:25px">No</th>
+                    <th>Nama Produk</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-center">Sat</th>
+                    <th class="text-right">Harga</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($transaction->details as $i => $item)
+                <tr>
+                    <td class="no">{{ $i + 1 }}</td>
+                    <td class="product-name">{{ $item->product_name }}</td>
+                    <td class="qty">{{ (int) $item->quantity }}</td>
+                    <td class="unit">{{ $item->unit->abbreviation ?? 'pcs' }}</td>
+                    <td class="price">{{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="total">{{ number_format($item->total, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    {{-- ===== TOTALS ===== --}}
+    <div class="totals-section">
+        <div class="payment-status">
+            @php $payment = $transaction->payments->first(); @endphp
+            @if($payment)
+                <div class="status-badge">LUNAS</div>
+                <div style="font-size: 9px; color: #6b7280; font-weight: 700">
+                    METODE: {{ strtoupper($payment->method->name ?? $payment->payment_method) }}
+                </div>
+            @else
+                <div class="status-badge" style="border-color: #dc2626; color: #dc2626;">PENDING</div>
+            @endif
+        </div>
+        
+        <div class="totals-box">
+            <div class="totals-row">
+                <span class="label">Subtotal</span>
+                <span class="value">Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
+            </div>
+            @if($transaction->discount_amount > 0)
+            <div class="totals-row">
+                <span class="label">Diskon</span>
+                <span class="value">-(Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }})</span>
+            </div>
+            @endif
+            @if($transaction->tax_amount > 0)
+            <div class="totals-row">
+                <span class="label">Pajak</span>
+                <span class="value">Rp {{ number_format($transaction->tax_amount, 0, ',', '.') }}</span>
+            </div>
+            @endif
+            <div class="totals-row grand">
+                <span class="label">TOTAL AKHIR</span>
+                <span class="value">Rp {{ number_format($transaction->grand_total, 0, ',', '.') }}</span>
+            </div>
+            @if($payment)
+            <div class="totals-row" style="margin-top: 4px">
+                <span class="label">Tunai</span>
+                <span class="value">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
+            </div>
+            <div class="totals-row">
+                <span class="label">Kembalian</span>
+                <span class="value" style="color:#059669">
+                    Rp {{ number_format(max(0, $payment->amount - $transaction->grand_total), 0, ',', '.') }}
+                </span>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- ===== FOOTER ===== --}}
+    <div class="invoice-footer">
+        <div class="footer-note">
+            <b>Catatan:</b> Terima kasih telah membeli produk Hendhys Brownies. 
+            Semoga hari Anda menyenangkan!
+        </div>
+        <div class="signature-block">
+            <div>Diterima Oleh,</div>
+            <div class="signature-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+        </div>
+        <div class="signature-block">
+            <div>Hormat Kami,</div>
+            <div class="signature-name">{{ auth()->user()->name }}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        setTimeout(function() { window.print(); }, 600);
+    }
+</script>
+</body>
+</html>

@@ -24,7 +24,7 @@ class PosController extends Controller
     {
         $user = auth()->user();
         
-        $q = Product::where('status', 'active')->whereIn('master_products.entity_scope', ['hendhys', 'all']);
+        $q = Product::where('status', 'active')->visibleInHendhys();
 
         if ($user->branch->type === 'pusat') {
             $q->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
@@ -210,10 +210,10 @@ class PosController extends Controller
         return view('hendhys.pos.receipt', compact('transaction'));
     }
 
-    public function invoice($id)
+    public function invoice(HendhysTransaction $transaction)
     {
-        $transaction = HendhysTransaction::findOrFail($id);
-        return $this->invoiceService->generateHendhysInvoice($transaction);
+        $transaction->load(['details.unit', 'payments.method', 'creator']);
+        return view('hendhys.pos.invoice', compact('transaction'));
     }
 
 }

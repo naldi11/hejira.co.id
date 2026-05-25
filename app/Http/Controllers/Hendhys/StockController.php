@@ -20,6 +20,7 @@ class StockController extends Controller
         if ($isPusat) {
             // --- PUSAT: stok milik pusat ---
             $q = Product::where('status', 'active')
+                ->visibleInHendhys()
                 ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
                 ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
                 ->with(['unit', 'category']);
@@ -42,6 +43,7 @@ class StockController extends Controller
             // Stok per cabang yang difilter
             $selectedBranchId = $request->branch_id;
             $branchStocksQuery = Product::where('master_products.status', 'active')
+                ->visibleInHendhys()
                 ->join('hendhys_stock_branch', 'master_products.id', '=', 'hendhys_stock_branch.product_id')
                 ->with(['unit']);
 

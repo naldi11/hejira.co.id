@@ -52,6 +52,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::get('/pos/customer-search', [PosController::class, 'customerSearch'])->name('pos.customer-search');
         Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
         Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+        Route::get('/pos/{transaction}/invoice', [PosController::class, 'invoice'])->name('pos.invoice');
 
         // Riwayat Transaksi
         Route::resource('transactions', \App\Http\Controllers\Hendhys\TransactionController::class)->only(['index', 'show']);
@@ -84,5 +85,16 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         // Stok Pusat & Cabang
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
+
+        // Laporan
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/',          [\App\Http\Controllers\Hendhys\ReportController::class, 'index'])->name('index');
+            Route::get('/laci',      [\App\Http\Controllers\Hendhys\ReportController::class, 'laci'])->name('laci');
+            Route::get('/harian',    [\App\Http\Controllers\Hendhys\ReportController::class, 'harian'])->name('harian');
+            Route::get('/mingguan',  [\App\Http\Controllers\Hendhys\ReportController::class, 'mingguan'])->name('mingguan');
+            Route::get('/bulanan',   [\App\Http\Controllers\Hendhys\ReportController::class, 'bulanan'])->name('bulanan');
+            Route::get('/pelanggan', [\App\Http\Controllers\Hendhys\ReportController::class, 'pelanggan'])->name('pelanggan');
+            Route::get('/pdf/{type}', [\App\Http\Controllers\Hendhys\ReportController::class, 'pdf'])->name('pdf');
+        });
 
     });

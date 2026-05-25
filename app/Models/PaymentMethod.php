@@ -12,7 +12,7 @@ class PaymentMethod extends Model
     protected $table = 'master_payment_methods';
 
     protected $fillable = [
-        'entity_scope', 'name', 'bank_name', 'account_number',
+        'entity_scope', 'name', 'type', 'bank_name', 'account_number',
         'account_name', 'image', 'is_active',
     ];
 

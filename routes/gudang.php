@@ -26,12 +26,18 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
         Route::resource('po', PurchaseOrderController::class)->except(['destroy']);
         Route::post('po/{po}/send',   [PurchaseOrderController::class, 'send'])->name('po.send');
         Route::post('po/{po}/cancel', [PurchaseOrderController::class, 'cancel'])->name('po.cancel');
+        Route::get('po/{po}/print',   [PurchaseOrderController::class, 'print'])->name('po.print');
 
         // Penerimaan Barang (GRN)
-        Route::get('receiving',             [ReceivingController::class, 'index'])->name('receiving.index');
-        Route::get('receiving/create',      [ReceivingController::class, 'create'])->name('receiving.create');
-        Route::post('receiving',            [ReceivingController::class, 'store'])->name('receiving.store');
-        Route::get('receiving/{receiving}', [ReceivingController::class, 'show'])->name('receiving.show');
+        Route::get('receiving',                                           [ReceivingController::class, 'index'])->name('receiving.index');
+        Route::get('receiving/create',                                    [ReceivingController::class, 'create'])->name('receiving.create');
+        Route::post('receiving',                                          [ReceivingController::class, 'store'])->name('receiving.store');
+        Route::get('receiving/{receiving}',                               [ReceivingController::class, 'show'])->name('receiving.show');
+        Route::put('receiving/{receiving}',                               [ReceivingController::class, 'update'])->name('receiving.update');
+        Route::post('receiving/{receiving}/close',                        [ReceivingController::class, 'close'])->name('receiving.close');
+        Route::get('receiving/{receiving}/print',                         [ReceivingController::class, 'print'])->name('receiving.print');
+        Route::post('receiving/{receiving}/photos',                       [ReceivingController::class, 'uploadPhoto'])->name('receiving.photos.store');
+        Route::delete('receiving/{receiving}/photos/{photo}',             [ReceivingController::class, 'deletePhoto'])->name('receiving.photos.destroy');
 
         // Stok Gudang
         Route::get('stock',           [StockController::class, 'index'])->name('stock.index');

@@ -158,6 +158,12 @@
                     Transaksi Pending
                 </a>
             </li>
+            <li>
+                <a href="{{ route('hendhys.reports.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.reports.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.reports.*') ? 'fill' : '' }}">assessment</span>
+                    Laporan
+                </a>
+            </li>
 
             <li class="mt-md text-[10px] font-bold text-outline uppercase tracking-widest px-sm">Inventory</li>
             <li>
@@ -178,6 +184,12 @@
                 <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'fill' : '' }}">local_shipping</span>
                     Distribusi
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('hendhys.transfer-requests.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transfer-requests.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transfer-requests.*') ? 'fill' : '' }}">warehouse</span>
+                    Request Stok (Gudang)
                 </a>
             </li>
             @endif

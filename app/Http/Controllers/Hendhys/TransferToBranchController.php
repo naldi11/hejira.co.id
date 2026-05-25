@@ -7,6 +7,7 @@ use App\Models\HendhysBranchRequest;
 use App\Models\HendhysStockPusat;
 use App\Models\HendhysTransferToBranch;
 use App\Models\HendhysTransferToBranchDetail;
+use App\Models\Product;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -58,7 +59,8 @@ class TransferToBranchController extends Controller
         // Fitur baru: Distribusi Manual tanpa request.
         $branches = \App\Models\Branch::where('type', 'cabang')->where('is_active', true)->orderBy('name')->get();
         // Hanya ambil produk yang ada stoknya di pusat
-        $products = \App\Models\Hendhys\Product::where('status', 'active')
+        $products = Product::where('status', 'active')
+            ->visibleInHendhys()
             ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
             ->with('unit')
             ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
