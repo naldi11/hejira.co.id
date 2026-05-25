@@ -76,26 +76,28 @@
                                         <th class="px-6 py-4 text-center">Jumlah Diminta</th>
                                         @if($transferRequest->status === 'pending')
                                             <th class="px-6 py-4 text-center">Stok Gudang</th>
+                                            <th class="px-6 py-4 text-center">Qty Disetujui</th>
+                                        @else
+                                            <th class="px-6 py-4 text-center">Qty Disetujui</th>
                                         @endif
                                         <th class="px-6 py-4 text-center">Satuan</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    @foreach($transferRequest->details as $item)
+                                    @foreach($transferRequest->details as $i => $item)
                                     @php
-                                        // Ambil stok gudang saat ini untuk perbandingan
-                                        $whStock = \App\Models\GudangStock::where('product_id', $item->product_id)->value('quantity') ?? 0;
-                                        $hasEnough = $whStock >= $item->quantity;
+                                        $whStock  = \App\Models\GudangStock::where('product_id', $item->product_id)->value('quantity') ?? 0;
+                                        $hasEnough = $whStock >= $item->quantity_requested;
                                     @endphp
                                     <tr class="group transition-colors hover:bg-slate-50/50">
                                         <td class="px-6 py-5">
                                             <div class="flex flex-col">
-                                                <span class="text-sm font-black text-slate-800 tracking-tight">{{ $item->product_name }}</span>
+                                                <span class="text-sm font-black text-slate-800 tracking-tight">{{ $item->product->name ?? '-' }}</span>
                                                 <span class="text-[10px] font-bold text-slate-400 font-mono uppercase mt-0.5">{{ $item->product->code ?? '-' }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-5 text-center">
-                                            <span class="text-base font-black text-slate-900 tabular-nums">{{ number_format($item->quantity, 0) }}</span>
+                                            <span class="text-base font-black text-slate-900 tabular-nums">{{ number_format($item->quantity_requested, 0) }}</span>
                                         </td>
                                         @if($transferRequest->status === 'pending')
                                             <td class="px-6 py-5 text-center">
@@ -105,6 +107,15 @@
                                                         <span class="material-symbols-outlined text-[14px]">warning</span>
                                                     @endif
                                                 </div>
+                                            </td>
+                                            <td class="px-6 py-5 text-center">
+                                                <input type="hidden" name="items[{{ $i }}][id]" value="{{ $item->id }}" form="approve-form">
+                                                <input type="number" name="items[{{ $i }}][quantity_approved]" value="{{ $item->quantity_requested }}" min="1" max="{{ $item->quantity_requested }}" form="approve-form"
+                                                    class="w-20 px-3 py-2 text-center text-sm font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none tabular-nums">
+                                            </td>
+                                        @else
+                                            <td class="px-6 py-5 text-center">
+                                                <span class="text-sm font-bold text-slate-700 tabular-nums">{{ $item->quantity_approved ?? '-' }}</span>
                                             </td>
                                         @endif
                                         <td class="px-6 py-5 text-center">
@@ -124,7 +135,7 @@
                     <div class="flex flex-col md:flex-row items-center gap-6">
                         <div class="flex-1">
                             <h4 class="text-lg font-black text-white font-headline tracking-tight">Keputusan Approval</h4>
-                            <p class="text-slate-400 text-xs font-medium mt-1">Pastikan stok fisik tersedia sebelum menyetujui permintaan ini.</p>
+                            <p class="text-slate-400 text-xs font-medium mt-1">Sesuaikan qty disetujui jika perlu, lalu klik Setujui.</p>
                         </div>
                         <div class="flex items-center gap-4 shrink-0 w-full md:w-auto">
                             <form action="{{ route('gudang.transfer-requests.reject', $transferRequest) }}" method="POST" class="flex-1 md:flex-none" onsubmit="return confirm('Yakin ingin menolak permintaan ini?')">
@@ -133,7 +144,7 @@
                                     Tolak Request
                                 </button>
                             </form>
-                            <form action="{{ route('gudang.transfer-requests.approve', $transferRequest) }}" method="POST" class="flex-1 md:flex-none">
+                            <form id="approve-form" action="{{ route('gudang.transfer-requests.approve', $transferRequest) }}" method="POST" class="flex-1 md:flex-none">
                                 @csrf
                                 <button type="submit" class="w-full px-10 py-4 bg-indigo-600 text-white hover:bg-indigo-500 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/30">
                                     Setujui (Approve)
@@ -219,7 +230,7 @@
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-white/10">
                         <span class="text-xs font-bold text-indigo-200">Total Kuantitas</span>
-                        <span class="text-sm font-black tabular-nums">{{ number_format($transferRequest->details->sum('quantity')) }} Unit</span>
+                        <span class="text-sm font-black tabular-nums">{{ number_format($transferRequest->details->sum('quantity_requested')) }} Unit</span>
                     </div>
                     <div class="flex justify-between items-center py-3">
                         <span class="text-xs font-bold text-indigo-200">Estimasi Berat</span>
