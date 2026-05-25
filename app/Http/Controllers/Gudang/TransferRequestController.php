@@ -59,9 +59,16 @@ class TransferRequestController extends Controller
                 $detail = $transferRequest->details->find($item['id']);
                 if (!$detail) continue;
 
+                // VALIDASI BACKEND: Qty disetujui tidak boleh melebihi qty diminta!
+                if ((float)$item['quantity_approved'] > (float)$detail->quantity_requested) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'items' => "Kuantitas disetujui untuk produk '" . ($detail->product->name ?? 'Barang') . "' tidak boleh melebihi jumlah permintaan (" . floatval($detail->quantity_requested) . ")."
+                    ]);
+                }
+
                 $detail->update(['quantity_approved' => $item['quantity_approved']]);
 
-                if ($item['quantity_approved'] < $detail->quantity_requested) {
+                if ((float)$item['quantity_approved'] < (float)$detail->quantity_requested) {
                     $allFulfilled = false;
                 }
             }
