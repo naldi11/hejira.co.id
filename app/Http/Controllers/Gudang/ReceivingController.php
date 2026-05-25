@@ -45,21 +45,25 @@ class ReceivingController extends Controller
 
     public function create(Request $request)
     {
-        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $products  = Product::where('status', 'active')
+        $suppliers      = Supplier::where('is_active', true)->orderBy('name')->get();
+        $products       = Product::where('status', 'active')
             ->visibleInGudang()
             ->with('unit')
             ->orderBy('name')
             ->get();
-        $units = Unit::orderBy('name')->get();
-        $po    = null;
+        $units          = Unit::orderBy('name')->get();
+        $purchaseOrders = PurchaseOrder::with('supplier')
+            ->whereIn('status', ['sent', 'partial'])
+            ->orderBy('date', 'desc')
+            ->get();
+        $po = null;
 
         if ($request->filled('po_id')) {
             $po = PurchaseOrder::with('details.product', 'details.unit', 'supplier')
                 ->findOrFail($request->po_id);
         }
 
-        return view('gudang.receivings.form', compact('suppliers', 'products', 'units', 'po'));
+        return view('gudang.receivings.form', compact('suppliers', 'products', 'units', 'purchaseOrders', 'po'));
     }
 
     public function store(Request $request)
