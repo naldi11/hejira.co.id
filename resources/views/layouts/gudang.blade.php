@@ -104,7 +104,6 @@
                     <div x-show="open" x-collapse x-cloak class="space-y-1 mt-1">
                         @foreach([
                             ['route' => 'master.suppliers.index',   'label' => 'Supplier', 'icon' => 'local_shipping'],
-                            ['route' => 'master.customers.index',   'label' => 'Customer', 'icon' => 'groups'],
                             ['route' => 'master.products.index',    'label' => 'Produk', 'icon' => 'inventory_2'],
                             ['route' => 'master.categories.index',  'label' => 'Kategori', 'icon' => 'category'],
                             ['route' => 'master.units.index',       'label' => 'Satuan', 'icon' => 'straighten'],
