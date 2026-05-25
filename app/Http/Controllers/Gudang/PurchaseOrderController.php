@@ -37,6 +37,7 @@ class PurchaseOrderController extends Controller
 
     public function create()
     {
+        $po        = new PurchaseOrder();
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $products  = Product::where('status', 'active')
             ->visibleInGudang()
@@ -45,7 +46,7 @@ class PurchaseOrderController extends Controller
             ->get();
         $units     = Unit::orderBy('name')->get();
 
-        return view('gudang.purchase-orders.form', compact('suppliers', 'products', 'units'));
+        return view('gudang.purchase-orders.form', compact('po', 'suppliers', 'products', 'units'));
     }
 
     public function store(Request $request)
