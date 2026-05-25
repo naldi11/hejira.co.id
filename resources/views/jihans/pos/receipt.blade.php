@@ -2,274 +2,197 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Faktur - {{ $transaction->transaction_number }}</title>
-    @vite(['resources/css/app.css'])
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: A5 portrait;   /* 148mm × 210mm */
-            margin: 8mm 10mm;
+            size: A5 landscape;   /* Setengah A4 landscape */
+            margin: 5mm 8mm;
         }
 
         body {
-            font-family: 'Arial', sans-serif;
-            background: #e5e7eb;
-            color: #1f2937;
-            font-size: 11px;
+            font-family: 'Courier New', Courier, monospace;
+            background: #fff;
+            color: #000;
+            font-size: 9px;
+            line-height: 1.3;
         }
 
         /* ===== Wrapper ===== */
         .page-wrapper {
-            max-width: 148mm;
-            margin: 20px auto;
+            width: 100%;
             background: #fff;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
             padding: 0;
-            min-height: 210mm;
+            margin: 0 auto;
         }
 
-        /* ===== Header Strip ===== */
-        .header-strip {
-            background: #c2410c;
-            height: 4px;
+        /* ===== Header Grid ===== */
+        .header-section {
+            width: 100%;
+            margin-bottom: 5px;
+            display: table;
+        }
+        .header-left {
+            display: table-cell;
+            width: 45%;
+            vertical-align: top;
+        }
+        .header-right {
+            display: table-cell;
+            width: 55%;
+            vertical-align: top;
+            padding-left: 10px;
         }
 
-        /* ===== Invoice Header ===== */
-        .invoice-header {
-            padding: 15px 20px 10px;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
+        .brand-logo-container {
+            display: inline-block;
+            vertical-align: top;
+            width: 50px;
+            margin-right: 8px;
         }
-
-        .brand-block {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-        }
-
         .brand-logo {
-            width: 72px;
-            height: 72px;
+            width: 45px;
+            height: 45px;
             object-fit: contain;
         }
-
-        .brand-info .invoice-label {
-            font-size: 14px;
-            font-weight: 900;
-            color: #c2410c;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+        .brand-text {
+            display: inline-block;
+            vertical-align: top;
+            width: calc(100% - 60px);
+        }
+        .invoice-title {
+            font-size: 13px;
+            font-weight: bold;
             margin-bottom: 2px;
+            letter-spacing: 1px;
         }
-
-        .brand-info h1 {
-            font-size: 16px;
-            font-weight: 800;
-            color: #1f2937;
-            line-height: 1.1;
-        }
-
-        .brand-info p {
+        .brand-name {
             font-size: 10px;
-            color: #4b5563;
-            margin-top: 1px;
-            line-height: 1.3;
-            text-transform: uppercase;
+            font-weight: bold;
         }
-
-        .invoice-meta-bar {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 20px;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 10px;
-            font-weight: 700;
-            color: #374151;
-        }
-
-        /* ===== Customer Info ===== */
-        .meta-section {
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .meta-item {
-            font-size: 10px;
-        }
-
-        .meta-item span {
-            display: block;
-            color: #6b7280;
-            font-weight: 700;
-            text-transform: uppercase;
+        .brand-sub {
             font-size: 8px;
-            margin-bottom: 2px;
+            font-weight: bold;
+        }
+        .brand-detail {
+            font-size: 8px;
         }
 
-        .meta-item b {
-            color: #1f2937;
-            font-size: 11px;
+        /* ===== Metadata Table ===== */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5px;
+        }
+        .meta-table td {
+            padding: 1px 2px;
+            vertical-align: top;
         }
 
         /* ===== Items Table ===== */
         .table-section {
-            padding: 10px 20px;
-            min-height: 80mm;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 5px;
         }
-
-        table {
+        table.items-table {
             width: 100%;
             border-collapse: collapse;
         }
-
-        thead tr {
-            border-bottom: 2px solid #374151;
-        }
-
-        thead th {
-            padding: 6px 4px;
+        table.items-table th {
+            padding: 3px 2px;
             font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #374151;
+            font-weight: bold;
+            border-top: 1px solid #000;
+            border-bottom: 3px double #000;
             text-align: left;
         }
-
-        thead th.text-right { text-align: right; }
-        thead th.text-center { text-align: center; }
-
-        tbody td {
-            padding: 6px 4px;
-            font-size: 10px;
-            border-bottom: 1px solid #f3f4f6;
-            vertical-align: middle;
-        }
-
-        td.no { width: 25px; text-align: center; color: #9ca3af; }
-        td.qty { width: 40px; text-align: center; font-weight: 700; }
-        td.unit { width: 40px; text-align: center; color: #6b7280; }
-        td.price { width: 80px; text-align: right; }
-        td.disc  { width: 70px; text-align: right; color: #dc2626; }
-        td.total { width: 90px; text-align: right; font-weight: 700; color: #1f2937; }
-        td.product-name { font-weight: 600; color: #111827; }
-
-        /* ===== Totals ===== */
-        .totals-section {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px 20px;
-            align-items: flex-end;
-        }
-
-        .payment-status {
-            width: 200px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border: 2px solid #c2410c;
-            color: #c2410c;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 12px;
-            margin-bottom: 8px;
-            transform: rotate(-3deg);
-        }
-
-        .totals-box {
-            width: 240px;
-        }
-
-        .totals-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 0;
-            font-size: 10px;
-        }
-
-        .totals-row.grand {
-            border-top: 2px solid #374151;
-            margin-top: 4px;
-            padding-top: 8px;
-            font-size: 13px;
-            font-weight: 900;
-        }
-
-        .totals-row .label { color: #4b5563; font-weight: 600; }
-        .totals-row.grand .label { color: #1f2937; }
-
-        .totals-row .value { font-weight: 700; color: #1f2937; }
-        .totals-row.grand .value { color: #c2410c; font-size: 14px; }
-
-        /* ===== Footer ===== */
-        .invoice-footer {
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-top: 1px dashed #d1d5db;
-        }
-
-        .footer-note {
+        table.items-table td {
+            padding: 3px 2px;
+            border: none;
             font-size: 9px;
-            color: #6b7280;
-            line-height: 1.4;
-            max-width: 60%;
+        }
+        table.items-table th.text-center, table.items-table td.text-center { text-align: center; }
+        table.items-table th.text-right, table.items-table td.text-right { text-align: right; }
+
+        /* ===== Bottom Section ===== */
+        .bottom-section {
+            width: 100%;
+            display: table;
+            margin-top: 5px;
+            font-size: 8.5px;
+        }
+        .bottom-left {
+            display: table-cell;
+            width: 45%;
+            vertical-align: top;
+        }
+        .bottom-mid {
+            display: table-cell;
+            width: 25%;
+            vertical-align: top;
+            padding-left: 10px;
+        }
+        .bottom-right {
+            display: table-cell;
+            width: 30%;
+            vertical-align: top;
+            padding-left: 10px;
         }
 
-        .signature-block {
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .totals-table td {
+            padding: 2px 0;
+        }
+
+        /* ===== Signature Section ===== */
+        .signature-table {
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 5px;
             text-align: center;
-            font-size: 10px;
-            color: #374151;
+        }
+        .signature-table td {
+            width: 50%;
+            vertical-align: top;
         }
 
-        .signature-name {
-            font-weight: 800;
-            margin-top: 40px;
-            text-decoration: underline;
-        }
-
-        /* ===== Action Buttons ===== */
+        /* ===== Action Bar (Print Hidden) ===== */
         .action-bar {
-            max-width: 148mm;
-            margin: 0 auto 16px;
+            max-width: 100%;
+            margin: 10px auto;
             display: flex;
             gap: 10px;
             justify-content: center;
-            padding: 12px 0;
+            padding: 8px 0;
+            background: #f3f4f6;
+            border-radius: 6px;
         }
-
         .btn {
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
             cursor: pointer;
             border: none;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
-
-        .btn-back { background: #f3f4f6; color: #374151; }
-        .btn-back:hover { background: #e5e7eb; }
+        .btn-back { background: #e5e7eb; color: #374151; }
+        .btn-back:hover { background: #d1d5db; }
         .btn-print { background: #c2410c; color: white; }
         .btn-print:hover { background: #9a3412; }
 
         @media print {
-            body { background: white; }
-            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; max-width: 100%; min-height: auto; }
             .action-bar { display: none !important; }
-            .header-strip { display: none; }
+            body { background: white; }
+            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; width: 100%; }
         }
     </style>
 </head>
@@ -277,152 +200,221 @@
 
 <div class="action-bar print:hidden">
     <a href="{{ route('jihans.pos.index') }}" class="btn btn-back">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         Kembali ke POS
     </a>
     <button onclick="window.print()" class="btn btn-print">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
         Cetak Faktur
     </button>
 </div>
 
 <div class="page-wrapper">
-    <div class="header-strip"></div>
-
     {{-- ===== HEADER ===== --}}
-    <div class="invoice-header">
-        <div class="brand-block">
-            <img src="{{ asset('logo/jihans-logo.png') }}" alt="Jihan's Food Logo" class="brand-logo">
-            <div class="brand-info">
-                <div class="invoice-label">FAKTUR PENJUALAN</div>
-                <h1>JIHAN'S FOOD</h1>
-                <p>MANUFACTURE FOR KEBAB &amp; TORTILLA</p>
-                <p>Jl. Beringin Pasar 7</p>
+    <div class="header-section">
+        <div class="header-left">
+            <div class="brand-logo-container">
+                <img src="{{ asset('logo/jihans-logo.png') }}" class="brand-logo" onerror="this.style.display='none'">
+            </div>
+            <div class="brand-text">
+                <div class="invoice-title">FAKTUR PENJUALAN</div>
+                <div class="brand-name">JIHAN'S FOOD</div>
+                <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
+                <div class="brand-detail">JL. Beringin Pasar 7</div>
+                <div class="brand-detail">081362148090 - 085373736060</div>
             </div>
         </div>
-    </div>
-
-    <div class="invoice-meta-bar">
-        <span>No: {{ $transaction->transaction_number }}</span>
-        <span>{{ \Carbon\Carbon::parse($transaction->date)->translatedFormat('d F Y') }} {{ $transaction->time }}</span>
-    </div>
-
-    {{-- ===== CUSTOMER INFO ===== --}}
-    <div class="meta-section">
-        <div class="meta-item">
-            <span>Pembeli / Customer:</span>
-            <b>{{ $transaction->customer_name ?: 'PELANGGAN UMUM' }}</b>
-        </div>
-        <div class="meta-item" style="text-align: right">
-            <span>Petugas Kasir:</span>
-            <b>{{ $transaction->creator->name ?? 'Kasir' }}</b>
+        
+        <div class="header-right">
+            <table class="meta-table">
+                <tr>
+                    <td style="width: 23%;">No Transaksi</td>
+                    <td style="width: 32%;">: {{ $transaction->transaction_number }}</td>
+                    <td style="width: 15%;">Dept</td>
+                    <td style="width: 30%;">: UTM</td>
+                </tr>
+                <tr>
+                    <td>Tanggal</td>
+                    <td>: {{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }} {{ $transaction->time }}</td>
+                    <td>User</td>
+                    <td>: {{ strtoupper($transaction->creator->name ?? 'KASIR') }}</td>
+                </tr>
+                <tr>
+                    <td>Kode Sales</td>
+                    <td>: -</td>
+                    <td colspan="2"></td>
+                </tr>
+                <tr>
+                    <td>Pelanggan</td>
+                    <td colspan="3">: {{ strtoupper($transaction->customer_name ?: 'PELANGGAN UMUM') }}</td>
+                </tr>
+                <tr>
+                    <td>Alamat</td>
+                    <td colspan="3">: 
+                        @if($transaction->customer && $transaction->customer->address)
+                            {{ strtoupper($transaction->customer->address) }}
+                            @if($transaction->customer->phone)
+                                ({{ $transaction->customer->phone }})
+                            @endif
+                        @else
+                            {{ $transaction->customer_phone ?: '-' }}
+                        @endif
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
     {{-- ===== ITEMS TABLE ===== --}}
     <div class="table-section">
-        <table>
+        <table class="items-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width:25px">No</th>
-                    <th>Nama Barang</th>
-                    <th class="text-center">Qty</th>
-                    <th class="text-center">Sat</th>
-                    <th class="text-right">Harga</th>
-                    <th class="text-right">Pot.</th>
-                    <th class="text-right">Total</th>
+                    <th class="text-center" style="width: 5%;">No.</th>
+                    <th style="width: 15%;">Kode Item</th>
+                    <th style="width: 38%;">Nama Item</th>
+                    <th class="text-center" style="width: 10%;">Jml</th>
+                    <th class="text-center" style="width: 8%;">Satuan</th>
+                    <th class="text-right" style="width: 10%;">Harga</th>
+                    <th class="text-right" style="width: 4%;">Pot</th>
+                    <th class="text-right" style="width: 10%;">Total</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($transaction->details as $i => $item)
                 <tr>
-                    <td class="no">{{ $i + 1 }}</td>
-                    <td class="product-name">{{ $item->product_name }}</td>
-                    <td class="qty">{{ (int) $item->quantity }}</td>
-                    <td class="unit">{{ $item->unit->abbreviation ?? 'pcs' }}</td>
-                    <td class="price">{{ number_format($item->price, 0, ',', '.') }}</td>
-                    <td class="disc">
-                        @if($item->discount_amount > 0)
-                            -{{ number_format($item->discount_amount, 0, ',', '.') }}
-                        @else
-                            —
-                        @endif
-                    </td>
-                    <td class="total">{{ number_format($item->total, 0, ',', '.') }}</td>
+                    <td class="text-center">{{ $i + 1 }}</td>
+                    <td>{{ $item->product->code ?? '-' }}</td>
+                    <td style="font-weight: bold;">{{ $item->product_name }}</td>
+                    <td class="text-center font-bold">{{ (int) $item->quantity }}</td>
+                    <td class="text-center">{{ $item->unit->abbreviation ?? 'PCS' }}</td>
+                    <td class="text-right">{{ number_format($item->price, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ $item->discount_amount > 0 ? number_format($item->discount_amount, 0, ',', '.') : '0' }}</td>
+                    <td class="text-right font-bold">{{ number_format($item->total, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
 
-    {{-- ===== TOTALS ===== --}}
-    <div class="totals-section">
-        <div class="payment-status">
-            @php $payment = $transaction->payments->first(); @endphp
-            @if($payment)
-                <div class="status-badge">LUNAS</div>
-                <div style="font-size: 9px; color: #6b7280; font-weight: 700">
-                    VIA: {{ strtoupper($payment->method->name ?? $payment->payment_method) }}
-                </div>
-            @else
-                <div class="status-badge" style="border-color: #dc2626; color: #dc2626;">PENDING</div>
-            @endif
+    {{-- ===== BOTTOM SECTION ===== --}}
+    <div class="bottom-section" style="border-top: 1px solid #000; padding-top: 4px;">
+        <div class="bottom-left">
+            <div>Keterangan :</div>
+            <div style="font-style: italic; min-height: 15px; margin-bottom: 10px;">{{ $transaction->notes ?: '-' }}</div>
+            
+            <table class="signature-table">
+                <tr>
+                    <td>Hormat Kami,</td>
+                    <td>Penerima,</td>
+                </tr>
+                <tr style="height: 30px;">
+                    <td colspan="2"></td>
+                </tr>
+                <tr>
+                    <td>( ............ )</td>
+                    <td>( ............ )</td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 5px; font-weight: bold;">
+                Terbilang : <span id="terbilang-text" style="font-style: italic; font-weight: normal;"></span>
+            </div>
         </div>
-        
-        <div class="totals-box">
-            <div class="totals-row">
-                <span class="label">Subtotal</span>
-                <span class="value">Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
-            </div>
-            @if($transaction->discount_amount > 0)
-            <div class="totals-row">
-                <span class="label">Diskon Faktur</span>
-                <span class="value">-(Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }})</span>
-            </div>
-            @endif
-            @if($transaction->tax_amount > 0)
-            <div class="totals-row">
-                <span class="label">PPN ({{ strtoupper($transaction->ppn_type) }})</span>
-                <span class="value">Rp {{ number_format($transaction->tax_amount, 0, ',', '.') }}</span>
-            </div>
-            @endif
-            <div class="totals-row grand">
-                <span class="label">TOTAL AKHIR</span>
-                <span class="value">Rp {{ number_format($transaction->grand_total, 0, ',', '.') }}</span>
-            </div>
-            @if($payment)
-            <div class="totals-row" style="margin-top: 4px">
-                <span class="label">Jumlah Bayar</span>
-                <span class="value">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
-            </div>
-            <div class="totals-row">
-                <span class="label">Kembalian</span>
-                <span class="value" style="color:#059669">
-                    Rp {{ number_format(max(0, $payment->amount - $transaction->grand_total), 0, ',', '.') }}
-                </span>
-            </div>
-            @endif
+
+        <div class="bottom-mid">
+            <table class="totals-table">
+                <tr>
+                    <td>Jml Item</td>
+                    <td>:</td>
+                    <td class="text-right font-bold" style="font-size: 10px;">{{ (int) $transaction->details->sum('quantity') }}</td>
+                </tr>
+                <tr>
+                    <td>Potongan</td>
+                    <td>:</td>
+                    <td class="text-right">0 % / {{ number_format($transaction->discount_amount, 0, ',', '.') }}</td>
+                </tr>
+                @php $payment = $transaction->payments->first(); @endphp
+                <tr>
+                    <td>Tunai</td>
+                    <td>:</td>
+                    <td class="text-right font-bold" style="font-size: 10px;">
+                        {{ number_format($payment ? $payment->amount : 0, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="bottom-right">
+            <table class="totals-table">
+                <tr>
+                    <td>Sub Total</td>
+                    <td>:</td>
+                    <td class="text-right font-bold">{{ number_format($transaction->subtotal, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td>Ongkir/Kurir</td>
+                    <td>:</td>
+                    <td class="text-right">{{ number_format($transaction->other_costs ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr style="border-top: 1px solid #000; font-size: 10px; font-weight: bold;">
+                    <td style="padding-top: 3px;">Total Akhir</td>
+                    <td style="padding-top: 3px;">:</td>
+                    <td class="text-right font-bold text-black" style="padding-top: 3px;">
+                        {{ number_format($transaction->grand_total, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
-    {{-- ===== FOOTER ===== --}}
-    <div class="invoice-footer">
-        <div class="footer-note">
-            <b>Perhatian:</b> Barang yang sudah dibeli tidak dapat ditukar/dikembalikan kecuali ada perjanjian sebelumnya. 
-            Terima kasih atas kepercayaan Anda berbelanja di Jihan's Food.
+    {{-- ===== DOUBLE BOTTOM BORDER ===== --}}
+    <div style="border-bottom: 3px double #000; margin-top: 2px; margin-bottom: 4px; width: 100%;"></div>
+
+    {{-- ===== FOOTER BANK & CUSTOMER SERVICE ===== --}}
+    <div style="width: 100%; display: table; font-size: 8px;">
+        <div style="display: table-cell; width: 50%; vertical-align: top;">
+            {{-- Spacing --}}
         </div>
-        <div class="signature-block">
-            <div>Diterima Oleh,</div>
-            <div class="signature-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+        <div style="display: table-cell; width: 50%; vertical-align: top; text-align: right; font-weight: bold; line-height: 1.2;">
+            BANK BRI<br>
+            1092-0100-0385-583<br>
+            A/N ANNY RITONGA
         </div>
-        <div class="signature-block">
-            <div>Hormat Kami,</div>
-            <div class="signature-name">{{ auth()->user()->name }}</div>
-        </div>
+    </div>
+
+    <div style="width: 100%; text-align: center; font-size: 8px; font-weight: bold; margin-top: 5px;">
+        Layanan Pelanggan 085373736060
     </div>
 </div>
 
 <script>
+    function terbilang(nilai) {
+        nilai = Math.floor(Math.abs(nilai));
+        var huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+        var temp = "";
+        if (nilai < 12) {
+            temp = " " + huruf[nilai];
+        } else if (nilai < 20) {
+            temp = terbilang(nilai - 10) + " belas";
+        } else if (nilai < 100) {
+            temp = terbilang(Math.floor(nilai / 10)) + " puluh" + terbilang(nilai % 10);
+        } else if (nilai < 200) {
+            temp = " seratus" + terbilang(nilai - 100);
+        } else if (nilai < 1000) {
+            temp = terbilang(Math.floor(nilai / 100)) + " ratus" + terbilang(nilai % 100);
+        } else if (nilai < 2000) {
+            temp = " seribu" + terbilang(nilai - 1000);
+        } else if (nilai < 1000000) {
+            temp = terbilang(Math.floor(nilai / 1000)) + " ribu" + terbilang(nilai % 1000);
+        } else if (nilai < 1000000000) {
+            temp = terbilang(Math.floor(nilai / 1000000)) + " juta" + terbilang(nilai % 1000000);
+        } else if (nilai < 1000000000000) {
+            temp = terbilang(Math.floor(nilai / 1000000000)) + " milyar" + terbilang(nilai % 1000000000);
+        }
+        return temp.trim();
+    }
+
+    document.getElementById('terbilang-text').innerText = terbilang({{ $transaction->grand_total }}) + " rupiah";
+
     window.onload = function() {
         setTimeout(function() { window.print(); }, 600);
     }

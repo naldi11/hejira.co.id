@@ -158,7 +158,7 @@ class PosController extends Controller
 
     public function receipt(JihansTransaction $transaction)
     {
-        $transaction->load(['details.unit', 'payments.method', 'creator']);
+        $transaction->load(['details.unit', 'payments.method', 'creator', 'customer']);
         return view('jihans.pos.receipt', compact('transaction'));
     }
 

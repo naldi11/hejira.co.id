@@ -206,7 +206,7 @@ class PosController extends Controller
             abort(403);
         }
 
-        $transaction->load(['details.unit', 'payments.method', 'creator']);
+        $transaction->load(['details.unit', 'payments.method', 'creator', 'customer']);
         return view('hendhys.pos.receipt', compact('transaction'));
     }
 

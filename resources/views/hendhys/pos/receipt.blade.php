@@ -4,124 +4,249 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Struk Pembayaran #{{ $transaction->transaction_number }}</title>
-    @vite(['resources/css/app.css'])
     <style>
-        @media print {
-            body { font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #000; background: #fff; }
-            .no-print { display: none !important; }
-            .print-area { width: 100%; max-width: 300px; margin: 0 auto; padding: 0; }
-            @page { margin: 0; size: auto; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background: #e5e7eb;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11.5px;
+            color: #000;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
         }
-        body { background: #e5e7eb; display: flex; justify-content: center; padding: 20px; font-family: 'Inter', sans-serif; }
-        .receipt-container { background: #fff; width: 100%; max-width: 380px; padding: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-radius: 8px; }
+
+        .receipt-container {
+            background: #fff;
+            width: 100%;
+            max-width: 320px;  /* Lebar standar struk thermal 80mm */
+            padding: 12px 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+        
+        .mb-1 { margin-bottom: 2px; }
+        .mb-2 { margin-bottom: 4px; }
+        .mb-3 { margin-bottom: 6px; }
+        .mt-3 { margin-top: 6px; }
+        .mt-6 { margin-top: 15px; }
+
+        /* ===== Divider ===== */
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+            width: 100%;
+        }
+
+        /* ===== Metadata Table ===== */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .meta-table td {
+            padding: 1px 0;
+            vertical-align: top;
+        }
+
+        /* ===== Item List ===== */
+        .item-row {
+            margin-bottom: 6px;
+        }
+        .item-name {
+            font-weight: bold;
+            display: block;
+        }
+        .item-details {
+            width: 100%;
+            display: table;
+            font-size: 11px;
+        }
+        .item-qty-price {
+            display: table-cell;
+            width: 65%;
+            text-align: left;
+        }
+        .item-total {
+            display: table-cell;
+            width: 35%;
+            text-align: right;
+        }
+
+        /* ===== Totals Box ===== */
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .totals-table td {
+            padding: 2px 0;
+        }
+
+        /* ===== Buttons Bar (Hidden in Print) ===== */
+        .action-bar {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            flex: 1;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            border: 1px solid #000;
+        }
+        .btn-print { background: #000; color: #fff; }
+        .btn-back { background: #fff; color: #000; }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .receipt-container {
+                box-shadow: none;
+                max-width: 100%;
+                width: 100%;
+                padding: 5px;
+            }
+            .action-bar { display: none !important; }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="receipt-container print-area">
-        {{-- Header --}}
-        <div class="text-center mb-6">
-            <h1 class="text-xl font-bold text-gray-900 tracking-wider uppercase mb-1">Hendhys Bakery</h1>
-            <p class="text-xs text-gray-600 font-medium">{{ auth()->user()->branch->type === 'pusat' ? 'Pusat' : 'Cabang ' . auth()->user()->branch->name }}</p>
-            <p class="text-[11px] text-gray-500 mt-1">{{ auth()->user()->branch->address ?? 'Alamat Cabang' }}</p>
+    <div class="receipt-container">
+        {{-- Header Brand --}}
+        <div class="text-center mb-3">
+            <h1 class="font-bold text-center" style="font-size: 14px; letter-spacing: 1px;">HENDHY'S BROWNIES</h1>
+            <p>JL. PASAR VI TEMBUNG</p>
+            <p>PERCUT SEI TUAN</p>
+            <p>Telp: 081213772502 Fax: -</p>
         </div>
 
-        {{-- Info Struk --}}
-        <div class="flex justify-between items-end border-b border-dashed border-gray-300 pb-3 mb-3 text-[11px] text-gray-600">
-            <div>
-                <p>Tgl: {{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }} {{ $transaction->time }}</p>
-                <p>No: <span class="font-bold text-gray-800">{{ $transaction->transaction_number }}</span></p>
-            </div>
-            <div class="text-right">
-                <p>Ksr: {{ $transaction->creator->name }}</p>
-                <p>Plg: {{ $transaction->customer_name }}</p>
-            </div>
-        </div>
+        {{-- Metadata Struk --}}
+        <table class="meta-table mb-2">
+            <tr>
+                <td style="width: 18%;">No.</td>
+                <td style="width: 45%;">: {{ $transaction->transaction_number }}</td>
+                <td style="text-align: right; width: 37%;">{{ \Carbon\Carbon::parse($transaction->date)->format('d-m-Y') }}</td>
+            </tr>
+            <tr>
+                <td>Kasir</td>
+                <td>: {{ strtoupper($transaction->creator->name ?? 'Kasir') }}</td>
+                <td style="text-align: right;">{{ $transaction->time }}</td>
+            </tr>
+            <tr>
+                <td>Pel.</td>
+                <td colspan="2">: {{ strtoupper($transaction->customer_name ?: 'UMUM/CASH') }}</td>
+            </tr>
+        </table>
 
-        {{-- Items --}}
-        <div class="mb-4">
-            <table class="w-full text-[11px]">
-                @foreach($transaction->details as $detail)
-                <tr>
-                    <td colspan="3" class="pb-1 font-bold text-gray-800">{{ $detail->product_name }}</td>
-                </tr>
-                <tr class="text-gray-600 border-b border-gray-100 last:border-0">
-                    <td class="pb-2 w-16">{{ (float) $detail->quantity }} {{ $detail->unit->code }}</td>
-                    <td class="pb-2">x {{ number_format($detail->price, 0, ',', '.') }}</td>
-                    <td class="pb-2 text-right font-medium text-gray-800">{{ number_format($detail->total, 0, ',', '.') }}</td>
-                </tr>
-                @endforeach
-            </table>
-        </div>
+        <div class="divider"></div>
 
-        {{-- Summary --}}
-        <div class="border-t border-dashed border-gray-300 pt-3 mb-4 space-y-1.5 text-[11px]">
-            <div class="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span>{{ number_format($transaction->subtotal, 0, ',', '.') }}</span>
-            </div>
-            
-            @if($transaction->discount_amount > 0)
-            <div class="flex justify-between text-gray-600">
-                <span>Diskon</span>
-                <span>- {{ number_format($transaction->discount_amount, 0, ',', '.') }}</span>
-            </div>
-            @endif
-            
-            @if($transaction->tax_amount > 0)
-            <div class="flex justify-between text-gray-600">
-                <span>PPN ({{ $transaction->ppn_type }})</span>
-                <span>{{ number_format($transaction->tax_amount, 0, ',', '.') }}</span>
-            </div>
-            @endif
-
-            <div class="flex justify-between items-center pt-2 font-bold text-sm text-gray-900 border-t border-gray-200 mt-2">
-                <span>TOTAL</span>
-                <span>Rp {{ number_format($transaction->grand_total, 0, ',', '.') }}</span>
-            </div>
-        </div>
-
-        {{-- Payment Info --}}
-        <div class="border-t border-dashed border-gray-300 pt-3 text-[11px] text-gray-600 space-y-1">
-            @foreach($transaction->payments as $payment)
-            <div class="flex justify-between font-medium">
-                <span class="uppercase">BAYAR ({{ $payment->method->name ?? ucfirst($payment->payment_method) }})</span>
-                <span>{{ number_format($payment->amount, 0, ',', '.') }}</span>
-            </div>
-            @if($payment->payment_method === 'cash' || (isset($payment->method) && stripos($payment->method->name, 'tunai') !== false))
-                <div class="flex justify-between">
-                    <span>KEMBALI</span>
-                    <span>{{ number_format(max(0, $payment->amount - $transaction->grand_total), 0, ',', '.') }}</span>
+        {{-- Daftar Barang --}}
+        <div class="mb-3">
+            @foreach($transaction->details as $detail)
+            <div class="item-row">
+                <span class="item-name">{{ $detail->product_name }}</span>
+                <div class="item-details">
+                    <span class="item-qty-price">
+                        {{ number_format($detail->price, 0, ',', '.') }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x {{ (int) $detail->quantity }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $detail->unit->abbreviation ?? 'PCS' }} =
+                    </span>
+                    <span class="item-total">
+                        {{ number_format($detail->total, 0, ',', '.') }}
+                    </span>
                 </div>
-            @endif
-            @if($payment->reference_number)
-                <div class="flex justify-between text-[10px]">
-                    <span>Ref: {{ $payment->reference_number }}</span>
-                </div>
-            @endif
+            </div>
             @endforeach
         </div>
 
+        <div class="divider"></div>
+
+        {{-- Summary (Baris, Qty, Total) --}}
+        <table class="totals-table">
+            <tr>
+                <td style="width: 25%;">BARIS={{ count($transaction->details) }}</td>
+                <td style="width: 35%;">QTY={{ (int) $transaction->details->sum('quantity') }}</td>
+                <td style="width: 5%;"></td>
+                <td class="text-right font-bold" style="width: 35%;">
+                    {{ number_format($transaction->subtotal, 0, ',', '.') }}
+                </td>
+            </tr>
+            
+            @if($transaction->discount_amount > 0)
+            <tr>
+                <td colspan="2">Diskon</td>
+                <td>=</td>
+                <td class="text-right font-bold">-{{ number_format($transaction->discount_amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+            
+            @if($transaction->tax_amount > 0)
+            <tr>
+                <td colspan="2">PPN ({{ $transaction->ppn_type }})</td>
+                <td>=</td>
+                <td class="text-right font-bold">{{ number_format($transaction->tax_amount, 0, ',', '.') }}</td>
+            </tr>
+            @endif
+
+            @php $payment = $transaction->payments->first(); @endphp
+            <tr>
+                <td colspan="2">Tunai</td>
+                <td>=</td>
+                <td class="text-right font-bold">
+                    {{ number_format($payment ? $payment->amount : $transaction->grand_total, 0, ',', '.') }}
+                </td>
+            </tr>
+            
+            <tr>
+                <td colspan="3"></td>
+                <td style="border-top: 1px dashed #000; height: 1px; padding: 0;"></td>
+            </tr>
+            
+            <tr>
+                <td colspan="2">Kembali</td>
+                <td>=</td>
+                <td class="text-right font-bold">
+                    {{ number_format($payment ? max(0, $payment->amount - $transaction->grand_total) : 0, 0, ',', '.') }}
+                </td>
+            </tr>
+        </table>
+
+        <div class="divider"></div>
+
         {{-- Footer --}}
-        <div class="mt-8 text-center text-[10px] text-gray-500">
-            <p>Terima kasih atas kunjungan Anda!</p>
-            <p>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan.</p>
+        <div class="text-center" style="font-size: 10.5px; line-height: 1.3; margin-top: 8px;">
+            <p>Barang yang telah dibeli tidak dapat</p>
+            <p>dikembalikan kecuali ada perjanjian</p>
         </div>
 
-        {{-- Actions --}}
-        <div class="mt-8 pt-6 border-t border-gray-200 flex gap-2 no-print">
-            <button onclick="window.print()" class="flex-1 bg-gray-800 text-white py-2 rounded font-medium text-sm hover:bg-black transition-colors">
-                Cetak Struk
-            </button>
-            <a href="{{ route('hendhys.pos.index') }}" class="flex-1 bg-[#d97706] text-white py-2 rounded font-medium text-sm text-center hover:bg-[#b45309] transition-colors">
-                POS Baru
-            </a>
+        {{-- Actions Bar --}}
+        <div class="action-bar no-print">
+            <button onclick="window.print()" class="btn btn-print">Cetak</button>
+            <a href="{{ route('hendhys.pos.index') }}" class="btn btn-back">POS Baru</a>
         </div>
     </div>
 
     <script>
-        // Auto print upon load if desired (optional)
-        // window.onload = function() { window.print(); }
+        window.onload = function() {
+            setTimeout(function() { window.print(); }, 600);
+        }
     </script>
 </body>
 </html>
