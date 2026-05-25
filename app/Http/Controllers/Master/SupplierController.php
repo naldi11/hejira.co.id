@@ -111,8 +111,10 @@ class SupplierController extends Controller
 
         $old = $supplier->toArray();
         $data['is_active'] = $request->boolean('is_active', true);
-        if($request->filled('entity_scope')) 
-        
+        if ($request->filled('entity_scope')) {
+            $data['entity_scope'] = $request->entity_scope;
+        }
+
         $supplier->update($data);
 
         $this->logger->log('update', 'master.supplier', "Update supplier: {$supplier->name}", $supplier, $old, $supplier->fresh()->toArray());
