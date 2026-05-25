@@ -42,18 +42,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Referensi PO <span class="text-slate-400 font-medium">(Opsional)</span></label>
-                            <div wire:ignore>
-                                <select name="purchase_order_id" x-model="po_id" 
-                                        x-init="tsPo = new TomSelect($el, { 
-                                            create: false, 
-                                            placeholder: 'Input Manual (Tanpa PO)',
-                                            dropdownParent: 'body',
-                                            onChange: function(value) {
-                                                po_id = value;
-                                                loadPoDetails();
-                                            }
-                                        })"
-                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                            <div>
+                                <select name="purchase_order_id" x-model="po_id" @change="loadPoDetails()"
+                                        class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
                                     <option value="">Input Manual (Tanpa PO)</option>
                                     @foreach($purchaseOrders as $po)
                                         <option value="{{ $po->id }}">{{ $po->po_number }} - {{ $po->supplier->name }}</option>
@@ -63,17 +54,9 @@
                         </div>
                         <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier <span class="text-rose-500">*</span></label>
-                            <div wire:ignore>
+                            <div>
                                 <select name="supplier_id" x-model="supplier_id" required :disabled="po_id != ''"
-                                        x-init="tsSupplier = new TomSelect($el, {
-                                            create: false,
-                                            placeholder: 'Pilih Supplier...',
-                                            dropdownParent: 'body',
-                                            onChange: function(value) {
-                                                supplier_id = value;
-                                            }
-                                        })"
-                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none disabled:opacity-60 disabled:cursor-not-allowed">
+                                        class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none disabled:opacity-60 disabled:cursor-not-allowed">
                                     <option value="">Pilih Supplier...</option>
                                     @foreach($suppliers as $s)
                                         <option value="{{ $s->id }}">{{ $s->name }}</option>
@@ -108,32 +91,10 @@
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="group">
                                             <td class="py-4 pr-4">
-                                                <div wire:ignore>
+                                                <div>
                                                     <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required :disabled="po_id != ''"
-                                                            x-init="$nextTick(() => {
-                                                                item.tsProduct = new TomSelect($el, {
-                                                                    create: false,
-                                                                    placeholder: 'Pilih Produk...',
-                                                                    dropdownParent: 'body',
-                                                                    onChange: function(value) {
-                                                                        item.product_id = value;
-                                                                        onProductChange(item);
-                                                                    }
-                                                                });
-                                                                if (item.product_id) {
-                                                                    item.tsProduct.setValue(item.product_id, true);
-                                                                }
-                                                                
-                                                                // Disable TomSelect dynamically if PO is selected
-                                                                $watch('po_id', val => {
-                                                                    if (val) {
-                                                                        item.tsProduct.disable();
-                                                                    } else {
-                                                                        item.tsProduct.enable();
-                                                                    }
-                                                                });
-                                                            })"
-                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none disabled:opacity-100">
+                                                            @change="onProductChange(item)"
+                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none disabled:opacity-100 disabled:cursor-not-allowed">
                                                         <option value="">Pilih Produk...</option>
                                                         @foreach($products as $p)
                                                             <option value="{{ $p->id }}">{{ $p->name }}</option>
@@ -221,45 +182,7 @@
 </div>
 @endsection
 
-@push('styles')
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-<style>
-    .ts-control {
-        border-radius: 1rem !important;
-        padding: 0.75rem 1.25rem !important;
-        font-size: 0.75rem !important;
-        font-weight: 700 !important;
-        background-color: rgb(248 250 252) !important; /* bg-slate-50 */
-        border: 2px solid rgb(241 245 249) !important; /* border-slate-100 */
-        color: rgb(51 65 85) !important; /* text-slate-700 */
-        transition: all 0.3s !important;
-    }
-    .ts-wrapper.single .ts-control {
-        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
-        background-position: right 1rem center !important;
-        background-size: 1.25rem !important;
-        background-repeat: no-repeat !important;
-    }
-    .focus .ts-control {
-        background-color: #fff !important;
-        border-color: #6366f1 !important; /* focus:border-indigo-500 */
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
-    }
-    .ts-dropdown {
-        border-radius: 1rem !important;
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-        border: 2px solid rgb(241 245 249) !important;
-    }
-    .ts-dropdown .active {
-        background-color: #eef2ff !important; /* bg-indigo-50 */
-        color: #4f46e5 !important; /* text-indigo-600 */
-        font-weight: bold !important;
-    }
-</style>
-@endpush
-
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
     function grnForm() {
         return {
@@ -267,23 +190,10 @@
             supplier_id: '',
             items: [],
             products: @json($products),
-            tsPo: null,
-            tsSupplier: null,
             
             init() {
                 // Initialize with one empty item if manual
                 if(this.items.length === 0) this.addItem();
-                
-                // Watch po_id to enable/disable Supplier select
-                this.$watch('po_id', val => {
-                    if (this.tsSupplier) {
-                        if (val) {
-                            this.tsSupplier.disable();
-                        } else {
-                            this.tsSupplier.enable();
-                        }
-                    }
-                });
             },
 
             addItem() {
@@ -298,8 +208,6 @@
             },
 
             removeItem(index) {
-                const item = this.items[index];
-                if (item.tsProduct) item.tsProduct.destroy();
                 this.items.splice(index, 1);
             },
 
@@ -323,7 +231,6 @@
                     this.items = [];
                     this.addItem();
                     this.supplier_id = '';
-                    if (this.tsSupplier) this.tsSupplier.setValue('', true);
                     return;
                 }
 
@@ -332,7 +239,6 @@
                     .then(res => {
                         const po = res.data;
                         this.supplier_id = po.supplier_id;
-                        if (this.tsSupplier) this.tsSupplier.setValue(po.supplier_id, true);
                         
                         this.items = po.details.map(d => {
                             const remaining = (parseFloat(d.quantity_ordered) || 0) - (parseFloat(d.quantity_received) || 0);

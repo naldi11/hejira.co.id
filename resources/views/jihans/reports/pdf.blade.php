@@ -8,47 +8,48 @@
             size: A4 landscape;
             margin: 1cm;
         }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #333; line-height: 1.4; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #000; line-height: 1.4; }
         
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .header-table td { vertical-align: top; }
         .logo-cell { width: 80px; }
         .logo { width: 70px; height: 70px; object-fit: contain; }
         
         .brand-cell { padding-left: 15px; }
-        .report-title { font-size: 16px; font-weight: bold; color: #c2410c; margin-bottom: 2px; }
-        .brand-name { font-size: 14px; font-weight: 800; color: #1f2937; margin: 0; }
-        .brand-sub { font-size: 9px; color: #4b5563; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 9px; color: #6b7280; margin: 0; }
+        .report-title { font-size: 16px; font-weight: bold; color: #000; margin-bottom: 2px; }
+        .brand-name { font-size: 14px; font-weight: 800; color: #000; margin: 0; }
+        .brand-sub { font-size: 9px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .brand-addr { font-size: 9px; color: #333; margin: 0; }
         
         .period-cell { text-align: right; }
-        .period-label { font-size: 10px; font-weight: bold; color: #374151; }
+        .period-label { font-size: 10px; font-weight: bold; color: #000; }
 
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table.data th { 
-            background: #fff7ed; 
-            color: #9a3412; 
+            background: #fff; 
+            color: #000; 
             padding: 8px 5px; 
-            border: 1px solid #fed7aa; 
+            border: 1px solid #000; 
             font-size: 9px; 
             text-transform: uppercase; 
             text-align: left;
         }
         table.data td { 
             padding: 6px 5px; 
-            border: 1px solid #eeeeee; 
+            border: 1px solid #ccc; 
             vertical-align: middle;
         }
-        table.data tr:nth-child(even) { background: #fafafa; }
+        table.data tr:nth-child(even) { background: #f9f9f9; }
         
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
         
-        .total-row { background: #fff7ed !important; font-weight: bold; border-top: 2px solid #fdba74 !important; }
-        .footer { margin-top: 20px; text-align: right; font-size: 8px; color: #9ca3af; border-top: 1px dashed #e5e7eb; padding-top: 10px; }
+        .total-row { background: #fff !important; font-weight: bold; border-top: 2px solid #000 !important; }
+        .total-row td { border-bottom: 2px solid #000 !important; }
+        .footer { margin-top: 20px; text-align: right; font-size: 8px; color: #666; border-top: 1px dashed #ccc; padding-top: 10px; }
     </style>
 </head>
 <body>
@@ -68,7 +69,7 @@
                 <div class="period-label">
                     Periode: {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/Y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/Y') : \Carbon\Carbon::now()->format('d/m/Y') }}
                 </div>
-                <div style="font-size: 8px; color: #9ca3af; margin-top: 5px;">
+                <div style="font-size: 8px; color: #666; margin-top: 5px;">
                     Dicetak: {{ now()->translatedFormat('d/m/Y H:i') }}
                 </div>
             </td>
@@ -118,7 +119,7 @@
                     <td class="text-center">{{ number_format($row->quantity, 0) }}</td>
                     <td class="text-center">{{ $row->satuan }}</td>
                     <td class="text-right">{{ number_format($row->price) }}</td>
-                    <td class="text-right text-red-600">{{ $row->pot > 0 ? '-' . number_format($row->pot) : '0' }}</td>
+                    <td class="text-right">{{ $row->pot > 0 ? '-' . number_format($row->pot) : '0' }}</td>
                     <td class="text-right font-bold">{{ number_format($row->total) }}</td>
                 @else
                     @if($type === 'pelanggan')
