@@ -3,7 +3,6 @@
 @section('page-title', 'Form Input Produksi Tortilla')
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <style>
         .ts-control { border-radius: 0.5rem; min-height: 42px; background-color: #fbf9f8; }
         .ts-dropdown { border-radius: 0.5rem; }
@@ -141,7 +140,6 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
         <script>
             function productionForm(config) {
                 return {

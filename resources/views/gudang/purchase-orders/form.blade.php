@@ -57,13 +57,20 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier / Vendor <span class="text-rose-500">*</span></label>
-                            <select name="supplier_id" required 
-                                    class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
-                                <option value="">Pilih Supplier...</option>
-                                @foreach($suppliers as $s)
-                                    <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                                @endforeach
-                            </select>
+                            <div wire:ignore>
+                                <select name="supplier_id" required 
+                                        x-init="tsSupplier = new TomSelect($el, {
+                                            create: false,
+                                            placeholder: 'Pilih Supplier...',
+                                            dropdownParent: 'body'
+                                        })"
+                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                    <option value="">Pilih Supplier...</option>
+                                    @foreach($suppliers as $s)
+                                        <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                         <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tanggal Pesanan <span class="text-rose-500">*</span></label>
@@ -98,23 +105,53 @@
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="group">
                                             <td class="py-4 pr-4" style="width: 40%; min-width: 250px;">
-                                                <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
-                                                        @change="onProductChange(item)"
-                                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                                    <option value="">Pilih Produk...</option>
-                                                    @foreach($products as $p)
-                                                        <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
-                                                    @endforeach
-                                                </select>
+                                                <div wire:ignore>
+                                                    <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
+                                                            x-init="$nextTick(() => {
+                                                                item.tsProduct = new TomSelect($el, {
+                                                                    create: false,
+                                                                    placeholder: 'Pilih Produk...',
+                                                                    dropdownParent: 'body',
+                                                                    onChange: function(value) {
+                                                                        item.product_id = value;
+                                                                        onProductChange(item);
+                                                                    }
+                                                                });
+                                                                if (item.product_id) {
+                                                                    item.tsProduct.setValue(item.product_id, true);
+                                                                }
+                                                            })"
+                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                                        <option value="">Pilih Produk...</option>
+                                                        @foreach($products as $p)
+                                                            <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </td>
                                             <td class="py-4 pr-2" style="width: 15%; min-width: 120px;">
-                                                <select x-model="item.unit_id" :name="'items['+index+'][unit_id]'" required
-                                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                                    <option value="">Pilih Satuan...</option>
-                                                    @foreach($units as $u)
-                                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <div wire:ignore>
+                                                    <select x-model="item.unit_id" :name="'items['+index+'][unit_id]'" required
+                                                            x-init="$nextTick(() => {
+                                                                item.tsUnit = new TomSelect($el, {
+                                                                    create: false,
+                                                                    placeholder: 'Pilih Satuan...',
+                                                                    dropdownParent: 'body',
+                                                                    onChange: function(value) {
+                                                                        item.unit_id = value;
+                                                                    }
+                                                                });
+                                                                if (item.unit_id) {
+                                                                    item.tsUnit.setValue(item.unit_id, true);
+                                                                }
+                                                            })"
+                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                                        <option value="">Pilih Satuan...</option>
+                                                        @foreach($units as $u)
+                                                            <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </td>
                                             <td class="py-4 px-2" style="width: 12%; min-width: 90px;">
                                                 <input type="number" x-model.number="item.quantity" :name="'items['+index+'][quantity]'" min="1" step="any" required
@@ -199,12 +236,53 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .ts-wrapper {
+        width: 100% !important;
+    }
+    .ts-control {
+        border-radius: 0.75rem !important; /* rounded-xl */
+        padding: 0.65rem 1rem !important;
+        font-size: 0.75rem !important; /* text-xs */
+        font-weight: 700 !important;
+        background-color: rgb(248 250 252) !important; /* bg-slate-50 */
+        border: 1px solid rgb(226 232 240) !important; /* border-slate-200 */
+        color: rgb(51 65 85) !important; /* text-slate-700 */
+        transition: all 0.2s !important;
+    }
+    .ts-wrapper.single .ts-control {
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
+        background-position: right 0.75rem center !important;
+        background-size: 1rem !important;
+        background-repeat: no-repeat !important;
+    }
+    .focus .ts-control {
+        background-color: #fff !important;
+        border-color: #6366f1 !important; /* focus:border-indigo-500 */
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
+    }
+    .ts-dropdown {
+        border-radius: 0.75rem !important;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08) !important;
+        border: 1px solid rgb(226 232 240) !important;
+        font-size: 0.75rem !important;
+    }
+    .ts-dropdown .active {
+        background-color: #eef2ff !important; /* bg-indigo-50 */
+        color: #4f46e5 !important; /* text-indigo-600 */
+        font-weight: bold !important;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
     function poForm() {
         return {
             items: @json(old('items', $formattedDetails)),
             products: @json($products),
+            tsSupplier: null,
             
             init() {
                 if(this.items.length === 0) {
@@ -222,6 +300,9 @@
             },
 
             removeItem(index) {
+                const item = this.items[index];
+                if (item.tsProduct) item.tsProduct.destroy();
+                if (item.tsUnit) item.tsUnit.destroy();
                 this.items.splice(index, 1);
             },
 
@@ -229,12 +310,18 @@
                 if (!item.product_id) {
                     item.unit_id = '';
                     item.price = 0;
+                    if (item.tsUnit) item.tsUnit.setValue('', true);
                     return;
                 }
                 const prod = this.products.find(p => p.id == item.product_id);
                 if (prod) {
                     item.unit_id = prod.unit_id || '';
                     item.price = parseFloat(prod.hpp) || 0;
+                    
+                    // Sync dengan TomSelect Satuan
+                    if (item.tsUnit && prod.unit_id) {
+                        item.tsUnit.setValue(prod.unit_id, true);
+                    }
                 }
             },
 

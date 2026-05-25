@@ -139,7 +139,6 @@
     </div>
 
     @push('styles')
-        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
         <style>
             .ts-control {
                 border-radius: 0.5rem;
@@ -155,7 +154,6 @@
     @endpush
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('branchRequestForm', () => ({

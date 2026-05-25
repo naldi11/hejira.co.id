@@ -3,7 +3,6 @@
 @section('page-title', 'Master Data — ' . (isset($product) ? 'Edit Produk' : 'Tambah Produk'))
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <style>
         .ts-wrapper { margin-bottom: 0 !important; }
         .ts-control {
@@ -315,7 +314,6 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 document.querySelectorAll('.select2').forEach((el) => {

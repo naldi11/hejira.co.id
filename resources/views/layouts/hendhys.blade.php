@@ -8,6 +8,10 @@
 
     {{-- <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script> --}}
     {{-- NOTE: To avoid conflicts, we use Vite for js, but Tailwind CDN for this specific layout --}}
+    <!-- TomSelect CSS & JS (Loaded globally in head to prevent AlpineJS race conditions) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
     @vite(['resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
