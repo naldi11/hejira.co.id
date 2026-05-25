@@ -5,6 +5,21 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-8 pb-12">
 
+    {{-- Validation Errors --}}
+    @if ($errors->any())
+    <div class="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-rose-800 space-y-2">
+        <div class="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[20px]">error</span>
+            Terjadi Kesalahan
+        </div>
+        <ul class="list-disc pl-5 text-xs font-semibold space-y-1">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     {{-- Top Action Bar --}}
     <div class="flex items-center justify-between">
         <a href="{{ route('gudang.transfer-requests.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
@@ -110,8 +125,8 @@
                                             </td>
                                             <td class="px-6 py-5 text-center">
                                                 <input type="hidden" name="items[{{ $i }}][id]" value="{{ $item->id }}" form="approve-form">
-                                                <input type="number" name="items[{{ $i }}][quantity_approved]" value="{{ $item->quantity_requested }}" min="1" max="{{ $item->quantity_requested }}" form="approve-form"
-                                                    class="w-20 px-3 py-2 text-center text-sm font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none tabular-nums">
+                                                <input type="number" name="items[{{ $i }}][quantity_approved]" value="{{ $item->quantity_requested }}" min="0.001" step="any" max="{{ $item->quantity_requested }}" form="approve-form"
+                                                    class="w-28 px-3 py-2 text-center text-sm font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none tabular-nums">
                                             </td>
                                         @else
                                             <td class="px-6 py-5 text-center">
@@ -138,8 +153,9 @@
                             <p class="text-slate-400 text-xs font-medium mt-1">Sesuaikan qty disetujui jika perlu, lalu klik Setujui.</p>
                         </div>
                         <div class="flex items-center gap-4 shrink-0 w-full md:w-auto">
-                            <form action="{{ route('gudang.transfer-requests.reject', $transferRequest) }}" method="POST" class="flex-1 md:flex-none" onsubmit="return confirm('Yakin ingin menolak permintaan ini?')">
+                            <form id="reject-form" action="{{ route('gudang.transfer-requests.reject', $transferRequest) }}" method="POST" class="flex-1 md:flex-none" onsubmit="return handleReject(event)">
                                 @csrf
+                                <input type="hidden" name="rejection_reason" id="rejection_reason_input">
                                 <button type="submit" class="w-full px-8 py-4 bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
                                     Tolak Request
                                 </button>
@@ -243,3 +259,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function handleReject(event) {
+        event.preventDefault();
+        const reason = prompt('Masukkan alasan penolakan transfer request ini:');
+        if (reason === null) {
+            // User click Batal
+            return false;
+        }
+        const trimmedReason = reason.trim();
+        if (!trimmedReason) {
+            alert('Alasan penolakan wajib diisi!');
+            return false;
+        }
+        document.getElementById('rejection_reason_input').value = trimmedReason;
+        document.getElementById('reject-form').submit();
+    }
+</script>
+@endpush
