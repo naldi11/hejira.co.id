@@ -168,27 +168,47 @@ class ReportController extends Controller
         $isDetailed = ($type === 'harian');
 
         if ($isDetailed) {
-            $title = "Laporan Penjualan Harian";
+            $title = "LHI DETAIL";
 
-            $rows = DB::table('jihans_transaction_details as d')
-                ->join('jihans_transactions as t', 't.id', '=', 'd.transaction_id')
-                ->join('master_products as p', 'p.id', '=', 'd.product_id')
-                ->join('master_units as u', 'u.id', '=', 'd.unit_id')
+            $transactions = DB::table('jihans_transactions as t')
+                ->leftJoin('users as u', 'u.id', '=', 't.created_by')
+                ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
                 ->where('t.status', '!=', 'cancelled')
                 ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
                 ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
                 ->select([
-                    'p.code as kode_item',
-                    'd.product_name as nama_item',
-                    'd.quantity',
-                    'u.abbreviation as satuan',
-                    'd.price',
-                    'd.discount_amount as pot',
-                    'd.total'
+                    't.id',
+                    't.transaction_number',
+                    't.date',
+                    'u.name as operator',
+                    'c.code as customer_code',
+                    't.customer_name',
+                    'c.address as customer_address',
+                    't.grand_total',
+                    't.discount_total',
+                    't.tax_total'
                 ])
                 ->orderBy('t.date', 'desc')
                 ->orderBy('t.id', 'desc')
                 ->get();
+
+            $rows = $transactions->map(function($tx) {
+                $tx->details = DB::table('jihans_transaction_details as d')
+                    ->join('master_products as p', 'p.id', '=', 'd.product_id')
+                    ->join('master_units as u', 'u.id', '=', 'd.unit_id')
+                    ->where('d.transaction_id', $tx->id)
+                    ->select([
+                        'p.code as kode_item',
+                        'd.product_name as nama_item',
+                        'd.quantity',
+                        'u.abbreviation as satuan',
+                        'd.price',
+                        'd.discount_amount as pot',
+                        'd.total'
+                    ])
+                    ->get();
+                return $tx;
+            });
         } else {
             // Logic summary (laci, mingguan, bulanan, pelanggan)
             $query = null;
