@@ -1,92 +1,97 @@
 @extends($layout ?? 'layouts.gudang')
 @section('title', 'Manajemen User')
-@section('page-title', 'Daftar Pengguna Sistem')
+@section('page-title', 'Keamanan & Akses')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
-    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+<div class="space-y-6">
+
+    {{-- Header --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-lg font-bold text-gray-800">Manajemen Pengguna</h2>
-            <p class="text-sm text-gray-500 mt-1">Kelola akses, entitas, dan role untuk semua pengguna sistem.</p>
+            <h2 class="text-2xl font-black text-slate-800 font-headline tracking-tight">Manajemen Pengguna</h2>
+            <p class="text-sm text-slate-500 font-medium">Kelola hak akses, entitas bisnis, dan kredensial pengguna sistem.</p>
         </div>
-        <a href="{{ route(($routePrefix ?? 'master.') . 'users.create') }}" class="bg-[#1e40af] hover:bg-[#1e3a8a] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Tambah User
+        <a href="{{ route(($routePrefix ?? 'master.') . 'users.create') }}"
+           class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]">
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
+            Tambah Pengguna
         </a>
     </div>
 
-    <div class="p-6">
-        @if(session('success'))
-            <div class="mb-4 bg-green-50 text-green-700 p-4 rounded-lg text-sm border border-green-200 flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                {{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 bg-red-50 text-red-700 p-4 rounded-lg text-sm border border-red-200 flex items-center gap-2">
-                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                {{ session('error') }}
-            </div>
-        @endif
-
-        <div class="overflow-x-auto">
+    {{-- Table Card --}}
+    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                Total: <strong class="text-slate-900 tabular-nums">{{ $users->count() }}</strong> Pengguna Terdaftar
+            </span>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider border-b border-gray-200">
-                        <th class="p-4 font-bold">Nama / Email</th>
-                        <th class="p-4 font-bold">Entitas & Cabang</th>
-                        <th class="p-4 font-bold">Role</th>
-                        <th class="p-4 font-bold text-center">Status</th>
-                        <th class="p-4 font-bold text-center w-24">Aksi</th>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profil Pengguna</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Penempatan</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Level Akses</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-slate-100">
                     @foreach($users as $user)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="p-4">
-                                <p class="font-bold text-gray-800">{{ $user->name }}</p>
-                                <p class="text-xs text-gray-500">{{ $user->email }}</p>
-                            </td>
-                            <td class="p-4">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase
-                                    @if($user->entity == 'gudang') bg-blue-100 text-blue-800
-                                    @elseif($user->entity == 'jihans') bg-pink-100 text-pink-800
-                                    @elseif($user->entity == 'hendhys') bg-amber-100 text-amber-800
-                                    @elseif($user->entity == 'owner') bg-purple-100 text-purple-800
-                                    @else bg-gray-100 text-gray-800 @endif">
+                    <tr class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-indigo-600 border border-slate-200 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-black text-slate-800 tracking-tight">{{ $user->name }}</span>
+                                    <span class="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{{ $user->email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1">
+                                <span class="inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter w-fit border
+                                    @if($user->entity == 'gudang') bg-blue-50 text-blue-700 border-blue-100
+                                    @elseif($user->entity == 'jihans') bg-orange-50 text-orange-700 border-orange-100
+                                    @elseif($user->entity == 'hendhys') bg-amber-50 text-amber-700 border-amber-100
+                                    @elseif($user->entity == 'owner') bg-violet-50 text-violet-700 border-violet-100
+                                    @else bg-slate-50 text-slate-700 border-slate-100 @endif">
                                     {{ $user->entity }}
                                 </span>
                                 @if($user->branch)
-                                    <p class="text-xs text-gray-500 mt-1 font-medium">{{ $user->branch->name }}</p>
+                                    <span class="text-[10px] font-bold text-slate-400 italic">@ {{ $user->branch->name }}</span>
                                 @endif
-                            </td>
-                            <td class="p-4">
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
                                 @foreach($user->roles as $role)
-                                    <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded border border-gray-200">{{ $role->name }}</span>
+                                    <span class="text-[10px] font-black text-slate-500 uppercase bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{{ $role->name }}</span>
                                 @endforeach
-                            </td>
-                            <td class="p-4 text-center">
-                                @if($user->is_active)
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Aktif</span>
-                                @else
-                                    <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200">Nonaktif</span>
-                                @endif
-                            </td>
-                            <td class="p-4">
-                                <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ route(($routePrefix ?? 'master.') . 'users.edit', $user) }}" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                    </a>
-                                    <form action="{{ route(($routePrefix ?? 'master.') . 'users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pengguna ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border {{ $user->is_active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100' }}">
+                                {{ $user->is_active ? 'Aktif' : 'Off' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                                <a href="{{ route(($routePrefix ?? 'master.') . 'users.edit', $user) }}" 
+                                   class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-slate-200">
+                                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                                </a>
+                                <form action="{{ route(($routePrefix ?? 'master.') . 'users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pengguna {{ $user->name }}?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all border border-slate-200">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                     @endforeach
                 </tbody>
             </table>

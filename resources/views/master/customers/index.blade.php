@@ -1,163 +1,156 @@
 @extends($layout ?? 'layouts.gudang')
-@section('title', 'Customer')
+@section('title', 'Daftar Customer')
 @section('page-title', 'Master Data — Customer')
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full overflow-y-auto h-full bg-surface">
-
-        {{-- Header --}}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-lg gap-md">
-            <div>
-                <h2 class="font-headline-md text-headline-md text-on-background">Data Customer</h2>
-                <p class="font-body-md text-body-md text-on-surface-variant mt-xs">{{ $customers->total() }} customer
-                    terdaftar</p>
-            </div>
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-black text-slate-900 font-headline">Daftar Customer</h2>
+            <p class="text-sm font-medium text-slate-500 mt-1">{{ $customers->total() }} customer terdaftar dalam sistem</p>
+        </div>
+        <div class="flex items-center gap-3">
             <a href="{{ route(($routePrefix ?? 'master.') . 'customers.create') }}"
-                class="inline-flex items-center gap-sm px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant  transition-all self-start sm:self-auto">
-                <span class="material-symbols-outlined text-[18px]">add</span>
+                class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
                 Tambah Customer
             </a>
         </div>
+    </div>
 
-        {{-- Filters --}}
-        <form method="GET" class="flex flex-wrap gap-sm mb-lg">
-            <div class="relative flex-1 min-w-[200px]">
-                <span
-                    class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode, telepon..."
-                    class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
+    {{-- Filters --}}
+    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-6 mb-8">
+        <form method="GET" class="flex flex-wrap gap-4">
+            <div class="flex-1 min-w-[280px] relative">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode, atau telepon..."
+                    class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm">
             </div>
-            <select name="type"
-                class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
-                <option value="">Semua Tipe</option>
-                <option value="Pelanggan Individual" {{ request('type') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
-                <option value="Pelanggan Retail" {{ request('type') === 'Pelanggan Retail' ? 'selected' : '' }}>Retail</option>
-                <option value="Pelanggan Agen" {{ request('type') === 'Pelanggan Agen' ? 'selected' : '' }}>Agen</option>
-            </select>
-            <select name="status"
-                class="pl-sm pr-8 py-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface font-label-lg text-label-lg focus:ring-0 focus:border-primary outline-none">
-                <option value="">Semua Status</option>
-                <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
-                <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
-            </select>
+            
+            <div class="min-w-[180px]">
+                <select name="type"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    <option value="">Semua Tipe</option>
+                    <option value="Pelanggan Individual" {{ request('type') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
+                    <option value="Pelanggan Retail" {{ request('type') === 'Pelanggan Retail' ? 'selected' : '' }}>Retail</option>
+                    <option value="Pelanggan Agen" {{ request('type') === 'Pelanggan Agen' ? 'selected' : '' }}>Agen</option>
+                </select>
+            </div>
+
+            <div class="min-w-[180px]">
+                <select name="status"
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    <option value="">Semua Status</option>
+                    <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
+                    <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
+                </select>
+            </div>
+
             <button type="submit"
-                class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
+                class="px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 flex items-center gap-2">
                 <span class="material-symbols-outlined text-[18px]">filter_list</span>
                 Filter
             </button>
+
             @if(request()->hasAny(['search', 'type', 'status']))
                 <a href="{{ route(($routePrefix ?? 'master.') . 'customers.index') }}"
-                    class="px-sm py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors  flex items-center gap-xs">
-                    <span class="material-symbols-outlined text-[16px]">close</span>
+                    class="px-6 py-3 bg-rose-50 text-rose-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
                     Reset
                 </a>
             @endif
         </form>
+    </div>
 
-        {{-- Table --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-surface-container-low border-b border-outline-variant">
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Kode
-                            </th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Nama
-                            </th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Tipe
-                            </th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">
-                                Telepon</th>
-                            <th
-                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">
-                                Status</th>
-                            <th
-                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
-                                Aksi</th>
+    {{-- Table --}}
+    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kode</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Customer</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tipe</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Telepon</th>
+                        <th class="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($customers as $customer)
+                        <tr class="hover:bg-slate-50/50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <span class="font-mono text-xs font-bold text-slate-400 px-2 py-1 bg-slate-100 rounded-lg">{{ $customer->code }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm border border-indigo-100">
+                                        {{ strtoupper(substr($customer->name, 0, 1)) }}
+                                    </div>
+                                    <p class="text-sm font-black text-slate-900">{{ $customer->name }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if(str_contains(strtolower($customer->type), 'agen'))
+                                    <span class="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-amber-100">Agen</span>
+                                @elseif(str_contains(strtolower($customer->type), 'retail'))
+                                    <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-blue-100">Retail</span>
+                                @else
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200">Individual</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-sm font-bold text-slate-500">
+                                {{ $customer->phone ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                @if($customer->is_active)
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 border border-slate-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        Nonaktif
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route(($routePrefix ?? 'master.') . 'customers.edit', $customer) }}"
+                                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-amber-50 hover:text-amber-600 transition-all border border-slate-200">
+                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                    </a>
+                                    <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'customers.destroy', $customer) }}"
+                                        onsubmit="return confirm('Hapus customer {{ $customer->name }}?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                            class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all border border-slate-200">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($customers as $customer)
-                            <tr
-                                class="border-b border-surface-container hover:bg-surface-container-lowest/80 transition-colors">
-                                <td class="px-md py-sm font-mono text-xs text-on-surface-variant">{{ $customer->code }}</td>
-                                <td class="px-md py-sm">
-                                    <div class="flex items-center gap-sm">
-                                        <div
-                                            class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
-                                            <span
-                                                class="font-bold text-on-primary-fixed-variant text-sm">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
-                                        </div>
-                                        <span
-                                            class="font-label-lg text-label-lg font-bold text-on-surface">{{ $customer->name }}</span>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center bg-slate-50/30">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center mb-4">
+                                        <span class="material-symbols-outlined text-[32px] text-slate-300">groups</span>
                                     </div>
-                                </td>
-                                <td class="px-md py-sm">
-                                    @if(str_contains(strtolower($customer->type), 'agen'))
-                                        <span
-                                            class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim">Agen</span>
-                                    @elseif(str_contains(strtolower($customer->type), 'retail'))
-                                        <span
-                                            class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed-variant border border-secondary-fixed-dim">Retail</span>
-                                    @else
-                                        <span
-                                            class="inline-flex items-center px-sm py-xs rounded-full font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed-variant border border-primary-fixed-dim">Individual</span>
-                                    @endif
-                                </td>
-                                <td class="px-md py-sm font-body-md text-body-md text-on-surface-variant">
-                                    {{ $customer->phone ?? '-' }}</td>
-                                <td class="px-md py-sm text-center">
-                                    @if($customer->is_active)
-                                        <span
-                                            class="inline-flex items-center gap-xs px-sm py-xs rounded-full font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary inline-block"></span>
-                                            Aktif
-                                        </span>
-                                    @else
-                                        <span
-                                            class="inline-flex items-center gap-xs px-sm py-xs rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant border border-outline-variant">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-outline inline-block"></span>
-                                            Nonaktif
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-md py-sm text-right">
-                                    <div class="flex items-center justify-end gap-sm">
-                                        <a href="{{ route(($routePrefix ?? 'master.') . 'customers.edit', $customer) }}"
-                                            class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-high transition-colors  shadow-sm">
-                                            <span class="material-symbols-outlined text-[14px]">edit</span>
-                                            Edit
-                                        </a>
-                                        <form method="POST"
-                                            action="{{ route(($routePrefix ?? 'master.') . 'customers.destroy', $customer) }}"
-                                            onsubmit="return confirm('Hapus customer {{ $customer->name }}?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-error rounded-lg font-label-sm text-label-sm hover:bg-error-container transition-colors  shadow-sm">
-                                                <span class="material-symbols-outlined text-[14px]">delete</span>
-                                                Hapus
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-md py-xl text-center text-on-surface-variant">
-                                    <span
-                                        class="material-symbols-outlined text-[48px] text-outline opacity-40 mb-sm block">group</span>
-                                    <p class="font-label-lg text-label-lg font-medium">Tidak ada data customer.</p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($customers->hasPages())
-                <div class="bg-surface-container-low border-t border-outline-variant px-md py-sm">
-                    {{ $customers->links() }}
-                </div>
-            @endif
+                                    <p class="text-sm font-black text-slate-400 uppercase tracking-widest">Tidak ada data customer</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        @if($customers->hasPages())
+            <div class="px-6 py-4 border-t border-slate-100">
+                {{ $customers->links() }}
+            </div>
+        @endif
     </div>
 @endsection

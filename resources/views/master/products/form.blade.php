@@ -5,70 +5,40 @@
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <style>
-        .ts-wrapper {
-            margin-bottom: 0 !important;
-        }
-
+        .ts-wrapper { margin-bottom: 0 !important; }
         .ts-control {
-            border-radius: 0.5rem;
-            border-color: #dac2b6;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            box-shadow: none;
-            min-height: 42px;
-            display: flex;
-            align-items: center;
-            background-color: #fbf9f8;
+            background-color: #f8fafc !important; /* slate-50 */
+            border: 2px solid #f1f5f9 !important; /* slate-100 */
+            border-radius: 1rem !important; /* 2xl */
+            padding: 0.875rem 1.25rem !important;
+            font-size: 0.875rem !important;
+            box-shadow: none !important;
+            transition: all 0.3s !important;
         }
-
         .ts-control.focus {
-            border-color: #6c2f00;
-            box-shadow: 0 0 0 1px #6c2f00;
+            background-color: #fff !important;
+            border-color: #4f46e5 !important; /* indigo-500 */
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
         }
-
         .ts-dropdown {
-            border-radius: 0.5rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            border-color: #dac2b6;
-            font-size: 0.875rem;
+            border-radius: 1rem !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 0.5rem !important;
         }
-
-        .ts-dropdown .option.selected {
-            background-color: #ffdbc9;
-            color: #6c2f00;
+        .ts-dropdown .option {
+            border-radius: 0.5rem !important;
+            padding: 0.5rem 1rem !important;
         }
-
-        .ts-dropdown .option:hover,
-        .ts-dropdown .option.active {
-            background-color: #f5f3f3;
-            color: #1b1c1c;
-        }
+        .ts-dropdown .active { background-color: #eef2ff !important; color: #4f46e5 !important; }
     </style>
 @endpush
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface">
-
-        @if ($errors->any())
-            <div class="mb-md bg-error-container text-on-error-container p-sm rounded-lg shadow-sm border border-error/20">
-                <div class="flex items-start gap-sm">
-                    <span class="material-symbols-outlined text-error mt-[2px]">error</span>
-                    <div>
-                        <h4 class="font-bold text-sm mb-xs">Terdapat beberapa kesalahan:</h4>
-                        <ul class="list-disc pl-md text-sm text-on-error-container/90 space-y-1">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-
+    <div class="max-w-5xl mx-auto">
         <form method="POST"
             action="{{ isset($product) ? route(($routePrefix ?? 'master.') . 'products.update', $product) : route(($routePrefix ?? 'master.') . 'products.store') }}"
-            class="space-y-lg" enctype="multipart/form-data">
+            class="space-y-8" enctype="multipart/form-data">
             @csrf
             @if(isset($product)) @method('PUT') @endif
             
@@ -80,343 +50,264 @@
                 $defHendhys = old('visible_hendhys', $isNew ? in_array($scope, ['gudang','hendhys'])       : (bool)$product->visible_hendhys);
             @endphp
 
-            {{-- Section: Informasi Dasar --}}
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant">
-                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
-                        Informasi Dasar</h3>
+            {{-- Main Form Card --}}
+            <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-10 py-8 bg-slate-50 border-b border-slate-200">
+                    <h3 class="text-lg font-black text-slate-900 font-headline uppercase tracking-widest">Informasi Dasar</h3>
+                    <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Identitas dan kategori produk</p>
                 </div>
-                <div class="p-md grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
-                    {{-- Nama Produk (full width) --}}
-                    <div class="md:col-span-2 xl:col-span-3">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Nama Produk <span
-                                class="text-error">*</span></label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                
+                <div class="p-10 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {{-- Nama Produk --}}
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Nama Produk <span class="text-rose-500">*</span></label>
                             <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}" required
-                                placeholder="cth: Roti Kelapa Manis"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
+                                placeholder="Masukkan nama produk..."
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                            @error('name') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
                         </div>
-                        @error('name') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p> @enderror
-                    </div>
 
-                    {{-- Barcode --}}
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Barcode</label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                        {{-- Barcode --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Barcode</label>
                             <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
-                                placeholder="Scan atau ketik barcode"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none font-mono">
+                                placeholder="Scan barcode produk..."
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-mono text-sm">
                         </div>
-                    </div>
 
-                    {{-- Lokasi Rak --}}
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Lokasi Rak</label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
+                        {{-- Lokasi Rak --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Lokasi Rak</label>
                             <input type="text" name="rack" value="{{ old('rack', $product->rack ?? '') }}"
-                                placeholder="cth: A-01"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
+                                placeholder="Contoh: A-01"
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                        </div>
+
+                        {{-- Kategori --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Kategori <span class="text-rose-500">*</span></label>
+                            <select name="category_id" class="select2 w-full">
+                                <option value="">Pilih Kategori</option>
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('category_id') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Satuan --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Satuan <span class="text-rose-500">*</span></label>
+                            <select name="unit_id" class="select2 w-full">
+                                <option value="">Pilih Satuan</option>
+                                @foreach($units as $unit)
+                                    <option value="{{ $unit->id }}" {{ old('unit_id', $product->unit_id ?? '') == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->abbreviation }})</option>
+                                @endforeach
+                            </select>
+                            @error('unit_id') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Brand --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Brand</label>
+                            <select name="brand_id" class="select2 w-full">
+                                <option value="">— Tanpa Brand —</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id ?? '') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Image Upload --}}
+                        <div x-data="{
+                                preview: '{{ isset($product) && $product->image ? Storage::url($product->image) : '' }}',
+                                fileName: '{{ isset($product) && $product->image ? basename($product->image) : '' }}',
+                                handleFile(file) {
+                                    if (!file || !file.type.startsWith('image/')) return;
+                                    this.fileName = file.name;
+                                    const reader = new FileReader();
+                                    reader.onload = e => this.preview = e.target.result;
+                                    reader.readAsDataURL(file);
+                                },
+                                clear() { this.preview = ''; this.fileName = ''; document.getElementById('imageInput').value = ''; }
+                            }">
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Gambar Produk</label>
+                            <div class="relative group">
+                                <input id="imageInput" type="file" name="image" accept="image/*" class="hidden"
+                                    @change="handleFile($event.target.files[0])">
+                                <div @click="document.getElementById('imageInput').click()" 
+                                     class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-4 flex items-center gap-4 cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                                    <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                                        <template x-if="preview">
+                                            <img :src="preview" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!preview">
+                                            <span class="material-symbols-outlined text-slate-300 text-[28px]">image</span>
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-black text-slate-700 truncate" x-text="preview ? fileName : 'Pilih Gambar'"></p>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Maks 2MB • JPG, PNG, WEBP</p>
+                                    </div>
+                                    <template x-if="preview">
+                                        <button type="button" @click.stop="clear()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center hover:bg-rose-100 transition-all">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Pricing Card --}}
+            <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-10 py-8 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900 font-headline uppercase tracking-widest">Harga & Stok</h3>
+                        <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Konfigurasi nilai jual dan batas stok</p>
+                    </div>
+                </div>
+                <div class="p-10">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">HPP (Rp) <span class="text-rose-500">*</span></label>
+                            <input type="number" name="hpp" value="{{ old('hpp', $product->hpp ?? 0) }}" min="0" step="0.01" required
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-indigo-500 uppercase tracking-widest ml-1 mb-2 block">Harga Jual (Rp) <span class="text-rose-500">*</span></label>
+                            <input type="number" name="selling_price" value="{{ old('selling_price', $product->selling_price ?? 0) }}" min="0" step="0.01" required
+                                class="bg-indigo-50 border-2 border-indigo-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-black text-indigo-600">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Stok Minimum <span class="text-rose-500">*</span></label>
+                            <input type="number" name="stock_min" value="{{ old('stock_min', $product->stock_min ?? 0) }}" min="0" step="1" required
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
                         </div>
                     </div>
 
-                    {{-- Kategori --}}
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Kategori <span
-                                class="text-error">*</span></label>
-                        <select name="category_id"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest @error('category_id') border-error @enderror">
-                            <option value="">Pilih Kategori</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('category_id') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <div class="mt-12">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest">Harga Bertingkat (Tiering)</h4>
+                                <p class="text-[11px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">Berikan diskon otomatis untuk pembelian grosir</p>
+                            </div>
+                            <button type="button" id="addTierBtn"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
+                                <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                                Tambah Tier
+                            </button>
+                        </div>
 
-                    {{-- Satuan --}}
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Satuan <span
-                                class="text-error">*</span></label>
-                        <select name="unit_id"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest @error('unit_id') border-error @enderror">
-                            <option value="">Pilih Satuan</option>
-                            @foreach($units as $unit)
-                                <option value="{{ $unit->id }}" {{ old('unit_id', $product->unit_id ?? '') == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->abbreviation }})</option>
-                            @endforeach
-                        </select>
-                        @error('unit_id') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Brand --}}
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Brand</label>
-                        <select name="brand_id"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="">— Tanpa Brand —</option>
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id ?? '') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-
-                    {{-- Gambar Produk - Drag & Drop --}}
-                    <div class="md:col-span-2 xl:col-span-1" x-data="{
-                                                isDragging: false,
-                                                preview: '{{ isset($product) && $product->image ? Storage::url($product->image) : '' }}',
-                                                fileName: '{{ isset($product) && $product->image ? basename($product->image) : '' }}',
-                                                handleFile(file) {
-                                                    if (!file || !file.type.startsWith('image/')) return;
-                                                    this.fileName = file.name;
-                                                    const reader = new FileReader();
-                                                    reader.onload = e => this.preview = e.target.result;
-                                                    reader.readAsDataURL(file);
-                                                    const dt = new DataTransfer();
-                                                    dt.items.add(file);
-                                                    document.getElementById('imageInput').files = dt.files;
-                                                },
-                                                clear() { this.preview = ''; this.fileName = ''; document.getElementById('imageInput').value = ''; }
-                                            }">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Gambar Produk</label>
-                        <input id="imageInput" type="file" name="image" accept="image/*" class="hidden"
-                            @change="handleFile($event.target.files[0])">
-                        <div class="border-2 rounded-xl transition-all duration-200 cursor-pointer"
-                            :class="isDragging ? 'border-primary bg-primary-fixed/20' : 'border-dashed border-outline-variant hover:border-primary hover:bg-surface-container-low'"
-                            @click="document.getElementById('imageInput').click()" @dragover.prevent="isDragging = true"
-                            @dragleave.prevent="isDragging = false"
-                            @drop.prevent="isDragging = false; handleFile($event.dataTransfer.files[0])">
-                            <template x-if="!preview">
-                                <div class="flex flex-col items-center justify-center py-lg gap-sm text-on-surface-variant">
-                                    <span class="material-symbols-outlined text-[48px] text-outline">image</span>
-                                    <p class="font-label-lg text-label-lg font-medium">Klik atau seret gambar</p>
-                                    <p class="font-label-sm text-label-sm opacity-60">PNG, JPG, WEBP - Maks 2MB</p>
-                                </div>
-                            </template>
-                            <template x-if="preview">
-                                <div class="flex items-center gap-md p-md">
-                                    <img :src="preview"
-                                        class="w-20 h-20 rounded-lg object-cover border border-outline-variant shrink-0">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-label-lg text-label-lg font-bold text-on-surface truncate"
-                                            x-text="fileName"></p>
-                                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Klik untuk
-                                            ganti</p>
+                        <div id="tierContainer" class="space-y-3">
+                            @php
+                                $existingTiers = old('tiered_prices', isset($product) ? $product->tieredPrices->map(fn($t) => ['min_qty' => $t->min_qty, 'price' => $t->price])->toArray() : []);
+                            @endphp
+                            @forelse($existingTiers as $i => $tier)
+                                <div class="tier-row flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                    <div class="flex-1 w-full">
+                                        <div class="relative">
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Min. Beli</span>
+                                            <input type="number" name="tiered_prices[{{ $i }}][min_qty]" value="{{ $tier['min_qty'] }}" min="1" placeholder="cth: 50"
+                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-900 text-sm">
+                                        </div>
                                     </div>
-                                    <button type="button" @click.stop="clear()"
-                                        class="p-xs rounded-full hover:bg-error-container text-error transition-colors shrink-0">
+                                    <div class="flex-1 w-full">
+                                        <div class="relative">
+                                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga Rp</span>
+                                            <input type="number" name="tiered_prices[{{ $i }}][price]" value="{{ $tier['price'] }}" min="0" placeholder="cth: 142000"
+                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-indigo-600 text-sm">
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
+                                        class="w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all shrink-0">
                                         <span class="material-symbols-outlined text-[20px]">delete</span>
                                     </button>
                                 </div>
-                            </template>
-                        </div>
-                        @error('image') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p> @enderror
-                    </div>
-                </div>
-            </div>
-
-            {{-- Section: Harga & Stok --}}
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant">
-                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
-                        Harga &amp; Stok</h3>
-                </div>
-                <div class="p-md grid grid-cols-1 sm:grid-cols-3 gap-md">
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">HPP (Rp) <span
-                                class="text-error">*</span></label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="hpp" value="{{ old('hpp', $product->hpp ?? 0) }}" min="0" step="0.01"
-                                required
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Harga Jual (Rp) <span
-                                class="text-error">*</span></label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="selling_price"
-                                value="{{ old('selling_price', $product->selling_price ?? 0) }}" min="0" step="0.01"
-                                required
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Stok Minimum <span
-                                class="text-error">*</span></label>
-                        <div
-                            class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="stock_min" value="{{ old('stock_min', $product->stock_min ?? 0) }}"
-                                min="0" step="1" required
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Section: Harga Bertingkat --}}
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
-                    <div>
-                        <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Harga Bertingkat</h3>
-                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Opsional — harga berbeda berdasarkan jumlah pembelian. Jika diisi, harga ini yang dipakai di POS. Jika kosong, pakai Harga Jual di atas.</p>
-                    </div>
-                    <button type="button" id="addTierBtn"
-                        class="inline-flex items-center gap-xs px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors shrink-0">
-                        <span class="material-symbols-outlined text-[16px]">add</span>
-                        Tambah Tier
-                    </button>
-                </div>
-                <div class="p-md">
-                    {{-- Header kolom --}}
-                    <div class="hidden sm:grid grid-cols-[1fr_1fr_auto] gap-sm mb-xs px-xs">
-                        <span class="font-label-sm text-label-sm text-on-surface-variant">Min. Qty (beli ≥ angka ini)</span>
-                        <span class="font-label-sm text-label-sm text-on-surface-variant">Harga per Satuan (Rp)</span>
-                        <span class="w-8"></span>
-                    </div>
-                    <div id="tierContainer" class="space-y-sm">
-                        @php
-                            $existingTiers = old('tiered_prices', isset($product) ? $product->tieredPrices->map(fn($t) => ['min_qty' => $t->min_qty, 'price' => $t->price])->toArray() : []);
-                        @endphp
-                        @forelse($existingTiers as $i => $tier)
-                            <div class="tier-row grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-sm items-center">
-                                <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                                    <input type="number" name="tiered_prices[{{ $i }}][min_qty]"
-                                        value="{{ $tier['min_qty'] }}" min="1" placeholder="cth: 50"
-                                        class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                            @empty
+                                <div id="emptyTierMsg" class="py-10 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                                    <span class="material-symbols-outlined text-slate-300 text-[32px] mb-2">trending_down</span>
+                                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Belum ada harga bertingkat</p>
                                 </div>
-                                <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                                    <input type="number" name="tiered_prices[{{ $i }}][price]"
-                                        value="{{ $tier['price'] }}" min="0" placeholder="cth: 142000"
-                                        class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                                </div>
-                                <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
-                                    class="flex items-center justify-center w-8 h-8 rounded-lg text-error hover:bg-error-container transition-colors shrink-0">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        @empty
-                            <p id="emptyTierMsg" class="font-label-sm text-label-sm text-on-surface-variant text-center py-md">
-                                Belum ada harga bertingkat. Klik "Tambah Tier" untuk menambahkan.
-                            </p>
-                        @endforelse
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Section: Pajak & Konfigurasi --}}
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant">
-                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
-                        Pajak &amp; Konfigurasi</h3>
+            {{-- Configuration Card --}}
+            <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-10 py-8 bg-slate-50 border-b border-slate-200">
+                    <h3 class="text-lg font-black text-slate-900 font-headline uppercase tracking-widest">Pajak & Konfigurasi</h3>
+                    <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Pengaturan sistem dan visibilitas produk</p>
                 </div>
-                <div class="p-md grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-md">
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
-                            Tipe PPN
-                            <span class="text-outline font-normal normal-case"> — cara PPN dihitung di struk</span>
-                        </label>
-                        <select name="ppn_type"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="none"  {{ old('ppn_type', $product->ppn_type ?? 'none') === 'none'    ? 'selected' : '' }}>Tanpa PPN — harga akhir = harga jual</option>
-                            <option value="include" {{ old('ppn_type', $product->ppn_type ?? '') === 'include' ? 'selected' : '' }}>Include — PPN sudah termasuk dalam harga</option>
-                            <option value="exclude" {{ old('ppn_type', $product->ppn_type ?? '') === 'exclude' ? 'selected' : '' }}>Exclude — PPN ditambahkan di atas harga</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
-                            Rate PPN (%)
-                            <span class="text-outline font-normal normal-case"> — default 11% sesuai aturan Indonesia</span>
-                        </label>
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="ppn_rate" value="{{ old('ppn_rate', $product->ppn_rate ?? 11) }}"
-                                min="0" max="100" step="0.01"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                <div class="p-10 space-y-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Tipe PPN</label>
+                            <select name="ppn_type" class="select2 w-full">
+                                <option value="none"  {{ old('ppn_type', $product->ppn_type ?? 'none') === 'none'    ? 'selected' : '' }}>Tanpa PPN</option>
+                                <option value="include" {{ old('ppn_type', $product->ppn_type ?? '') === 'include' ? 'selected' : '' }}>Include PPN</option>
+                                <option value="exclude" {{ old('ppn_type', $product->ppn_type ?? '') === 'exclude' ? 'selected' : '' }}>Exclude PPN</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Rate PPN (%)</label>
+                            <input type="number" name="ppn_rate" value="{{ old('ppn_rate', $product->ppn_rate ?? 11) }}" min="0" max="100" step="0.01"
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Status Produk</label>
+                            <select name="status" class="select2 w-full">
+                                <option value="active" {{ old('status', $product->status ?? 'active') === 'active' ? 'selected' : '' }}>Aktif (Dijual)</option>
+                                <option value="discontinued" {{ old('status', $product->status ?? '') === 'discontinued' ? 'selected' : '' }}>Discontinue (Sembunyi)</option>
+                            </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
-                            Tipe Produk
-                            <span class="text-outline font-normal normal-case"> — apakah stok ditrack?</span>
-                        </label>
-                        <select name="product_type"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="INV" {{ old('product_type', $product->product_type ?? 'INV') === 'INV' ? 'selected' : '' }}>INV — Stok dicatat &amp; ditrack</option>
-                            <option value="NON" {{ old('product_type', $product->product_type ?? '') === 'NON' ? 'selected' : '' }}>NON — Stok tidak ditrack (jasa / non-fisik)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">
-                            Sumber Stok
-                            <span class="text-outline font-normal normal-case"> — dari mana stok produk ini?</span>
-                        </label>
-                        <select name="source_type"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="purchased" {{ old('source_type', $product->source_type ?? 'purchased') === 'purchased' ? 'selected' : '' }}>Dari Supplier / Gudang</option>
-                            <option value="produced" {{ old('source_type', $product->source_type ?? '') === 'produced' ? 'selected' : '' }}>Produksi Sendiri</option>
-                        </select>
-                        @error('source_type') <p class="text-error font-label-sm text-label-sm mt-xs">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Status</label>
-                        <select name="status"
-                            class="select2 w-full border border-outline-variant rounded-lg text-body-md bg-surface-container-lowest">
-                            <option value="active" {{ old('status', $product->status ?? 'active') === 'active' ? 'selected' : '' }}>Aktif — produk dijual</option>
-                            <option value="discontinued" {{ old('status', $product->status ?? '') === 'discontinued' ? 'selected' : '' }}>Tidak Dijual — sembunyikan dari POS</option>
-                        </select>
-                    </div>
-                    {{-- Visibilitas Entitas --}}
-                    <div class="sm:col-span-2 xl:col-span-3">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-sm">
-                            Tampilkan di Entitas
-                            <span class="text-outline font-normal normal-case"> — otomatis dari login, centang manual jika perlu multi-entitas</span>
-                        </label>
-                        <div class="flex flex-wrap gap-md">
+
+                    <div class="border-t border-slate-100 pt-10">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-6 block">Tampilkan di Entitas</label>
+                        <div class="flex flex-wrap gap-6">
                             @foreach([
                                 ['visible_gudang',  'Gudang Tempua',   'warehouse',  $defGudang],
                                 ['visible_jihans',  "Jihan's Food",    'storefront', $defJihans],
                                 ['visible_hendhys', 'Hendhys Brownies','cake',       $defHendhys],
                             ] as [$fieldName, $label, $icon, $checked])
                                 <label x-data="{ on: {{ $checked ? 'true' : 'false' }} }"
-                                    :class="on ? 'border-primary bg-primary-container' : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container'"
-                                    class="flex items-center gap-sm cursor-pointer px-md py-sm rounded-xl border-2 transition-all select-none">
-                                    <input type="checkbox" name="{{ $fieldName }}" value="1"
-                                        x-model="on"
-                                        class="w-4 h-4 rounded accent-primary focus:ring-primary focus:ring-offset-0 border-outline-variant">
-                                    <span class="material-symbols-outlined text-[18px]" :class="on ? 'text-primary' : 'text-outline'">{{ $icon }}</span>
-                                    <span class="font-label-md text-label-md" :class="on ? 'font-semibold text-primary' : 'text-on-surface-variant'">{{ $label }}</span>
+                                    :class="on ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'"
+                                    class="flex-1 min-w-[200px] flex flex-col items-center justify-center p-6 rounded-[2rem] border-2 cursor-pointer transition-all select-none">
+                                    <input type="checkbox" name="{{ $fieldName }}" value="1" x-model="on" class="hidden">
+                                    <span class="material-symbols-outlined text-[32px] mb-3" :class="on ? 'fill' : ''">{{ $icon }}</span>
+                                    <span class="text-xs font-black uppercase tracking-widest">{{ $label }}</span>
+                                    <div class="mt-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all" :class="on ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200'">
+                                        <span x-show="on" class="material-symbols-outlined text-white text-[16px] font-black">check</span>
+                                    </div>
                                 </label>
                             @endforeach
                         </div>
                     </div>
 
-                    <div class="sm:col-span-2 xl:col-span-3">
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Catatan</label>
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="text" name="notes" value="{{ old('notes', $product->notes ?? '') }}"
-                                placeholder="Catatan tambahan (opsional)"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
-                        </div>
+                    <div class="border-t border-slate-100 pt-10">
+                        <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Catatan Internal</label>
+                        <textarea name="notes" placeholder="Tambahkan catatan khusus untuk produk ini..." rows="3"
+                            class="bg-slate-50 border-2 border-slate-100 rounded-3xl px-6 py-5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-medium text-slate-700">{{ old('notes', $product->notes ?? '') }}</textarea>
                     </div>
                 </div>
             </div>
 
-            {{-- Action Buttons --}}
-            <div class="flex items-center gap-md pb-lg">
+            {{-- Form Actions --}}
+            <div class="flex items-center gap-4 pt-4 pb-12">
                 <button type="submit"
-                    class="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant  transition-all">
-                    <span class="material-symbols-outlined text-[18px]">{{ isset($product) ? 'save' : 'add' }}</span>
-                    {{ isset($product) ? 'Simpan Perubahan' : 'Tambah Produk' }}
+                    class="flex-1 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3">
+                    <span class="material-symbols-outlined">{{ isset($product) ? 'save' : 'add_circle' }}</span>
+                    {{ isset($product) ? 'Simpan Perubahan' : 'Daftarkan Produk Baru' }}
                 </button>
                 <a href="{{ route(($routePrefix ?? 'master.') . 'products.index') }}"
-                    class="inline-flex items-center gap-sm px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors ">
-                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    class="px-10 py-4 bg-white border-2 border-slate-200 text-slate-500 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center justify-center gap-3">
+                    <span class="material-symbols-outlined">arrow_back</span>
                     Batal
                 </a>
             </div>
@@ -428,11 +319,7 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 document.querySelectorAll('.select2').forEach((el) => {
-                    new TomSelect(el, {
-                        create: false,
-                        sortField: { field: "text", direction: "asc" },
-                        maxOptions: null
-                    });
+                    new TomSelect(el, { create: false, sortField: { field: "text", direction: "asc" }, maxOptions: null });
                 });
 
                 document.getElementById('addTierBtn').addEventListener('click', function () {
@@ -442,19 +329,25 @@
                     const container = document.getElementById('tierContainer');
                     const index = container.querySelectorAll('.tier-row').length;
                     const row = document.createElement('div');
-                    row.className = 'tier-row grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-sm items-center';
+                    row.className = 'tier-row flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200';
                     row.innerHTML = `
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="tiered_prices[${index}][min_qty]" min="1" placeholder="cth: 50"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                        <div class="flex-1 w-full">
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Min. Beli</span>
+                                <input type="number" name="tiered_prices[${index}][min_qty]" min="1" placeholder="cth: 50"
+                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-900 text-sm">
+                            </div>
                         </div>
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="number" name="tiered_prices[${index}][price]" min="0" placeholder="cth: 142000"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
+                        <div class="flex-1 w-full">
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga Rp</span>
+                                <input type="number" name="tiered_prices[${index}][price]" min="0" placeholder="cth: 142000"
+                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-indigo-600 text-sm">
+                            </div>
                         </div>
                         <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
-                            class="flex items-center justify-center w-8 h-8 rounded-lg text-error hover:bg-error-container transition-colors shrink-0">
-                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                            class="w-11 h-11 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
                         </button>`;
                     container.appendChild(row);
                     row.querySelector('input').focus();
@@ -469,11 +362,10 @@
                 });
                 if (document.querySelectorAll('.tier-row').length === 0) {
                     const container = document.getElementById('tierContainer');
-                    const p = document.createElement('p');
-                    p.id = 'emptyTierMsg';
-                    p.className = 'font-label-sm text-label-sm text-on-surface-variant text-center py-md';
-                    p.textContent = 'Belum ada harga bertingkat. Klik "Tambah Tier" untuk menambahkan.';
-                    container.appendChild(p);
+                    container.innerHTML = `<div id="emptyTierMsg" class="py-10 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                        <span class="material-symbols-outlined text-slate-300 text-[32px] mb-2">trending_down</span>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Belum ada harga bertingkat</p>
+                    </div>`;
                 }
             }
         </script>
