@@ -116,7 +116,7 @@ class StockService
         ]);
     }
 
-    // ── Transfer Keluar: debit Gudang + credit entity ─────────────────────────
+    // ── Transfer Keluar: hanya debit Gudang ──────────────────────────────────
 
     public function processTransferOut(TransferOut $transfer): void
     {
@@ -124,7 +124,6 @@ class StockService
             $userId = $transfer->created_by;
 
             foreach ($transfer->details as $detail) {
-                // Debit gudang
                 $this->debitGudang(
                     $detail->product_id,
                     $detail->quantity,
@@ -132,22 +131,30 @@ class StockService
                     $transfer->id,
                     $userId
                 );
-
-                // Credit entity
-                if ($transfer->to_entity === 'jihans') {
-                    $this->creditJihans($detail->product_id, $detail->unit_id, $detail->quantity, 'transfer_gudang', $transfer->id, $userId);
-                } else {
-                    $this->creditHendhys($detail->product_id, $detail->unit_id, $detail->quantity, $transfer->branch_id, 'transfer_gudang', $transfer->id, $userId);
-                }
-            }
-
-            // Create stock_in record
-            if ($transfer->to_entity === 'jihans') {
-                $this->createJihansStockIn($transfer);
-            } else {
-                $this->createHendhysStockIn($transfer);
             }
         });
+    }
+
+    // ── Penerimaan Transfer: credit entity berdasarkan qty diterima ───────────
+
+    public function processTransferReceive(TransferOut $transfer, int $userId): void
+    {
+        foreach ($transfer->details as $detail) {
+            $qty = (float) $detail->received_quantity;
+            if ($qty <= 0) continue;
+
+            if ($transfer->to_entity === 'jihans') {
+                $this->creditJihans($detail->product_id, $detail->unit_id, $qty, 'transfer_gudang', $transfer->id, $userId);
+            } else {
+                $this->creditHendhys($detail->product_id, $detail->unit_id, $qty, $transfer->branch_id, 'transfer_gudang', $transfer->id, $userId);
+            }
+        }
+
+        if ($transfer->to_entity === 'jihans') {
+            $this->createJihansStockIn($transfer);
+        } else {
+            $this->createHendhysStockIn($transfer);
+        }
     }
 
     // ── Jihans ────────────────────────────────────────────────────────────────
@@ -204,10 +211,13 @@ class StockService
         ]);
 
         foreach ($transfer->details as $detail) {
+            $qty = (float) ($detail->received_quantity ?? $detail->quantity);
+            if ($qty <= 0) continue;
+
             JihansStockInDetail::create([
                 'stock_in_id' => $stockIn->id,
                 'product_id'  => $detail->product_id,
-                'quantity'    => $detail->quantity,
+                'quantity'    => $qty,
                 'unit_id'     => $detail->unit_id,
                 'hpp_price'   => $detail->hpp_price,
             ]);

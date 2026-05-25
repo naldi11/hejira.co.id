@@ -89,23 +89,13 @@
                     <th style="width: 80px;" class="text-right">Pot</th>
                     <th style="width: 120px;" class="text-right">Total</th>
                 @else
-                    @if($type === 'pelanggan')
-                        <th>Nama Pelanggan</th>
-                        <th class="text-center">Kunjungan Awal</th>
-                        <th class="text-center">Kunjungan Akhir</th>
-                    @elseif($type === 'mingguan')
-                        <th>Periode Minggu</th>
-                    @elseif($type === 'bulanan')
-                        <th>Bulan</th>
-                    @else
-                        <th>Tanggal</th>
-                    @endif
+                    <th>Tanggal</th>
                     <th class="text-center">Jml Transaksi</th>
                     <th class="text-right">Total Transaksi</th>
-                    <th class="text-right">Tunai</th>
-                    <th class="text-right">Kredit</th>
-                    <th class="text-right">Debit</th>
-                    <th class="text-right">CC</th>
+                    <th class="text-right">Jml Bayar Tunai</th>
+                    <th class="text-right">Jml Bayar Kredit</th>
+                    <th class="text-right">Jml Bayar Debit</th>
+                    <th class="text-right">Jml Bayar K.Kredit</th>
                 @endif
             </tr>
         </thead>
@@ -122,17 +112,13 @@
                     <td class="text-right">{{ $row->pot > 0 ? '-' . number_format($row->pot) : '0' }}</td>
                     <td class="text-right font-bold">{{ number_format($row->total) }}</td>
                 @else
-                    @if($type === 'pelanggan')
-                        <td class="font-bold">{{ $row->pelanggan }}</td>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($row->tanggal_pertama)->format('d/m/Y') }}</td>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($row->tanggal_terakhir)->format('d/m/Y') }}</td>
-                    @elseif($type === 'mingguan')
-                        <td>{{ \Carbon\Carbon::parse($row->minggu_mulai)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($row->minggu_akhir)->format('d/m/Y') }}</td>
-                    @elseif($type === 'bulanan')
-                        <td>{{ $row->label_bulan }}</td>
-                    @else
-                        <td>{{ \Carbon\Carbon::parse($row->date)->translatedFormat('d M Y') }}</td>
-                    @endif
+                    <td>
+                        @if($type === 'pelanggan') {{ $row->pelanggan }}
+                        @elseif($type === 'mingguan') {{ \Carbon\Carbon::parse($row->minggu_mulai)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($row->minggu_akhir)->format('d/m/Y') }}
+                        @elseif($type === 'bulanan') {{ $row->label_bulan }}
+                        @else {{ \Carbon\Carbon::parse($row->date)->translatedFormat('d M Y') }}
+                        @endif
+                    </td>
                     <td class="text-center">{{ number_format($row->jumlah_transaksi) }}</td>
                     <td class="text-right font-bold">Rp {{ number_format($row->total_transaksi) }}</td>
                     <td class="text-right">{{ number_format($row->tunai) }}</td>
@@ -149,7 +135,7 @@
                     <td colspan="7" class="text-right">GRAND TOTAL</td>
                     <td class="text-right">Rp {{ number_format($rows->sum('total')) }}</td>
                 @else
-                    <td colspan="{{ in_array($type, ['pelanggan', 'mingguan', 'bulanan']) ? ($type === 'pelanggan' ? 3 : 1) : 1 }}" class="text-right">TOTAL</td>
+                    <td class="text-right">TOTAL</td>
                     <td class="text-center">{{ number_format($rows->sum('jumlah_transaksi')) }}</td>
                     <td class="text-right">Rp {{ number_format($rows->sum('total_transaksi')) }}</td>
                     <td class="text-right">{{ number_format($rows->sum('tunai')) }}</td>

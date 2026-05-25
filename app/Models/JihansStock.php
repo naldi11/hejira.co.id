@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Product as JihansProduct;
-use App\Models\Jihans\Unit as JihansUnit;
+use App\Models\Unit;
 
 class JihansStock extends Model
 {
@@ -15,5 +15,5 @@ class JihansStock extends Model
     protected $fillable = ['product_id', 'quantity', 'unit_id', 'last_updated'];
 
     public function product(): BelongsTo { return $this->belongsTo(JihansProduct::class); }
-    public function unit(): BelongsTo    { return $this->belongsTo(JihansUnit::class); }
+    public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
 }

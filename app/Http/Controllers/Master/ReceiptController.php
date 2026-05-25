@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TransferOut;
 use App\Models\TransferOutPhoto;
 use App\Services\ActivityLogService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\Storage;
 class ReceiptController extends Controller
 {
     public function __construct(
-        private ActivityLogService $logger
+        private ActivityLogService $logger,
+        private StockService $stock
     ) {}
 
     public function showReceiveForm(Request $request, $id)
@@ -76,6 +78,8 @@ class ReceiptController extends Controller
                         'kondisi'           => $kondisi,
                     ]);
                 }
+
+                $this->stock->processTransferReceive($transferOut, auth()->id());
 
                 $transferOut->update([
                     'status'                    => 'received',

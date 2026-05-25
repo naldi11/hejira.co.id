@@ -175,12 +175,12 @@ class ReportController extends Controller
             $query = $this->buildSummaryQuery($request, $user->id)
                 ->selectRaw("
                     t.date,
-                    COUNT(*)                                                                   as jumlah_transaksi,
-                    SUM(t.grand_total)                                                         as total_transaksi,
-                    SUM(CASE WHEN t.status = 'pending'     THEN t.grand_total ELSE 0 END)     as kredit,
-                    COALESCE(SUM(pay_agg.tunai), 0)                                            as tunai,
-                    COALESCE(SUM(pay_agg.kartu_debit), 0)                                     as kartu_debit,
-                    COALESCE(SUM(pay_agg.kartu_kredit), 0)                                    as kartu_kredit
+                    COUNT(*) as jumlah_transaksi,
+                    SUM(t.grand_total) as total_transaksi,
+                    COALESCE(SUM(pay_agg.tunai), 0) as tunai,
+                    SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END) as kredit,
+                    COALESCE(SUM(pay_agg.kartu_debit), 0) as kartu_debit,
+                    COALESCE(SUM(pay_agg.kartu_kredit), 0) as kartu_kredit
                 ")
                 ->groupBy('t.date')
                 ->orderBy('t.date', 'desc');

@@ -165,18 +165,16 @@ class ReportController extends Controller
     {
         $title = "Laporan " . ucfirst($type);
         $rows = collect();
-        $isDetailed = in_array($type, ['laci', 'harian']);
+        $isDetailed = ($type === 'harian');
 
         if ($isDetailed) {
-            $kasirId = ($type === 'laci') ? auth()->id() : null;
-            $title = ($type === 'laci') ? "Laporan Laci Kasir" : "Laporan Penjualan Harian";
+            $title = "Laporan Penjualan Harian";
 
             $rows = DB::table('jihans_transaction_details as d')
                 ->join('jihans_transactions as t', 't.id', '=', 'd.transaction_id')
                 ->join('master_products as p', 'p.id', '=', 'd.product_id')
                 ->join('master_units as u', 'u.id', '=', 'd.unit_id')
                 ->where('t.status', '!=', 'cancelled')
-                ->when($kasirId, fn($q) => $q->where('t.created_by', $kasirId))
                 ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
                 ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
                 ->select([
@@ -192,9 +190,23 @@ class ReportController extends Controller
                 ->orderBy('t.id', 'desc')
                 ->get();
         } else {
-            // Logic summary yang sudah ada
+            // Logic summary (laci, mingguan, bulanan, pelanggan)
             $query = null;
-            if ($type === 'mingguan') {
+            if ($type === 'laci') {
+                $title = "Laporan Laci Kasir: " . auth()->user()->name;
+                $query = $this->buildSummaryQuery($request, auth()->id())
+                    ->selectRaw("
+                        t.date,
+                        COUNT(*) as jumlah_transaksi,
+                        SUM(t.grand_total) as total_transaksi,
+                        COALESCE(SUM(pay_agg.tunai), 0) as tunai,
+                        SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END) as kredit,
+                        COALESCE(SUM(pay_agg.kartu_debit), 0) as kartu_debit,
+                        COALESCE(SUM(pay_agg.kartu_kredit), 0) as kartu_kredit
+                    ")
+                    ->groupBy('t.date')
+                    ->orderBy('t.date', 'desc');
+            } elseif ($type === 'mingguan') {
                 $title = "Laporan Penjualan Mingguan";
                 $query = $this->buildSummaryQuery($request)
                     ->selectRaw("
