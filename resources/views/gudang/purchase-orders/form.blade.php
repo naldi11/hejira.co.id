@@ -89,18 +89,18 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                        <th class="pb-4 pl-2" style="min-width: 280px;">Pilih Produk</th>
-                                        <th class="pb-4 pl-2" style="width: 110px;">Satuan</th>
-                                        <th class="pb-4 text-center" style="width: 80px;">Qty</th>
-                                        <th class="pb-4 text-right" style="width: 150px;">Harga Satuan</th>
-                                        <th class="pb-4 text-right" style="width: 130px;">Subtotal</th>
-                                        <th class="pb-4 text-center" style="width: 50px;"></th>
+                                        <th class="pb-4 pl-2" style="width: 40%; min-width: 250px;">Pilih Produk</th>
+                                        <th class="pb-4 pl-2" style="width: 15%; min-width: 120px;">Satuan</th>
+                                        <th class="pb-4 text-center" style="width: 12%; min-width: 90px;">Qty</th>
+                                        <th class="pb-4 text-right" style="width: 18%; min-width: 160px;">Harga Satuan</th>
+                                        <th class="pb-4 text-right" style="width: 12%; min-width: 120px;">Subtotal</th>
+                                        <th class="pb-4 text-center" style="width: 3%; min-width: 50px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-50">
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr class="group">
-                                            <td class="py-4 pr-4">
+                                            <td class="py-4 pr-4" style="width: 40%; min-width: 250px;">
                                                 <div wire:ignore>
                                                     <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
                                                             x-init="$nextTick(() => {
@@ -125,7 +125,7 @@
                                                     </select>
                                                 </div>
                                             </td>
-                                            <td class="py-4 pr-2">
+                                            <td class="py-4 pr-2" style="width: 15%; min-width: 120px;">
                                                 <div wire:ignore>
                                                     <select x-model="item.unit_id" :name="'items['+index+'][unit_id]'" required
                                                             x-init="$nextTick(() => {
@@ -149,21 +149,21 @@
                                                     </select>
                                                 </div>
                                             </td>
-                                            <td class="py-4 px-2">
+                                            <td class="py-4 px-2" style="width: 12%; min-width: 90px;">
                                                 <input type="number" x-model.number="item.quantity" :name="'items['+index+'][quantity]'" min="1" step="any" required
                                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
                                             </td>
-                                            <td class="py-4 px-2">
+                                            <td class="py-4 px-2" style="width: 18%; min-width: 160px;">
                                                 <div class="relative">
                                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Rp</span>
                                                     <input type="number" x-model.number="item.price" :name="'items['+index+'][price]'" min="0" step="any" required
                                                            class="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-right text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
                                                 </div>
                                             </td>
-                                            <td class="py-4 px-2 text-right">
+                                            <td class="py-4 px-2 text-right" style="width: 12%; min-width: 120px;">
                                                 <span class="text-xs font-black text-slate-900 tabular-nums" x-text="formatNumber(item.quantity * item.price)"></span>
                                             </td>
-                                            <td class="py-4 pl-4 text-center">
+                                            <td class="py-4 pl-4 text-center" style="width: 3%; min-width: 50px;">
                                                 <button type="button" @click="removeItem(index)" class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 transition-colors">
                                                     <span class="material-symbols-outlined text-[20px]">delete</span>
                                                 </button>
