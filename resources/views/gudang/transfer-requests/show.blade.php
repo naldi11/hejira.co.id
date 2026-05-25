@@ -84,7 +84,7 @@
                                     @foreach($transferRequest->details as $item)
                                     @php
                                         // Ambil stok gudang saat ini untuk perbandingan
-                                        $whStock = \App\Models\GudangStock::where('product_id', $item->product_id)->value('current_stock') ?? 0;
+                                        $whStock = \App\Models\GudangStock::where('product_id', $item->product_id)->value('quantity') ?? 0;
                                         $hasEnough = $whStock >= $item->quantity;
                                     @endphp
                                     <tr class="group transition-colors hover:bg-slate-50/50">
