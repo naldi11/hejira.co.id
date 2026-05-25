@@ -13,6 +13,7 @@ class HendhysTransferToBranch extends Model
     protected $fillable = [
         'transfer_number', 'request_id', 'branch_id', 'date',
         'status', 'notes', 'receive_notes', 'receive_photo',
+        'receive_kendala', 'receive_received_by_name', 'receive_pengirim_name',
         'created_by', 'received_by'
     ];
 
@@ -39,5 +40,10 @@ class HendhysTransferToBranch extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'received_by');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(HendhysTransferToBranchPhoto::class, 'transfer_id');
     }
 }

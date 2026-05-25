@@ -67,6 +67,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('transfer-requests', \App\Http\Controllers\Hendhys\TransferRequestController::class)->except(['edit', 'update', 'destroy']);
         Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form-gudang');
         Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive-gudang');
+        Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print-gudang');
 
 
 
@@ -77,6 +78,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy']);
         Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
         Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
+        Route::get('transfer-to-branch/{transfer_to_branch}/bast', [TransferToBranchController::class, 'printBast'])->name('transfer-to-branch.bast');
 
         // Retur dari Cabang
         Route::resource('returns', ReturnController::class)->except(['edit', 'update', 'destroy']);

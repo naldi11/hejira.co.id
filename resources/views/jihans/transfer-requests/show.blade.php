@@ -79,12 +79,22 @@
                         <p class="text-sm text-gray-700">{{ $transferRequest->approval_notes ?: '-' }}</p>
                     </div>
                     
-                    @if($transferRequest->status === 'completed' && $transferRequest->transferOuts->count() > 0)
+                    @if($transferRequest->transferOuts->count() > 0)
                         <div>
-                            <p class="text-xs text-gray-500 mb-1">Referensi Pengiriman (DO)</p>
-                            <div class="flex flex-wrap gap-2 mt-1">
+                            <p class="text-xs text-gray-500 mb-2">Pengiriman dari Gudang</p>
+                            <div class="space-y-1.5">
                                 @foreach($transferRequest->transferOuts as $do)
+                                <div class="flex items-center gap-2">
                                     <span class="text-xs font-mono bg-white border border-gray-200 px-2 py-1 rounded shadow-sm text-gray-600">{{ $do->transfer_number }}</span>
+                                    @if($do->status === 'sent')
+                                    <a href="{{ route('jihans.transfer-requests.receive-form', $do->id) }}"
+                                       class="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 font-medium">Konfirmasi Terima</a>
+                                    @elseif($do->status === 'received')
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">Diterima</span>
+                                    <a href="{{ route('jihans.transfer-requests.print', $do->id) }}" target="_blank"
+                                       class="text-xs bg-gray-700 text-white px-2 py-1 rounded hover:bg-gray-800 font-medium">Cetak BAST</a>
+                                    @endif
+                                </div>
                                 @endforeach
                             </div>
                         </div>

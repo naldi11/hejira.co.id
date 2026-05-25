@@ -13,7 +13,7 @@ class TransferOutDetail extends Model
     public    $timestamps = false;
 
     protected $fillable = [
-        'transfer_id', 'product_id', 'quantity', 'received_quantity', 'unit_id', 'hpp_price', 'total',
+        'transfer_id', 'product_id', 'quantity', 'received_quantity', 'kondisi', 'unit_id', 'hpp_price', 'total',
     ];
 
     public function transfer(): BelongsTo { return $this->belongsTo(TransferOut::class, 'transfer_id'); }

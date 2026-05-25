@@ -22,7 +22,7 @@ class TransferRequestController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $q = TransferRequest::where('from_entity', 'hendhys')->with(['creator', 'approver']);
+        $q = TransferRequest::where('from_entity', 'hendhys')->with(['creator', 'approver', 'transferOuts']);
 
         if ($status = $request->status) {
             $q->where('status', $status);

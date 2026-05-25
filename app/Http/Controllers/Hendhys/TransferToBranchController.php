@@ -7,6 +7,7 @@ use App\Models\HendhysBranchRequest;
 use App\Models\HendhysStockPusat;
 use App\Models\HendhysTransferToBranch;
 use App\Models\HendhysTransferToBranchDetail;
+use App\Models\HendhysTransferToBranchPhoto;
 use App\Models\Product;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -192,7 +193,7 @@ class TransferToBranchController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $transferToBranch->load(['branch', 'branchRequest', 'creator', 'receiver', 'details.product', 'details.unit']);
+        $transferToBranch->load(['branch', 'branchRequest', 'creator', 'receiver', 'details.product', 'details.unit', 'photos']);
         return view('hendhys.transfer-to-branch.show', compact('transferToBranch'));
     }
 
@@ -227,26 +228,31 @@ class TransferToBranchController extends Controller
         }
 
         $request->validate([
-            'received_quantities'   => 'required|array|min:1',
-            'received_quantities.*' => 'required|integer|min:1',
-            'receive_notes'         => 'nullable|string|max:1000',
-            'receive_photo'         => 'nullable|image|max:5120',
+            'received_quantities'      => 'required|array|min:1',
+            'received_quantities.*'    => 'required|numeric|min:0',
+            'kondisi'                  => 'nullable|array',
+            'kondisi.*'                => 'nullable|in:baik,rusak,kurang',
+            'receive_notes'            => 'nullable|string|max:2000',
+            'receive_kendala'          => 'nullable|string|max:2000',
+            'receive_received_by_name' => 'nullable|string|max:255',
+            'receive_pengirim_name'    => 'nullable|string|max:255',
+            'photos'                   => 'nullable|array|max:10',
+            'photos.*'                 => 'image|max:5120',
         ]);
 
         try {
-            $photoPath = null;
-            if ($request->hasFile('receive_photo')) {
-                $photoPath = $request->file('receive_photo')->store('transfer-receipts', 'public');
-            }
-
-            DB::transaction(function () use ($request, $transferToBranch, $user, $photoPath) {
+            DB::transaction(function () use ($request, $transferToBranch, $user) {
                 $transferToBranch->load('details');
 
                 foreach ($transferToBranch->details as $detail) {
                     $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
                     $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $kondisi = $request->kondisi[$detail->id] ?? null;
 
-                    $detail->update(['received_quantity' => $receivedQty]);
+                    $detail->update([
+                        'received_quantity' => $receivedQty,
+                        'kondisi'           => $kondisi,
+                    ]);
 
                     if ($receivedQty > 0) {
                         $this->stockService->creditHendhys(
@@ -262,18 +268,45 @@ class TransferToBranchController extends Controller
                 }
 
                 $transferToBranch->update([
-                    'status'        => 'received',
-                    'received_by'   => $user->id,
-                    'receive_notes' => $request->receive_notes,
-                    'receive_photo' => $photoPath,
+                    'status'                    => 'received',
+                    'received_by'               => $user->id,
+                    'receive_notes'             => $request->receive_notes,
+                    'receive_kendala'           => $request->receive_kendala,
+                    'receive_received_by_name'  => $request->receive_received_by_name,
+                    'receive_pengirim_name'     => $request->receive_pengirim_name,
                 ]);
+
+                if ($request->hasFile('photos')) {
+                    $dir = 'transfer-branch-receipts/' . $transferToBranch->transfer_number;
+                    foreach ($request->file('photos') as $file) {
+                        $path = $file->store($dir, 'public');
+                        HendhysTransferToBranchPhoto::create([
+                            'transfer_id' => $transferToBranch->id,
+                            'path'        => $path,
+                            'uploaded_by' => $user->id,
+                            'created_at'  => now(),
+                        ]);
+                    }
+                }
             });
 
             return redirect()->route('hendhys.transfer-to-branch.show', $transferToBranch->id)
-                ->with('success', 'Penerimaan barang berhasil dikonfirmasi. Stok cabang telah bertambah sesuai qty diterima.');
+                ->with('success', 'Penerimaan barang dikonfirmasi. BAST berhasil dibuat.');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal memproses penerimaan: ' . $e->getMessage());
         }
+    }
+
+    public function printBast(HendhysTransferToBranch $transferToBranch)
+    {
+        $user = auth()->user();
+        if ($user->branch->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $transferToBranch->load(['branch', 'branchRequest', 'creator', 'receiver', 'details.product', 'details.unit', 'photos']);
+
+        return view('hendhys.transfer-to-branch.print', compact('transferToBranch'));
     }
 }

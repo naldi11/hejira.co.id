@@ -1,79 +1,156 @@
 @extends($layout)
-@section('title', 'Terima Barang dari Gudang')
-@section('page-title', 'Terima Barang: ' . $transferOut->transfer_number)
+@section('title', 'Konfirmasi Penerimaan Barang')
+@section('page-title', 'Konfirmasi Terima: ' . $transferOut->transfer_number)
 
 @section('content')
-<div class="max-w-4xl mx-auto p-margin-mobile md:p-margin-desktop">
-    <div class="mb-6 flex items-center justify-between">
-        <a href="{{ route($routePrefix . 'transfer-requests.index') }}" class="text-primary hover:underline font-medium text-sm flex items-center gap-1">
-            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-            Kembali ke Daftar Request
-        </a>
+<div class="max-w-4xl mt-4 space-y-4">
+
+    <div class="flex items-center gap-2">
+        <a href="{{ route($info['transferRoute'] . 'index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Kembali</a>
     </div>
 
-    <form action="{{ route(Route::currentRouteName() == $routePrefix . 'transfer-requests.receive-form' ? $routePrefix . 'transfer-requests.receive' : $routePrefix . 'transfer-requests.receive-gudang', $transferOut->id) }}" method="POST" enctype="multipart/form-data" class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+    @if($errors->any())
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+        <ul class="list-disc list-inside space-y-1">
+            @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+        </ul>
+    </div>
+    @endif
+
+    <form action="{{ route($info['receiveRoute'], $transferOut->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         @csrf
-        
-        <div class="p-6 border-b border-outline-variant bg-surface-container-low">
-            <h2 class="text-xl font-bold text-on-surface">Konfirmasi Penerimaan dari Gudang Utama</h2>
-            <p class="text-sm text-on-surface-variant mt-1">Gudang telah mengirim barang berikut. Silakan masukkan jumlah aktual yang Anda terima.</p>
+
+        {{-- Header Info --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Informasi Pengiriman dari Gudang</p>
+            <div class="grid grid-cols-3 gap-4 text-sm">
+                <div><p class="text-gray-400 text-xs">No. Transfer</p><p class="font-bold text-gray-800">{{ $transferOut->transfer_number }}</p></div>
+                <div><p class="text-gray-400 text-xs">Tanggal Kirim</p><p class="font-medium text-gray-700">{{ $transferOut->date->format('d M Y') }}</p></div>
+                <div><p class="text-gray-400 text-xs">Dikirim Oleh</p><p class="font-medium text-gray-700">{{ $transferOut->creator->name }}</p></div>
+            </div>
         </div>
 
-        <div class="p-6">
-            <div class="overflow-x-auto mb-6">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-surface-container border-b border-outline-variant text-on-surface-variant">
-                            <th class="py-3 px-4 font-semibold">Produk Gudang</th>
-                            <th class="py-3 px-4 font-semibold text-center w-32">Qty Dikirim</th>
-                            <th class="py-3 px-4 font-semibold text-center w-40">Qty Diterima</th>
+        {{-- Items Table --}}
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">Daftar Barang — Isi Kondisi yang Diterima</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs text-gray-500">Produk</th>
+                            <th class="px-4 py-2 text-center text-xs text-gray-500">Qty Dikirim</th>
+                            <th class="px-4 py-2 text-center text-xs text-gray-500 w-32">Qty Diterima</th>
+                            <th class="px-4 py-2 text-left text-xs text-gray-500 w-24">Satuan</th>
+                            <th class="px-4 py-2 text-center text-xs text-gray-500 w-32">Kondisi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($transferOut->details as $index => $detail)
-                        <tr class="border-b border-surface-container last:border-0">
-                            <td class="py-3 px-4 font-medium text-on-surface">
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($transferOut->details as $detail)
+                        <tr>
+                            <td class="px-4 py-3 font-medium text-gray-800">
                                 {{ $detail->product->name }}
-                                <span class="block text-[10px] text-on-surface-variant uppercase font-mono">{{ $detail->product->code }}</span>
+                                <span class="block text-xs text-gray-400 font-mono">{{ $detail->product->code }}</span>
                             </td>
-                            <td class="py-3 px-4 text-center text-on-surface-variant">
-                                {{ (int) $detail->quantity }} {{ $detail->unit->abbreviation ?? '' }}
+                            <td class="px-4 py-3 text-center text-gray-500">{{ (int) $detail->quantity }}</td>
+                            <td class="px-4 py-3">
+                                <input type="number" name="received_quantities[{{ $detail->id }}]"
+                                       value="{{ (int) $detail->quantity }}"
+                                       min="0" max="{{ (int) $detail->quantity }}" step="1" required
+                                       class="w-full text-center border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
                             </td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center gap-2">
-                                    <input type="number" name="received_quantities[{{ $detail->id }}]"
-                                           value="{{ (int) $detail->quantity }}"
-                                           max="{{ (int) $detail->quantity }}"
-                                           min="1" step="1" required
-                                           class="w-full text-center bg-surface-container-low border border-outline-variant rounded-md focus:border-primary focus:ring-primary text-sm font-bold text-on-surface">
-                                </div>
+                            <td class="px-4 py-3 text-xs text-gray-500 font-mono">{{ $detail->unit->abbreviation ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                <select name="kondisi[{{ $detail->id }}]"
+                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                                    <option value="">-</option>
+                                    <option value="baik">Baik</option>
+                                    <option value="rusak">Rusak</option>
+                                    <option value="kurang">Kurang</option>
+                                </select>
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+        </div>
 
-            <div class="space-y-4 border-t border-outline-variant pt-6">
+        {{-- BAST Info --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Informasi Bukti Serah Terima</p>
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-bold text-on-surface mb-1">Catatan ke Gudang (Opsional)</label>
-                    <p class="text-xs text-on-surface-variant mb-2">Tuliskan jika ada kendala saat pengiriman atau barang tidak sesuai.</p>
-                    <textarea name="receive_notes" rows="3" class="w-full rounded-lg bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-primary text-sm text-on-surface" placeholder="Contoh: Barang diterima dalam kondisi baik, namun satu karung bocor..."></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Penerima ({{ $info['entity'] }})</label>
+                    <input type="text" name="receive_received_by_name" value="{{ old('receive_received_by_name') }}"
+                           placeholder="Nama petugas penerima..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-on-surface mb-1">Foto Bukti Penerimaan (Opsional)</label>
-                    <p class="text-xs text-on-surface-variant mb-2">Unggah foto saat serah terima atau kondisi barang (Maks 5MB).</p>
-                    <input type="file" name="receive_photo" accept="image/*" class="block w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-fixed file:text-on-primary-fixed-variant hover:file:bg-primary-fixed-dim cursor-pointer border border-outline-variant rounded-md p-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pengirim (Gudang)</label>
+                    <input type="text" name="receive_pengirim_name" value="{{ old('receive_pengirim_name') }}"
+                           placeholder="Nama petugas gudang pengirim..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan / No. Surat Jalan</label>
+                    <input type="text" name="receive_notes" value="{{ old('receive_notes') }}"
+                           placeholder="Nomor surat jalan atau catatan..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kendala / Catatan Masalah</label>
+                    <input type="text" name="receive_kendala" value="{{ old('receive_kendala') }}"
+                           placeholder="Isi jika ada kendala (rusak, kurang, dll)..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
                 </div>
             </div>
         </div>
 
-        <div class="p-6 bg-surface-container-low border-t border-outline-variant flex justify-end">
-            <button type="submit" onclick="return confirm('Konfirmasi penerimaan barang? Stok entitas Anda akan bertambah sesuai Qty Diterima.')" class="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center gap-2 hover:bg-opacity-90 active:scale-95">
-                <span class="material-symbols-outlined text-[20px]">check_circle</span>
-                Simpan & Update Stok
+        {{-- Photos --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5"
+             x-data="{ previews: [], files: [], addFiles(evt) {
+                 const newFiles = Array.from(evt.target.files);
+                 newFiles.forEach(f => {
+                     if (this.files.length < 10) {
+                         this.files.push(f);
+                         this.previews.push(URL.createObjectURL(f));
+                     }
+                 });
+                 evt.target.value = '';
+             }, remove(i) {
+                 this.files.splice(i,1);
+                 this.previews.splice(i,1);
+             } }">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Foto Bukti Penerimaan (Maks. 10)</p>
+                <span class="text-xs text-gray-400" x-text="files.length + '/10 foto'"></span>
+            </div>
+            <div class="grid grid-cols-4 gap-3 mb-3" x-show="previews.length > 0">
+                <template x-for="(src, i) in previews" :key="i">
+                    <div class="relative group">
+                        <img :src="src" class="w-full h-24 object-cover rounded-lg border border-gray-200">
+                        <button type="button" @click="remove(i)"
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                    </div>
+                </template>
+            </div>
+            <label x-show="files.length < 10"
+                   class="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-4 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all text-sm text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Tambah Foto
+                <input type="file" name="photos[]" accept="image/*" multiple class="hidden" @change="addFiles($event)">
+            </label>
+            <p class="text-xs text-gray-400 mt-1.5">JPG, PNG, WEBP — maks. 5 MB per foto</p>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="submit"
+                    onclick="return confirm('Konfirmasi penerimaan barang dan buat BAST? Tindakan ini tidak dapat diubah.')"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Konfirmasi & Buat BAST
             </button>
+            <a href="{{ route($info['transferRoute'] . 'index') }}" class="border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50">Batal</a>
         </div>
     </form>
 </div>

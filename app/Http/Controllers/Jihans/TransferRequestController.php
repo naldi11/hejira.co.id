@@ -21,7 +21,7 @@ class TransferRequestController extends Controller
 
     public function index(Request $request)
     {
-        $q = TransferRequest::where('from_entity', 'jihans')->with(['approver', 'creator']);
+        $q = TransferRequest::where('from_entity', 'jihans')->with(['approver', 'creator', 'transferOuts']);
 
         if ($search = $request->search) {
             $q->where('request_number', 'like', "%$search%");

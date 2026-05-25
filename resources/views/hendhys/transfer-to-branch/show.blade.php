@@ -54,6 +54,13 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             Cetak Surat Jalan
         </button>
+        @if($transferToBranch->status === 'received')
+        <a href="{{ route('hendhys.transfer-to-branch.bast', $transferToBranch) }}" target="_blank"
+           class="bg-green-700 text-white hover:bg-green-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm no-print print:hidden">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Cetak BAST
+        </a>
+        @endif
     </div>
 
     <div class="surat-jalan-doc bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -143,14 +150,30 @@
             {{-- Informasi Penerimaan (tampil jika sudah diterima) --}}
             @if($transferToBranch->status === 'received')
             <div class="mt-6 pt-6 border-t border-gray-200">
-                <h4 class="text-sm font-bold text-gray-700 mb-3">Informasi Penerimaan</h4>
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-bold text-gray-700">Informasi Penerimaan BAST</h4>
+                    <div class="flex gap-2 text-xs text-gray-500">
+                        @if($transferToBranch->receive_received_by_name)
+                        <span>Penerima: <strong>{{ $transferToBranch->receive_received_by_name }}</strong></span>
+                        @endif
+                        @if($transferToBranch->receive_pengirim_name)
+                        <span>· Pengirim: <strong>{{ $transferToBranch->receive_pengirim_name }}</strong></span>
+                        @endif
+                    </div>
+                </div>
+                @if($transferToBranch->receive_kendala)
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm mb-3">
+                    <p class="font-bold text-orange-800 mb-1">⚠ Kendala:</p>
+                    <p class="text-orange-900">{{ $transferToBranch->receive_kendala }}</p>
+                </div>
+                @endif
                 <table class="w-full text-left border-collapse border border-gray-400 text-sm mb-4">
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="py-2 px-3 font-bold border border-gray-400">Produk</th>
                             <th class="py-2 px-3 font-bold border border-gray-400 text-right">Qty Dikirim</th>
                             <th class="py-2 px-3 font-bold border border-gray-400 text-right">Qty Diterima</th>
-                            <th class="py-2 px-3 font-bold border border-gray-400">Status</th>
+                            <th class="py-2 px-3 font-bold border border-gray-400">Kondisi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,12 +186,10 @@
                                 {{ $detail->received_quantity !== null ? (int)$detail->received_quantity : '-' }}
                             </td>
                             <td class="py-2 px-3 border border-gray-400 text-xs">
-                                @if($detail->received_quantity !== null && $detail->received_quantity < $detail->quantity)
-                                    <span class="text-red-600 font-bold">Kurang {{ (int)($detail->quantity - $detail->received_quantity) }}</span>
-                                @elseif($detail->received_quantity !== null)
-                                    <span class="text-green-700 font-bold">Sesuai</span>
-                                @else
-                                    -
+                                @if($detail->kondisi === 'baik') <span class="px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-bold">Baik</span>
+                                @elseif($detail->kondisi === 'rusak') <span class="px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-bold">Rusak</span>
+                                @elseif($detail->kondisi === 'kurang') <span class="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded font-bold">Kurang</span>
+                                @else <span class="text-gray-400">—</span>
                                 @endif
                             </td>
                         </tr>
@@ -176,12 +197,22 @@
                     </tbody>
                 </table>
                 @if($transferToBranch->receive_notes)
-                <div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm mb-3">
-                    <p class="font-bold text-yellow-800 mb-1">Catatan dari Cabang:</p>
-                    <p class="text-yellow-900">{{ $transferToBranch->receive_notes }}</p>
+                <div class="bg-gray-50 border border-gray-200 rounded p-3 text-sm mb-3">
+                    <p class="font-bold text-gray-700 mb-1">Catatan / No. Surat Jalan:</p>
+                    <p class="text-gray-800">{{ $transferToBranch->receive_notes }}</p>
                 </div>
                 @endif
-                @if($transferToBranch->receive_photo)
+                @php $photos = $transferToBranch->photos ?? collect(); @endphp
+                @if($photos->isNotEmpty())
+                <div class="mb-4">
+                    <p class="text-xs font-bold text-gray-600 mb-2">Foto Bukti Serah Terima ({{ $photos->count() }} foto):</p>
+                    <div class="grid grid-cols-4 gap-2">
+                        @foreach($photos as $photo)
+                        <img src="{{ Storage::url($photo->path) }}" class="w-full h-24 object-cover rounded border border-gray-200" alt="Foto bukti">
+                        @endforeach
+                    </div>
+                </div>
+                @elseif($transferToBranch->receive_photo)
                 <div class="mb-4">
                     <p class="text-xs font-bold text-gray-600 mb-2">Foto Bukti Serah Terima:</p>
                     <img src="{{ asset('storage/' . $transferToBranch->receive_photo) }}"

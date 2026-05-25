@@ -82,5 +82,34 @@
             </div>
         </div>
     </div>
+
+    {{-- TransferOut / BAST section --}}
+    @if($transferRequest->transferOuts->count() > 0)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <h3 class="font-bold text-gray-800 text-sm">Pengiriman dari Gudang</h3>
+        </div>
+        <div class="p-6 space-y-3">
+            @foreach($transferRequest->transferOuts as $do)
+            <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+                <div>
+                    <span class="text-sm font-mono font-bold text-gray-700">{{ $do->transfer_number }}</span>
+                    <span class="ml-2 text-xs text-gray-500">{{ $do->date->format('d M Y') }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    @if($do->status === 'sent')
+                    <a href="{{ route('hendhys.transfer-requests.receive-form-gudang', $do->id) }}"
+                       class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 font-medium">Konfirmasi Terima</a>
+                    @elseif($do->status === 'received')
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">Diterima</span>
+                    <a href="{{ route('hendhys.transfer-requests.print-gudang', $do->id) }}" target="_blank"
+                       class="text-xs bg-gray-700 text-white px-2 py-1 rounded hover:bg-gray-800 font-medium">Cetak BAST</a>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

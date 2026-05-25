@@ -66,6 +66,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy']);
         Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form');
         Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive');
+        Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print');
 
         // Stok
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
