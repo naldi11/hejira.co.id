@@ -2,6 +2,20 @@
 @section('title', ($po->id ? 'Edit' : 'Buat') . ' Purchase Order')
 @section('page-title', 'Purchase Order')
 
+@php
+    $formattedDetails = [];
+    if ($po->id) {
+        $formattedDetails = $po->details->map(function($d) {
+            return [
+                'product_id' => $d->product_id,
+                'quantity' => $d->quantity_ordered,
+                'unit_id' => $d->unit_id,
+                'price' => (float)$d->price,
+            ];
+        })->toArray();
+    }
+@endphp
+
 @section('content')
 <div x-data="poForm()" class="max-w-6xl mx-auto space-y-8 pb-20">
 
@@ -13,6 +27,21 @@
         </a>
         <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">{{ $po->id ? 'Edit Dokumen PO' : 'Draft Pesanan Baru' }}</h2>
     </div>
+
+    {{-- Validation Errors --}}
+    @if ($errors->any())
+    <div class="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-rose-800 space-y-2">
+        <div class="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[20px]">error</span>
+            Terjadi Kesalahan Validasi
+        </div>
+        <ul class="list-disc pl-5 text-xs font-semibold space-y-1">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
     <form action="{{ $po->id ? route('gudang.po.update', $po) : route('gudang.po.store') }}" method="POST" class="space-y-8">
         @csrf
@@ -57,9 +86,10 @@
                                 <thead>
                                     <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                                         <th class="pb-4 pl-2">Pilih Produk</th>
-                                        <th class="pb-4 text-center" style="width: 120px;">Qty</th>
-                                        <th class="pb-4 text-right" style="width: 180px;">Harga Satuan</th>
-                                        <th class="pb-4 text-right" style="width: 150px;">Subtotal</th>
+                                        <th class="pb-4 pl-2" style="width: 140px;">Satuan</th>
+                                        <th class="pb-4 text-center" style="width: 100px;">Qty</th>
+                                        <th class="pb-4 text-right" style="width: 160px;">Harga Satuan</th>
+                                        <th class="pb-4 text-right" style="width: 140px;">Subtotal</th>
                                         <th class="pb-4 text-center" style="width: 50px;"></th>
                                     </tr>
                                 </thead>
@@ -68,10 +98,20 @@
                                         <tr class="group">
                                             <td class="py-4 pr-4">
                                                 <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
+                                                        @change="onProductChange(item)"
                                                         class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
                                                     <option value="">Pilih Produk...</option>
                                                     @foreach($products as $p)
                                                         <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td class="py-4 pr-2">
+                                                <select x-model="item.unit_id" :name="'items['+index+'][unit_id]'" required
+                                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                                    <option value="">Pilih Satuan...</option>
+                                                    @foreach($units as $u)
+                                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </td>
@@ -114,11 +154,6 @@
                 
                 {{-- Date & Note --}}
                 <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-6">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Estimasi Tiba</label>
-                        <input type="date" name="expected_date" value="{{ old('expected_date', $po->expected_date?->format('Y-m-d')) }}"
-                               class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                    </div>
                     <div class="space-y-2">
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Catatan Tambahan</label>
                         <textarea name="notes" rows="4" placeholder="Instruksi pengiriman, termin pembayaran, dll..."
@@ -167,7 +202,8 @@
 <script>
     function poForm() {
         return {
-            items: @json(old('items', $po->items ?? [])),
+            items: @json(old('items', $formattedDetails)),
+            products: @json($products),
             
             init() {
                 if(this.items.length === 0) {
@@ -178,6 +214,7 @@
             addItem() {
                 this.items.push({
                     product_id: '',
+                    unit_id: '',
                     quantity: 1,
                     price: 0
                 });
@@ -185,6 +222,19 @@
 
             removeItem(index) {
                 this.items.splice(index, 1);
+            },
+
+            onProductChange(item) {
+                if (!item.product_id) {
+                    item.unit_id = '';
+                    item.price = 0;
+                    return;
+                }
+                const prod = this.products.find(p => p.id == item.product_id);
+                if (prod) {
+                    item.unit_id = prod.unit_id || '';
+                    item.price = parseFloat(prod.hpp) || 0;
+                }
             },
 
             calculateTotal() {
