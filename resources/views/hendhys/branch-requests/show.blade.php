@@ -39,7 +39,7 @@
     {{-- Print-only header --}}
     <div class="hidden print:block mb-6 pb-4 border-b-2 border-gray-800">
         <h1 class="text-2xl font-bold uppercase tracking-wide">Faktur Permintaan Stok Cabang</h1>
-        <p class="text-sm text-gray-600 mt-1">Hendhys Bakery — Sistem Bisnis Terpadu</p>
+        <p class="text-sm text-gray-600 mt-1">Hendhys Bakery — HEJIRA</p>
         <p class="text-sm text-gray-600">Dicetak: {{ now()->translatedFormat('d F Y, H:i') }} WIB</p>
     </div>
 

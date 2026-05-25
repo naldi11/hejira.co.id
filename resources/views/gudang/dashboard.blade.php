@@ -10,7 +10,7 @@
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
                 <h2 class="text-2xl font-black text-white font-headline tracking-tight">Selamat Datang, {{ auth()->user()->name }}!</h2>
-                <p class="text-slate-400 text-sm mt-1 font-medium tracking-wide italic">Sistem Manajemen Inventori Terpadu — Gudang Tempua</p>
+                <p class="text-slate-400 text-sm mt-1 font-medium tracking-wide italic">HEJIRA — Sistem Manajemen Inventori Terpadu</p>
             </div>
             <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
                 <div class="text-right">

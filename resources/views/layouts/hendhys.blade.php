@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Hendhys Brownies')</title>
+    <title>@yield('title', 'Hendhys Brownies') — HEJIRA</title>
 
     {{-- <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script> --}}
     {{-- NOTE: To avoid conflicts, we use Vite for js, but Tailwind CDN for this specific layout --}}
