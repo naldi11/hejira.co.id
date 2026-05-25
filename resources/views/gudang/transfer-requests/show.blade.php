@@ -1,262 +1,234 @@
 @extends('layouts.gudang')
-@section('title', 'Detail Transfer Request '.$transferRequest->request_number)
-@section('page-title', 'Transfer Request — '.$transferRequest->request_number)
+@section('title', 'Detail Transfer Request')
+@section('page-title', 'Review Permintaan')
 
 @section('content')
-@php
-    $statusClass = [
-        'pending'   => 'bg-yellow-100 text-yellow-700',
-        'approved'  => 'bg-blue-100 text-blue-700',
-        'partial'   => 'bg-indigo-100 text-indigo-700',
-        'completed' => 'bg-green-100 text-green-700',
-        'rejected'  => 'bg-red-100 text-red-700',
-    ];
-@endphp
+<div class="max-w-6xl mx-auto space-y-8 pb-12">
 
-<div x-data="{ approveModalOpen: false, rejectModalOpen: false }">
-    <div class="mt-4 max-w-5xl">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <div class="flex items-center gap-3 mb-1">
-                    <h2 class="text-2xl font-bold text-gray-800">{{ $transferRequest->request_number }}</h2>
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider {{ $statusClass[$transferRequest->status] ?? 'bg-gray-100 text-gray-600' }}">
-                        {{ $transferRequest->status }}
-                    </span>
-                </div>
-                <p class="text-sm text-gray-500 mt-1">Diminta pada {{ \Carbon\Carbon::parse($transferRequest->date)->format('d F Y') }} oleh {{ $transferRequest->requester->name ?? '-' }}</p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('gudang.transfer-requests.index') }}" class="border border-gray-300 bg-white text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-                    Kembali
+    {{-- Top Action Bar --}}
+    <div class="flex items-center justify-between">
+        <a href="{{ route('gudang.transfer-requests.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
+            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Kembali ke Daftar
+        </a>
+        
+        <div class="flex items-center gap-3">
+            @if($request->status === 'approved')
+                <a href="{{ route('gudang.transfer-out.create', ['request_id' => $request->id]) }}" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20">
+                    <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                    Proses Pengiriman
                 </a>
-                @if($transferRequest->status === 'pending')
-                    <button type="button" @click="rejectModalOpen = true" class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium">
-                        Tolak Request
-                    </button>
-                    <button type="button" @click="approveModalOpen = true" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Proses Approval
-                    </button>
-                @elseif(in_array($transferRequest->status, ['approved', 'partial']))
-                    <a href="{{ route('gudang.transfer-out.create', ['transfer_request_id' => $transferRequest->id]) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
-                        Buat Transfer Keluar (DO)
-                    </a>
+            @endif
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {{-- Left Column: Document Info --}}
+        <div class="lg:col-span-2 space-y-8">
+            
+            {{-- Main Info Card --}}
+            <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-8 sm:p-10">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-3xl font-black text-slate-900 font-headline tracking-tight">{{ $request->request_number }}</h1>
+                                @php
+                                    $statusStyles = [
+                                        'pending'   => 'bg-amber-100 text-amber-700 border-amber-200',
+                                        'approved'  => 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                                        'partial'   => 'bg-violet-100 text-violet-700 border-violet-200',
+                                        'completed' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                        'rejected'  => 'bg-rose-100 text-rose-700 border-rose-200',
+                                    ];
+                                @endphp
+                                <span class="px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] border {{ $statusStyles[$request->status] ?? 'bg-slate-100 text-slate-600' }}">
+                                    {{ $request->status }}
+                                </span>
+                            </div>
+                            <p class="text-slate-500 font-bold tracking-wide">Tanggal Permintaan: {{ \Carbon\Carbon::parse($request->date)->translatedFormat('d F Y') }}</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-3xl border border-slate-100 min-w-[240px]">
+                            <div class="w-12 h-12 rounded-2xl {{ $request->from_entity === 'hendhys' ? 'bg-amber-100 text-amber-600' : 'bg-orange-100 text-orange-600' }} flex items-center justify-center shrink-0 shadow-inner">
+                                <span class="material-symbols-outlined text-[28px]">{{ $request->from_entity === 'hendhys' ? 'cake' : 'bakery_dining' }}</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Asal Permintaan</p>
+                                <p class="text-sm font-black text-slate-800 leading-tight">{{ ucfirst($request->from_entity) }}</p>
+                                <p class="text-xs font-bold text-slate-500">{{ $request->branch->name ?? 'Produksi Pusat' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Items Table --}}
+                    <div class="mt-12 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-black text-slate-900 font-headline tracking-tight">Daftar Barang</h3>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ count($request->details) }} Items</span>
+                        </div>
+
+                        <div class="overflow-hidden rounded-3xl border border-slate-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                                        <th class="px-6 py-4">Produk</th>
+                                        <th class="px-6 py-4 text-center">Jumlah Diminta</th>
+                                        @if($request->status === 'pending')
+                                            <th class="px-6 py-4 text-center">Stok Gudang</th>
+                                        @endif
+                                        <th class="px-6 py-4 text-center">Satuan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($request->details as $item)
+                                    @php
+                                        // Ambil stok gudang saat ini untuk perbandingan
+                                        $whStock = \App\Models\GudangStock::where('product_id', $item->product_id)->value('current_stock') ?? 0;
+                                        $hasEnough = $whStock >= $item->quantity;
+                                    @endphp
+                                    <tr class="group transition-colors hover:bg-slate-50/50">
+                                        <td class="px-6 py-5">
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-black text-slate-800 tracking-tight">{{ $item->product_name }}</span>
+                                                <span class="text-[10px] font-bold text-slate-400 font-mono uppercase mt-0.5">{{ $item->product->code ?? '-' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-5 text-center">
+                                            <span class="text-base font-black text-slate-900 tabular-nums">{{ number_format($item->quantity, 0) }}</span>
+                                        </td>
+                                        @if($request->status === 'pending')
+                                            <td class="px-6 py-5 text-center">
+                                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl font-bold text-xs {{ $hasEnough ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600' }}">
+                                                    <span class="tabular-nums">{{ number_format($whStock, 0) }}</span>
+                                                    @if(!$hasEnough)
+                                                        <span class="material-symbols-outlined text-[14px]">warning</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        @endif
+                                        <td class="px-6 py-5 text-center">
+                                            <span class="text-[10px] font-black text-slate-500 uppercase bg-slate-100 px-2 py-1 rounded-lg">{{ $item->unit->abbreviation ?? 'PCS' }}</span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Approval Actions (Only for Pending) --}}
+                @if($request->status === 'pending')
+                <div class="p-8 sm:p-10 bg-slate-900 border-t border-white/10">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-black text-white font-headline tracking-tight">Keputusan Approval</h4>
+                            <p class="text-slate-400 text-xs font-medium mt-1">Pastikan stok fisik tersedia sebelum menyetujui permintaan ini.</p>
+                        </div>
+                        <div class="flex items-center gap-4 shrink-0 w-full md:w-auto">
+                            <form action="{{ route('gudang.transfer-requests.reject', $request) }}" method="POST" class="flex-1 md:flex-none" onsubmit="return confirm('Yakin ingin menolak permintaan ini?')">
+                                @csrf
+                                <button type="submit" class="w-full px-8 py-4 bg-rose-600/10 text-rose-500 hover:bg-rose-600 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
+                                    Tolak Request
+                                </button>
+                            </form>
+                            <form action="{{ route('gudang.transfer-requests.approve', $request) }}" method="POST" class="flex-1 md:flex-none">
+                                @csrf
+                                <button type="submit" class="w-full px-10 py-4 bg-indigo-600 text-white hover:bg-indigo-500 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/30">
+                                    Setujui (Approve)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 @endif
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {{-- Info Asal Request --}}
-            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Informasi Peminta</h3>
-                <div class="space-y-3">
-                    <div>
-                        <p class="text-xs text-gray-500">Asal Request (Tujuan Kirim)</p>
-                        <p class="text-sm font-medium text-gray-800">
-                            @if($transferRequest->from_entity === 'hendhys')
-                                Cabang Hendhys ({{ $transferRequest->branch->name ?? '-' }})
-                            @else
-                                Stok Gudang Jihans
-                            @endif
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500">Catatan Permintaan</p>
-                        <p class="text-sm text-gray-800">{{ $transferRequest->notes ?: '-' }}</p>
-                    </div>
+            {{-- Notes Section --}}
+            @if($request->notes)
+            <div class="bg-indigo-50 border border-indigo-100 rounded-3xl p-8 flex items-start gap-5">
+                <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
+                    <span class="material-symbols-outlined">description</span>
+                </div>
+                <div>
+                    <h4 class="text-sm font-black text-indigo-900 uppercase tracking-widest mb-1">Catatan Peminta</h4>
+                    <p class="text-indigo-800/80 text-sm font-medium leading-relaxed italic">"{{ $request->notes }}"</p>
                 </div>
             </div>
+            @endif
+        </div>
 
-            {{-- Info Approval --}}
-            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Status Approval</h3>
-                <div class="space-y-3">
-                    <div>
-                        <p class="text-xs text-gray-500">Diproses Oleh</p>
-                        <p class="text-sm font-medium text-gray-800">{{ $transferRequest->approver->name ?? 'Belum diproses' }}</p>
+        {{-- Right Column: Audit Trail & Details --}}
+        <div class="space-y-8">
+            
+            {{-- Requester Info --}}
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-6">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Audit Trail</h3>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">person</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diminta Oleh</p>
+                            <p class="text-sm font-bold text-slate-800">{{ $request->requester->name ?? '-' }}</p>
+                            <p class="text-[10px] font-medium text-slate-500 mt-0.5">{{ $request->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-xs text-gray-500">Tanggal Proses</p>
-                        <p class="text-sm text-gray-800">{{ $transferRequest->approved_at ? \Carbon\Carbon::parse($transferRequest->approved_at)->format('d M Y H:i') : '-' }}</p>
+
+                    @if($request->approver)
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">verified</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Disetujui Oleh</p>
+                            <p class="text-sm font-bold text-slate-800">{{ $request->approver->name ?? '-' }}</p>
+                            <p class="text-[10px] font-medium text-slate-500 mt-0.5">{{ $request->approved_at ? $request->approved_at->format('d/m/Y H:i') : '-' }}</p>
+                        </div>
                     </div>
-                    @if($transferRequest->status === 'rejected')
-                    <div>
-                        <p class="text-xs text-red-500 font-semibold">Alasan Penolakan</p>
-                        <p class="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-100 mt-1">{{ $transferRequest->rejection_reason }}</p>
+                    @endif
+
+                    @if($request->status === 'rejected')
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100 shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">block</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ditolak Oleh</p>
+                            <p class="text-sm font-bold text-slate-800">{{ $request->approver->name ?? 'Admin' }}</p>
+                            <p class="text-[10px] font-medium text-slate-500 mt-0.5">Permintaan tidak disetujui.</p>
+                        </div>
                     </div>
                     @endif
                 </div>
             </div>
-        </div>
 
-        {{-- Detail Items --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-            <div class="p-5 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-800">Detail Item Permintaan</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 text-gray-500">
-                        <tr>
-                            <th class="px-5 py-3 font-medium">Produk</th>
-                            <th class="px-5 py-3 font-medium text-center">Qty Diminta</th>
-                            <th class="px-5 py-3 font-medium text-center">Qty Disetujui</th>
-                            <th class="px-5 py-3 font-medium text-center">Satuan</th>
-                            <th class="px-5 py-3 font-medium text-center">Sisa Belum Dikirim</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach($transferRequest->details as $item)
-                        @php
-                            $sisaKirim = $item->quantity_approved - $item->quantity_sent;
-                            $sisaKirim = max(0, $sisaKirim);
-                        @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-5 py-3 font-medium text-gray-800">{{ $item->product->name }}</td>
-                            <td class="px-5 py-3 text-center text-gray-600">{{ (int) $item->quantity_requested }}</td>
-                            <td class="px-5 py-3 text-center font-bold {{ $item->quantity_approved > 0 ? 'text-indigo-600' : 'text-gray-400' }}">
-                                {{ $transferRequest->status === 'pending' ? '?' : (int) $item->quantity_approved }}
-                            </td>
-                            <td class="px-5 py-3 text-center text-gray-500">{{ $item->unit->abbreviation ?? '-' }}</td>
-                            <td class="px-5 py-3 text-center">
-                                @if(in_array($transferRequest->status, ['approved', 'partial', 'completed']))
-                                    <span class="inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold {{ $sisaKirim > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' }}">
-                                        {{ (int) $sisaKirim }}
-                                    </span>
-                                @else
-                                    -
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        {{-- List Transfer Out Terkait --}}
-        @if($transferRequest->transferOuts->count() > 0)
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-            <div class="p-5 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-800">Dokumen Transfer Keluar (DO) Terkait</h3>
-            </div>
-            <div class="p-3">
-                <ul class="space-y-2">
-                    @foreach($transferRequest->transferOuts as $to)
-                    <li class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
-                            </div>
-                            <div>
-                                <a href="{{ route('gudang.transfer-out.show', $to) }}" class="font-medium text-indigo-600 hover:underline">{{ $to->transfer_number }}</a>
-                                <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($to->date)->format('d M Y') }} - Status: {{ $to->status }}</p>
-                            </div>
-                        </div>
-                    </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-        @endif
-    </div>
-
-    {{-- Modal Approval --}}
-    <div x-show="approveModalOpen" style="display: none;" class="relative z-50">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="approveModalOpen" x-transition.opacity></div>
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="approveModalOpen" x-transition @click.away="approveModalOpen = false" class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
-                    <form method="POST" action="{{ route('gudang.transfer-requests.approve', $transferRequest) }}">
-                        @csrf
-                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg font-semibold leading-6 text-gray-900 mb-4">Proses Approval Transfer Request</h3>
-                            <p class="text-sm text-gray-500 mb-4">Silakan tentukan jumlah yang disetujui untuk masing-masing item. Sistem akan menyesuaikan status menjadi Partial jika ada item yang disetujui kurang dari yang diminta.</p>
-                            
-                            <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4">
-                                <table class="w-full text-sm">
-                                    <thead class="bg-gray-50 text-gray-500 text-left sticky top-0">
-                                        <tr>
-                                            <th class="px-3 py-2 font-medium">Produk</th>
-                                            <th class="px-3 py-2 font-medium text-center">Diminta</th>
-                                            <th class="px-3 py-2 font-medium text-center">Disetujui</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-100">
-                                        @foreach($transferRequest->details as $idx => $item)
-                                        <tr>
-                                            <td class="px-3 py-2 font-medium text-gray-800">
-                                                {{ $item->product->name }}
-                                                <input type="hidden" name="items[{{$idx}}][id]" value="{{ $item->id }}">
-                                            </td>
-                                            <td class="px-3 py-2 text-center text-gray-500">{{ (int) $item->quantity_requested }} {{ $item->unit->abbreviation ?? '' }}</td>
-                                            <td class="px-3 py-2">
-                                                <input type="number" name="items[{{$idx}}][quantity_approved]" value="{{ (int) $item->quantity_requested }}" min="0" step="1" required
-                                                       class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none text-center">
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Approval (Opsional)</label>
-                                <input type="text" name="notes" placeholder="Catatan tambahan..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 sm:ml-3 sm:w-auto">
-                                Simpan Approval
-                            </button>
-                            <button type="button" @click="approveModalOpen = false" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                                Batal
-                            </button>
-                        </div>
-                    </form>
+            {{-- Summary Sidebar --}}
+            <div class="bg-indigo-600 rounded-[2rem] shadow-xl shadow-indigo-600/20 p-8 text-white">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="material-symbols-outlined text-[24px]">info</span>
+                    <h3 class="text-sm font-black uppercase tracking-widest">Ringkasan</h3>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center py-3 border-b border-white/10">
+                        <span class="text-xs font-bold text-indigo-200">Total Item</span>
+                        <span class="text-sm font-black tabular-nums">{{ count($request->details) }} SKU</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-white/10">
+                        <span class="text-xs font-bold text-indigo-200">Total Kuantitas</span>
+                        <span class="text-sm font-black tabular-nums">{{ number_format($request->details->sum('quantity')) }} Unit</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3">
+                        <span class="text-xs font-bold text-indigo-200">Estimasi Berat</span>
+                        <span class="text-sm font-black">~ -- kg</span>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
-
-    {{-- Modal Reject --}}
-    <div x-show="rejectModalOpen" style="display: none;" class="relative z-50">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="rejectModalOpen" x-transition.opacity></div>
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="rejectModalOpen" x-transition @click.away="rejectModalOpen = false" class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md">
-                    <form method="POST" action="{{ route('gudang.transfer-requests.reject', $transferRequest) }}">
-                        @csrf
-                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg font-semibold leading-6 text-gray-900">Tolak Transfer Request</h3>
-                                    <div class="mt-4">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan Penolakan <span class="text-red-500">*</span></label>
-                                        <textarea name="rejection_reason" required rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 focus:outline-none" placeholder="Masukkan alasan kenapa request ini ditolak..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 sm:ml-3 sm:w-auto">
-                                Konfirmasi Tolak
-                            </button>
-                            <button type="button" @click="rejectModalOpen = false" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                                Batal
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
 @endsection

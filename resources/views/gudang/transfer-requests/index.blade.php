@@ -1,136 +1,171 @@
 @extends('layouts.gudang')
 @section('title', 'Transfer Requests (Approval)')
-@section('page-title', 'Gudang — Transfer Requests')
+@section('page-title', 'Permintaan Barang')
 
 @section('content')
-<div class="flex items-center justify-between mt-4 mb-5">
-    <div>
-        <h2 class="text-lg font-semibold text-gray-800">Permintaan Barang (Transfer Request)</h2>
-        <p class="text-sm text-gray-400">Approval permintaan dari Cabang (Hendhys) atau Entitas Lain (Jihans)</p>
-    </div>
-</div>
+<div class="space-y-6">
 
-<div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
+    {{-- Page Header --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Menunggu Approval</p>
-            <p class="text-2xl font-bold text-gray-800">{{ $counts['pending'] }}</p>
+            <h2 class="text-2xl font-black text-slate-800 font-headline tracking-tight">Permintaan Transfer Stok</h2>
+            <p class="text-sm text-slate-500 font-medium">Review dan persetujuan permintaan barang dari unit bisnis</p>
         </div>
-    </div>
-    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Disetujui (Belum Dikirim)</p>
-            <p class="text-2xl font-bold text-gray-800">{{ $counts['approved'] }}</p>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Selesai (Completed)</p>
-            <p class="text-2xl font-bold text-gray-800">{{ $counts['completed'] }}</p>
-        </div>
-    </div>
-</div>
-
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-    <div class="p-4 border-b border-gray-100 flex justify-between items-center gap-4">
-        <form method="GET" action="{{ route('gudang.transfer-requests.index') }}" class="flex-1 flex gap-3">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. Request..." 
-                   class="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-            
-            <select name="status" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                <option value="">Semua Status</option>
-                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partial</option>
-                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-            </select>
-            
-            <select name="from_entity" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                <option value="">Semua Asal Request</option>
-                <option value="hendhys" {{ request('from_entity') == 'hendhys' ? 'selected' : '' }}>Hendhys (Cabang)</option>
-                <option value="jihans" {{ request('from_entity') == 'jihans' ? 'selected' : '' }}>Jihans (Stok Gudang Jihans)</option>
-            </select>
-            
-            <button type="submit" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium">Filter</button>
-            @if(request()->anyFilled(['search', 'status', 'from_entity']))
-                <a href="{{ route('gudang.transfer-requests.index') }}" class="text-gray-400 hover:text-red-500 px-2 py-2 flex items-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </a>
-            @endif
-        </form>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-            <thead class="bg-gray-50 text-gray-500">
-                <tr>
-                    <th class="px-4 py-3 font-medium">Tanggal</th>
-                    <th class="px-4 py-3 font-medium">No. Request</th>
-                    <th class="px-4 py-3 font-medium">Asal (Peminta)</th>
-                    <th class="px-4 py-3 font-medium text-center">Status</th>
-                    <th class="px-4 py-3 font-medium">Diminta Oleh</th>
-                    <th class="px-4 py-3 font-medium text-right">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @php
-                    $statusClass = [
-                        'pending'   => 'bg-yellow-100 text-yellow-700',
-                        'approved'  => 'bg-blue-100 text-blue-700',
-                        'partial'   => 'bg-indigo-100 text-indigo-700',
-                        'completed' => 'bg-green-100 text-green-700',
-                        'rejected'  => 'bg-red-100 text-red-700',
-                    ];
-                @endphp
-                @forelse($requests as $req)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-4 py-3 text-gray-500">{{ \Carbon\Carbon::parse($req->date)->format('d M Y') }}</td>
-                    <td class="px-4 py-3 font-medium text-gray-800">{{ $req->request_number }}</td>
-                    <td class="px-4 py-3">
-                        @if($req->from_entity === 'hendhys')
-                            Hendhys <span class="text-xs text-gray-400">({{ $req->branch->name ?? 'Cabang' }})</span>
-                        @else
-                            Jihans <span class="text-xs text-gray-400">(Produksi)</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $statusClass[$req->status] ?? 'bg-gray-100 text-gray-600' }} uppercase tracking-wider">
-                            {{ $req->status }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500">{{ $req->requester->name ?? '-' }}</td>
-                    <td class="px-4 py-3 text-right">
-                        @if($req->status === 'pending')
-                            <a href="{{ route('gudang.transfer-requests.show', $req) }}" class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                Review & Approval
-                            </a>
-                        @else
-                            <a href="{{ route('gudang.transfer-requests.show', $req) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Lihat Detail</a>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="px-4 py-8 text-center text-gray-400">Belum ada data Transfer Request.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+    {{-- Dashboard Mini Stats --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-inner">
+                <span class="material-symbols-outlined text-[32px] animate-pulse">pending_actions</span>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Menunggu Review</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums">{{ $counts['pending'] }} <span class="text-xs font-bold text-slate-400">Dokumen</span></p>
+            </div>
+        </div>
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner">
+                <span class="material-symbols-outlined text-[32px]">task_alt</span>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Siap Dikirim</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums">{{ $counts['approved'] }} <span class="text-xs font-bold text-slate-400">Dokumen</span></p>
+            </div>
+        </div>
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-5">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                <span class="material-symbols-outlined text-[32px]">local_shipping</span>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selesai / Terkirim</p>
+                <p class="text-2xl font-black text-slate-900 tabular-nums">{{ $counts['completed'] }} <span class="text-xs font-bold text-slate-400">Bulan Ini</span></p>
+            </div>
+        </div>
     </div>
-    @if($requests->hasPages())
-    <div class="p-4 border-t border-gray-100">
-        {{ $requests->links() }}
+
+    {{-- List Card --}}
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        {{-- Filter Area --}}
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+            <form method="GET" action="{{ route('gudang.transfer-requests.index') }}" class="flex flex-wrap items-center gap-4">
+                <div class="flex-1 min-w-[250px] relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. Request..." 
+                           class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                </div>
+                
+                <select name="status" class="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    <option value="">Semua Status</option>
+                    @foreach(['pending' => 'Menunggu', 'approved' => 'Disetujui', 'partial' => 'Sebagian', 'completed' => 'Selesai', 'rejected' => 'Ditolak'] as $v => $l)
+                        <option value="{{ $v }}" {{ request('status') == $v ? 'selected' : '' }}>{{ $l }}</option>
+                    @endforeach
+                </select>
+                
+                <select name="from_entity" class="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                    <option value="">Asal Request</option>
+                    <option value="hendhys" {{ request('from_entity') == 'hendhys' ? 'selected' : '' }}>Hendhys Brownies</option>
+                    <option value="jihans" {{ request('from_entity') == 'jihans' ? 'selected' : '' }}>Jihan's Food</option>
+                </select>
+                
+                <button type="submit" class="px-8 py-3 bg-slate-900 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-900/10">
+                    Filter
+                </button>
+
+                @if(request()->anyFilled(['search', 'status', 'from_entity']))
+                    <a href="{{ route('gudang.transfer-requests.index') }}" class="w-11 h-11 flex items-center justify-center bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </a>
+                @endif
+            </form>
+        </div>
+
+        {{-- Table Area --}}
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Dokumen</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Unit Bisnis</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Peminta</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @php
+                        $statusStyles = [
+                            'pending'   => 'bg-amber-50 text-amber-600 border-amber-100',
+                            'approved'  => 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                            'partial'   => 'bg-violet-50 text-violet-600 border-violet-100',
+                            'completed' => 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                            'rejected'  => 'bg-rose-50 text-rose-600 border-rose-100',
+                        ];
+                    @endphp
+                    @forelse($requests as $req)
+                    <tr class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{{ $req->request_number }}</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ \Carbon\Carbon::parse($req->date)->translatedFormat('d M Y') }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center {{ $req->from_entity === 'hendhys' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700' }}">
+                                    <span class="material-symbols-outlined text-[18px]">{{ $req->from_entity === 'hendhys' ? 'cake' : 'bakery_dining' }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-black text-slate-700 uppercase tracking-tight">{{ ucfirst($req->from_entity) }}</span>
+                                    <span class="text-[10px] font-bold text-slate-400">{{ $req->branch->name ?? 'Produksi Pusat' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border {{ $statusStyles[$req->status] ?? 'bg-slate-50 text-slate-500 border-slate-100' }}">
+                                {{ $req->status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">
+                                    {{ substr($req->requester->name ?? '?', 0, 1) }}
+                                </div>
+                                <span class="text-xs font-bold text-slate-600">{{ $req->requester->name ?? '-' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            @if($req->status === 'pending')
+                                <a href="{{ route('gudang.transfer-requests.show', $req) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                    Review
+                                </a>
+                            @else
+                                <a href="{{ route('gudang.transfer-requests.show', $req) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+                                    Detail
+                                </a>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <span class="material-symbols-outlined text-slate-200 text-[64px] mb-4">move_to_inbox</span>
+                                <p class="text-slate-400 font-bold italic">Belum ada dokumen Transfer Request.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($requests->hasPages())
+        <div class="p-6 border-t border-slate-100 bg-slate-50/30">
+            {{ $requests->links() }}
+        </div>
+        @endif
     </div>
-    @endif
 </div>
 @endsection

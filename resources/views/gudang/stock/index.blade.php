@@ -1,157 +1,199 @@
 @extends('layouts.gudang')
 @section('title', 'Stok Gudang Utama')
-@section('page-title', 'Gudang — Stok Barang')
+@section('page-title', 'Inventori Gudang')
 
 @section('content')
-<div x-data="{ adjustModalOpen: false, selectedProduct: null, quantity: 0, notes: '', unitId: '' }">
+<div x-data="{ adjustModalOpen: false, selectedProduct: null, quantity: 0, notes: '', unitId: '' }" class="space-y-6">
 
-    <div class="flex items-center justify-between mt-4 mb-5">
+    {{-- Page Header --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">Stok Gudang Utama</h2>
-            <p class="text-sm text-gray-400">Master inventori dan saldo stok saat ini</p>
+            <h2 class="text-2xl font-black text-slate-800 font-headline tracking-tight">Stok Gudang Utama</h2>
+            <p class="text-sm text-slate-500 font-medium">Monitoring saldo inventori dan penyesuaian fisik (Stock Opname)</p>
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('gudang.stock.movements') }}" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                Histori Pergerakan (Kartu Stok)
+        <div class="flex items-center gap-3">
+            <a href="{{ route('gudang.stock.movements') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">history</span>
+                Kartu Stok
             </a>
         </div>
     </div>
 
-    {{-- Filter --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center gap-4">
-            <form method="GET" action="{{ route('gudang.stock.index') }}" class="flex-1 flex gap-3">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk atau kode..." 
-                       class="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+    {{-- Filter Card --}}
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+            <form method="GET" action="{{ route('gudang.stock.index') }}" class="flex flex-wrap items-center gap-4">
+                <div class="flex-1 min-w-[300px] relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk atau kode..." 
+                           class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all">
+                </div>
                 
-                <label class="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100">
-                    <input type="checkbox" name="low_stock" value="1" {{ request('low_stock') == '1' ? 'checked' : '' }} class="rounded text-indigo-600 focus:ring-indigo-500">
-                    Stok Menipis
+                <label class="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
+                    <input type="checkbox" name="low_stock" value="1" {{ request('low_stock') == '1' ? 'checked' : '' }} 
+                           class="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 transition-all">
+                    <span class="text-sm font-bold text-slate-600">Stok Menipis</span>
                 </label>
-                <button type="submit" class="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium">Filter</button>
+
+                <button type="submit" class="px-6 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-slate-900/10">
+                    Terapkan
+                </button>
+
                 @if(request()->anyFilled(['search', 'low_stock']))
-                    <a href="{{ route('gudang.stock.index') }}" class="text-gray-400 hover:text-red-500 px-2 py-2 flex items-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <a href="{{ route('gudang.stock.index') }}" class="w-11 h-11 flex items-center justify-center bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all" title="Reset Filter">
+                        <span class="material-symbols-outlined">refresh</span>
                     </a>
                 @endif
             </form>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Kode</th>
-                        <th class="px-4 py-3 font-medium">Nama Produk</th>
-                        <th class="px-4 py-3 font-medium">Kategori</th>
-                        <th class="px-4 py-3 font-medium text-right">Stok Min</th>
-                        <th class="px-4 py-3 font-medium text-right">Stok Saat Ini</th>
-                        <th class="px-4 py-3 font-medium">Satuan</th>
-                        <th class="px-4 py-3 font-medium text-center">Aksi</th>
+        {{-- Table --}}
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Info Produk</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kategori</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Safety Stock</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Stok Akhir</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-slate-100">
                     @forelse($stocks as $item)
                     @php 
-                        $qty = (int) ($item->current_stock ?? 0);
+                        $qty = floatval($item->current_stock ?? 0);
                         $isLow = $qty <= $item->stock_min;
                     @endphp
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $item->code }}</td>
-                        <td class="px-4 py-3 font-medium text-gray-800">{{ $item->name }}</td>
-                        <td class="px-4 py-3">
-                            <span class="block text-gray-800">{{ $item->category->name ?? '-' }}</span>
-                            <span class="text-xs text-gray-400 capitalize">{{ str_replace('_', ' ', $item->jenis) }}</span>
+                    <tr class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{{ $item->name }}</span>
+                                <span class="text-[10px] font-bold text-slate-400 font-mono uppercase tracking-widest mt-0.5">{{ $item->code }}</span>
+                            </div>
                         </td>
-                        <td class="px-4 py-3 text-right text-gray-500">{{ floatval($item->stock_min) }}</td>
-                        <td class="px-4 py-3 text-right">
-                            <span class="inline-flex items-center justify-center px-2 py-1 rounded text-sm font-bold {{ $isLow ? 'bg-red-100 text-red-700' : 'text-gray-800' }}">
-                                {{ floatval($qty) }}
-                            </span>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-slate-600">{{ $item->category->name ?? '-' }}</span>
+                                <span class="text-[10px] text-slate-400 capitalize font-medium">{{ str_replace('_', ' ', $item->jenis) }}</span>
+                            </div>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $item->unit->abbreviation ?? '-' }}</td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">{{ floatval($item->stock_min) }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl {{ $isLow ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100' }}">
+                                <span class="text-sm font-black tabular-nums">{{ number_format($qty, 0, ',', '.') }}</span>
+                                <span class="text-[10px] font-bold uppercase">{{ $item->unit->abbreviation ?? 'PCS' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
                             <button type="button" 
-                                    @click="adjustModalOpen = true; selectedProduct = { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', stock: {{ $qty }}, unit_id: '{{ $item->unit_id }}', unit_name: '{{ $item->unit->abbreviation ?? '-' }}' }; quantity = {{ $qty }}; notes = ''; unitId = '{{ $item->unit_id }}';"
-                                    class="text-indigo-600 hover:text-indigo-800 text-xs font-medium border border-indigo-200 bg-indigo-50 px-2 py-1 rounded">
-                                Sesuaikan (SO)
+                                    @click="adjustModalOpen = true; selectedProduct = { id: '{{ $item->id }}', name: '{{ addslashes($item->name) }}', stock: {{ $qty }}, unit_id: '{{ $item->unit_id }}', unit_name: '{{ $item->unit->abbreviation ?? 'PCS' }}' }; quantity = {{ $qty }}; notes = ''; unitId = '{{ $item->unit_id }}';"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
+                                <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                                Opname
                             </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-400">Tidak ada data produk.</td>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <span class="material-symbols-outlined text-slate-200 text-[64px] mb-4">inventory_2</span>
+                                <p class="text-slate-400 font-bold italic">Tidak ada data produk ditemukan.</p>
+                            </div>
+                        </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
         @if($stocks->hasPages())
-        <div class="p-4 border-t border-gray-100">
+        <div class="p-6 border-t border-slate-100">
             {{ $stocks->links() }}
         </div>
         @endif
     </div>
 
-    {{-- Modal Adjustment --}}
-    <div x-show="adjustModalOpen" style="display: none;" class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-show="adjustModalOpen" x-transition.opacity></div>
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="adjustModalOpen" x-transition
-                     @click.away="adjustModalOpen = false"
-                     class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md">
-                    <form method="POST" action="{{ route('gudang.stock.adjust') }}">
-                        @csrf
-                        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modal-title">Penyesuaian Stok (Stock Opname)</h3>
-                                    <div class="mt-4 space-y-4">
-                                        <input type="hidden" name="product_id" :value="selectedProduct?.id">
-                                        <input type="hidden" name="unit_id" :value="unitId">
-                                        
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-500 mb-1">Produk</p>
-                                            <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700" x-text="selectedProduct?.name"></div>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-500 mb-1">Stok Sistem Saat Ini</p>
-                                            <div class="text-sm font-bold text-gray-700"><span x-text="selectedProduct?.stock"></span> <span class="text-xs text-gray-500 font-normal" x-text="selectedProduct?.unit_name"></span></div>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Stok Fisik Sebenarnya (Final) <span class="text-red-500">*</span></label>
-                                            <div class="flex items-center gap-2">
-                                                <input type="number" name="quantity" x-model.number="quantity" min="0" step="1" required
-                                                       @change="quantity = Math.max(0, Math.round(quantity || 0))"
-                                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none text-right">
-                                                <span class="text-sm text-gray-500 w-12" x-text="selectedProduct?.unit_name"></span>
-                                            </div>
-                                            <p class="text-xs text-red-500 mt-1" x-show="quantity != selectedProduct?.stock">
-                                                Sistem akan membuat selisih otomatis.
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Alasan Penyesuaian <span class="text-red-500">*</span></label>
-                                            <input type="text" name="notes" x-model="notes" required placeholder="Contoh: Barang rusak, hilang, salah input..."
-                                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                                        </div>
-                                    </div>
-                                </div>
+    {{-- Modal Adjustment (Modern Glassmorphism Style) --}}
+    <div x-show="adjustModalOpen" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" x-show="adjustModalOpen" x-transition.opacity @click="adjustModalOpen = false"></div>
+        
+        <div x-show="adjustModalOpen" 
+             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+             class="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+            
+            <div class="absolute top-0 right-0 p-6">
+                <button @click="adjustModalOpen = false" class="w-10 h-10 flex items-center justify-center rounded-2xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('gudang.stock.adjust') }}" class="p-8 sm:p-10">
+                @csrf
+                <div class="space-y-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-[1.25rem] flex items-center justify-center shadow-inner">
+                            <span class="material-symbols-outlined text-[28px]">balance</span>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-slate-900 font-headline tracking-tight">Stock Opname</h3>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Penyesuaian Saldo Fisik</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <input type="hidden" name="product_id" :value="selectedProduct?.id">
+                        <input type="hidden" name="unit_id" :value="unitId">
+                        
+                        <div class="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produk Terpilih</span>
+                                <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg" x-text="selectedProduct?.id"></span>
+                            </div>
+                            <p class="text-base font-black text-slate-800 font-headline leading-tight" x-text="selectedProduct?.name"></p>
+                            <div class="flex items-center gap-2 pt-2 border-t border-slate-200/50">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stok Sistem:</span>
+                                <span class="text-sm font-black text-slate-700" x-text="selectedProduct?.stock + ' ' + selectedProduct?.unit_name"></span>
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 sm:ml-3 sm:w-auto">
-                                Simpan Penyesuaian
-                            </button>
-                            <button type="button" @click="adjustModalOpen = false" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                                Batal
-                            </button>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Stok Fisik Sebenarnya <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <input type="number" name="quantity" x-model.number="quantity" min="0" step="1" required
+                                       @change="quantity = Math.max(0, Math.round(quantity || 0))"
+                                       class="w-full pl-6 pr-16 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-black text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-none transition-all outline-none tabular-nums">
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400" x-text="selectedProduct?.unit_name"></span>
+                            </div>
+                            <div class="flex items-center gap-2 px-2" x-show="quantity != selectedProduct?.stock">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                <p class="text-[11px] font-bold text-amber-600 italic">
+                                    Akan dicatat sebagai selisih <span x-text="quantity - selectedProduct?.stock > 0 ? '+' : ''"></span><span x-text="quantity - selectedProduct?.stock"></span> units.
+                                </p>
+                            </div>
                         </div>
-                    </form>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Alasan Penyesuaian <span class="text-rose-500">*</span></label>
+                            <textarea name="notes" x-model="notes" required rows="3" placeholder="Contoh: Barang rusak, hilang, salah input..."
+                                      class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-none transition-all outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="flex-1 px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98]">
+                            Simpan Perubahan
+                        </button>
+                        <button type="button" @click="adjustModalOpen = false" class="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+                            Batal
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 

@@ -1,154 +1,200 @@
 @extends('layouts.gudang')
-@section('title', isset($po) ? 'Edit PO' : 'Buat Purchase Order')
-@section('page-title', 'Gudang — ' . (isset($po) ? 'Edit PO '.$po->po_number : 'Buat Purchase Order'))
+@section('title', ($po->id ? 'Edit' : 'Buat') . ' Purchase Order')
+@section('page-title', 'Purchase Order')
 
 @section('content')
-<div class="mt-4 max-w-4xl"
-     x-data="{
-        items: {{ isset($po) ? $po->details->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'quantity'=>$d->quantity_ordered,'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'price'=>$d->price,'total'=>$d->total,'notes'=>$d->notes??''])->toJson() : '[]' }},
-        products: {{ $products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'unit_id'=>$p->unit_id,'unit_name'=>$p->unit->abbreviation,'hpp'=>$p->hpp])->toJson() }},
-        addItem() {
-            this.items.push({ product_id:'', product_name:'', quantity:1, unit_id:'', unit_name:'', price:0, total:0, notes:'' });
-        },
-        removeItem(i) { this.items.splice(i,1); },
-        onProductChange(i, productId) {
-            const p = this.products.find(x=>x.id==productId);
-            if (p) {
-                this.items[i].product_name = p.name;
-                this.items[i].unit_id = p.unit_id;
-                this.items[i].unit_name = p.unit_name;
-                this.items[i].price = p.hpp;
-                this.calcTotal(i);
-            }
-        },
-        calcTotal(i) {
-            this.items[i].total = this.items[i].quantity * this.items[i].price;
-        },
-        grandTotal() { return this.items.reduce((s,i)=>s+(parseFloat(i.total)||0),0); }
-     }">
+<div x-data="poForm()" class="max-w-6xl mx-auto space-y-8 pb-20">
 
-<form method="POST" action="{{ isset($po) ? route('gudang.po.update', $po) : route('gudang.po.store') }}"
-      class="space-y-4">
-    @csrf
-    @if(isset($po)) @method('PUT') @endif
-
-    {{-- Header --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Informasi PO</p>
-        <div class="grid grid-cols-3 gap-4">
-            <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Supplier <span class="text-red-500">*</span></label>
-                <select name="supplier_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none @error('supplier_id') border-red-400 @enderror">
-                    <option value="">Pilih Supplier</option>
-                    @foreach($suppliers as $s)
-                    <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id??'') == $s->id ? 'selected':'' }}>{{ $s->name }}</option>
-                    @endforeach
-                </select>
-                @error('supplier_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal PO <span class="text-red-500">*</span></label>
-                <input type="date" name="date" value="{{ old('date', isset($po) ? $po->date->format('Y-m-d') : now()->format('Y-m-d')) }}" required
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Estimasi Tiba</label>
-                <input type="date" name="expected_date" value="{{ old('expected_date', isset($po) && $po->expected_date ? $po->expected_date->format('Y-m-d') : '') }}"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-            </div>
-            <div class="col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                <input type="text" name="notes" value="{{ old('notes', $po->notes??'') }}"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-            </div>
-        </div>
+    {{-- Header & Back --}}
+    <div class="flex items-center justify-between">
+        <a href="{{ route('gudang.po.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
+            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Batal & Kembali
+        </a>
+        <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">{{ $po->id ? 'Edit Dokumen PO' : 'Draft Pesanan Baru' }}</h2>
     </div>
 
-    {{-- Line Items --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-3">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Item Produk</p>
-            <button type="button" @click="addItem()"
-                    class="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                Tambah Item
-            </button>
-        </div>
+    <form action="{{ $po->id ? route('gudang.po.update', $po) : route('gudang.po.store') }}" method="POST" class="space-y-8">
+        @csrf
+        @if($po->id) @method('PUT') @endif
 
-        @error('items') <p class="text-red-500 text-xs mb-2">{{ $message }}</p> @enderror
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {{-- Left: Main Info --}}
+            <div class="lg:col-span-2 space-y-8">
+                
+                {{-- Metadata Card --}}
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 sm:p-10 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier / Vendor <span class="text-rose-500">*</span></label>
+                            <select name="supplier_id" required class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
+                                <option value="">Pilih Supplier...</option>
+                                @foreach($suppliers as $s)
+                                    <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tanggal Pesanan <span class="text-rose-500">*</span></label>
+                            <input type="date" name="date" value="{{ old('date', $po->date?->format('Y-m-d') ?? date('Y-m-d')) }}" required
+                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
+                        </div>
+                    </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-xs text-gray-500 border-b border-gray-100">
-                        <th class="pb-2 text-left w-64">Produk</th>
-                        <th class="pb-2 text-right w-24">Qty</th>
-                        <th class="pb-2 text-left w-20">Satuan</th>
-                        <th class="pb-2 text-right w-32">Harga/Unit</th>
-                        <th class="pb-2 text-right w-32">Total</th>
-                        <th class="pb-2 w-8"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="(item, i) in items" :key="i">
-                        <tr class="border-b border-gray-50">
-                            <td class="py-1.5 pr-2">
-                                <select :name="`items[${i}][product_id]`" x-model="item.product_id"
-                                        @change="onProductChange(i, item.product_id)" required
-                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                                    <option value="">Pilih produk</option>
-                                    <template x-for="p in products" :key="p.id">
-                                        <option :value="p.id" x-text="p.name" :selected="p.id == item.product_id"></option>
+                    {{-- Items Section --}}
+                    <div class="pt-8 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-black text-slate-900 font-headline tracking-tight">Daftar Barang</h3>
+                            <button type="button" @click="addItem()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                                Tambah Item
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                        <th class="pb-4 pl-2">Pilih Produk</th>
+                                        <th class="pb-4 text-center" style="width: 120px;">Qty</th>
+                                        <th class="pb-4 text-right" style="width: 180px;">Harga Satuan</th>
+                                        <th class="pb-4 text-right" style="width: 150px;">Subtotal</th>
+                                        <th class="pb-4 text-center" style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50">
+                                    <template x-for="(item, index) in items" :key="index">
+                                        <tr class="group">
+                                            <td class="py-4 pr-4">
+                                                <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
+                                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                                    <option value="">Pilih Produk...</option>
+                                                    @foreach($products as $p)
+                                                        <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td class="py-4 px-2">
+                                                <input type="number" x-model.number="item.quantity" :name="'items['+index+'][quantity]'" min="1" step="any" required
+                                                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
+                                            </td>
+                                            <td class="py-4 px-2">
+                                                <div class="relative">
+                                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Rp</span>
+                                                    <input type="number" x-model.number="item.price" :name="'items['+index+'][price]'" min="0" step="any" required
+                                                           class="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-right text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
+                                                </div>
+                                            </td>
+                                            <td class="py-4 px-2 text-right">
+                                                <span class="text-xs font-black text-slate-900 tabular-nums" x-text="formatNumber(item.quantity * item.price)"></span>
+                                            </td>
+                                            <td class="py-4 pl-4 text-center">
+                                                <button type="button" @click="removeItem(index)" class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 transition-colors">
+                                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
                                     </template>
-                                </select>
-                            </td>
-                            <td class="py-1.5 px-2">
-                                <input type="number" :name="`items[${i}][quantity]`" x-model.number="item.quantity"
-                                       @change="item.quantity = Math.max(1, Math.round(item.quantity || 1)); calcTotal(i)" @input="calcTotal(i)" min="1" step="1" required
-                                       class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                            </td>
-                            <td class="py-1.5 px-2">
-                                <input type="hidden" :name="`items[${i}][unit_id]`" x-model="item.unit_id">
-                                <span x-text="item.unit_name || '-'" class="text-xs text-gray-500 font-mono"></span>
-                            </td>
-                            <td class="py-1.5 px-2">
-                                <input type="number" :name="`items[${i}][price]`" x-model="item.price"
-                                       @input="calcTotal(i)" min="0" step="0.01" required
-                                       class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                            </td>
-                            <td class="py-1.5 px-2 text-right text-xs font-medium text-gray-700">
-                                <span x-text="'Rp '+(parseFloat(item.total)||0).toLocaleString('id-ID')"></span>
-                            </td>
-                            <td class="py-1.5 pl-2">
-                                <button type="button" @click="removeItem(i)" class="text-red-400 hover:text-red-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                    <tr x-show="items.length === 0">
-                        <td colspan="6" class="py-4 text-center text-gray-400 text-xs">Klik "Tambah Item" untuk menambah produk.</td>
-                    </tr>
-                </tbody>
-                <tfoot class="border-t border-gray-200">
-                    <tr>
-                        <td colspan="4" class="pt-2 text-right text-sm font-semibold text-gray-700">Grand Total:</td>
-                        <td class="pt-2 pr-2 text-right font-bold text-gray-900">
-                            <span x-text="'Rp '+grandTotal().toLocaleString('id-ID')"></span>
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
+                                </tbody>
+                            </table>
+                        </div>
 
-    <div class="flex gap-3">
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg">
-            {{ isset($po) ? 'Simpan Perubahan' : 'Buat Purchase Order' }}
-        </button>
-        <a href="{{ route('gudang.po.index') }}" class="border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50">Batal</a>
-    </div>
-</form>
+                        <div x-show="items.length === 0" class="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                            <span class="material-symbols-outlined text-slate-300 text-[48px] mb-2">playlist_add</span>
+                            <p class="text-slate-400 font-bold">Belum ada item ditambahkan.</p>
+                            <button type="button" @click="addItem()" class="mt-4 text-indigo-600 text-xs font-black uppercase tracking-widest hover:underline">Klik untuk tambah</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Right: Sidebar Summary --}}
+            <div class="space-y-8">
+                
+                {{-- Date & Note --}}
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-6">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Estimasi Tiba</label>
+                        <input type="date" name="expected_date" value="{{ old('expected_date', $po->expected_date?->format('Y-m-d')) }}"
+                               class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Catatan Tambahan</label>
+                        <textarea name="notes" rows="4" placeholder="Instruksi pengiriman, termin pembayaran, dll..."
+                                  class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 transition-all outline-none resize-none">{{ old('notes', $po->notes) }}</textarea>
+                    </div>
+                </div>
+
+                {{-- Grand Total Card --}}
+                <div class="bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 p-10 text-white relative overflow-hidden">
+                    <div class="relative z-10 space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-indigo-400">payments</span>
+                            <h3 class="text-sm font-black uppercase tracking-[0.2em]">Ringkasan Biaya</h3>
+                        </div>
+                        
+                        <div class="space-y-4 pt-4 border-t border-white/10">
+                            <div class="flex justify-between items-center text-slate-400">
+                                <span class="text-xs font-bold uppercase tracking-widest">Total Item</span>
+                                <span class="text-sm font-black tabular-nums" x-text="items.length"></span>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Total Tagihan</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-indigo-400 text-lg font-black italic">Rp</span>
+                                    <span class="text-4xl font-black tracking-tighter tabular-nums" x-text="formatNumber(calculateTotal())"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-indigo-600/30 active:scale-[0.98] mt-4">
+                            Simpan & Kirim PO
+                        </button>
+                    </div>
+                    
+                    {{-- Decoration --}}
+                    <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                </div>
+
+            </div>
+        </div>
+    </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function poForm() {
+        return {
+            items: @json(old('items', $po->items ?? [])),
+            
+            init() {
+                if(this.items.length === 0) {
+                    this.addItem();
+                }
+            },
+
+            addItem() {
+                this.items.push({
+                    product_id: '',
+                    quantity: 1,
+                    price: 0
+                });
+            },
+
+            removeItem(index) {
+                this.items.splice(index, 1);
+            },
+
+            calculateTotal() {
+                return this.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            },
+
+            formatNumber(num) {
+                return new Intl.NumberFormat('id-ID').format(num);
+            }
+        }
+    }
+</script>
+@endpush
