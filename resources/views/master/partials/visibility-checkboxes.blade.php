@@ -10,21 +10,27 @@
     $vj = old('visible_jihans',  $isNew ? in_array($scope, ['gudang','jihans'])  : (bool)($model->visible_jihans  ?? false));
     $vh = old('visible_hendhys', $isNew ? in_array($scope, ['gudang','hendhys']) : (bool)($model->visible_hendhys ?? false));
     $items = [
-        ['visible_gudang',  'Gudang Tempua',   'warehouse',  $vg],
-        ['visible_jihans',  "Jihan's Food",    'storefront', $vj],
-        ['visible_hendhys', 'Hendhys Brownies','cake',       $vh],
+        ['visible_gudang',  'Gudang Utama',   'warehouse',  $vg, 'blue'],
+        ['visible_jihans',  "Jihan's Food",    'bakery_dining', $vj, 'orange'],
+        ['visible_hendhys', 'Hendhys Brownies','cake',       $vh, 'amber'],
     ];
 @endphp
-<div class="flex flex-wrap gap-sm">
-    @foreach($items as [$fieldName, $label, $icon, $checked])
+<div class="flex flex-wrap gap-3">
+    @foreach($items as [$fieldName, $label, $icon, $checked, $color])
         <label x-data="{ on: {{ $checked ? 'true' : 'false' }} }"
-            :class="on ? 'border-primary bg-primary-container' : 'border-outline-variant bg-surface-container-lowest hover:bg-surface-container'"
-            class="flex items-center gap-xs cursor-pointer px-sm py-xs rounded-lg border-2 transition-all select-none text-sm">
+            :class="on ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            class="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-xl border-2 transition-all select-none group min-w-[140px]">
             <input type="checkbox" name="{{ $fieldName }}" value="1"
                 x-model="on"
-                class="w-3.5 h-3.5 rounded accent-primary border-outline-variant">
-            <span class="material-symbols-outlined text-[15px]" :class="on ? 'text-primary' : 'text-outline'">{{ $icon }}</span>
-            <span :class="on ? 'font-semibold text-primary' : 'text-on-surface-variant'">{{ $label }}</span>
+                class="hidden">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                 :class="on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'">
+                <span class="material-symbols-outlined text-[18px]" :class="on ? 'fill' : ''">{{ $icon }}</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[10px] font-black uppercase tracking-tighter" :class="on ? 'text-indigo-600' : 'text-slate-400'">{{ $label }}</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest" :class="on ? 'text-indigo-400' : 'text-slate-300'" x-text="on ? 'Enabled' : 'Disabled'"></span>
+            </div>
         </label>
     @endforeach
 </div>

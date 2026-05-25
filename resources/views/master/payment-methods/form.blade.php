@@ -1,144 +1,115 @@
 @extends($layout ?? 'layouts.gudang')
 @section('title', isset($method) ? 'Edit Metode Pembayaran' : 'Tambah Metode Pembayaran')
-@section('page-title', 'Master Data — ' . (isset($method) ? 'Edit' : 'Tambah') . ' Metode Pembayaran')
+@section('page-title', 'Konfigurasi Pembayaran')
 
 @section('content')
-<div class="p-margin-mobile md:p-margin-desktop w-full bg-surface">
+<div class="max-w-4xl mx-auto space-y-8 pb-20">
 
-    @if($errors->any())
-    <div class="mb-md bg-error-container text-on-error-container p-sm rounded-lg border border-error/20">
-        <div class="flex items-start gap-sm">
-            <span class="material-symbols-outlined text-error mt-[2px]">error</span>
-            <ul class="list-disc pl-md text-sm space-y-1">
-                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-            </ul>
-        </div>
+    {{-- Header & Back --}}
+    <div class="flex items-center justify-between">
+        <a href="{{ route(($routePrefix ?? 'master.') . 'payment-methods.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
+            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Batal & Kembali
+        </a>
+        <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">{{ isset($method) ? 'Edit Opsi Pembayaran' : 'Metode Pembayaran Baru' }}</h2>
     </div>
-    @endif
 
-    <form method="POST"
-        action="{{ isset($method) ? route(($routePrefix ?? 'master.') . 'payment-methods.update', $method) : route(($routePrefix ?? 'master.') . 'payment-methods.store') }}"
-        enctype="multipart/form-data"
-        class="space-y-lg">
+    <form method="POST" action="{{ isset($method) ? route(($routePrefix ?? 'master.') . 'payment-methods.update', $method) : route(($routePrefix ?? 'master.') . 'payment-methods.store') }}"
+          enctype="multipart/form-data" class="space-y-8">
         @csrf
         @if(isset($method)) @method('PUT') @endif
 
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
-            <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant rounded-t-xl">
-                <h3 class="font-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Informasi Metode Pembayaran</h3>
-            </div>
-            <div class="p-md grid grid-cols-1 md:grid-cols-2 gap-md">
-
-                <div class="md:col-span-2">
-                    <label class="block font-label-sm text-on-surface-variant mb-xs">Nama Metode <span class="text-error">*</span></label>
-                    <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                        <input type="text" name="name" value="{{ old('name', $method->name ?? '') }}" required
-                            placeholder="cth: BCA Transfer, QRIS Jihan's, Tunai"
-                            class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
-                    </div>
-                    @error('name')<p class="text-error font-label-sm mt-xs">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label class="block font-label-sm text-on-surface-variant mb-xs">Nama Bank</label>
-                    <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                        <input type="text" name="bank_name" value="{{ old('bank_name', $method->bank_name ?? '') }}"
-                            placeholder="cth: BCA, Mandiri, BRI (kosongkan untuk Tunai)"
-                            class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-label-sm text-on-surface-variant mb-xs">Nomor Rekening</label>
-                    <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                        <input type="text" name="account_number" value="{{ old('account_number', $method->account_number ?? '') }}"
-                            placeholder="cth: 1234567890"
-                            class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-label-sm text-on-surface-variant mb-xs">Atas Nama</label>
-                    <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                        <input type="text" name="account_name" value="{{ old('account_name', $method->account_name ?? '') }}"
-                            placeholder="cth: Jihan Santoso"
-                            class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder-on-surface-variant py-sm px-sm outline-none">
-                    </div>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="block font-label-sm text-on-surface-variant mb-xs">Gambar QR / Logo Bank <span class="text-on-surface-variant/60 font-label-sm">(opsional, max 2MB)</span></label>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {{-- Left: Form --}}
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 sm:p-10 space-y-8">
                     
-                    <div x-data="{ 
-                        isDropping: false, 
-                        imagePreview: '{{ isset($method) && $method->image ? Storage::url($method->image) : '' }}',
-                        handleFile(file) {
-                            if (!file || !file.type.startsWith('image/')) return;
-                            const reader = new FileReader();
-                            reader.onload = (e) => this.imagePreview = e.target.result;
-                            reader.readAsDataURL(file);
-                        }
-                    }" class="relative">
-                        
-                        <!-- Drop Zone -->
-                        <div 
-                            @dragover.prevent="isDropping = true" 
-                            @dragleave.prevent="isDropping = false" 
-                            @drop.prevent="isDropping = false; $refs.imageInput.files = $event.dataTransfer.files; handleFile($event.dataTransfer.files[0])"
-                            @click="$refs.imageInput.click()"
-                            :class="isDropping ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-low'"
-                            class="group relative flex flex-col items-center justify-center w-full min-h-[160px] border-2 border-dashed rounded-xl cursor-pointer transition-all hover:border-primary hover:bg-primary/5"
-                        >
-                            <!-- Preview Image -->
-                            <template x-if="imagePreview">
-                                <div class="relative w-full h-full p-4 flex flex-col items-center">
-                                    <img :src="imagePreview" class="max-h-40 object-contain rounded-lg shadow-sm border border-outline-variant bg-white">
-                                    <p class="mt-2 text-xs text-primary font-medium group-hover:underline">Klik atau seret untuk ganti gambar</p>
-                                </div>
-                            </template>
-
-                            <!-- Empty State -->
-                            <template x-if="!imagePreview">
-                                <div class="flex flex-col items-center p-6 text-center">
-                                    <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                        <span class="material-symbols-outlined text-on-surface-variant text-[28px]">add_a_photo</span>
-                                    </div>
-                                    <p class="text-sm font-medium text-on-surface">Klik untuk pilih gambar atau seret file ke sini</p>
-                                    <p class="text-xs text-on-surface-variant mt-1">PNG, JPG, atau WEBP (Maks. 2MB)</p>
-                                </div>
-                            </template>
-
-                            <!-- Progress Bar Overlay (if uploading, but here it's just local) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nama Metode <span class="text-rose-500">*</span></label>
+                            <input type="text" name="name" value="{{ old('name', $method->name ?? '') }}" required placeholder="cth: Tunai, Transfer Mandiri, QRIS..."
+                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
                         </div>
-
-                        <!-- Real Hidden Input -->
-                        <input type="file" name="image" x-ref="imageInput" accept="image/*" class="hidden"
-                            @change="handleFile($event.target.files[0])">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tipe Sistem <span class="text-rose-500">*</span></label>
+                            <select name="type" required class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                @foreach(['tunai' => 'Tunai / Cash', 'kredit' => 'Piutang / Kredit', 'kartu_debit' => 'Kartu Debit / Transfer', 'kartu_kredit' => 'Kartu Kredit'] as $val => $lbl)
+                                    <option value="{{ $val }}" {{ old('type', $method->type ?? '') === $val ? 'selected' : '' }}>{{ $lbl }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    @error('image')<p class="text-error font-label-sm mt-xs">{{ $message }}</p>@enderror
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nama Bank / Provider</label>
+                            <input type="text" name="bank_name" value="{{ old('bank_name', $method->bank_name ?? '') }}" placeholder="cth: Bank Mandiri"
+                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nomor Rekening</label>
+                            <input type="text" name="account_number" value="{{ old('account_number', $method->account_number ?? '') }}" placeholder="xxxx-xxxx-xxxx"
+                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none font-mono">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Atas Nama</label>
+                            <input type="text" name="account_name" value="{{ old('account_name', $method->account_name ?? '') }}" placeholder="cth: CV. Jihan Food"
+                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 pt-6 border-t border-slate-100">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Ikon / Logo Metode</label>
+                        <div class="flex items-center gap-6">
+                            @if(isset($method) && $method->image)
+                                <img src="{{ asset('storage/'.$method->image) }}" class="w-20 h-12 object-contain rounded-xl border border-slate-200 p-2 bg-slate-50">
+                            @endif
+                            <input type="file" name="image" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition-all">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-sm">
-                    <input type="hidden" name="is_active" value="0">
-                    <input type="checkbox" name="is_active" id="is_active" value="1"
-                        {{ old('is_active', $method->is_active ?? true) ? 'checked' : '' }}
-                        class="w-4 h-4 accent-primary">
-                    <label for="is_active" class="font-label-md text-on-surface cursor-pointer">Aktif</label>
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-5 bg-slate-900 text-white rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 active:scale-[0.98]">
+                        {{ isset($method) ? 'Simpan Perubahan' : 'Aktifkan Metode Pembayaran' }}
+                    </button>
                 </div>
-
             </div>
-        </div>
 
-        <div class="flex items-center justify-end gap-md pb-lg">
-            <a href="{{ route(($routePrefix ?? 'master.') . 'payment-methods.index') }}"
-                class="inline-flex items-center gap-sm px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg hover:bg-surface-container-high transition-colors">
-                <span class="material-symbols-outlined text-[18px]">arrow_back</span>Batal
-            </a>
-            <button type="submit"
-                class="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-primary rounded-lg font-label-lg shadow-sm hover:bg-on-primary-fixed-variant transition-colors">
-                <span class="material-symbols-outlined text-[18px]">save</span>
-                {{ isset($method) ? 'Perbarui' : 'Simpan' }}
-            </button>
+            {{-- Right: Sidebar --}}
+            <div class="space-y-8">
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-8">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Scope Penggunaan</label>
+                        <select name="entity_scope" class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                            <option value="all" {{ old('entity_scope', $method->entity_scope ?? '') === 'all' ? 'selected' : '' }}>Semua Entitas</option>
+                            <option value="jihans" {{ old('entity_scope', $method->entity_scope ?? '') === 'jihans' ? 'selected' : '' }}>Khusus Jihan's Food</option>
+                            <option value="hendhys" {{ old('entity_scope', $method->entity_scope ?? '') === 'hendhys' ? 'selected' : '' }}>Khusus Hendhys</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center px-2">
+                        <label class="relative inline-flex items-center cursor-pointer group">
+                            <input type="hidden" name="is_active" value="0">
+                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', $method->is_active ?? true) ? 'checked' : '' }} class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 transition-all"></div>
+                            <span class="ms-3 text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700 transition-colors">Metode Aktif</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-600 rounded-[2rem] p-8 text-white shadow-xl shadow-indigo-600/20 relative overflow-hidden group">
+                    <div class="relative z-10">
+                        <span class="material-symbols-outlined text-[32px] text-indigo-300 mb-4">security</span>
+                        <h3 class="text-sm font-black uppercase tracking-[0.2em] mb-4">Catatan Keamanan</h3>
+                        <p class="text-xs font-medium leading-relaxed italic opacity-80">
+                            Pastikan data nomor rekening dan tipe sistem sudah benar. Perubahan pada tipe sistem dapat mempengaruhi perhitungan laporan keuangan otomatis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </form>
 </div>

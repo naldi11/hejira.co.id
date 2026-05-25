@@ -32,7 +32,10 @@
       "mcp__plugin_claude-mem_mcp-search__smart_outline",
       "Bash(echo \"Exit: $?\")",
       "Bash(grep -rn \"App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Gudang\\\\\\\\\\\\\\\\\" app/)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\laragon\\\\www\\\\project-ketua\\\\app\\\\Http\\\\Controllers\\\\Gudang\" -Filter \"*.php\")",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Find \"C:\\\\laragon\\\\www\\\\project-ketua\\\\resources\\\\views\\\\master\" -name \"*.blade.php\" -type f)"
     ]
   }
 }

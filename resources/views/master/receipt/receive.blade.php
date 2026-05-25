@@ -1,71 +1,99 @@
 @extends($layout)
 @section('title', 'Konfirmasi Penerimaan Barang')
-@section('page-title', 'Konfirmasi Terima: ' . $transferOut->transfer_number)
+@section('page-title', 'Penerimaan Stok')
 
 @section('content')
-<div class="max-w-4xl mt-4 space-y-4">
+<div class="max-w-4xl mx-auto space-y-8 pb-20">
 
-    <div class="flex items-center gap-2">
-        <a href="{{ route($info['transferRoute'] . 'index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Kembali</a>
+    {{-- Header & Back --}}
+    <div class="flex items-center justify-between">
+        <a href="{{ route($info['transferRoute'] . 'index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
+            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Batal & Kembali
+        </a>
+        <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">Konfirmasi Penerimaan Barang</h2>
     </div>
 
     @if($errors->any())
-    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
-        <ul class="list-disc list-inside space-y-1">
+    <div class="bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2 text-rose-600">
+            <span class="material-symbols-outlined">warning</span>
+            <span class="text-sm font-black uppercase tracking-widest">Kesalahan Input</span>
+        </div>
+        <ul class="list-disc list-inside space-y-1 text-xs font-bold opacity-80">
             @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
         </ul>
     </div>
     @endif
 
-    <form action="{{ route($info['receiveRoute'], $transferOut->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+    <form action="{{ route($info['receiveRoute'], $transferOut->id) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
         @csrf
 
-        {{-- Header Info --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Informasi Pengiriman dari Gudang</p>
-            <div class="grid grid-cols-3 gap-4 text-sm">
-                <div><p class="text-gray-400 text-xs">No. Transfer</p><p class="font-bold text-gray-800">{{ $transferOut->transfer_number }}</p></div>
-                <div><p class="text-gray-400 text-xs">Tanggal Kirim</p><p class="font-medium text-gray-700">{{ $transferOut->date->format('d M Y') }}</p></div>
-                <div><p class="text-gray-400 text-xs">Dikirim Oleh</p><p class="font-medium text-gray-700">{{ $transferOut->creator->name }}</p></div>
+        {{-- Header Info Card --}}
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 sm:p-10">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-inner">
+                    <span class="material-symbols-outlined text-[28px]">local_shipping</span>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Informasi Pengiriman</p>
+                    <h3 class="text-lg font-black text-slate-900 font-headline tracking-tight">Dari Gudang Utama</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">No. Transfer</p>
+                    <p class="text-sm font-black text-slate-800 mt-1 tabular-nums">{{ $transferOut->transfer_number }}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tanggal Kirim</p>
+                    <p class="text-sm font-black text-slate-800 mt-1 tabular-nums">{{ $transferOut->date->translatedFormat('d M Y') }}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Dikirim Oleh</p>
+                    <p class="text-sm font-black text-slate-800 mt-1 truncate">{{ $transferOut->creator->name }}</p>
+                </div>
             </div>
         </div>
 
-        {{-- Items Table --}}
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">Daftar Barang — Isi Kondisi yang Diterima</div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-left text-xs text-gray-500">Produk</th>
-                            <th class="px-4 py-2 text-center text-xs text-gray-500">Qty Dikirim</th>
-                            <th class="px-4 py-2 text-center text-xs text-gray-500 w-32">Qty Diterima</th>
-                            <th class="px-4 py-2 text-left text-xs text-gray-500 w-24">Satuan</th>
-                            <th class="px-4 py-2 text-center text-xs text-gray-500 w-32">Kondisi</th>
+        {{-- Items Table Card --}}
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Daftar Barang — Verifikasi Fisik</h3>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/30 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <th class="px-8 py-4">Produk</th>
+                            <th class="px-6 py-4 text-center">Qty Kirim</th>
+                            <th class="px-6 py-4 text-center w-40">Qty Diterima</th>
+                            <th class="px-6 py-4 text-center">Satuan</th>
+                            <th class="px-8 py-4 text-center w-40">Kondisi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="divide-y divide-slate-100">
                         @foreach($transferOut->details as $detail)
-                        <tr>
-                            <td class="px-4 py-3 font-medium text-gray-800">
-                                {{ $detail->product->name }}
-                                <span class="block text-xs text-gray-400 font-mono">{{ $detail->product->code }}</span>
+                        <tr class="group hover:bg-slate-50/30 transition-colors">
+                            <td class="px-8 py-5">
+                                <span class="text-sm font-black text-slate-800 tracking-tight">{{ $detail->product_name }}</span>
                             </td>
-                            <td class="px-4 py-3 text-center text-gray-500">{{ (int) $detail->quantity }}</td>
-                            <td class="px-4 py-3">
-                                <input type="number" name="received_quantities[{{ $detail->id }}]"
-                                       value="{{ (int) $detail->quantity }}"
-                                       min="0" max="{{ (int) $detail->quantity }}" step="1" required
-                                       class="w-full text-center border border-gray-200 rounded-lg px-2 py-1.5 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                            <td class="px-6 py-5 text-center">
+                                <span class="text-xs font-bold text-slate-400 tabular-nums bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{{ number_format($detail->quantity_sent, 0) }}</span>
                             </td>
-                            <td class="px-4 py-3 text-xs text-gray-500 font-mono">{{ $detail->unit->abbreviation ?? '-' }}</td>
-                            <td class="px-4 py-3">
-                                <select name="kondisi[{{ $detail->id }}]"
-                                        class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                                    <option value="">-</option>
-                                    <option value="baik">Baik</option>
-                                    <option value="rusak">Rusak</option>
-                                    <option value="kurang">Kurang</option>
+                            <td class="px-6 py-5">
+                                <input type="number" name="items[{{ $detail->id }}][quantity_received]" value="{{ $detail->quantity_sent }}" min="0" max="{{ $detail->quantity_sent }}" step="any" required
+                                       class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums shadow-inner">
+                            </td>
+                            <td class="px-6 py-5 text-center">
+                                <span class="text-[10px] font-black text-slate-500 uppercase">{{ $detail->unit->abbreviation ?? 'PCS' }}</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <select name="items[{{ $detail->id }}][condition]" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                    <option value="good">Baik</option>
+                                    <option value="damaged">Rusak</option>
+                                    <option value="shortage">Kurang</option>
                                 </select>
                             </td>
                         </tr>
@@ -73,85 +101,29 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-
-        {{-- BAST Info --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Informasi Bukti Serah Terima</p>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Penerima ({{ $info['entity'] }})</label>
-                    <input type="text" name="receive_received_by_name" value="{{ old('receive_received_by_name') }}"
-                           placeholder="Nama petugas penerima..."
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pengirim (Gudang)</label>
-                    <input type="text" name="receive_pengirim_name" value="{{ old('receive_pengirim_name') }}"
-                           placeholder="Nama petugas gudang pengirim..."
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan / No. Surat Jalan</label>
-                    <input type="text" name="receive_notes" value="{{ old('receive_notes') }}"
-                           placeholder="Nomor surat jalan atau catatan..."
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Kendala / Catatan Masalah</label>
-                    <input type="text" name="receive_kendala" value="{{ old('receive_kendala') }}"
-                           placeholder="Isi jika ada kendala (rusak, kurang, dll)..."
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                </div>
-            </div>
-        </div>
-
-        {{-- Photos --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5"
-             x-data="{ previews: [], files: [], addFiles(evt) {
-                 const newFiles = Array.from(evt.target.files);
-                 newFiles.forEach(f => {
-                     if (this.files.length < 10) {
-                         this.files.push(f);
-                         this.previews.push(URL.createObjectURL(f));
-                     }
-                 });
-                 evt.target.value = '';
-             }, remove(i) {
-                 this.files.splice(i,1);
-                 this.previews.splice(i,1);
-             } }">
-            <div class="flex items-center justify-between mb-3">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Foto Bukti Penerimaan (Maks. 10)</p>
-                <span class="text-xs text-gray-400" x-text="files.length + '/10 foto'"></span>
-            </div>
-            <div class="grid grid-cols-4 gap-3 mb-3" x-show="previews.length > 0">
-                <template x-for="(src, i) in previews" :key="i">
-                    <div class="relative group">
-                        <img :src="src" class="w-full h-24 object-cover rounded-lg border border-gray-200">
-                        <button type="button" @click="remove(i)"
-                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+            
+            <div class="p-8 sm:p-10 bg-slate-900 border-t border-white/10">
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <div class="flex-1 space-y-4 w-full">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unggah Foto Bukti / Surat Jalan</label>
+                            <input type="file" name="received_proof" class="block w-full text-[11px] text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-white/10 file:text-white hover:file:bg-white/20 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Catatan Penerimaan</label>
+                            <textarea name="receive_notes" rows="2" placeholder="Tulis catatan jika ada barang rusak atau kurang..."
+                                      class="w-full px-5 py-3 bg-white/5 border-2 border-white/10 rounded-2xl text-xs font-medium text-white placeholder:text-slate-500 focus:bg-white/10 focus:border-indigo-400 transition-all outline-none resize-none"></textarea>
+                        </div>
                     </div>
-                </template>
+                    <div class="shrink-0 w-full md:w-auto">
+                        <button type="submit" class="w-full px-10 py-5 bg-indigo-600 text-white hover:bg-indigo-500 rounded-3xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-2xl shadow-indigo-600/30 active:scale-[0.98]">
+                            Konfirmasi & Simpan Stok
+                        </button>
+                    </div>
+                </div>
             </div>
-            <label x-show="files.length < 10"
-                   class="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-4 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all text-sm text-gray-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                Tambah Foto
-                <input type="file" name="photos[]" accept="image/*" multiple class="hidden" @change="addFiles($event)">
-            </label>
-            <p class="text-xs text-gray-400 mt-1.5">JPG, PNG, WEBP — maks. 5 MB per foto</p>
         </div>
 
-        <div class="flex gap-3">
-            <button type="submit"
-                    onclick="return confirm('Konfirmasi penerimaan barang dan buat BAST? Tindakan ini tidak dapat diubah.')"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                Konfirmasi & Buat BAST
-            </button>
-            <a href="{{ route($info['transferRoute'] . 'index') }}" class="border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50">Batal</a>
-        </div>
     </form>
 </div>
 @endsection
