@@ -85,11 +85,11 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                        <th class="pb-4 pl-2">Pilih Produk</th>
-                                        <th class="pb-4 pl-2" style="width: 140px;">Satuan</th>
-                                        <th class="pb-4 text-center" style="width: 100px;">Qty</th>
-                                        <th class="pb-4 text-right" style="width: 160px;">Harga Satuan</th>
-                                        <th class="pb-4 text-right" style="width: 140px;">Subtotal</th>
+                                        <th class="pb-4 pl-2" style="min-width: 280px;">Pilih Produk</th>
+                                        <th class="pb-4 pl-2" style="width: 110px;">Satuan</th>
+                                        <th class="pb-4 text-center" style="width: 80px;">Qty</th>
+                                        <th class="pb-4 text-right" style="width: 150px;">Harga Satuan</th>
+                                        <th class="pb-4 text-right" style="width: 130px;">Subtotal</th>
                                         <th class="pb-4 text-center" style="width: 50px;"></th>
                                     </tr>
                                 </thead>
