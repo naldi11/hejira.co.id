@@ -47,6 +47,7 @@
                                         x-init="tsPo = new TomSelect($el, { 
                                             create: false, 
                                             placeholder: 'Input Manual (Tanpa PO)',
+                                            dropdownParent: 'body',
                                             onChange: function(value) {
                                                 po_id = value;
                                                 loadPoDetails();
@@ -67,6 +68,7 @@
                                         x-init="tsSupplier = new TomSelect($el, {
                                             create: false,
                                             placeholder: 'Pilih Supplier...',
+                                            dropdownParent: 'body',
                                             onChange: function(value) {
                                                 supplier_id = value;
                                             }
@@ -112,6 +114,7 @@
                                                                 item.tsProduct = new TomSelect($el, {
                                                                     create: false,
                                                                     placeholder: 'Pilih Produk...',
+                                                                    dropdownParent: 'body',
                                                                     onChange: function(value) {
                                                                         item.product_id = value;
                                                                         onProductChange(item);

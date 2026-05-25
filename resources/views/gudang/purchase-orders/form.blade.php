@@ -59,7 +59,7 @@
                             <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier / Vendor <span class="text-rose-500">*</span></label>
                             <div wire:ignore>
                                 <select name="supplier_id" required 
-                                        x-init="new TomSelect($el, { create: false, placeholder: 'Pilih Supplier...' })"
+                                        x-init="new TomSelect($el, { create: false, placeholder: 'Pilih Supplier...', dropdownParent: 'body' })"
                                         class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
                                     <option value="">Pilih Supplier...</option>
                                     @foreach($suppliers as $s)
@@ -107,6 +107,7 @@
                                                                 item.tsProduct = new TomSelect($el, {
                                                                     create: false,
                                                                     placeholder: 'Pilih Produk...',
+                                                                    dropdownParent: 'body',
                                                                     onChange: function(value) {
                                                                         item.product_id = value;
                                                                         onProductChange(item);
@@ -131,6 +132,7 @@
                                                                 item.tsUnit = new TomSelect($el, {
                                                                     create: false,
                                                                     placeholder: 'Pilih Satuan...',
+                                                                    dropdownParent: 'body',
                                                                     onChange: function(value) {
                                                                         item.unit_id = value;
                                                                     }
