@@ -178,7 +178,7 @@ class ReportController extends Controller
             $isPusat = optional($user->branch)->type === 'pusat';
 
             $transactions = DB::table('hendhys_transactions as t')
-                ->leftJoin('users as u', 'u.id', '=', 't.created_by')
+                ->leftJoin('master_users as u', 'u.id', '=', 't.created_by')
                 ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
                 ->where('t.status', '!=', 'cancelled')
                 ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))

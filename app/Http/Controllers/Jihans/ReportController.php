@@ -171,7 +171,7 @@ class ReportController extends Controller
             $title = "LHI DETAIL";
 
             $transactions = DB::table('jihans_transactions as t')
-                ->leftJoin('users as u', 'u.id', '=', 't.created_by')
+                ->leftJoin('master_users as u', 'u.id', '=', 't.created_by')
                 ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
                 ->where('t.status', '!=', 'cancelled')
                 ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
