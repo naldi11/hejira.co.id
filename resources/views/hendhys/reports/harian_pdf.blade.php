@@ -10,9 +10,9 @@
         }
         body { 
             font-family: 'Courier', 'Courier New', monospace; 
-            font-size: 10px; 
+            font-size: 12px; 
             color: #000; 
-            line-height: 1.25; 
+            line-height: 1.3; 
             margin: 0; 
             padding: 0; 
         }
@@ -29,64 +29,64 @@
             padding: 0; 
         }
         .logo-cell { 
-            width: 45px; 
+            width: 50px; 
             vertical-align: middle; 
         }
         .logo { 
-            width: 38px; 
-            height: 38px; 
+            width: 42px; 
+            height: 42px; 
             display: block; 
         }
         
         .brand-cell { 
-            padding-left: 8px; 
+            padding-left: 10px; 
             text-align: left; 
             vertical-align: middle; 
         }
         .report-title { 
-            font-size: 14px; 
+            font-size: 16px; 
             font-weight: bold; 
             margin: 0; 
         }
         .brand-name { 
-            font-size: 12px; 
+            font-size: 14px; 
             font-weight: bold; 
             margin: 0; 
         }
         .brand-sub { 
-            font-size: 9px; 
+            font-size: 11px; 
             font-weight: bold; 
             margin: 0; 
         }
         .brand-addr { 
-            font-size: 9px; 
+            font-size: 11px; 
             margin: 0; 
         }
         
         .period-cell { 
             text-align: right; 
             vertical-align: top; 
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
         }
  
         /* Pembungkus transaksi agar tidak terpotong halaman di tengah jalan */
         .transaction-block {
             page-break-inside: avoid;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         
         /* Tabel Data Transaksi */
         .tx-header-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            font-size: 12px;
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
         .tx-header-table td {
-            padding: 3px 2px;
+            padding: 4px 2px;
         }
         
         /* Tabel Detail Item */
@@ -94,18 +94,18 @@
             width: 95%;
             border-collapse: collapse;
             margin-left: auto;
-            font-size: 10px;
-            margin-bottom: 2px;
+            font-size: 12px;
+            margin-bottom: 4px;
         }
         .item-table th {
             font-style: italic;
             font-weight: bold;
             text-align: left;
             border-bottom: 1px solid #000;
-            padding: 3px 2px;
+            padding: 4px 2px;
         }
         .item-table td {
-            padding: 3px 2px;
+            padding: 4px 2px;
         }
         
         /* Tabel Ringkasan Bawah */
@@ -113,13 +113,13 @@
             width: 95%;
             border-collapse: collapse;
             margin-left: auto;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
         }
         .summary-table td {
-            padding: 3px 2px;
+            padding: 4px 2px;
         }
  
         .text-right { text-align: right !important; }
