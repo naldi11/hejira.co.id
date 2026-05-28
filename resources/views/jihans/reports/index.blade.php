@@ -15,10 +15,10 @@
                 'color' => 'bg-blue-500'
             ],
             [
-                'title' => 'Laporan Harian',
-                'desc' => 'Rekapitulasi penjualan harian dari semua kasir.',
+                'title' => 'Laporan Perpelanggan Detail',
+                'desc' => 'Detail rincian transaksi penjualan per pelanggan.',
                 'route' => 'jihans.reports.harian',
-                'icon' => 'calendar_today',
+                'icon' => 'assignment_ind',
                 'color' => 'bg-orange-500'
             ],
             [

@@ -58,19 +58,32 @@ class ReportController extends Controller
 
     public function harian(Request $request)
     {
-        // Harian: semua kasir, group by date
-        $rows = $this->buildSummaryQuery($request)
-            ->selectRaw("
-                t.date,
-                COUNT(*)                                                                   as jumlah_transaksi,
-                SUM(t.grand_total)                                                         as total_transaksi,
-                SUM(CASE WHEN t.status = 'pending'     THEN t.grand_total ELSE 0 END)     as kredit,
-                COALESCE(SUM(pay_agg.tunai), 0)                                            as tunai,
-                COALESCE(SUM(pay_agg.kartu_debit), 0)                                     as kartu_debit,
-                COALESCE(SUM(pay_agg.kartu_kredit), 0)                                    as kartu_kredit
-            ")
-            ->groupBy('t.date')
+        // Laporan Perpelanggan Detail: list transaksi dengan detail pelanggan
+        $rows = DB::table('jihans_transactions as t')
+            ->leftJoin('master_users as u', 'u.id', '=', 't.created_by')
+            ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
+            ->where('t.status', '!=', 'cancelled')
+            ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+            ->when($request->search, fn($q) => $q->where(function($qi) use ($request) {
+                $qi->where('c.name', 'like', '%'.$request->search.'%')
+                   ->orWhere('t.customer_name', 'like', '%'.$request->search.'%')
+                   ->orWhere('t.transaction_number', 'like', '%'.$request->search.'%');
+            }))
+            ->select([
+                't.id',
+                't.transaction_number',
+                't.date',
+                'u.name as operator',
+                DB::raw("COALESCE(c.code, 'UMUM') as customer_code"),
+                DB::raw("COALESCE(c.name, t.customer_name, 'Pelanggan Umum') as customer_name"),
+                DB::raw("COALESCE(c.address, 'Umum') as customer_address"),
+                't.grand_total',
+                't.discount_amount as discount_total',
+                't.tax_amount as tax_total'
+            ])
             ->orderBy('t.date', 'desc')
+            ->orderBy('t.id', 'desc')
             ->paginate(30)
             ->withQueryString();
 
@@ -176,6 +189,11 @@ class ReportController extends Controller
                 ->where('t.status', '!=', 'cancelled')
                 ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
                 ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+                ->when($request->search, fn($q) => $q->where(function($qi) use ($request) {
+                    $qi->where('c.name', 'like', '%'.$request->search.'%')
+                       ->orWhere('t.customer_name', 'like', '%'.$request->search.'%')
+                       ->orWhere('t.transaction_number', 'like', '%'.$request->search.'%');
+                }))
                 ->select([
                     't.id',
                     't.transaction_number',
