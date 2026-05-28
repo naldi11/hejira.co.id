@@ -33,7 +33,7 @@
         }
         .page-footer {
             position: fixed;
-            bottom: -0.6cm;
+            bottom: -0.3cm;
             left: 0;
             right: 0;
             height: 0.4cm;
@@ -117,7 +117,7 @@
                 $pdf->page_text($x, 15, $text, $font, $size, array(0,0,0));
             @else
                 // Letakkan di kanan bawah (footer)
-                $pdf->page_text($x, $pdf->get_height() - 20, $text, $font, $size, array(0,0,0));
+                $pdf->page_text($x, $pdf->get_height() - 23, $text, $font, $size, array(0,0,0));
             @endif
         }
     </script>
