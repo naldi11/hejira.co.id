@@ -7,6 +7,7 @@ use App\Services\NumberGeneratorService;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithStartRow;
 
 class CustomersImport implements ToCollection, WithHeadingRow, WithStartRow
 {
