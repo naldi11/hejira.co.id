@@ -5,7 +5,7 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: A5 {{ $orientation }};
+            size: {{ $orientation === 'landscape' ? '11in 9.5in' : '9.5in 11in' }};
             margin-top: {{ $isDetailed ? '0.3cm' : '1.2cm' }};
             margin-bottom: {{ $isDetailed ? '1.0cm' : '0.6cm' }};
             margin-left: 0.6cm;

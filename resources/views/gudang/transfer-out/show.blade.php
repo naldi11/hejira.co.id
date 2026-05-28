@@ -122,14 +122,28 @@
 
 <style>
 @media print {
+    @page { size: 9.5in 11in; margin: 10mm; }
+    body {
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+        background: #fff !important;
+    }
     body * { visibility: hidden; }
-    .max-w-5xl, .max-w-5xl * { visibility: visible; }
+    .max-w-5xl, .max-w-5xl * { 
+        visibility: visible; 
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+    }
     .max-w-5xl { position: absolute; left: 0; top: 0; width: 100%; }
     button, a { display: none !important; }
     .shadow-sm { box-shadow: none !important; }
-    .border { border-color: #ddd !important; }
+    .border { border-color: #000 !important; }
     .print\:block { display: block !important; }
     .print\:mt-12 { margin-top: 3rem !important; }
+    table, th, td {
+        border-color: #000 !important;
+        background: none !important;
+    }
 }
 </style>
 @endsection

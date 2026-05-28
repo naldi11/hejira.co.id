@@ -5,12 +5,51 @@
 @section('content')
 <style>
     @media print {
-        body { visibility: hidden; }
-        .print-area, .print-area * { visibility: visible; }
-        .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; }
+        @page {
+            size: 9.5in 5.5in;
+            margin: 4mm 6mm;
+        }
+        body { 
+            visibility: hidden; 
+            background: #fff !important;
+            font-family: 'Courier New', Courier, monospace !important;
+            color: #000 !important;
+            font-size: 11px !important;
+        }
+        .print-area, .print-area * { 
+            visibility: visible; 
+            font-family: 'Courier New', Courier, monospace !important;
+            color: #000 !important;
+        }
+        .print-area { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            margin: 0; 
+            padding: 10px; 
+            box-shadow: none !important;
+            border: none !important;
+            background: #fff !important;
+        }
         .no-print { display: none !important; }
         /* Hide sidebar/header if any are not caught by body visibility hidden */
         aside, header, nav { display: none !important; }
+        
+        /* Clean table for dot matrix */
+        table th {
+            color: #000 !important;
+            border-bottom: 1px solid #000 !important;
+            background: none !important;
+        }
+        table td {
+            border-bottom: 1px dashed #000 !important;
+            color: #000 !important;
+        }
+        /* Hide logo strip on print */
+        .text-primary, .text-gray-800, .text-gray-600 {
+            color: #000 !important;
+        }
     }
 </style>
 

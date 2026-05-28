@@ -5,13 +5,13 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: A4 landscape;
+            size: 11in 9.5in;
             margin-top: 1.4cm;
             margin-bottom: 0.8cm;
             margin-left: 0.8cm;
             margin-right: 0.8cm;
         }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9px; color: #000; line-height: 1.4; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #000; line-height: 1.4; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {

@@ -37,7 +37,8 @@
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(Find \"C:\\\\laragon\\\\www\\\\project-ketua\\\\resources\\\\views\\\\master\" -name \"*.blade.php\" -type f)",
       "Bash(python -c ' *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(dir \"C:\\\\laragon\\\\www\\\\project-ketua\\\\public\\\\Daftar Pelanggan.xls\")"
     ]
   }
 }

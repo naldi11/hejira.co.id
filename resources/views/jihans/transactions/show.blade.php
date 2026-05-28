@@ -7,7 +7,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: A5 landscape;
+            size: 9.5in 5.5in;
             margin: 4mm 6mm;
         }
 

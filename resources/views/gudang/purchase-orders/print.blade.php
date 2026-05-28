@@ -6,29 +6,29 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        @page { size: A4 portrait; margin: 15mm 15mm; }
+        @page { size: 9.5in 11in; margin: 10mm; }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 11px;
-            color: #1a1a1a;
-            background: #f5f5f5;
+            color: #000;
+            background: #fff;
         }
 
         .page {
-            max-width: 210mm;
-            min-height: 297mm;
-            margin: 20px auto;
+            max-width: 9.5in;
+            min-height: 11in;
+            margin: 10px auto;
             background: #fff;
-            padding: 20mm 18mm;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 10mm;
+            box-shadow: none;
         }
 
         .doc-header {
             display: flex;
             align-items: flex-start;
             gap: 16px;
-            border-bottom: 3px solid #1a202c;
+            border-bottom: 2px solid #000;
             padding-bottom: 14px;
             margin-bottom: 16px;
         }
@@ -42,7 +42,7 @@
         .header-text h1 {
             font-size: 9px;
             font-weight: 700;
-            color: #718096;
+            color: #000;
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 3px;
@@ -51,12 +51,12 @@
         .header-text h2 {
             font-size: 20px;
             font-weight: 900;
-            color: #1a202c;
+            color: #000;
             line-height: 1.1;
             margin-bottom: 2px;
         }
 
-        .header-text p { font-size: 10px; color: #718096; }
+        .header-text p { font-size: 10px; color: #000; }
 
         .po-badge {
             margin-left: auto;
@@ -66,7 +66,7 @@
         .po-number {
             font-size: 16px;
             font-weight: 900;
-            color: #1a202c;
+            color: #000;
             letter-spacing: 1px;
         }
 
@@ -74,37 +74,37 @@
             display: inline-block;
             margin-top: 4px;
             padding: 2px 10px;
-            border-radius: 20px;
+            border: 1px solid #000;
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
+            color: #000;
         }
 
-        .status-draft    { background: #e2e8f0; color: #4a5568; }
-        .status-sent     { background: #dbeafe; color: #1e40af; }
-        .status-partial  { background: #fef3c7; color: #92400e; }
-        .status-received { background: #d1fae5; color: #065f46; }
-        .status-cancelled{ background: #fee2e2; color: #7f1d1d; }
+        .status-draft    { background: #fff; color: #000; }
+        .status-sent     { background: #fff; color: #000; }
+        .status-partial  { background: #fff; color: #000; }
+        .status-received { background: #fff; color: #000; }
+        .status-cancelled{ background: #fff; color: #000; }
 
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 6px 20px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
+            background: #fff;
+            border: 1px solid #000;
             padding: 12px 14px;
             margin-bottom: 16px;
         }
 
         .info-row { display: flex; gap: 6px; align-items: baseline; }
-        .info-label { font-size: 9px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; min-width: 80px; flex-shrink: 0; }
-        .info-value { font-size: 11px; font-weight: 600; color: #2d3748; }
+        .info-label { font-size: 9px; color: #000; text-transform: uppercase; letter-spacing: 0.5px; min-width: 80px; flex-shrink: 0; }
+        .info-value { font-size: 11px; font-weight: 600; color: #000; }
 
         .section-title {
             font-size: 9px;
             font-weight: 700;
-            color: #4a5568;
+            color: #000;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 6px;
@@ -112,22 +112,22 @@
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
 
-        thead tr { background: #1a202c; }
+        thead tr { background: #fff; border-bottom: 2px solid #000; }
         thead th {
             padding: 8px 8px;
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #fff;
+            color: #000;
             text-align: left;
         }
         thead th.text-center { text-align: center; }
         thead th.text-right  { text-align: right; }
 
-        tbody tr { border-bottom: 1px solid #e2e8f0; }
-        tbody tr:nth-child(even) { background: #f8fafc; }
-        tbody td { padding: 8px; font-size: 10px; vertical-align: middle; }
+        tbody tr { border-bottom: 1px dashed #000; }
+        tbody tr:nth-child(even) { background: none; }
+        tbody td { padding: 8px; font-size: 10px; vertical-align: middle; color: #000; }
         tbody td.text-center { text-align: center; }
         tbody td.text-right  { text-align: right; }
 
@@ -135,47 +135,46 @@
             padding: 10px 8px;
             font-size: 12px;
             font-weight: 700;
-            color: #1a202c;
-            border-top: 2px solid #1a202c;
+            color: #000;
+            border-top: 2px solid #000;
         }
 
         .notes-box {
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
+            border: 1px dashed #000;
             padding: 10px 12px;
             margin-bottom: 16px;
-            background: #f7fafc;
+            background: #fff;
         }
 
-        .notes-box .notes-title { font-size: 9px; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .notes-box p { font-size: 11px; color: #4a5568; }
+        .notes-box .notes-title { font-size: 9px; font-weight: 700; color: #000; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .notes-box p { font-size: 11px; color: #000; }
 
         .signature-section {
             display: flex;
             justify-content: flex-end;
             margin-top: 16px;
-            border-top: 1px dashed #cbd5e0;
+            border-top: 1px dashed #000;
             padding-top: 14px;
         }
 
         .sign-box { text-align: center; min-width: 180px; }
-        .sign-label { font-size: 10px; color: #4a5568; font-weight: 600; margin-bottom: 2px; }
-        .sign-sublabel { font-size: 9px; color: #718096; margin-bottom: 48px; }
-        .sign-line { border-top: 1px solid #1a202c; padding-top: 6px; margin: 0 20px; }
-        .sign-name { font-size: 11px; font-weight: 700; color: #1a202c; }
+        .sign-label { font-size: 10px; color: #000; font-weight: 600; margin-bottom: 2px; }
+        .sign-sublabel { font-size: 9px; color: #000; margin-bottom: 48px; }
+        .sign-line { border-top: 1px solid #000; padding-top: 6px; margin: 0 20px; }
+        .sign-name { font-size: 11px; font-weight: 700; color: #000; }
 
         .doc-footer {
             margin-top: 16px;
             font-size: 8px;
-            color: #a0aec0;
-            border-top: 1px solid #e2e8f0;
+            color: #000;
+            border-top: 1px dashed #000;
             padding-top: 6px;
             display: flex;
             justify-content: space-between;
         }
 
         .action-bar {
-            max-width: 210mm;
+            max-width: 9.5in;
             margin: 0 auto 12px;
             display: flex;
             gap: 10px;
@@ -183,7 +182,7 @@
         }
         .btn { padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-back { background: #f3f4f6; color: #374151; }
-        .btn-print { background: #1a202c; color: white; }
+        .btn-print { background: #000; color: white; }
 
         @media print {
             body { background: white; }

@@ -9,36 +9,36 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: A5 portrait;   /* 148mm × 210mm */
-            margin: 8mm 10mm;
+            size: 9.5in 5.5in;
+            margin: 4mm 6mm;
         }
 
         body {
-            font-family: 'Inter', 'Arial', sans-serif;
-            background: #f3f4f6;
-            color: #1f2937;
+            font-family: 'Courier New', Courier, monospace;
+            background: #fff;
+            color: #000;
             font-size: 11px;
         }
 
         /* ===== Wrapper ===== */
         .page-wrapper {
-            max-width: 148mm;
-            margin: 20px auto;
+            max-width: 9.5in;
+            margin: 10px auto;
             background: #fff;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: none;
             padding: 0;
-            min-height: 210mm;
+            min-height: 5.5in;
         }
 
         /* ===== Header Strip ===== */
         .header-strip {
-            background: #d97706;
-            height: 4px;
+            background: #000;
+            height: 2px;
         }
 
         /* ===== Invoice Header ===== */
         .invoice-header {
-            padding: 15px 20px 10px;
+            padding: 10px 20px 5px;
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
@@ -51,31 +51,31 @@
         }
 
         .brand-logo {
-            width: 72px;
-            height: 72px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
-            border-radius: 8px;
+            border-radius: 4px;
         }
 
         .brand-info .invoice-label {
-            font-size: 14px;
-            font-weight: 900;
-            color: #d97706;
+            font-size: 13px;
+            font-weight: bold;
+            color: #000;
             letter-spacing: 2px;
             text-transform: uppercase;
             margin-bottom: 2px;
         }
 
         .brand-info h1 {
-            font-size: 16px;
-            font-weight: 800;
-            color: #1f2937;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
             line-height: 1.1;
         }
 
         .brand-info p {
             font-size: 10px;
-            color: #4b5563;
+            color: #000;
             margin-top: 1px;
             line-height: 1.3;
         }
@@ -83,18 +83,18 @@
         .invoice-meta-bar {
             display: flex;
             justify-content: space-between;
-            padding: 8px 20px;
-            background: #fffbeb;
-            border-top: 1px solid #fef3c7;
-            border-bottom: 1px solid #fef3c7;
+            padding: 6px 20px;
+            background: #fff;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
             font-size: 10px;
-            font-weight: 700;
-            color: #92400e;
+            font-weight: bold;
+            color: #000;
         }
 
         /* ===== Customer Info ===== */
         .meta-section {
-            padding: 10px 20px;
+            padding: 8px 20px;
             display: flex;
             justify-content: space-between;
         }
@@ -105,22 +105,22 @@
 
         .meta-item span {
             display: block;
-            color: #6b7280;
-            font-weight: 700;
+            color: #000;
+            font-weight: bold;
             text-transform: uppercase;
             font-size: 8px;
             margin-bottom: 2px;
         }
 
         .meta-item b {
-            color: #1f2937;
+            color: #000;
             font-size: 11px;
         }
 
         /* ===== Items Table ===== */
         .table-section {
-            padding: 10px 20px;
-            min-height: 80mm;
+            padding: 5px 20px;
+            min-height: 50mm;
         }
 
         table {
@@ -129,15 +129,15 @@
         }
 
         thead tr {
-            border-bottom: 2px solid #d97706;
+            border-bottom: 1px solid #000;
         }
 
         thead th {
-            padding: 6px 4px;
+            padding: 4px 2px;
             font-size: 9px;
-            font-weight: 800;
+            font-weight: bold;
             text-transform: uppercase;
-            color: #92400e;
+            color: #000;
             text-align: left;
         }
 
@@ -145,25 +145,26 @@
         thead th.text-center { text-align: center; }
 
         tbody td {
-            padding: 6px 4px;
+            padding: 4px 2px;
             font-size: 10px;
-            border-bottom: 1px solid #fef3c7;
+            border-bottom: 1px dashed #000;
             vertical-align: middle;
+            color: #000;
         }
 
-        td.no { width: 25px; text-align: center; color: #9ca3af; }
-        td.qty { width: 40px; text-align: center; font-weight: 700; }
-        td.unit { width: 40px; text-align: center; color: #6b7280; }
+        td.no { width: 25px; text-align: center; color: #000; }
+        td.qty { width: 40px; text-align: center; font-weight: bold; }
+        td.unit { width: 40px; text-align: center; color: #000; }
         td.price { width: 80px; text-align: right; }
-        td.disc  { width: 70px; text-align: right; color: #dc2626; }
-        td.total { width: 90px; text-align: right; font-weight: 700; color: #1f2937; }
-        td.product-name { font-weight: 600; color: #111827; }
+        td.disc  { width: 70px; text-align: right; color: #000; }
+        td.total { width: 90px; text-align: right; font-weight: bold; color: #000; }
+        td.product-name { font-weight: bold; color: #000; }
 
         /* ===== Totals ===== */
         .totals-section {
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px 20px;
+            padding: 8px 20px;
             align-items: flex-end;
         }
 
@@ -173,14 +174,13 @@
 
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border: 2px solid #d97706;
-            color: #d97706;
-            font-weight: 900;
+            padding: 2px 10px;
+            border: 1px solid #000;
+            color: #000;
+            font-weight: bold;
             text-transform: uppercase;
-            font-size: 12px;
-            margin-bottom: 8px;
-            transform: rotate(-3deg);
+            font-size: 11px;
+            margin-bottom: 6px;
         }
 
         .totals-box {
@@ -191,36 +191,36 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px 0;
+            padding: 3px 0;
             font-size: 10px;
         }
 
         .totals-row.grand {
-            border-top: 2px solid #d97706;
-            margin-top: 4px;
-            padding-top: 8px;
-            font-size: 13px;
-            font-weight: 900;
+            border-top: 1px solid #000;
+            margin-top: 3px;
+            padding-top: 6px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .totals-row .label { color: #4b5563; font-weight: 600; }
-        .totals-row.grand .label { color: #1f2937; }
+        .totals-row .label { color: #000; font-weight: bold; }
+        .totals-row.grand .label { color: #000; }
 
-        .totals-row .value { font-weight: 700; color: #1f2937; }
-        .totals-row.grand .value { color: #d97706; font-size: 14px; }
+        .totals-row .value { font-weight: bold; color: #000; }
+        .totals-row.grand .value { color: #000; font-size: 13px; }
 
         /* ===== Footer ===== */
         .invoice-footer {
-            padding: 15px 20px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            border-top: 1px dashed #fcd34d;
+            border-top: 1px dashed #000;
         }
 
         .footer-note {
             font-size: 9px;
-            color: #6b7280;
+            color: #000;
             line-height: 1.4;
             max-width: 60%;
         }
@@ -228,18 +228,18 @@
         .signature-block {
             text-align: center;
             font-size: 10px;
-            color: #374151;
+            color: #000;
         }
 
         .signature-name {
-            font-weight: 800;
-            margin-top: 40px;
+            font-weight: bold;
+            margin-top: 35px;
             text-decoration: underline;
         }
 
         /* ===== Action Buttons ===== */
         .action-bar {
-            max-width: 148mm;
+            max-width: 9.5in;
             margin: 0 auto 16px;
             display: flex;
             gap: 10px;
@@ -262,8 +262,8 @@
 
         .btn-back { background: #f3f4f6; color: #374151; }
         .btn-back:hover { background: #e5e7eb; }
-        .btn-print { background: #d97706; color: white; }
-        .btn-print:hover { background: #b45309; }
+        .btn-print { background: #000; color: white; }
+        .btn-print:hover { background: #333; }
 
         @media print {
             body { background: white; }

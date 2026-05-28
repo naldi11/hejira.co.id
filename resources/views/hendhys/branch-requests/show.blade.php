@@ -8,17 +8,30 @@
     aside, nav, header,
     [class*="sidebar"], [class*="navbar"], [class*="topbar"],
     .no-print { display: none !important; }
-    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    body { 
+        background: white !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+    }
+    body * {
+        color: #000 !important;
+    }
     main, [class*="content"], #app {
         margin: 0 !important; padding: 0 !important;
         width: 100% !important; max-width: 100% !important;
     }
     .print-card {
         max-width: 100% !important; margin: 0 !important;
-        box-shadow: none !important; border: 1.5px solid #000 !important;
+        box-shadow: none !important; border: 1px solid #000 !important;
         border-radius: 0 !important;
+        font-family: 'Courier New', Courier, monospace !important;
     }
-    @page { margin: 10mm; size: A4 portrait; }
+    table, th, td {
+        border-color: #000 !important;
+    }
+    @page { margin: 10mm; size: 9.5in 11in; }
 }
 </style>
 @endpush

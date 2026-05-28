@@ -14,7 +14,7 @@ class InvoiceService
         $transaction->load(['details.product', 'creator', 'customer']);
         
         $pdf = Pdf::loadView('invoices.jihans', compact('transaction'))
-                  ->setPaper('a4', 'portrait');
+                  ->setPaper([0, 0, 684, 396], 'portrait');
 
         if ($stream) {
             return $pdf->stream('INV-' . $transaction->transaction_number . '.pdf');
@@ -28,7 +28,7 @@ class InvoiceService
         $transaction->load(['details.product', 'creator', 'customer', 'branch']);
         
         $pdf = Pdf::loadView('invoices.hendhys', compact('transaction'))
-                  ->setPaper('a4', 'portrait');
+                  ->setPaper([0, 0, 684, 396], 'portrait');
 
         if ($stream) {
             return $pdf->stream('INV-' . $transaction->transaction_number . '.pdf');

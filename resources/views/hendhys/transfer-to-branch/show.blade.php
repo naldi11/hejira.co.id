@@ -11,7 +11,13 @@
     .print\:hidden { display: none !important; }
 
     /* Reset body & wrapper */
-    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    body { 
+        background: white !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+    }
 
     /* Buat konten mengambil full width */
     main, [class*="content"], #app, .min-h-screen,
@@ -27,14 +33,24 @@
         max-width: 100% !important;
         margin: 0 !important;
         box-shadow: none !important;
-        border: 1.5px solid #000 !important;
+        border: 1px solid #000 !important;
         border-radius: 0 !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        color: #000 !important;
+    }
+    
+    .surat-jalan-doc * {
+        color: #000 !important;
+    }
+    
+    table, th, td {
+        border-color: #000 !important;
     }
 
     /* Tombol dan aksi */
     .no-print, button, a.back-btn { display: none !important; }
 
-    @page { margin: 10mm; size: A4 portrait; }
+    @page { margin: 10mm; size: 9.5in 11in; }
 }
 </style>
 @endpush

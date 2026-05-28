@@ -5,7 +5,7 @@
     <title>LHI Detail</title>
     <style>
         @page {
-            size: A5 landscape;
+            size: 11in 9.5in;
             margin: 0.5cm;
         }
         body { 
