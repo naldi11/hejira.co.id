@@ -3,6 +3,54 @@
 @section('page-title', 'Request Bahan Baku ke Gudang')
 
 @section('content')
+
+@if($incomingTransfers->isNotEmpty())
+<div class="mb-8 bg-orange-50 border border-orange-200 rounded-2xl overflow-hidden shadow-sm">
+    <div class="px-6 py-4 bg-orange-100 border-b border-orange-200 flex justify-between items-center">
+        <h3 class="font-bold text-orange-950 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] animate-pulse">local_shipping</span>
+            Pengiriman Masuk Belum Diterima
+        </h3>
+        <span class="bg-orange-800 text-white text-xs px-2.5 py-1 rounded-full font-bold">{{ $incomingTransfers->count() }} Pengiriman</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-orange-50/50 text-orange-900 border-b border-orange-200 text-xs uppercase font-bold">
+                <tr>
+                    <th class="px-6 py-3">No. Transfer (DO)</th>
+                    <th class="px-6 py-3">Tanggal Kirim</th>
+                    <th class="px-6 py-3">Referensi Request</th>
+                    <th class="px-6 py-3">Pengirim</th>
+                    <th class="px-6 py-3 text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-orange-100">
+                @foreach($incomingTransfers as $do)
+                <tr class="hover:bg-orange-100/30 transition-colors">
+                    <td class="px-6 py-4 font-mono font-bold text-orange-950">{{ $do->transfer_number }}</td>
+                    <td class="px-6 py-4 text-orange-900">{{ $do->date->format('d/m/Y') }}</td>
+                    <td class="px-6 py-4">
+                        @if($do->request)
+                            <span class="font-mono text-orange-850 font-semibold">{{ $do->request->request_number }}</span>
+                        @else
+                            <span class="text-orange-600 italic text-xs font-semibold">Transfer Langsung</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-orange-900">{{ $do->creator->name ?? 'Gudang' }}</td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="{{ route('jihans.transfer-requests.receive-form', $do->id) }}" class="inline-flex items-center gap-1.5 bg-orange-800 hover:bg-orange-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">check_box</span>
+                            Konfirmasi Terima
+                        </a>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
     <a href="{{ route('jihans.transfer-requests.create') }}" class="bg-orange-800 hover:bg-orange-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

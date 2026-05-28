@@ -33,7 +33,14 @@ class TransferRequestController extends Controller
 
         $requests = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.transfer-requests.index', compact('requests'));
+        // Load incoming transfers from Gudang with status 'sent'
+        $incomingTransfers = \App\Models\TransferOut::where('to_entity', 'hendhys')
+            ->where('branch_id', auth()->user()->branch_id)
+            ->where('status', 'sent')
+            ->with(['creator', 'request'])
+            ->get();
+
+        return view('hendhys.transfer-requests.index', compact('requests', 'incomingTransfers'));
     }
 
     public function create()

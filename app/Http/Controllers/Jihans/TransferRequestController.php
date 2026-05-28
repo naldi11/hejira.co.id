@@ -33,7 +33,13 @@ class TransferRequestController extends Controller
 
         $requests = $q->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        return view('jihans.transfer-requests.index', compact('requests'));
+        // Load incoming transfers from Gudang with status 'sent'
+        $incomingTransfers = \App\Models\TransferOut::where('to_entity', 'jihans')
+            ->where('status', 'sent')
+            ->with(['creator', 'request'])
+            ->get();
+
+        return view('jihans.transfer-requests.index', compact('requests', 'incomingTransfers'));
     }
 
     public function create()
