@@ -163,8 +163,8 @@
 
     @if($isDetailed)
         {{-- LHI DETAIL Layout --}}
-        @foreach($rows as $tx)
-        <div style="margin-bottom: 12px; page-break-inside: avoid;">
+        @foreach($rows as $index => $tx)
+        <div style="margin-bottom: 12px; {{ $index > 0 ? 'page-break-inside: avoid;' : '' }}">
             <!-- Transaksi Header Table -->
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 8px;">
                 <thead>
