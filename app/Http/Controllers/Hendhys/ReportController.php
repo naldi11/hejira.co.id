@@ -307,6 +307,7 @@ class ReportController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('hendhys.reports.pdf', compact('rows', 'type', 'title', 'request', 'branch', 'isDetailed'))
                 ->setPaper('a4', 'landscape');
+        $pdf->getDomPDF()->set_option("enable_php", true);
 
         return $pdf->stream($title . '.pdf');
     }

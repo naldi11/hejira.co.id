@@ -8,15 +8,15 @@
 
         @page {
             size: A5 landscape;   /* Setengah A4 landscape */
-            margin: 5mm 8mm;
+            margin: 4mm 6mm;
         }
 
         body {
             font-family: 'Courier New', Courier, monospace;
             background: #fff;
             color: #000;
-            font-size: 11.5px;
-            line-height: 1.4;
+            font-size: 13px;
+            line-height: 1.35;
         }
 
         /* ===== Wrapper ===== */
@@ -30,7 +30,7 @@
         /* ===== Header Grid ===== */
         .header-section {
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: table;
         }
         .header-left {
@@ -48,70 +48,70 @@
         .brand-logo-container {
             display: inline-block;
             vertical-align: top;
-            width: 50px;
+            width: 55px;
             margin-right: 8px;
         }
         .brand-logo {
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
         }
         .brand-text {
             display: inline-block;
             vertical-align: top;
-            width: calc(100% - 60px);
+            width: calc(100% - 65px);
         }
         .invoice-title {
-            font-size: 15px;
+            font-size: 17px;
             font-weight: bold;
             margin-bottom: 2px;
             letter-spacing: 1px;
         }
         .brand-name {
-            font-size: 12px;
+            font-size: 13.5px;
             font-weight: bold;
         }
         .brand-sub {
-            font-size: 9.5px;
+            font-size: 10.5px;
             font-weight: bold;
         }
         .brand-detail {
-            font-size: 9.5px;
+            font-size: 10.5px;
         }
 
         /* ===== Metadata Table ===== */
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10.5px;
+            font-size: 12px;
         }
         .meta-table td {
-            padding: 2.5px 2px;
+            padding: 2px 2px;
             vertical-align: top;
         }
 
         /* ===== Items Table ===== */
         .table-section {
             width: 100%;
-            margin-top: 8px;
-            margin-bottom: 8px;
+            margin-top: 6px;
+            margin-bottom: 6px;
         }
         table.items-table {
             width: 100%;
             border-collapse: collapse;
         }
         table.items-table th {
-            padding: 6px 3px;
-            font-size: 11px;
+            padding: 5px 3px;
+            font-size: 12.5px;
             font-weight: bold;
             border-top: 1px solid #000;
             border-bottom: 3px double #000;
             text-align: left;
         }
         table.items-table td {
-            padding: 6px 3px;
+            padding: 5px 3px;
             border: none;
-            font-size: 11px;
+            font-size: 12.5px;
         }
         table.items-table th.text-center, table.items-table td.text-center { text-align: center; }
         table.items-table th.text-right, table.items-table td.text-right { text-align: right; }
@@ -120,8 +120,8 @@
         .bottom-section {
             width: 100%;
             display: table;
-            margin-top: 12px;
-            font-size: 10.5px;
+            margin-top: 10px;
+            font-size: 12px;
         }
         .bottom-left {
             display: table-cell;
@@ -146,13 +146,13 @@
             border-collapse: collapse;
         }
         .totals-table td {
-            padding: 3px 0;
+            padding: 2.5px 0;
         }
 
         /* ===== Signature Section ===== */
         .signature-table {
             width: 100%;
-            margin-top: 12px;
+            margin-top: 10px;
             margin-bottom: 5px;
             text-align: center;
         }
@@ -191,8 +191,8 @@
 
         @media print {
             .action-bar { display: none !important; }
-            body { background: white; }
-            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; width: 100%; }
+            body { background: white; width: 100%; height: 100%; }
+            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; width: 100%; height: 100%; }
         }
     </style>
 </head>
@@ -363,6 +363,12 @@
                     </td>
                 </tr>
             </table>
+
+            <div style="margin-top: 8px; text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.35;">
+                BANK BRI<br>
+                1092-0100-0385-583<br>
+                A/N ANNY RITONGA
+            </div>
         </div>
     </div>
 

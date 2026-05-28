@@ -102,15 +102,33 @@
     </style>
 </head>
 <body>
+    <script type="text/php">
+        if (isset($pdf)) {
+            $font = $fontMetrics->getFont("Helvetica", "normal");
+            $size = 7.5;
+            $text = "{PAGE_NUM}/{PAGE_COUNT}";
+            
+            // Hitung lebar teks agar rata kanan dengan sempurna
+            $width = $fontMetrics->getTextWidth($text, $font, $size);
+            $x = $pdf->get_width() - $width - 17; // 17pt setara 0.6cm margin
+            
+            @if(!$isDetailed)
+                // Letakkan di kanan atas (header)
+                $pdf->page_text($x, 15, $text, $font, $size, array(0,0,0));
+            @else
+                // Letakkan di kanan bawah (footer)
+                $pdf->page_text($x, $pdf->get_height() - 20, $text, $font, $size, array(0,0,0));
+            @endif
+        }
+    </script>
+
     @if(!$isDetailed)
         <div class="page-header">
             <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
-            <div class="page-header-right"><span class="page-number"></span>/<span class="page-count"></span></div>
         </div>
     @else
         <div class="page-footer">
             <div class="page-footer-left">{{ now()->translatedFormat('d/m/Y H:i') }} &nbsp; &nbsp; {{ strtoupper(auth()->user()->name ?? '-') }}</div>
-            <div class="page-footer-right"><span class="page-number"></span>/<span class="page-count"></span></div>
         </div>
     @endif
 
@@ -122,9 +140,9 @@
             <td class="brand-cell">
                 <div class="report-title">
                     @if($type === 'harian') LHI DETAIL
-                    @elif($type === 'pelanggan') LAPORAN JUAL PER PELANGGAN
-                    @elif($type === 'laci' || $type === 'bulanan') LAPORAN PENJUALAN HARIAN
-                    @elif($type === 'mingguan') LAPORAN PENJUALAN MINGGUAN
+                    @elseif($type === 'pelanggan') LAPORAN JUAL PER PELANGGAN
+                    @elseif($type === 'laci' || $type === 'bulanan') LAPORAN PENJUALAN HARIAN
+                    @elseif($type === 'mingguan') LAPORAN PENJUALAN MINGGUAN
                     @else {{ strtoupper($title) }}
                     @endif
                 </div>

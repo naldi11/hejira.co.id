@@ -280,6 +280,7 @@ class ReportController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jihans.reports.pdf', compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
                 ->setPaper('a5', $orientation);
+        $pdf->getDomPDF()->set_option("enable_php", true);
 
         return $pdf->stream($title . '.pdf');
     }

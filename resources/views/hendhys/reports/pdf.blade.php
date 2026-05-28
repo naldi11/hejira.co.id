@@ -84,9 +84,21 @@
     </style>
 </head>
 <body>
+    <script type="text/php">
+        if (isset($pdf)) {
+            $font = $fontMetrics->getFont("Helvetica", "normal");
+            $size = 8;
+            $text = "{PAGE_NUM}/{PAGE_COUNT}";
+            
+            // Hitung lebar teks agar rata kanan dengan sempurna
+            $width = $fontMetrics->getTextWidth($text, $font, $size);
+            $x = $pdf->get_width() - $width - 23; // 23pt setara 0.8cm margin
+            
+            $pdf->page_text($x, 20, $text, $font, $size, array(0,0,0));
+        }
+    </script>
     <div class="page-header">
         <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
-        <div class="page-header-right"><span class="page-number"></span>/<span class="page-count"></span></div>
     </div>
 
     <table class="header-table">
