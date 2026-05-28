@@ -237,6 +237,7 @@
                 paymentMethodId: '',
                 selectedMethod: null,
                 amountPaid: 0,
+                bankName: '',
                 refNumber: '',
                 isLoading: false,
 
