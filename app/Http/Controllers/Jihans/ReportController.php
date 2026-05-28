@@ -296,10 +296,11 @@ class ReportController extends Controller
 
         // Laporan harian kini menggunakan landscape A5 sesuai template baru
         $orientation = ($type === 'pelanggan') ? 'portrait' : 'landscape';
+        $paperSize = ($type === 'pelanggan') ? 'legal' : [0, 0, 792, 684];
 
         $viewName = ($type === 'harian') ? 'jihans.reports.harian_pdf' : 'jihans.reports.pdf';
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
-                ->setPaper('a5', $orientation);
+                ->setPaper($paperSize, $orientation);
         $pdf->getDomPDF()->set_option("enable_php", true);
 
         return $pdf->stream($title . '.pdf');

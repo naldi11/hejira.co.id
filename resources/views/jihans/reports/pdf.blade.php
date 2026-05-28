@@ -5,7 +5,7 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: {{ $orientation === 'landscape' ? '11in 9.5in' : '9.5in 11in' }};
+            size: {{ $type === 'pelanggan' ? 'legal portrait' : '11in 9.5in' }};
             margin-top: {{ $isDetailed ? '0.3cm' : '1.2cm' }};
             margin-bottom: {{ $isDetailed ? '1.0cm' : '0.6cm' }};
             margin-left: 0.6cm;
@@ -58,19 +58,19 @@
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
         .header-table td { vertical-align: top; padding: 0; }
         .logo-cell { width: 34px; padding-right: 0; }
-        .logo { width: 30px; height: 30px; object-fit: contain; }
+        .logo { width: 28px; height: 28px; display: block; object-fit: contain; }
         
-        .brand-cell { padding-left: 2px; }
+        .brand-cell { padding-left: 6px; text-align: left; }
         .report-title { font-size: 10px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-name { font-size: 9px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-sub { font-size: 7px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
         .brand-addr { font-size: 7px; color: #000; margin: 0; line-height: 1.2; }
         
-        .period-cell { text-align: right; }
+        .period-cell { text-align: right; vertical-align: top; }
         .period-label { font-size: 7.5px; font-weight: bold; color: #000; }
 
         /* Data Table */
-        table.data { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        table.data { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
         table.data th { 
             background: none; 
             color: #000; 
@@ -235,6 +235,26 @@
     @else
         {{-- SUMMARY Layout --}}
         <table class="data">
+            @if($type === 'pelanggan')
+                <colgroup>
+                    <col style="width: 25%;">
+                    <col style="width: 15%;">
+                    <col style="width: 15%;">
+                    <col style="width: 15%;">
+                    <col style="width: 15%;">
+                    <col style="width: 15%;">
+                </colgroup>
+            @else
+                <colgroup>
+                    <col style="width: 18%;">
+                    <col style="width: 9%;">
+                    <col style="width: 15%;">
+                    <col style="width: 14%;">
+                    <col style="width: 14%;">
+                    <col style="width: 15%;">
+                    <col style="width: 15%;">
+                </colgroup>
+            @endif
             <thead>
                 <tr>
                     @if($type === 'pelanggan')
@@ -247,13 +267,13 @@
                         <th>Tanggal</th>
                     @endif
                     @if($type !== 'pelanggan')
-                        <th class="text-center" style="width: 80px;">Jml Trs</th>
+                        <th class="text-center">Jml Trs</th>
                     @endif
-                    <th class="text-right" style="width: 130px;">Total Transaksi</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar Tunai</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar Kredit</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar K.Debit</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar K.Kredit</th>
+                    <th class="text-right">Total Transaksi</th>
+                    <th class="text-right">Jml Bayar Tunai</th>
+                    <th class="text-right">Jml Bayar Kredit</th>
+                    <th class="text-right">Jml Bayar K.Debit</th>
+                    <th class="text-right">Jml Bayar K.Kredit</th>
                 </tr>
             </thead>
             <tbody>

@@ -5,13 +5,13 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: 11in 9.5in;
-            margin-top: 1.4cm;
+            size: {{ $type === 'pelanggan' ? 'legal portrait' : '11in 9.5in' }};
+            margin-top: 1.2cm;
             margin-bottom: 0.8cm;
             margin-left: 0.8cm;
             margin-right: 0.8cm;
         }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #000; line-height: 1.4; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.4; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -54,7 +54,7 @@
         .period-label { font-size: 9px; font-weight: bold; color: #000; }
 
         /* Data Table */
-        table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.data { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
         table.data th { 
             background: none; 
             color: #000; 
@@ -195,6 +195,15 @@
     @else
         {{-- SUMMARY Layout --}}
         <table class="data">
+            <colgroup>
+                <col style="width: 18%;">
+                <col style="width: 9%;">
+                <col style="width: 15%;">
+                <col style="width: 14%;">
+                <col style="width: 14%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
             <thead>
                 <tr>
                     @if($type === 'pelanggan')
@@ -206,12 +215,12 @@
                     @else
                         <th>Tanggal</th>
                     @endif
-                    <th class="text-center" style="width: 80px;">Jml Trs</th>
-                    <th class="text-right" style="width: 130px;">Total Transaksi</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar Tunai</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar Kredit</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar K.Debit</th>
-                    <th class="text-right" style="width: 120px;">Jml Bayar K.Kredit</th>
+                    <th class="text-center">Jml Trs</th>
+                    <th class="text-right">Total Transaksi</th>
+                    <th class="text-right">Jml Bayar Tunai</th>
+                    <th class="text-right">Jml Bayar Kredit</th>
+                    <th class="text-right">Jml Bayar K.Debit</th>
+                    <th class="text-right">Jml Bayar K.Kredit</th>
                 </tr>
             </thead>
             <tbody>
