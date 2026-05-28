@@ -276,8 +276,10 @@ class ReportController extends Controller
             $rows = $query->get();
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jihans.reports.pdf', compact('rows', 'type', 'title', 'request', 'isDetailed'))
-                ->setPaper('a4', 'landscape');
+        $orientation = ($type === 'harian' || $type === 'pelanggan') ? 'portrait' : 'landscape';
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jihans.reports.pdf', compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
+                ->setPaper('a5', $orientation);
 
         return $pdf->stream($title . '.pdf');
     }

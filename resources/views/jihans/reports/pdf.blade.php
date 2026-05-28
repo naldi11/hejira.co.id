@@ -5,43 +5,44 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: A4 landscape;
-            margin: 1cm;
+            size: A5 {{ $orientation }};
+            margin: 0.6cm;
         }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9px; color: #000; line-height: 1.4; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 8.5px; color: #000; line-height: 1.4; }
         
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
         .header-table td { vertical-align: top; }
-        .logo-cell { width: 60px; }
-        .logo { width: 50px; height: 50px; object-fit: contain; }
+        .logo-cell { width: 55px; }
+        .logo { width: 45px; height: 45px; object-fit: contain; }
         
         .brand-cell { padding-left: 10px; }
-        .report-title { font-size: 14px; font-weight: bold; color: #000; margin-bottom: 2px; }
-        .brand-name { font-size: 12px; font-weight: 800; color: #000; margin: 0; }
-        .brand-sub { font-size: 8px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 8px; color: #333; margin: 0; }
+        .report-title { font-size: 12px; font-weight: bold; color: #000; margin-bottom: 2px; }
+        .brand-name { font-size: 11px; font-weight: bold; color: #000; margin: 0; }
+        .brand-sub { font-size: 7.5px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .brand-addr { font-size: 7.5px; color: #333; margin: 0; }
         
         .period-cell { text-align: right; }
-        .period-label { font-size: 9px; font-weight: bold; color: #000; }
+        .period-label { font-size: 8px; font-weight: bold; color: #000; }
 
         /* Data Table */
-        table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.data { width: 100%; border-collapse: collapse; margin-top: 5px; }
         table.data th { 
             background: none; 
             color: #000; 
-            padding: 5px 2px; 
+            padding: 4px 2px; 
             border-top: 1px solid #000;
-            border-bottom: 3px double #000; 
-            font-size: 9px; 
+            border-bottom: 1px solid #000; 
+            font-size: 8.5px; 
             text-transform: uppercase; 
             text-align: left;
             font-weight: bold;
         }
         table.data td { 
-            padding: 5px 2px; 
+            padding: 4px 2px; 
             border: none;
             vertical-align: middle;
+            font-size: 8px;
         }
         
         .text-right { text-align: right; }
@@ -51,10 +52,11 @@
         .total-row { font-weight: bold; }
         .total-row td {
             border-top: 1px solid #000 !important;
-            border-bottom: 3px double #000 !important;
-            padding: 5px 2px;
+            border-bottom: 1px solid #000 !important;
+            padding: 4px 2px;
+            font-size: 8px;
         }
-        .footer { margin-top: 20px; text-align: right; font-size: 8px; color: #666; border-top: 1px dashed #ccc; padding-top: 5px; }
+        .footer { margin-top: 15px; text-align: right; font-size: 7.5px; color: #666; border-top: 1px dashed #ccc; padding-top: 4px; }
     </style>
 </head>
 <body>
@@ -64,9 +66,17 @@
                 <img src="{{ public_path('logo/jihans-logo.png') }}" class="logo" onerror="this.style.display='none'">
             </td>
             <td class="brand-cell">
-                <div class="report-title">{{ strtoupper($title) }}</div>
-                <h1 class="brand-name">JIHAN'S FOOD</h1>
-                <p class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</p>
+                <div class="report-title">
+                    @if($type === 'harian') LHI DETAIL
+                    @elif($type === 'pelanggan') LAPORAN JUAL PER PELANGGAN
+                    @elif($type === 'laci' || $type === 'bulanan') LAPORAN PENJUALAN HARIAN
+                    @elif($type === 'mingguan') LAPORAN PENJUALAN MINGGUAN
+                    @else {{ strtoupper($title) }}
+                    @endif
+                </div>
+                <h1 class="brand-name">JIHAAN'S FOOD</h1>
+                <p class="brand-sub">MANUFACTURE FOR KEBAB</p>
+                <p class="brand-sub">&amp; TORTILLA</p>
                 <p class="brand-addr">Jl. Beringin Pasar 7</p>
                 <p class="brand-addr">081362148090 - 085373736060</p>
             </td>
@@ -74,7 +84,7 @@
                 <div class="period-label">
                     PERIODE : {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/y') : \Carbon\Carbon::now()->format('d/m/y') }}
                 </div>
-                <div style="font-size: 8px; color: #666; margin-top: 3px;">
+                <div style="font-size: 7.5px; color: #666; margin-top: 3px;">
                     Dicetak: {{ now()->translatedFormat('d/m/Y H:i') }}
                 </div>
             </td>
