@@ -21,6 +21,14 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
         $this->numberGenerator = app(NumberGeneratorService::class);
     }
 
+    private function parseNumeric($value, $default = 0)
+    {
+        if ($value === null || trim($value) === '' || trim($value) === '-') {
+            return $default;
+        }
+        return is_numeric($value) ? (float) $value : $default;
+    }
+
     public function headingRow(): int { return 5; }
 
     public function startRow(): int { return 6; }
@@ -80,6 +88,11 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                     $productType = 'INV';
                 }
 
+                $hpp = $this->parseNumeric($row['hpp'] ?? null, 0);
+                $sellingPrice = $this->parseNumeric($row['harga_jual'] ?? null, 0);
+                $stockMin = $this->parseNumeric($row['stok_min'] ?? null, 0);
+                $ppnRate = $this->parseNumeric($row['rate_ppn'] ?? null, 11.00);
+
                 // Cek produk existing (by barcode lalu by nama, termasuk yang di-soft-delete)
                 $product = null;
                 if (!empty($row['barcode'])) {
@@ -94,11 +107,11 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                         'category_id'  => $category->id,
                         'unit_id'      => $unit->id,
                         'brand_id'     => $brandId,
-                        'hpp'          => $row['hpp'] ?? $product->hpp,
-                        'selling_price'=> $row['harga_jual'] ?? $product->selling_price,
-                        'stock_min'    => $row['stok_min'] ?? $product->stock_min,
+                        'hpp'          => isset($row['hpp']) ? $hpp : $product->hpp,
+                        'selling_price'=> isset($row['harga_jual']) ? $sellingPrice : $product->selling_price,
+                        'stock_min'    => isset($row['stok_min']) ? $stockMin : $product->stock_min,
                         'ppn_type'     => $ppnType,
-                        'ppn_rate'     => $row['rate_ppn'] ?? $product->ppn_rate,
+                        'ppn_rate'     => isset($row['rate_ppn']) ? $ppnRate : $product->ppn_rate,
                         'product_type' => $productType,
                         'entity_scope' => $entityScope,
                     ]);
@@ -115,11 +128,11 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                         'category_id'     => $category->id,
                         'unit_id'         => $unit->id,
                         'brand_id'        => $brandId,
-                        'hpp'             => $row['hpp'] ?? 0,
-                        'selling_price'   => $row['harga_jual'] ?? 0,
-                        'stock_min'       => $row['stok_min'] ?? 0,
+                        'hpp'             => $hpp,
+                        'selling_price'   => $sellingPrice,
+                        'stock_min'       => $stockMin,
                         'ppn_type'        => $ppnType,
-                        'ppn_rate'        => $row['rate_ppn'] ?? 11.00,
+                        'ppn_rate'        => $ppnRate,
                         'product_type'    => $productType,
                         'entity_scope'    => $entityScope,
                         'visible_gudang'  => in_array($entityScope, ['gudang', 'all']),
