@@ -163,12 +163,12 @@
 
     @if($isDetailed)
         {{-- LHI DETAIL Layout --}}
-        @foreach($rows as $index => $tx)
-        <div style="margin-bottom: 12px; {{ $index > 0 ? 'page-break-inside: avoid;' : '' }}">
-            <!-- Transaksi Header Table -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 8px;">
+        @foreach($rows as $txIndex => $tx)
+        <div style="margin-bottom: 15px; page-break-inside: avoid;">
+            <table style="width: 100%; border-collapse: collapse; page-break-inside: avoid;">
+                <!-- Transaksi Header -->
                 <thead>
-                    <tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000;">
+                    <tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 8px;">
                         <th style="text-align: left; width: 18%; padding: 3px 0; font-weight: bold;">No Transaksi</th>
                         <th style="text-align: left; width: 12%; padding: 3px 0; font-weight: bold;">Tanggal</th>
                         <th style="text-align: left; width: 12%; padding: 3px 0; font-weight: bold;">Dept.</th>
@@ -179,62 +179,70 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="padding: 4px 0; font-weight: bold;">{{ $tx->transaction_number }}</td>
-                        <td style="padding: 4px 0;">{{ \Carbon\Carbon::parse($tx->date)->format('d/m/Y') }}</td>
-                        <td style="padding: 4px 0;">{{ strtoupper($tx->operator ?? '-') }}</td>
-                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_code) }}</td>
-                        <td style="padding: 4px 0; font-weight: bold;">{{ strtoupper($tx->customer_name) }}</td>
-                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_address) }}</td>
+                        <td style="padding: 4px 0; font-weight: bold; font-size: 8px;">{{ $tx->transaction_number }}</td>
+                        <td style="padding: 4px 0; font-size: 8px;">{{ \Carbon\Carbon::parse($tx->date)->format('d/m/Y') }}</td>
+                        <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->operator ?? '-') }}</td>
+                        <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->customer_code) }}</td>
+                        <td style="padding: 4px 0; font-weight: bold; font-size: 8px;">{{ strtoupper($tx->customer_name) }}</td>
+                        <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->customer_address) }}</td>
                     </tr>
-                </tbody>
-            </table>
-
-            <!-- Sub-tabel Item Details -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; margin-bottom: 4px;">
-                <thead>
-                    <tr style="font-style: italic; border-bottom: 1px dashed #000;">
-                        <th style="text-align: left; width: 5%; padding: 2px 0;">No.</th>
-                        <th style="text-align: left; width: 15%; padding: 2px 0;">Kd. Item</th>
-                        <th style="text-align: left; width: 35%; padding: 2px 0;">Nama Item</th>
-                        <th style="text-align: center; width: 10%; padding: 2px 0;">Jml</th>
-                        <th style="text-align: center; width: 10%; padding: 2px 0;">Satuan</th>
-                        <th style="text-align: right; width: 10%; padding: 2px 0;">Harga</th>
-                        <th style="text-align: right; width: 10%; padding: 2px 0;">Pot.%</th>
-                        <th style="text-align: right; width: 15%; padding: 2px 0;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($tx->details as $index => $item)
+                    
+                    <!-- Sub-tabel Item Details -->
                     <tr>
-                        <td style="padding: 3px 0;">{{ $index + 1 }}</td>
-                        <td style="padding: 3px 0;">{{ $item->kode_item }}</td>
-                        <td style="padding: 3px 0; font-weight: bold;">{{ $item->nama_item }}</td>
-                        <td style="padding: 3px 0; text-align: center;">{{ number_format($item->quantity, 0, ',', '.') }}</td>
-                        <td style="padding: 3px 0; text-align: center;">{{ $item->satuan }}</td>
-                        <td style="padding: 3px 0; text-align: right;">{{ number_format($item->price, 0, ',', '.') }}</td>
-                        <td style="padding: 3px 0; text-align: right;">{{ $item->pot > 0 ? number_format($item->pot, 0, ',', '.') : '0' }}</td>
-                        <td style="padding: 3px 0; text-align: right; font-weight: bold;">{{ number_format($item->total, 0, ',', '.') }}</td>
+                        <td colspan="6" style="padding: 4px 0;">
+                            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px;">
+                                <thead>
+                                    <tr style="font-style: italic; border-bottom: 1px dashed #000;">
+                                        <th style="text-align: left; width: 5%; padding: 2px 0;">No.</th>
+                                        <th style="text-align: left; width: 15%; padding: 2px 0;">Kd. Item</th>
+                                        <th style="text-align: left; width: 35%; padding: 2px 0;">Nama Item</th>
+                                        <th style="text-align: center; width: 10%; padding: 2px 0;">Jml</th>
+                                        <th style="text-align: center; width: 10%; padding: 2px 0;">Satuan</th>
+                                        <th style="text-align: right; width: 10%; padding: 2px 0;">Harga</th>
+                                        <th style="text-align: right; width: 10%; padding: 2px 0;">Pot.%</th>
+                                        <th style="text-align: right; width: 15%; padding: 2px 0;">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($tx->details as $index => $item)
+                                    <tr>
+                                        <td style="padding: 3px 0;">{{ $index + 1 }}</td>
+                                        <td style="padding: 3px 0;">{{ $item->kode_item }}</td>
+                                        <td style="padding: 3px 0; font-weight: bold;">{{ $item->nama_item }}</td>
+                                        <td style="padding: 3px 0; text-align: center;">{{ number_format($item->quantity, 0, ',', '.') }}</td>
+                                        <td style="padding: 3px 0; text-align: center;">{{ $item->satuan }}</td>
+                                        <td style="padding: 3px 0; text-align: right;">{{ number_format($item->price, 0, ',', '.') }}</td>
+                                        <td style="padding: 3px 0; text-align: right;">{{ $item->pot > 0 ? number_format($item->pot, 0, ',', '.') : '0' }}</td>
+                                        <td style="padding: 3px 0; text-align: right; font-weight: bold;">{{ number_format($item->total, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                    <!-- Baris Total Kuantitas & Total Item (Garis putus-putus) -->
+                                    <tr style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; font-weight: bold;">
+                                        <td colspan="3" style="padding: 3px 0;"></td>
+                                        <td style="padding: 3px 0; text-align: center;">{{ number_format($tx->details->sum('quantity'), 0, ',', '.') }}</td>
+                                        <td style="padding: 3px 0;"></td>
+                                        <td colspan="2" style="padding: 3px 0;"></td>
+                                        <td style="padding: 3px 0; text-align: right;">{{ number_format($tx->details->sum('total'), 0, ',', '.') }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
                     </tr>
-                    @endforeach
-                    <!-- Baris Total Kuantitas & Total Item (Garis putus-putus) -->
-                    <tr style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; font-weight: bold;">
-                        <td colspan="3" style="padding: 3px 0;"></td>
-                        <td style="padding: 3px 0; text-align: center;">{{ number_format($tx->details->sum('quantity'), 0, ',', '.') }}</td>
-                        <td style="padding: 3px 0;"></td>
-                        <td colspan="2" style="padding: 3px 0;"></td>
-                        <td style="padding: 3px 0; text-align: right;">{{ number_format($tx->details->sum('total'), 0, ',', '.') }}</td>
+
+                    <!-- Ringkasan Biaya -->
+                    <tr>
+                        <td colspan="6" style="padding: 4px 0 8px 0;">
+                            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
+                                <tr>
+                                    <td style="width: 25%; text-align: left; padding: 4px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
+                                    <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
+                                    <td style="width: 25%; text-align: left; padding: 4px 0;">Biaya : 0</td>
+                                    <td style="width: 25%; text-align: right; padding: 4px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
+                                </tr>
+                            </table>
+                        </td>
                     </tr>
                 </tbody>
-            </table>
-
-            <!-- Ringkasan Biaya di bawah sub-tabel -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 8px;">
-                <tr>
-                    <td style="width: 25%; text-align: left; padding: 4px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
-                    <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
-                    <td style="width: 25%; text-align: left; padding: 4px 0;">Biaya : 0</td>
-                    <td style="width: 25%; text-align: right; padding: 4px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
-                </tr>
             </table>
         </div>
         @endforeach
