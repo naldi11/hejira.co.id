@@ -78,6 +78,7 @@
     {{-- Header --}}
     <div class="doc-header">
         @php
+            $transferOut->loadMissing('receiptConfirmation.details');
             $entityName = $currentScope === 'jihans' ? "JIHAN'S FOOD" : 'HENDHYS BROWNIES';
         @endphp
         <div class="header-text">
@@ -118,24 +119,64 @@
                 <th style="width:22px">No</th>
                 <th>Nama Produk</th>
                 <th class="text-center" style="width:60px">Qty Kirim</th>
-                <th class="text-center" style="width:70px">Qty Terima</th>
+                <th class="text-center" style="width:70px">Qty Bagus</th>
+                <th class="text-center" style="width:60px">Qty Rusak</th>
+                <th class="text-center" style="width:60px">Qty Kurang</th>
                 <th class="text-center" style="width:45px">Satuan</th>
-                <th class="text-center" style="width:60px">Kondisi</th>
+                <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>
+            @php
+                $receipt = $transferOut->receiptConfirmation;
+                $detailsGrouped = $receipt ? $receipt->details->groupBy('product_id') : null;
+            @endphp
             @foreach($transferOut->details as $i => $item)
+            @php
+                $qtySent = (float) $item->quantity;
+                $qtyBagus = 0;
+                $qtyRusak = 0;
+                $qtyKurang = 0;
+                $notes = [];
+
+                if ($detailsGrouped && isset($detailsGrouped[$item->product_id])) {
+                    foreach ($detailsGrouped[$item->product_id] as $rcDetail) {
+                        if ($rcDetail->condition === 'baik') {
+                            $qtyBagus += (float) $rcDetail->actual_qty;
+                        } elseif ($rcDetail->condition === 'rusak') {
+                            $qtyRusak += (float) $rcDetail->actual_qty;
+                            if ($rcDetail->notes) {
+                                $notes[] = $rcDetail->notes;
+                            }
+                        } elseif (in_array($rcDetail->condition, ['kurang', 'hilang'])) {
+                            $qtyKurang += (float) $rcDetail->actual_qty;
+                            if ($rcDetail->notes) {
+                                $notes[] = $rcDetail->notes;
+                            }
+                        }
+                    }
+                } else {
+                    // Fallback untuk data lama
+                    $qtyBagus = (float) ($item->received_quantity ?? $item->quantity);
+                    $qtyRusak = 0;
+                    $qtyKurang = 0;
+                    if ($item->kondisi === 'rusak') {
+                        $qtyRusak = (float) ($item->quantity - $qtyBagus);
+                    } elseif ($item->kondisi === 'kurang') {
+                        $qtyKurang = (float) ($item->quantity - $qtyBagus);
+                    }
+                }
+                $notesStr = implode(', ', $notes);
+            @endphp
             <tr>
                 <td class="text-center" style="color:#9ca3af">{{ $i + 1 }}</td>
                 <td style="font-weight:600">{{ $item->product->name }}</td>
-                <td class="text-center" style="color:#9ca3af">{{ (int) $item->quantity }}</td>
-                <td class="text-center" style="font-weight:700">{{ floatval($item->received_quantity ?? $item->quantity) }}</td>
+                <td class="text-center" style="color:#9ca3af">{{ floatval($qtySent) }}</td>
+                <td class="text-center" style="font-weight:700; color:#065f46">{{ floatval($qtyBagus) }}</td>
+                <td class="text-center" style="font-weight:700; color:#b91c1c">{{ floatval($qtyRusak) > 0 ? floatval($qtyRusak) : '-' }}</td>
+                <td class="text-center" style="font-weight:700; color:#d97706">{{ floatval($qtyKurang) > 0 ? floatval($qtyKurang) : '-' }}</td>
                 <td class="text-center" style="color:#718096">{{ $item->unit->abbreviation ?? '-' }}</td>
-                <td class="text-center">
-                    @if($item->kondisi)
-                    <span class="k-{{ $item->kondisi }}">{{ ucfirst($item->kondisi) }}</span>
-                    @else <span style="color:#d1d5db">—</span> @endif
-                </td>
+                <td style="color:#4a5568">{{ $notesStr ?: '-' }}</td>
             </tr>
             @endforeach
         </tbody>

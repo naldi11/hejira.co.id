@@ -76,34 +76,53 @@
                         <tr class="bg-slate-50/30 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                             <th class="px-8 py-4">Produk</th>
                             <th class="px-6 py-4 text-center">Qty Kirim</th>
-                            <th class="px-6 py-4 text-center w-32">Qty Diterima</th>
+                            <th class="px-4 py-4 text-center w-32">Qty Bagus</th>
+                            <th class="px-4 py-4 text-center w-32">Qty Rusak</th>
                             <th class="px-6 py-4 text-center">Satuan</th>
-                            <th class="px-4 py-4 text-center w-32">Kondisi</th>
-                            <th class="px-4 py-4 text-center w-40">Batch / Expired</th>
+                            <th class="px-4 py-4 text-center w-48">Batch / Expired</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach($transferOut->details as $detail)
-                        <tr class="group hover:bg-slate-50/30 transition-colors">
+                        @php $qtySent = (float) $detail->quantity; @endphp
+                        <tr class="group hover:bg-slate-50/30 transition-colors"
+                            x-data="{
+                                qtySent: {{ $qtySent }},
+                                qtyBagus: {{ $qtySent }},
+                                qtyRusak: 0,
+                                validateBagus() {
+                                    if (this.qtyBagus === '' || isNaN(this.qtyBagus)) return;
+                                    if (this.qtyBagus < 0) this.qtyBagus = 0;
+                                    if (this.qtyBagus > this.qtySent) this.qtyBagus = this.qtySent;
+                                    if (this.qtyBagus + this.qtyRusak > this.qtySent) {
+                                        this.qtyRusak = parseFloat((this.qtySent - this.qtyBagus).toFixed(3));
+                                    }
+                                },
+                                validateRusak() {
+                                    if (this.qtyRusak === '' || isNaN(this.qtyRusak)) return;
+                                    if (this.qtyRusak < 0) this.qtyRusak = 0;
+                                    if (this.qtyRusak > this.qtySent) this.qtyRusak = this.qtySent;
+                                    if (this.qtyBagus + this.qtyRusak > this.qtySent) {
+                                        this.qtyBagus = parseFloat((this.qtySent - this.qtyRusak).toFixed(3));
+                                    }
+                                }
+                            }">
                             <td class="px-8 py-5">
                                 <span class="text-sm font-black text-slate-800 tracking-tight">{{ $detail->product->name }}</span>
                             </td>
                             <td class="px-6 py-5 text-center">
-                                <span class="text-xs font-bold text-slate-400 tabular-nums bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{{ number_format($detail->quantity, 0) }}</span>
+                                <span class="text-xs font-bold text-slate-400 tabular-nums bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{{ $qtySent }}</span>
                             </td>
-                            <td class="px-6 py-5">
-                                <input type="number" name="received_quantities[{{ $detail->id }}]" value="{{ floatval($detail->quantity) }}" min="0" max="{{ floatval($detail->quantity) }}" step="any" required
-                                       class="w-full px-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-{{ $accentColor }}-500 transition-all outline-none tabular-nums shadow-inner">
+                            <td class="px-4 py-5">
+                                <input type="number" name="quantity_bagus[{{ $detail->id }}]" x-model.number="qtyBagus" @input="validateBagus()" min="0" :max="qtySent" step="any" required
+                                       class="w-full px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-{{ $accentColor }}-500 transition-all outline-none tabular-nums shadow-inner">
+                            </td>
+                            <td class="px-4 py-5">
+                                <input type="number" name="quantity_rusak[{{ $detail->id }}]" x-model.number="qtyRusak" @input="validateRusak()" min="0" :max="qtySent" step="any" required
+                                       class="w-full px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-{{ $accentColor }}-500 transition-all outline-none tabular-nums shadow-inner">
                             </td>
                             <td class="px-6 py-5 text-center">
                                 <span class="text-[10px] font-black text-slate-500 uppercase">{{ $detail->unit->abbreviation ?? 'PCS' }}</span>
-                            </td>
-                            <td class="px-4 py-5">
-                                <select name="kondisi[{{ $detail->id }}]" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-white focus:border-{{ $accentColor }}-500 transition-all outline-none">
-                                    <option value="baik">Baik</option>
-                                    <option value="rusak">Rusak</option>
-                                    <option value="kurang">Kurang</option>
-                                </select>
                             </td>
                             <td class="px-4 py-5 space-y-2">
                                 <input type="text" name="batch_number[{{ $detail->id }}]" placeholder="No Batch"
@@ -120,10 +139,64 @@
             <div class="p-8 sm:p-10 bg-slate-900 border-t border-white/10">
                 <div class="flex flex-col md:flex-row items-center gap-8">
                     <div class="flex-1 space-y-4 w-full">
-                        <div class="space-y-2">
+                        <div x-data="{
+                            files: [],
+                            dragging: false,
+                            addFiles(fileList) {
+                                for (let i = 0; i < fileList.length; i++) {
+                                    const file = fileList[i];
+                                    if (file.type.startsWith('image/')) {
+                                        const url = URL.createObjectURL(file);
+                                        this.files.push({ file: file, url: url, name: file.name });
+                                    }
+                                }
+                                this.updateFileInput();
+                            },
+                            removeFile(index) {
+                                URL.revokeObjectURL(this.files[index].url);
+                                this.files.splice(index, 1);
+                                this.updateFileInput();
+                            },
+                            updateFileInput() {
+                                const dataTransfer = new DataTransfer();
+                                this.files.forEach(f => dataTransfer.items.add(f.file));
+                                this.$refs.fileInput.files = dataTransfer.files;
+                            }
+                        }" class="space-y-3">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unggah Foto Bukti / Surat Jalan</label>
-                            <input type="file" name="photos[]" multiple accept="image/*" class="block w-full text-[11px] text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-white/10 file:text-white hover:file:bg-white/20 transition-all">
+                            
+                            <div 
+                                @dragover.prevent="dragging = true"
+                                @dragleave.prevent="dragging = false"
+                                @drop.prevent="dragging = false; addFiles($event.dataTransfer.files)"
+                                class="border-2 border-dashed rounded-3xl p-6 transition-all duration-200 flex flex-col items-center justify-center cursor-pointer text-center relative"
+                                :class="dragging ? 'border-{{ $accentColor }}-500 bg-{{ $accentColor }}-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+                                @click="$refs.fileInput.click()"
+                            >
+                                <input type="file" name="photos[]" multiple accept="image/*" class="hidden" x-ref="fileInput"
+                                       @change="addFiles($event.target.files)">
+                                
+                                <span class="material-symbols-outlined text-[32px] text-white/50 mb-2">cloud_upload</span>
+                                <p class="text-xs text-white/70 font-semibold">Tarik & lepas foto di sini, atau <span class="text-{{ $accentColor }}-400 underline">klik untuk memilih</span></p>
+                                <p class="text-[10px] text-slate-500 mt-1">Maksimal 10 file gambar (masing-masing maks 5MB)</p>
+                            </div>
+
+                            <!-- Previews Grid -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-3" x-show="files.length > 0" x-cloak>
+                                <template x-for="(f, idx) in files" :key="idx">
+                                    <div class="relative group aspect-square rounded-2xl overflow-hidden border border-white/10 bg-white/5 shadow-inner">
+                                        <img :src="f.url" class="w-full h-full object-cover">
+                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button type="button" @click.stop="removeFile(idx)" class="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center hover:bg-red-500 transition-colors">
+                                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                                            </button>
+                                        </div>
+                                        <div class="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 truncate text-[8px] text-white/80 font-mono" x-text="f.name"></div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Catatan Penerimaan</label>
                             <textarea name="receive_notes" rows="2" placeholder="Tulis catatan jika ada barang rusak atau kurang..."

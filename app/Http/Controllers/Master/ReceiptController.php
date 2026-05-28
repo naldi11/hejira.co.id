@@ -54,20 +54,32 @@ class ReceiptController extends Controller
         }
 
         $request->validate([
-            'received_quantities'    => 'required|array|min:1',
-            'received_quantities.*'  => 'required|numeric|min:0',
-            'kondisi'                => 'nullable|array',
-            'kondisi.*'              => 'nullable|in:baik,rusak,kurang',
-            'batch_number'           => 'nullable|array',
-            'expired_date'           => 'nullable|array',
-            'expired_date.*'         => 'nullable|date',
-            'receive_notes'          => 'nullable|string|max:2000',
-            'receive_kendala'        => 'nullable|string|max:2000',
+            'quantity_bagus'           => 'required|array|min:1',
+            'quantity_bagus.*'         => 'required|numeric|min:0',
+            'quantity_rusak'           => 'required|array|min:1',
+            'quantity_rusak.*'         => 'required|numeric|min:0',
+            'batch_number'             => 'nullable|array',
+            'expired_date'             => 'nullable|array',
+            'expired_date.*'           => 'nullable|date',
+            'receive_notes'            => 'nullable|string|max:2000',
+            'receive_kendala'          => 'nullable|string|max:2000',
             'receive_received_by_name' => 'nullable|string|max:255',
-            'receive_pengirim_name'  => 'nullable|string|max:255',
-            'photos'                 => 'nullable|array|max:10',
-            'photos.*'               => 'image|max:5120',
+            'receive_pengirim_name'    => 'nullable|string|max:255',
+            'photos'                   => 'nullable|array|max:10',
+            'photos.*'                 => 'image|max:5120',
         ]);
+
+        // Validate sum of good + damaged does not exceed shipped quantity
+        foreach ($transferOut->details as $detail) {
+            $qtyBagus = (float) ($request->quantity_bagus[$detail->id] ?? 0);
+            $qtyRusak = (float) ($request->quantity_rusak[$detail->id] ?? 0);
+            $qtySent  = (float) $detail->quantity;
+            if ($qtyBagus + $qtyRusak > $qtySent) {
+                return back()->withInput()->withErrors([
+                    'received_quantities' => "Jumlah Bagus + Rusak untuk produk {$detail->product->name} tidak boleh melebihi Qty Kirim ({$qtySent})."
+                ]);
+            }
+        }
 
         try {
             DB::transaction(function () use ($request, $transferOut, $info) {
@@ -81,26 +93,64 @@ class ReceiptController extends Controller
                 ]);
 
                 foreach ($transferOut->details as $detail) {
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
-                    $receivedQty = min($receivedQty, (float) $detail->quantity);
-                    $kondisi = $request->kondisi[$detail->id] ?? null;
+                    $qtyBagus = (float) ($request->quantity_bagus[$detail->id] ?? 0);
+                    $qtyRusak = (float) ($request->quantity_rusak[$detail->id] ?? 0);
+                    $qtySent  = (float) $detail->quantity;
 
-                    // Update legacy detail
+                    // Update legacy detail: received_quantity = good items, kondisi = 'baik'
+                    // (Only good items go to stock)
+                    $legacyKondisi = 'baik';
+                    if ($qtyBagus <= 0 && $qtyRusak > 0) {
+                        $legacyKondisi = 'rusak';
+                    } elseif ($qtyBagus + $qtyRusak < $qtySent) {
+                        $legacyKondisi = 'kurang';
+                    }
+
                     $detail->update([
-                        'received_quantity' => $receivedQty,
-                        'kondisi'           => $kondisi,
+                        'received_quantity' => $qtyBagus,
+                        'kondisi'           => $legacyKondisi,
                     ]);
 
                     // Insert to Unified BAST details
-                    $receiptConfirmation->details()->create([
-                        'product_id'   => $detail->product_id,
-                        'expected_qty' => $detail->quantity,
-                        'actual_qty'   => $receivedQty,
-                        'condition'    => $kondisi ?? 'baik',
-                        'expired_date' => $request->expired_date[$detail->id] ?? null,
-                        'batch_number' => $request->batch_number[$detail->id] ?? null,
-                        'notes'        => null,
-                    ]);
+                    // 1. Good items
+                    if ($qtyBagus > 0) {
+                        $receiptConfirmation->details()->create([
+                            'product_id'   => $detail->product_id,
+                            'expected_qty' => $qtySent,
+                            'actual_qty'   => $qtyBagus,
+                            'condition'    => 'baik',
+                            'expired_date' => $request->expired_date[$detail->id] ?? null,
+                            'batch_number' => $request->batch_number[$detail->id] ?? null,
+                            'notes'        => null,
+                        ]);
+                    }
+
+                    // 2. Damaged items
+                    if ($qtyRusak > 0) {
+                        $receiptConfirmation->details()->create([
+                            'product_id'   => $detail->product_id,
+                            'expected_qty' => $qtySent,
+                            'actual_qty'   => $qtyRusak,
+                            'condition'    => 'rusak',
+                            'expired_date' => $request->expired_date[$detail->id] ?? null,
+                            'batch_number' => $request->batch_number[$detail->id] ?? null,
+                            'notes'        => 'Barang rusak saat pengiriman',
+                        ]);
+                    }
+
+                    // 3. Missing items
+                    $qtyKurang = $qtySent - ($qtyBagus + $qtyRusak);
+                    if ($qtyKurang > 0.001) {
+                        $receiptConfirmation->details()->create([
+                            'product_id'   => $detail->product_id,
+                            'expected_qty' => $qtySent,
+                            'actual_qty'   => $qtyKurang,
+                            'condition'    => 'kurang',
+                            'expired_date' => null,
+                            'batch_number' => null,
+                            'notes'        => 'Kurang/Hilang saat pengiriman',
+                        ]);
+                    }
                 }
 
                 $this->stock->processTransferReceive($transferOut, auth()->id());

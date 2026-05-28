@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class TransferOut extends Model
 {
@@ -30,6 +31,7 @@ class TransferOut extends Model
     public function receiver(): BelongsTo { return $this->belongsTo(User::class, 'received_by'); }
     public function details(): HasMany    { return $this->hasMany(TransferOutDetail::class, 'transfer_id'); }
     public function photos(): HasMany     { return $this->hasMany(TransferOutPhoto::class, 'transfer_id'); }
+    public function receiptConfirmation(): MorphOne { return $this->morphOne(ReceiptConfirmation::class, 'receiptable'); }
 
     public function isPending(): bool    { return $this->status === 'sent'; }
     public function isReceived(): bool   { return $this->status === 'received'; }
