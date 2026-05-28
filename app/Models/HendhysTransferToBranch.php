@@ -17,6 +17,13 @@ class HendhysTransferToBranch extends Model
         'created_by', 'received_by'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+        ];
+    }
+
     public function branchRequest(): BelongsTo
     {
         return $this->belongsTo(HendhysBranchRequest::class, 'request_id');
