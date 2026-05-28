@@ -163,9 +163,7 @@
 
     @if($isDetailed)
         {{-- LHI DETAIL Layout --}}
-        @foreach($rows as $txIndex => $tx)
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; page-break-inside: avoid;">
-            <!-- Transaksi Header -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
             <thead>
                 <tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 8px;">
                     <th style="text-align: left; width: 18%; padding: 3px 0; font-weight: bold;">No Transaksi</th>
@@ -176,14 +174,16 @@
                     <th style="text-align: left; width: 25%; padding: 3px 0; font-weight: bold;">Alamat</th>
                 </tr>
             </thead>
-            <tbody>
+            @foreach($rows as $txIndex => $tx)
+            <tbody style="page-break-inside: avoid;">
+                <!-- Transaksi Header Row -->
                 <tr>
-                    <td style="padding: 4px 0; font-weight: bold; font-size: 8px;">{{ $tx->transaction_number }}</td>
-                    <td style="padding: 4px 0; font-size: 8px;">{{ \Carbon\Carbon::parse($tx->date)->format('d/m/Y') }}</td>
-                    <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->operator ?? '-') }}</td>
-                    <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->customer_code) }}</td>
-                    <td style="padding: 4px 0; font-weight: bold; font-size: 8px;">{{ strtoupper($tx->customer_name) }}</td>
-                    <td style="padding: 4px 0; font-size: 8px;">{{ strtoupper($tx->customer_address) }}</td>
+                    <td style="padding: 4px 0; font-weight: bold; font-size: 8px; vertical-align: top;">{{ $tx->transaction_number }}</td>
+                    <td style="padding: 4px 0; font-size: 8px; vertical-align: top;">{{ \Carbon\Carbon::parse($tx->date)->format('d/m/Y') }}</td>
+                    <td style="padding: 4px 0; font-size: 8px; vertical-align: top;">{{ strtoupper($tx->operator ?? '-') }}</td>
+                    <td style="padding: 4px 0; font-size: 8px; vertical-align: top;">{{ strtoupper($tx->customer_code) }}</td>
+                    <td style="padding: 4px 0; font-weight: bold; font-size: 8px; vertical-align: top;">{{ strtoupper($tx->customer_name) }}</td>
+                    <td style="padding: 4px 0; font-size: 8px; vertical-align: top;">{{ strtoupper($tx->customer_address) }}</td>
                 </tr>
                 
                 <!-- Sub-tabel Item Details -->
@@ -230,20 +230,20 @@
 
                 <!-- Ringkasan Biaya -->
                 <tr>
-                    <td colspan="6" style="padding: 4px 0 8px 0;">
+                    <td colspan="6" style="padding: 4px 0 12px 0; border-bottom: 1px dashed #000;">
                         <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
                             <tr>
                                 <td style="width: 25%; text-align: left; padding: 4px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
-                                    <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
-                                    <td style="width: 25%; text-align: left; padding: 4px 0;">Biaya : 0</td>
-                                    <td style="width: 25%; text-align: right; padding: 4px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
+                                <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
+                                <td style="width: 25%; text-align: left; padding: 4px 0;">Biaya : 0</td>
+                                <td style="width: 25%; text-align: right; padding: 4px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
                             </tr>
                         </table>
                     </td>
                 </tr>
             </tbody>
+            @endforeach
         </table>
-        @endforeach
     @else
         {{-- SUMMARY Layout --}}
         <table class="data">
