@@ -132,12 +132,12 @@
         </div>
     @endif
 
-    <table class="header-table" style="width: 100%; border-collapse: collapse;">
+    <table class="header-table">
         <tr>
-            <td class="logo-cell" width="40" style="vertical-align: top; padding-right: 5px;">
-                <img src="{{ public_path('logo/jihans-logo.png') }}" class="logo" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'">
+            <td class="logo-cell">
+                <img src="{{ public_path('logo/jihans-logo.png') }}" class="logo" onerror="this.style.display='none'">
             </td>
-            <td class="brand-cell" width="60%" style="vertical-align: top; text-align: left;">
+            <td class="brand-cell">
                 <div class="report-title">
                     @if($type === 'harian') LHI DETAIL
                     @elseif($type === 'pelanggan') LAPORAN JUAL PER PELANGGAN
@@ -152,7 +152,7 @@
                 <p class="brand-addr">Jl. Beringin Pasar 7</p>
                 <p class="brand-addr">081362148090 - 085373736060</p>
             </td>
-            <td class="period-cell" style="vertical-align: top; text-align: right;">
+            <td class="period-cell">
                 <div class="period-label">
                     PERIODE : {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/y') : \Carbon\Carbon::now()->format('d/m/y') }}
                 </div>
