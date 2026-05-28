@@ -11,7 +11,7 @@
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 8.5px; color: #000; line-height: 1.4; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 9.5px; color: #000; line-height: 1.35; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -57,17 +57,17 @@
         /* Header Layout */
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
         .header-table td { vertical-align: top; }
-        .logo-cell { width: 55px; }
-        .logo { width: 45px; height: 45px; object-fit: contain; }
+        .logo-cell { width: 50px; }
+        .logo { width: 40px; height: 40px; object-fit: contain; }
         
         .brand-cell { padding-left: 10px; }
-        .report-title { font-size: 12px; font-weight: bold; color: #000; margin-bottom: 2px; }
-        .brand-name { font-size: 11px; font-weight: bold; color: #000; margin: 0; }
-        .brand-sub { font-size: 7.5px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 7.5px; color: #000; margin: 0; }
+        .report-title { font-size: 13px; font-weight: bold; color: #000; margin-bottom: 2px; }
+        .brand-name { font-size: 12px; font-weight: bold; color: #000; margin: 0; }
+        .brand-sub { font-size: 9px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .brand-addr { font-size: 9px; color: #000; margin: 0; }
         
         .period-cell { text-align: right; }
-        .period-label { font-size: 8px; font-weight: bold; color: #000; }
+        .period-label { font-size: 9px; font-weight: bold; color: #000; }
 
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 5px; }
@@ -77,7 +77,7 @@
             padding: 4px 2px; 
             border-top: 1px solid #000;
             border-bottom: 3px double #000; 
-            font-size: 8.5px; 
+            font-size: 9.5px; 
             text-align: left;
             font-weight: bold;
         }
@@ -85,7 +85,7 @@
             padding: 4px 2px; 
             border: none;
             vertical-align: middle;
-            font-size: 8px;
+            font-size: 9px;
         }
         
         .text-right { text-align: right; }
@@ -97,7 +97,7 @@
             border-top: 1px solid #000 !important;
             border-bottom: 1px solid #000 !important;
             padding: 4px 2px;
-            font-size: 8px;
+            font-size: 9px;
         }
     </style>
 </head>
@@ -252,7 +252,9 @@
                     @else
                         <th>Tanggal</th>
                     @endif
-                    <th class="text-center" style="width: 80px;">Jml Trs</th>
+                    @if($type !== 'pelanggan')
+                        <th class="text-center" style="width: 80px;">Jml Trs</th>
+                    @endif
                     <th class="text-right" style="width: 130px;">Total Transaksi</th>
                     <th class="text-right" style="width: 120px;">Jml Bayar Tunai</th>
                     <th class="text-right" style="width: 120px;">Jml Bayar Kredit</th>
@@ -270,7 +272,9 @@
                         @else {{ \Carbon\Carbon::parse($row->date)->format('d/m/Y') }}
                         @endif
                     </td>
-                    <td class="text-center">{{ number_format($row->jumlah_transaksi, 0, ',', '.') }}</td>
+                    @if($type !== 'pelanggan')
+                        <td class="text-center">{{ number_format($row->jumlah_transaksi, 0, ',', '.') }}</td>
+                    @endif
                     <td class="text-right font-bold">{{ number_format($row->total_transaksi, 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($row->tunai, 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($row->kredit, 0, ',', '.') }}</td>
@@ -282,7 +286,9 @@
             <tfoot>
                 <tr class="total-row">
                     <td class="text-left" style="font-style: italic;">TOTAL :</td>
-                    <td class="text-center">{{ number_format($rows->sum('jumlah_transaksi'), 0, ',', '.') }}</td>
+                    @if($type !== 'pelanggan')
+                        <td class="text-center">{{ number_format($rows->sum('jumlah_transaksi'), 0, ',', '.') }}</td>
+                    @endif
                     <td class="text-right">{{ number_format($rows->sum('total_transaksi'), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->sum('tunai'), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->sum('kredit'), 0, ',', '.') }}</td>
