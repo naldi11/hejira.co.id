@@ -7,7 +7,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: 210mm 148mm; /* Memaksa width 210mm dan height 148mm (Landscape) */
+            size: A5 landscape;
             margin: 4mm 6mm;
         }
 
