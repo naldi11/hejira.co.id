@@ -2,6 +2,24 @@
 @section('title', isset($product) ? 'Edit Produk' : 'Tambah Produk')
 @section('page-title', 'Master Data — ' . (isset($product) ? 'Edit Produk' : 'Tambah Produk'))
 
+@php
+    $accentColor = 'indigo';
+    $accentHex = '#4f46e5';
+    $accentRgb = '79, 70, 229';
+    $accentLightHex = '#eef2ff';
+    if (($currentScope ?? '') === 'jihans') {
+        $accentColor = 'orange';
+        $accentHex = '#ea580c';
+        $accentRgb = '234, 88, 12';
+        $accentLightHex = '#ffedd5';
+    } elseif (($currentScope ?? '') === 'hendhys') {
+        $accentColor = 'amber';
+        $accentHex = '#d97706';
+        $accentRgb = '217, 119, 6';
+        $accentLightHex = '#fef3c7';
+    }
+@endphp
+
 @push('styles')
     <style>
         .ts-wrapper { margin-bottom: 0 !important; }
@@ -16,8 +34,8 @@
         }
         .ts-control.focus {
             background-color: #fff !important;
-            border-color: #4f46e5 !important; /* indigo-500 */
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
+            border-color: {{ $accentHex }} !important;
+            box-shadow: 0 0 0 4px rgba({{ $accentRgb }}, 0.1) !important;
         }
         .ts-dropdown {
             border-radius: 1rem !important;
@@ -29,7 +47,7 @@
             border-radius: 0.5rem !important;
             padding: 0.5rem 1rem !important;
         }
-        .ts-dropdown .active { background-color: #eef2ff !important; color: #4f46e5 !important; }
+        .ts-dropdown .active { background-color: {{ $accentLightHex }} !important; color: {{ $accentHex }} !important; }
     </style>
 @endpush
 
@@ -63,7 +81,7 @@
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Nama Produk <span class="text-rose-500">*</span></label>
                             <input type="text" name="name" value="{{ old('name', $product->name ?? '') }}" required
                                 placeholder="Masukkan nama produk..."
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
                             @error('name') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
                         </div>
 
@@ -72,7 +90,7 @@
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Barcode</label>
                             <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
                                 placeholder="Scan barcode produk..."
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-mono text-sm">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-mono text-sm">
                         </div>
 
                         {{-- Lokasi Rak --}}
@@ -80,13 +98,13 @@
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Lokasi Rak</label>
                             <input type="text" name="rack" value="{{ old('rack', $product->rack ?? '') }}"
                                 placeholder="Contoh: A-01"
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
                         </div>
 
                         {{-- Kategori --}}
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Kategori <span class="text-rose-500">*</span></label>
-                            <select name="category_id" class="select2 w-full">
+                            <select name="category_id" class="select-creatable w-full">
                                 <option value="">Pilih Kategori</option>
                                 @foreach($categories as $cat)
                                     <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
@@ -98,7 +116,7 @@
                         {{-- Satuan --}}
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Satuan <span class="text-rose-500">*</span></label>
-                            <select name="unit_id" class="select2 w-full">
+                            <select name="unit_id" class="select-creatable w-full">
                                 <option value="">Pilih Satuan</option>
                                 @foreach($units as $unit)
                                     <option value="{{ $unit->id }}" {{ old('unit_id', $product->unit_id ?? '') == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->abbreviation }})</option>
@@ -110,7 +128,7 @@
                         {{-- Brand --}}
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Brand</label>
-                            <select name="brand_id" class="select2 w-full">
+                            <select name="brand_id" class="select-creatable w-full">
                                 <option value="">— Tanpa Brand —</option>
                                 @foreach($brands as $brand)
                                     <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id ?? '') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
@@ -136,7 +154,7 @@
                                 <input id="imageInput" type="file" name="image" accept="image/*" class="hidden"
                                     @change="handleFile($event.target.files[0])">
                                 <div @click="document.getElementById('imageInput').click()" 
-                                     class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-4 flex items-center gap-4 cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                                     class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-4 flex items-center gap-4 cursor-pointer hover:bg-slate-100 hover:border-{{ $accentColor }}-300 transition-all">
                                     <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                                         <template x-if="preview">
                                             <img :src="preview" class="w-full h-full object-cover">
@@ -174,17 +192,17 @@
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">HPP (Rp) <span class="text-rose-500">*</span></label>
                             <input type="number" name="hpp" value="{{ old('hpp', $product->hpp ?? 0) }}" min="0" step="0.01" required
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
                         </div>
                         <div>
-                            <label class="text-xs font-black text-indigo-500 uppercase tracking-widest ml-1 mb-2 block">Harga Jual (Rp) <span class="text-rose-500">*</span></label>
+                            <label class="text-xs font-black text-{{ $accentColor }}-500 uppercase tracking-widest ml-1 mb-2 block">Harga Jual (Rp) <span class="text-rose-500">*</span></label>
                             <input type="number" name="selling_price" value="{{ old('selling_price', $product->selling_price ?? 0) }}" min="0" step="0.01" required
-                                class="bg-indigo-50 border-2 border-indigo-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-black text-indigo-600">
+                                class="bg-{{ $accentColor }}-50 border-2 border-{{ $accentColor }}-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-black text-{{ $accentColor }}-600">
                         </div>
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Stok Minimum <span class="text-rose-500">*</span></label>
                             <input type="number" name="stock_min" value="{{ old('stock_min', $product->stock_min ?? 0) }}" min="0" step="1" required
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
                         </div>
                     </div>
 
@@ -211,14 +229,14 @@
                                         <div class="relative">
                                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Min. Beli</span>
                                             <input type="number" name="tiered_prices[{{ $i }}][min_qty]" value="{{ $tier['min_qty'] }}" min="1" placeholder="cth: 50"
-                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-900 text-sm">
+                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-{{ $accentColor }}-500 outline-none transition-all font-bold text-slate-900 text-sm">
                                         </div>
                                     </div>
                                     <div class="flex-1 w-full">
                                         <div class="relative">
                                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga Rp</span>
                                             <input type="number" name="tiered_prices[{{ $i }}][price]" value="{{ $tier['price'] }}" min="0" placeholder="cth: 142000"
-                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-indigo-600 text-sm">
+                                                class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-{{ $accentColor }}-500 outline-none transition-all font-bold text-{{ $accentColor }}-600 text-sm">
                                         </div>
                                     </div>
                                     <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"
@@ -256,7 +274,7 @@
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Rate PPN (%)</label>
                             <input type="number" name="ppn_rate" value="{{ old('ppn_rate', $product->ppn_rate ?? 11) }}" min="0" max="100" step="0.01"
-                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
                         </div>
                         <div>
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Status Produk</label>
@@ -276,12 +294,12 @@
                                 ['visible_hendhys', 'Hendhys Brownies','cake',       $defHendhys],
                             ] as [$fieldName, $label, $icon, $checked])
                                 <label x-data="{ on: {{ $checked ? 'true' : 'false' }} }"
-                                    :class="on ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'"
+                                    :class="on ? 'border-{{ $accentColor }}-600 bg-{{ $accentColor }}-50 text-{{ $accentColor }}-600' : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'"
                                     class="flex-1 min-w-[200px] flex flex-col items-center justify-center p-6 rounded-[2rem] border-2 cursor-pointer transition-all select-none">
                                     <input type="checkbox" name="{{ $fieldName }}" value="1" x-model="on" class="hidden">
                                     <span class="material-symbols-outlined text-[32px] mb-3" :class="on ? 'fill' : ''">{{ $icon }}</span>
                                     <span class="text-xs font-black uppercase tracking-widest">{{ $label }}</span>
-                                    <div class="mt-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all" :class="on ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200'">
+                                    <div class="mt-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all" :class="on ? 'bg-{{ $accentColor }}-600 border-{{ $accentColor }}-600' : 'border-slate-200'">
                                         <span x-show="on" class="material-symbols-outlined text-white text-[16px] font-black">check</span>
                                     </div>
                                 </label>
@@ -292,7 +310,7 @@
                     <div class="border-t border-slate-100 pt-10">
                         <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Catatan Internal</label>
                         <textarea name="notes" placeholder="Tambahkan catatan khusus untuk produk ini..." rows="3"
-                            class="bg-slate-50 border-2 border-slate-100 rounded-3xl px-6 py-5 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none w-full font-medium text-slate-700">{{ old('notes', $product->notes ?? '') }}</textarea>
+                            class="bg-slate-50 border-2 border-slate-100 rounded-3xl px-6 py-5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-medium text-slate-700">{{ old('notes', $product->notes ?? '') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -300,7 +318,7 @@
             {{-- Form Actions --}}
             <div class="flex items-center gap-4 pt-4 pb-12">
                 <button type="submit"
-                    class="flex-1 px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3">
+                    class="flex-1 px-8 py-4 bg-{{ $accentColor }}-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-{{ $accentColor }}-700 transition-all shadow-xl shadow-{{ $accentColor }}-600/20 flex items-center justify-center gap-3">
                     <span class="material-symbols-outlined">{{ isset($product) ? 'save' : 'add_circle' }}</span>
                     {{ isset($product) ? 'Simpan Perubahan' : 'Daftarkan Produk Baru' }}
                 </button>
@@ -319,6 +337,10 @@
                 document.querySelectorAll('.select2').forEach((el) => {
                     new TomSelect(el, { create: false, sortField: { field: "text", direction: "asc" }, maxOptions: null });
                 });
+                
+                document.querySelectorAll('.select-creatable').forEach((el) => {
+                    new TomSelect(el, { create: true, sortField: { field: "text", direction: "asc" }, maxOptions: null, createOnBlur: true });
+                });
 
                 document.getElementById('addTierBtn').addEventListener('click', function () {
                     const emptyMsg = document.getElementById('emptyTierMsg');
@@ -333,14 +355,14 @@
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Min. Beli</span>
                                 <input type="number" name="tiered_prices[${index}][min_qty]" min="1" placeholder="cth: 50"
-                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-900 text-sm">
+                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-{{ $accentColor }}-500 outline-none transition-all font-bold text-slate-900 text-sm">
                             </div>
                         </div>
                         <div class="flex-1 w-full">
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga Rp</span>
                                 <input type="number" name="tiered_prices[${index}][price]" min="0" placeholder="cth: 142000"
-                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold text-indigo-600 text-sm">
+                                    class="w-full pl-24 pr-4 py-3 bg-white border-2 border-slate-100 rounded-xl focus:border-{{ $accentColor }}-500 outline-none transition-all font-bold text-{{ $accentColor }}-600 text-sm">
                             </div>
                         </div>
                         <button type="button" onclick="this.closest('.tier-row').remove(); reindexTiers()"

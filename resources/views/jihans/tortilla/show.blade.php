@@ -1,101 +1,115 @@
 @extends('layouts.jihans')
-@section('title', 'Detail Produksi Tortilla')
-@section('page-title', 'Detail Produksi Sesi ' . $tortilla->session_number)
+@section('title', 'Detail Produksi — ' . $tortilla->session_number)
+@section('page-title', 'Detail Sesi Produksi')
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface space-y-lg">
+<div class="space-y-6">
 
-        {{-- Header Info --}}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md">
-            <div class="space-y-1">
-                <p class="text-xs font-bold text-outline uppercase tracking-wider">Nomor Sesi</p>
-                <h3 class="text-xl font-bold text-on-surface font-mono">{{ $tortilla->session_number }}</h3>
-                <p class="text-sm text-on-surface-variant italic">{{ $tortilla->notes ?? 'Tidak ada catatan' }}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-md text-right">
-                <div class="text-left sm:text-right">
-                    <p class="text-xs font-bold text-outline uppercase tracking-wider">Tanggal</p>
-                    <p class="text-on-surface font-bold">{{ \Carbon\Carbon::parse($tortilla->date)->format('d F Y') }}</p>
-                </div>
-                <div class="text-left sm:text-right">
-                    <p class="text-xs font-bold text-outline uppercase tracking-wider">Input Oleh</p>
-                    <p class="text-on-surface font-bold">{{ $tortilla->creator->name ?? 'System' }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Table Details --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant">
-                <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Rincian Produksi Karyawan</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-surface-container-low border-b border-outline-variant text-xs uppercase text-on-surface-variant">
-                            <th class="px-md py-sm">Karyawan</th>
-                            <th class="px-sm py-sm text-center">TB</th>
-                            <th class="px-sm py-sm text-center">TS</th>
-                            <th class="px-sm py-sm text-center">TK</th>
-                            <th class="px-sm py-sm text-center">TC</th>
-                            <th class="px-sm py-sm text-center">KRIBAB</th>
-                            <th class="px-md py-sm text-right">Total Upah</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-surface-container">
-                        @foreach($tortilla->details as $detail)
-                            <tr class="hover:bg-surface-container transition-colors">
-                                <td class="px-md py-sm font-bold text-on-surface">
-                                    {{ $detail->karyawan->name }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ $detail->tb_qty }} <span class="text-[10px] text-on-surface-variant">(@ Rp {{ number_format($detail->tb_rate, 0, ',', '.') }})</span>
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ $detail->ts_qty }} <span class="text-[10px] text-on-surface-variant">(@ Rp {{ number_format($detail->ts_rate, 0, ',', '.') }})</span>
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ $detail->tk_qty }} <span class="text-[10px] text-on-surface-variant">(@ Rp {{ number_format($detail->tk_rate, 0, ',', '.') }})</span>
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ $detail->tc_qty }} <span class="text-[10px] text-on-surface-variant">(@ Rp {{ number_format($detail->tc_rate, 0, ',', '.') }})</span>
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ $detail->kribab_qty }} <span class="text-[10px] text-on-surface-variant">(@ Rp {{ number_format($detail->kribab_rate, 0, ',', '.') }})</span>
-                                </td>
-                                <td class="px-md py-sm text-right font-bold text-primary">
-                                    Rp {{ number_format($detail->total_amount, 0, ',', '.') }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr class="bg-surface-container-low font-bold">
-                            <td class="px-md py-sm">TOTAL KESELURUHAN</td>
-                            <td class="px-sm py-sm text-center">{{ $tortilla->details->sum('tb_qty') }}</td>
-                            <td class="px-sm py-sm text-center">{{ $tortilla->details->sum('ts_qty') }}</td>
-                            <td class="px-sm py-sm text-center">{{ $tortilla->details->sum('tk_qty') }}</td>
-                            <td class="px-sm py-sm text-center">{{ $tortilla->details->sum('tc_qty') }}</td>
-                            <td class="px-sm py-sm text-center">{{ $tortilla->details->sum('kribab_qty') }}</td>
-                            <td class="px-md py-sm text-right text-primary text-xl">
-                                Rp {{ number_format($tortilla->details->sum('total_amount'), 0, ',', '.') }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-md">
-            <a href="{{ route('jihans.tortilla.index') }}" class="inline-flex items-center gap-sm px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">
-                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                Kembali ke Daftar
-            </a>
-            <button type="button" onclick="window.print()" class="inline-flex items-center gap-sm px-md py-sm bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg hover:bg-secondary-fixed-dim transition-all">
-                <span class="material-symbols-outlined text-[18px]">print</span>
-                Cetak Detail
-            </button>
-        </div>
-
+    {{-- Back + Print --}}
+    <div class="flex items-center justify-between">
+        <a href="{{ route('jihans.tortilla.index') }}"
+           class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition-colors group">
+            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Kembali ke Daftar
+        </a>
+        <button onclick="window.print()"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition-all print:hidden">
+            <span class="material-symbols-outlined text-[18px]">print</span>
+            Cetak
+        </button>
     </div>
+
+    {{-- Header Card --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+            <div>
+                <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nomor Sesi</p>
+                <h2 class="text-2xl font-black text-slate-900 font-mono">{{ $tortilla->session_number }}</h2>
+                @if($tortilla->notes)
+                <p class="text-sm text-slate-500 italic mt-1">{{ $tortilla->notes }}</p>
+                @endif
+            </div>
+            <div class="grid grid-cols-2 gap-6 sm:text-right">
+                <div>
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Tanggal</p>
+                    <p class="text-base font-bold text-slate-700">{{ \Carbon\Carbon::parse($tortilla->date)->format('d F Y') }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Diinput Oleh</p>
+                    <p class="text-base font-bold text-slate-700">{{ $tortilla->creator->name ?? 'Sistem' }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Summary badges --}}
+        <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3">
+            <div class="inline-flex items-center gap-1.5 bg-orange-50 border border-orange-100 text-orange-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+                <span class="material-symbols-outlined text-[14px]">group</span>
+                {{ $tortilla->details->count() }} Karyawan
+            </div>
+            <div class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-bold">
+                <span class="material-symbols-outlined text-[14px]">inventory_2</span>
+                Total Produksi: {{ $tortilla->details->sum('tb_qty') + $tortilla->details->sum('ts_qty') + $tortilla->details->sum('tk_qty') + $tortilla->details->sum('tc_qty') + $tortilla->details->sum('kribab_qty') }} pack
+            </div>
+        </div>
+    </div>
+
+    {{-- Detail Table --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-black text-slate-700 text-sm uppercase tracking-wider">Rincian Produksi per Karyawan</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-black tracking-wider">
+                        <th class="px-6 py-3">Karyawan</th>
+                        <th class="px-4 py-3 text-center">TB</th>
+                        <th class="px-4 py-3 text-center">TS</th>
+                        <th class="px-4 py-3 text-center">TK</th>
+                        <th class="px-4 py-3 text-center">TC</th>
+                        <th class="px-4 py-3 text-center">Kribab</th>
+                        <th class="px-6 py-3 text-right">Total Pack</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach($tortilla->details as $detail)
+                    <tr class="hover:bg-orange-50/30 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black shrink-0">
+                                    {{ substr($detail->karyawan->name, 0, 1) }}
+                                </div>
+                                <span class="font-bold text-slate-800">{{ $detail->karyawan->name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->tb_qty }}</td>
+                        <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->ts_qty }}</td>
+                        <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->tk_qty }}</td>
+                        <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->tc_qty }}</td>
+                        <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->kribab_qty }}</td>
+                        <td class="px-6 py-4 text-right font-black text-orange-600 text-base">
+                            {{ $detail->tb_qty + $detail->ts_qty + $detail->tk_qty + $detail->tc_qty + $detail->kribab_qty }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr class="bg-orange-50 border-t-2 border-orange-200 font-black">
+                        <td class="px-6 py-4 text-slate-700">TOTAL</td>
+                        <td class="px-4 py-4 text-center text-slate-700">{{ $tortilla->details->sum('tb_qty') }}</td>
+                        <td class="px-4 py-4 text-center text-slate-700">{{ $tortilla->details->sum('ts_qty') }}</td>
+                        <td class="px-4 py-4 text-center text-slate-700">{{ $tortilla->details->sum('tk_qty') }}</td>
+                        <td class="px-4 py-4 text-center text-slate-700">{{ $tortilla->details->sum('tc_qty') }}</td>
+                        <td class="px-4 py-4 text-center text-slate-700">{{ $tortilla->details->sum('kribab_qty') }}</td>
+                        <td class="px-6 py-4 text-right text-orange-700 text-xl">
+                            {{ $tortilla->details->sum('tb_qty') + $tortilla->details->sum('ts_qty') + $tortilla->details->sum('tk_qty') + $tortilla->details->sum('tc_qty') + $tortilla->details->sum('kribab_qty') }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+</div>
 @endsection

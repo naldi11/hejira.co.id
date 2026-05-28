@@ -58,6 +58,9 @@ class ReceiptController extends Controller
             'received_quantities.*'  => 'required|numeric|min:0',
             'kondisi'                => 'nullable|array',
             'kondisi.*'              => 'nullable|in:baik,rusak,kurang',
+            'batch_number'           => 'nullable|array',
+            'expired_date'           => 'nullable|array',
+            'expired_date.*'         => 'nullable|date',
             'receive_notes'          => 'nullable|string|max:2000',
             'receive_kendala'        => 'nullable|string|max:2000',
             'receive_received_by_name' => 'nullable|string|max:255',
@@ -68,14 +71,35 @@ class ReceiptController extends Controller
 
         try {
             DB::transaction(function () use ($request, $transferOut, $info) {
+                $receiptConfirmation = \App\Models\ReceiptConfirmation::create([
+                    'receiptable_type' => TransferOut::class,
+                    'receiptable_id'   => $transferOut->id,
+                    'received_by'      => auth()->id(),
+                    'received_at'      => now(),
+                    'status'           => 'completed',
+                    'general_notes'    => $request->receive_notes . ($request->receive_kendala ? " | Kendala: " . $request->receive_kendala : ""),
+                ]);
+
                 foreach ($transferOut->details as $detail) {
                     $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
                     $receivedQty = min($receivedQty, (float) $detail->quantity);
                     $kondisi = $request->kondisi[$detail->id] ?? null;
 
+                    // Update legacy detail
                     $detail->update([
                         'received_quantity' => $receivedQty,
                         'kondisi'           => $kondisi,
+                    ]);
+
+                    // Insert to Unified BAST details
+                    $receiptConfirmation->details()->create([
+                        'product_id'   => $detail->product_id,
+                        'expected_qty' => $detail->quantity,
+                        'actual_qty'   => $receivedQty,
+                        'condition'    => $kondisi ?? 'baik',
+                        'expired_date' => $request->expired_date[$detail->id] ?? null,
+                        'batch_number' => $request->batch_number[$detail->id] ?? null,
+                        'notes'        => null,
                     ]);
                 }
 
@@ -95,11 +119,16 @@ class ReceiptController extends Controller
                     $dir = 'transfer-receipts/' . $transferOut->transfer_number;
                     foreach ($request->file('photos') as $file) {
                         $path = $file->store($dir, 'public');
+                        // Legacy photo
                         TransferOutPhoto::create([
                             'transfer_id' => $transferOut->id,
                             'path'        => $path,
                             'uploaded_by' => auth()->id(),
                             'created_at'  => now(),
+                        ]);
+                        // Unified BAST photo
+                        $receiptConfirmation->photos()->create([
+                            'photo_path' => $path,
                         ]);
                     }
                 }

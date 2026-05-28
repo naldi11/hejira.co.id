@@ -10,7 +10,10 @@ class JihansTortillaSession extends Model
 {
     protected $table = 'jihans_tortilla_sessions';
 
-    protected $fillable = ['session_number', 'date', 'notes', 'created_by'];
+    protected $fillable = [
+        'session_number', 'date', 'notes', 'created_by',
+        'tb_product_id', 'ts_product_id', 'tk_product_id', 'tc_product_id', 'kribab_product_id',
+    ];
 
     protected function casts(): array
     {

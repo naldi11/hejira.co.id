@@ -1,147 +1,146 @@
 @extends('layouts.jihans')
-@section('title', 'Rekap Gaji Karyawan')
-@section('page-title', 'Rekap Produksi & Gaji Tortilla')
+@section('title', 'Rekap Produksi Karyawan')
+@section('page-title', 'Rekap Produksi Tortilla')
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface space-y-md">
+<div class="space-y-6">
 
-        {{-- Filter Periode --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md space-y-md">
+    {{-- Filter Periode --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
 
-            {{-- Tombol Shortcut Periode --}}
-            <div class="flex flex-wrap gap-sm">
-                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'hari']) }}"
-                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
-                        {{ $periode === 'hari' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
-                    Hari Ini
-                </a>
-                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'minggu']) }}"
-                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
-                        {{ $periode === 'minggu' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
-                    Minggu Ini
-                </a>
-                <a href="{{ route('jihans.tortilla.recap', ['periode' => 'bulan']) }}"
-                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
-                        {{ $periode === 'bulan' ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
-                    Bulan Ini
-                </a>
-                <a href="{{ route('jihans.tortilla.recap') }}"
-                    class="px-md py-xs rounded-full font-label-md text-label-md border transition-all
-                        {{ $noFilter ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container' }}">
-                    Semua Data
-                </a>
-            </div>
-
-            {{-- Custom Range --}}
-            <form method="GET" class="flex flex-wrap items-end gap-md">
-                <div class="space-y-xs">
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant">Dari Tanggal</label>
-                    <input type="date" name="date_from" value="{{ $dateFrom ? $dateFrom->format('Y-m-d') : '' }}"
-                        class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
-                </div>
-                <div class="space-y-xs">
-                    <label class="block font-label-sm text-label-sm text-on-surface-variant">Sampai Tanggal</label>
-                    <input type="date" name="date_to" value="{{ $dateTo ? $dateTo->format('Y-m-d') : '' }}"
-                        class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
-                </div>
-                <button type="submit" class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg hover:bg-on-primary-fixed-variant transition-all flex items-center gap-xs shadow-sm">
-                    <span class="material-symbols-outlined text-[18px]">filter_list</span>
-                    Custom Range
-                </button>
-                @php
-                    $exportParams = $periode
-                        ? ['periode' => $periode]
-                        : ($dateFrom && $dateTo ? ['date_from' => $dateFrom->format('Y-m-d'), 'date_to' => $dateTo->format('Y-m-d')] : []);
-                @endphp
-                <a href="{{ route('jihans.tortilla.recap.export', $exportParams) }}"
-                    class="px-md py-sm bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg hover:bg-secondary-fixed-dim transition-all flex items-center gap-xs shadow-sm">
-                    <span class="material-symbols-outlined text-[18px]">download</span>
-                    Export Excel
-                </a>
-            </form>
+        {{-- Tombol Shortcut Periode --}}
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('jihans.tortilla.recap', ['periode' => 'hari']) }}"
+                class="px-4 py-1.5 rounded-full text-sm font-bold border transition-all
+                    {{ $periode === 'hari' ? 'bg-orange-600 text-white border-orange-600' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' }}">
+                Hari Ini
+            </a>
+            <a href="{{ route('jihans.tortilla.recap', ['periode' => 'minggu']) }}"
+                class="px-4 py-1.5 rounded-full text-sm font-bold border transition-all
+                    {{ $periode === 'minggu' ? 'bg-orange-600 text-white border-orange-600' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' }}">
+                Minggu Ini
+            </a>
+            <a href="{{ route('jihans.tortilla.recap', ['periode' => 'bulan']) }}"
+                class="px-4 py-1.5 rounded-full text-sm font-bold border transition-all
+                    {{ $periode === 'bulan' ? 'bg-orange-600 text-white border-orange-600' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' }}">
+                Bulan Ini
+            </a>
+            <a href="{{ route('jihans.tortilla.recap') }}"
+                class="px-4 py-1.5 rounded-full text-sm font-bold border transition-all
+                    {{ $noFilter ? 'bg-orange-600 text-white border-orange-600' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' }}">
+                Semua Data
+            </a>
         </div>
 
-        {{-- Table Recap --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
-                <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">
-                    @if($noFilter)
-                        Semua Data Produksi
-                    @elseif($dateFrom && $dateTo)
-                        Periode: {{ $dateFrom->format('d M Y') }} — {{ $dateTo->format('d M Y') }}
-                    @endif
-                </h3>
-                <span class="font-label-sm text-label-sm text-on-surface-variant">{{ $recap->count() }} karyawan</span>
+        {{-- Custom Range --}}
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Dari Tanggal</label>
+                <input type="date" name="date_from" value="{{ $dateFrom ? $dateFrom->format('Y-m-d') : '' }}"
+                    class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all">
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-surface-container-low border-b border-outline-variant text-xs uppercase text-on-surface-variant font-bold">
-                            <th class="px-md py-sm">Nama Karyawan</th>
-                            <th class="px-sm py-sm text-center">Hadir</th>
-                            <th class="px-sm py-sm text-center">TB</th>
-                            <th class="px-sm py-sm text-center">TS</th>
-                            <th class="px-sm py-sm text-center">TK</th>
-                            <th class="px-sm py-sm text-center">TC</th>
-                            <th class="px-sm py-sm text-center">KRIBAB</th>
-                            <th class="px-md py-sm text-right">Total Upah (Rp)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-surface-container">
-                        @forelse($recap as $item)
-                            <tr class="hover:bg-surface-container transition-colors">
-                                <td class="px-md py-sm font-bold text-on-surface">
-                                    {{ $item->karyawan->name }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md text-secondary font-bold">
-                                    {{ $item->hadir_count }}x
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ number_format($item->total_tb, 0, ',', '.') }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ number_format($item->total_ts, 0, ',', '.') }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ number_format($item->total_tk, 0, ',', '.') }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ number_format($item->total_tc, 0, ',', '.') }}
-                                </td>
-                                <td class="px-sm py-sm text-center font-body-md">
-                                    {{ number_format($item->total_kribab, 0, ',', '.') }}
-                                </td>
-                                <td class="px-md py-sm text-right font-bold text-primary">
-                                    {{ number_format($item->total_gaji, 0, ',', '.') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="px-md py-xl text-center text-on-surface-variant italic">
-                                    Tidak ada data produksi untuk periode ini.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    @if($recap->isNotEmpty())
-                        <tfoot>
-                            <tr class="bg-surface-container-low font-bold text-on-surface">
-                                <td class="px-md py-sm">GRAND TOTAL</td>
-                                <td class="px-sm py-sm text-center"></td>
-                                <td class="px-sm py-sm text-center">{{ number_format($recap->sum('total_tb'), 0, ',', '.') }}</td>
-                                <td class="px-sm py-sm text-center">{{ number_format($recap->sum('total_ts'), 0, ',', '.') }}</td>
-                                <td class="px-sm py-sm text-center">{{ number_format($recap->sum('total_tk'), 0, ',', '.') }}</td>
-                                <td class="px-sm py-sm text-center">{{ number_format($recap->sum('total_tc'), 0, ',', '.') }}</td>
-                                <td class="px-sm py-sm text-center">{{ number_format($recap->sum('total_kribab'), 0, ',', '.') }}</td>
-                                <td class="px-md py-sm text-right text-primary text-xl">
-                                    {{ number_format($recap->sum('total_gaji'), 0, ',', '.') }}
-                                </td>
-                            </tr>
-                        </tfoot>
-                    @endif
-                </table>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Sampai Tanggal</label>
+                <input type="date" name="date_to" value="{{ $dateTo ? $dateTo->format('Y-m-d') : '' }}"
+                    class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all">
             </div>
-        </div>
-
+            <button type="submit" class="px-4 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">filter_list</span>
+                Custom Range
+            </button>
+            @php
+                $exportParams = $periode
+                    ? ['periode' => $periode]
+                    : ($dateFrom && $dateTo ? ['date_from' => $dateFrom->format('Y-m-d'), 'date_to' => $dateTo->format('Y-m-d')] : []);
+            @endphp
+            <a href="{{ route('jihans.tortilla.recap.export', $exportParams) }}"
+                class="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                Export Excel
+            </a>
+        </form>
     </div>
+
+    {{-- Table Recap --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="text-sm font-black text-slate-600 uppercase tracking-wider">
+                @if($noFilter)
+                    Semua Data Produksi
+                @elseif($dateFrom && $dateTo)
+                    Periode: {{ $dateFrom->format('d M Y') }} — {{ $dateTo->format('d M Y') }}
+                @elseif($periode === 'hari')
+                    Produksi Hari Ini
+                @elseif($periode === 'minggu')
+                    Produksi Minggu Ini
+                @elseif($periode === 'bulan')
+                    Produksi Bulan Ini
+                @endif
+            </h3>
+            <span class="text-xs font-bold text-slate-400">{{ $recap->count() }} karyawan</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500 font-black tracking-wider">
+                        <th class="px-6 py-3">Nama Karyawan</th>
+                        <th class="px-4 py-3 text-center">Hadir</th>
+                        <th class="px-4 py-3 text-center">TB</th>
+                        <th class="px-4 py-3 text-center">TS</th>
+                        <th class="px-4 py-3 text-center">TK</th>
+                        <th class="px-4 py-3 text-center">TC</th>
+                        <th class="px-4 py-3 text-center">Kribab</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($recap as $item)
+                        <tr class="hover:bg-orange-50/30 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-800">
+                                {{ $item->karyawan->name }}
+                            </td>
+                            <td class="px-4 py-4 text-center font-bold text-orange-600">
+                                {{ $item->hadir_count }}x
+                            </td>
+                            <td class="px-4 py-4 text-center font-black text-slate-800">
+                                {{ number_format($item->total_tb, 0, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-4 text-center font-black text-slate-800">
+                                {{ number_format($item->total_ts, 0, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-4 text-center font-black text-slate-800">
+                                {{ number_format($item->total_tk, 0, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-4 text-center font-black text-slate-800">
+                                {{ number_format($item->total_tc, 0, ',', '.') }}
+                            </td>
+                            <td class="px-4 py-4 text-center font-black text-slate-800">
+                                {{ number_format($item->total_kribab, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-400 italic">
+                                Tidak ada data produksi untuk periode ini.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if($recap->isNotEmpty())
+                    <tfoot>
+                        <tr class="bg-orange-50 border-t-2 border-orange-200 font-black">
+                            <td class="px-6 py-4 text-slate-700">GRAND TOTAL</td>
+                            <td class="px-4 py-4 text-center"></td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ number_format($recap->sum('total_tb'), 0, ',', '.') }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ number_format($recap->sum('total_ts'), 0, ',', '.') }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ number_format($recap->sum('total_tk'), 0, ',', '.') }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ number_format($recap->sum('total_tc'), 0, ',', '.') }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ number_format($recap->sum('total_kribab'), 0, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
+</div>
 @endsection

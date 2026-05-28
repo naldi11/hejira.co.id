@@ -80,13 +80,13 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                     $productType = 'INV';
                 }
 
-                // Cek produk existing (by barcode lalu by nama)
+                // Cek produk existing (by barcode lalu by nama, termasuk yang di-soft-delete)
                 $product = null;
                 if (!empty($row['barcode'])) {
-                    $product = Product::where('barcode', $row['barcode'])->first();
+                    $product = Product::withTrashed()->where('barcode', $row['barcode'])->first();
                 }
                 if (!$product) {
-                    $product = Product::where('name', $productName)->first();
+                    $product = Product::withTrashed()->where('name', $productName)->first();
                 }
 
                 if ($product) {
@@ -102,6 +102,10 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                         'product_type' => $productType,
                         'entity_scope' => $entityScope,
                     ]);
+
+                    if ($product->trashed()) {
+                        $product->restore();
+                    }
                 } else {
                     $code = $this->numberGenerator->generate('PRD', 'master_products', 'code');
                     $product = Product::create([
@@ -127,7 +131,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                 }
             } else {
                 // Baris tier tambahan — temukan produk yang sudah di-upsert sebelumnya
-                $product = Product::where('name', $productName)->first();
+                $product = Product::withTrashed()->where('name', $productName)->first();
             }
 
             // Kumpulkan tier jika ada

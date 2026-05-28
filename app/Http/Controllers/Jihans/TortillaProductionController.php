@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use App\Models\JihansTortillaSession;
 use App\Models\JihansTortillaSessionDetail;
+use App\Models\JihansProductionConfig;
 use App\Models\Karyawan;
 use App\Models\Product;
-use App\Models\ProductionRate;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -29,10 +29,7 @@ class TortillaProductionController extends Controller
 
         if ($request->filled('date_from')) $q->whereDate('date', '>=', $request->date_from);
         if ($request->filled('date_to'))   $q->whereDate('date', '<=', $request->date_to);
-
-        if ($request->filled('search')) {
-            $q->where('session_number', 'like', '%' . $request->search . '%');
-        }
+        if ($request->filled('search'))    $q->where('session_number', 'like', '%' . $request->search . '%');
 
         $sessions = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
@@ -41,103 +38,101 @@ class TortillaProductionController extends Controller
 
     public function create()
     {
-        $karyawans = Karyawan::where('entity_scope', 'jihans')->where('is_active', true)->orderBy('name')->get();
-        $rates = ProductionRate::where('entity_scope', 'jihans')->first();
+        $karyawans = Karyawan::where('entity_scope', 'jihans')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
-        if (!$rates) {
-            return redirect()->route('jihans.master.production-rates.edit')
-                ->with('error', 'Harap atur tarif produksi terlebih dahulu sebelum menginput data.');
-        }
-
-        return view('jihans.tortilla.form', compact('karyawans', 'rates'));
+        return view('jihans.tortilla.form', compact('karyawans'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
-            'notes' => 'nullable|string',
-            'details' => 'required|array|min:1',
+            'date'                  => 'required|date',
+            'notes'                 => 'nullable|string',
+            'details'               => 'required|array|min:1',
             'details.*.karyawan_id' => 'required|exists:master_karyawan,id',
-            'details.*.tb_qty' => 'required|integer|min:0',
-            'details.*.ts_qty' => 'required|integer|min:0',
-            'details.*.tk_qty' => 'required|integer|min:0',
-            'details.*.tc_qty' => 'required|integer|min:0',
-            'details.*.kribab_qty' => 'required|integer|min:0',
+            'details.*.tb_qty'      => 'required|integer|min:0',
+            'details.*.ts_qty'      => 'required|integer|min:0',
+            'details.*.tk_qty'      => 'required|integer|min:0',
+            'details.*.tc_qty'      => 'required|integer|min:0',
+            'details.*.kribab_qty'  => 'required|integer|min:0',
         ]);
 
-        $rates = ProductionRate::where('entity_scope', 'jihans')->first();
+        $totalQtyAll = collect($request->details)->sum(function ($d) {
+            return ($d['tb_qty'] ?? 0) + ($d['ts_qty'] ?? 0) + ($d['tk_qty'] ?? 0)
+                 + ($d['tc_qty'] ?? 0) + ($d['kribab_qty'] ?? 0);
+        });
 
-        if (!$rates) {
-            return redirect()->route('jihans.master.production-rates.edit')
-                ->with('error', 'Tarif produksi Jihans tidak ditemukan. Harap atur tarif terlebih dahulu.');
+        if ($totalQtyAll <= 0) {
+            return back()->withInput()->withErrors(['details' => 'Minimal ada 1 karyawan dengan jumlah produksi > 0.']);
         }
 
-        DB::transaction(function () use ($request, $rates) {
+        DB::transaction(function () use ($request) {
+            $config = JihansProductionConfig::current();
+
             $session = JihansTortillaSession::create([
-                'session_number' => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
-                'date' => $request->date,
-                'notes' => $request->notes,
-                'created_by' => auth()->id(),
+                'session_number'    => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
+                'date'              => $request->date,
+                'notes'             => $request->notes,
+                'created_by'        => auth()->id(),
+                'tb_product_id'     => $config->tb_product_id,
+                'ts_product_id'     => $config->ts_product_id,
+                'tk_product_id'     => $config->tk_product_id,
+                'tc_product_id'     => $config->tc_product_id,
+                'kribab_product_id' => $config->kribab_product_id,
             ]);
 
-            foreach ($request->details as $detail) {
-                $total = ($detail['tb_qty'] * $rates->tb_rate) +
-                         ($detail['ts_qty'] * $rates->ts_rate) +
-                         ($detail['tk_qty'] * $rates->tk_rate) +
-                         ($detail['tc_qty'] * $rates->tc_rate) +
-                         ($detail['kribab_qty'] * $rates->kribab_rate);
+            $productQtyMap = [];
 
+            foreach ($request->details as $detail) {
                 $session->details()->create([
                     'karyawan_id' => $detail['karyawan_id'],
-                    'tb_qty' => $detail['tb_qty'],
-                    'ts_qty' => $detail['ts_qty'],
-                    'tk_qty' => $detail['tk_qty'],
-                    'tc_qty' => $detail['tc_qty'],
-                    'kribab_qty' => $detail['kribab_qty'],
-                    'tb_rate' => $rates->tb_rate,
-                    'ts_rate' => $rates->ts_rate,
-                    'tk_rate' => $rates->tk_rate,
-                    'tc_rate' => $rates->tc_rate,
-                    'kribab_rate' => $rates->kribab_rate,
-                    'total_amount' => $total,
+                    'tb_qty'      => $detail['tb_qty'],
+                    'ts_qty'      => $detail['ts_qty'],
+                    'tk_qty'      => $detail['tk_qty'],
+                    'tc_qty'      => $detail['tc_qty'],
+                    'kribab_qty'  => $detail['kribab_qty'],
                 ]);
+
+                // Akumulasi qty per produk
+                $variantMap = [
+                    $session->tb_product_id     => (int) $detail['tb_qty'],
+                    $session->ts_product_id     => (int) $detail['ts_qty'],
+                    $session->tk_product_id     => (int) $detail['tk_qty'],
+                    $session->tc_product_id     => (int) $detail['tc_qty'],
+                    $session->kribab_product_id => (int) $detail['kribab_qty'],
+                ];
+                foreach ($variantMap as $pid => $qty) {
+                    if ($pid && $qty > 0) {
+                        $productQtyMap[$pid] = ($productQtyMap[$pid] ?? 0) + $qty;
+                    }
+                }
             }
 
-            // Agregasi total per varian dan update stok Jihans
-            $collectedDetails = collect($request->details);
-            $variantMap = [
-                [$rates->tb_product_id,     (int) $collectedDetails->sum('tb_qty')],
-                [$rates->ts_product_id,     (int) $collectedDetails->sum('ts_qty')],
-                [$rates->tk_product_id,     (int) $collectedDetails->sum('tk_qty')],
-                [$rates->tc_product_id,     (int) $collectedDetails->sum('tc_qty')],
-                [$rates->kribab_product_id, (int) $collectedDetails->sum('kribab_qty')],
-            ];
-
-            // Eager-load semua product sekaligus untuk hindari N+1 query
-            $productIds = collect($variantMap)
-                ->filter(fn ($v) => $v[0] && $v[1] > 0)
-                ->pluck(0)
-                ->unique();
-            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
-
-            foreach ($variantMap as [$productId, $totalQty]) {
-                if ($productId && $totalQty > 0 && $products->has($productId)) {
-                    $this->stockService->creditJihans(
-                        $productId,
-                        $products[$productId]->unit_id,
-                        $totalQty,
-                        'production',
-                        $session->id,
-                        auth()->id()
-                    );
+            // Update stok Jihans per produk
+            if (!empty($productQtyMap)) {
+                $products = Product::whereIn('id', array_keys($productQtyMap))->get()->keyBy('id');
+                foreach ($productQtyMap as $productId => $totalQty) {
+                    if ($products->has($productId)) {
+                        $this->stockService->creditJihans(
+                            $productId,
+                            $products[$productId]->unit_id,
+                            $totalQty,
+                            'production',
+                            $session->id,
+                            auth()->id()
+                        );
+                    }
                 }
             }
 
             $this->logger->log('create', 'jihans.tortilla', "Input produksi tortilla: {$session->session_number}", $session);
         });
 
-        return redirect()->route('jihans.tortilla.index')->with('success', 'Data produksi tortilla berhasil disimpan dan stok telah diperbarui.');
+        return redirect()->route('jihans.tortilla.index')
+            ->with('success', 'Data produksi tortilla berhasil disimpan dan stok telah diperbarui.');
     }
 
     public function show(JihansTortillaSession $tortilla)
@@ -150,7 +145,6 @@ class TortillaProductionController extends Controller
     {
         $noFilter = !$request->filled('date_from') && !$request->filled('date_to') && !$request->filled('periode');
 
-        // Shortcut periode
         $periode = $request->periode;
         if ($periode === 'hari') {
             $dateFrom = Carbon::today()->startOfDay();
@@ -165,28 +159,25 @@ class TortillaProductionController extends Controller
             $dateFrom = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : Carbon::createFromDate(2000, 1, 1)->startOfDay();
             $dateTo   = $request->filled('date_to')   ? Carbon::parse($request->date_to)->endOfDay()   : Carbon::now()->endOfDay();
         } else {
-            // Default: semua data
             $dateFrom = null;
             $dateTo   = null;
         }
 
-        $query = JihansTortillaSessionDetail::select(
+        $recap = JihansTortillaSessionDetail::select(
                 'karyawan_id',
                 DB::raw('COUNT(DISTINCT session_id) as hadir_count'),
                 DB::raw('SUM(tb_qty) as total_tb'),
                 DB::raw('SUM(ts_qty) as total_ts'),
                 DB::raw('SUM(tk_qty) as total_tk'),
                 DB::raw('SUM(tc_qty) as total_tc'),
-                DB::raw('SUM(kribab_qty) as total_kribab'),
-                DB::raw('SUM(total_amount) as total_gaji')
+                DB::raw('SUM(kribab_qty) as total_kribab')
             )
             ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
                 $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
             })
             ->with('karyawan')
-            ->groupBy('karyawan_id');
-
-        $recap = $query->get();
+            ->groupBy('karyawan_id')
+            ->get();
 
         return view('jihans.tortilla.recap', compact('recap', 'dateFrom', 'dateTo', 'periode', 'noFilter'));
     }
@@ -218,8 +209,7 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(ts_qty) as total_ts'),
                 DB::raw('SUM(tk_qty) as total_tk'),
                 DB::raw('SUM(tc_qty) as total_tc'),
-                DB::raw('SUM(kribab_qty) as total_kribab'),
-                DB::raw('SUM(total_amount) as total_gaji')
+                DB::raw('SUM(kribab_qty) as total_kribab')
             )
             ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
                 $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
@@ -231,7 +221,7 @@ class TortillaProductionController extends Controller
         $period = ($dateFrom && $dateTo)
             ? $dateFrom->format('d M Y') . ' - ' . $dateTo->format('d M Y')
             : 'Semua Data';
-        $filename = "Rekap_Gaji_Tortilla_{$dateFrom->format('Ymd')}_{$dateTo->format('Ymd')}.xlsx";
+        $filename = "Rekap_Gaji_Tortilla_{$dateFrom?->format('Ymd')}_{$dateTo?->format('Ymd')}.xlsx";
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\Jihans\TortillaRecapExport($recap, $period),

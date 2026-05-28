@@ -1,8 +1,15 @@
 @extends($layout ?? 'layouts.gudang')
 @section('title', 'Cabang')
 @section('page-title', 'Master Data — Cabang')
-
-@section('content')
+@section('content')
+@php
+    $accentColor = 'indigo';
+    if (($currentScope ?? '') === 'jihans') {
+        $accentColor = 'orange';
+    } elseif (($currentScope ?? '') === 'hendhys') {
+        $accentColor = 'amber';
+    }
+@endphp
 <div class="space-y-6">
 
     {{-- Header --}}
@@ -12,7 +19,7 @@
             <p class="text-sm text-slate-500 font-medium">Manajemen unit bisnis dan outlet resmi Hendhys Brownies.</p>
         </div>
         <a href="{{ route(($routePrefix ?? 'master.') . 'branches.create') }}"
-           class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]">
+           class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $accentColor }}-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-xl shadow-{{ $accentColor }}-600/20 active:scale-[0.98]">
             <span class="material-symbols-outlined text-[20px]">add</span>
             Tambah Cabang
         </a>
@@ -42,7 +49,7 @@
                     <tr class="hover:bg-slate-50/50 transition-colors group">
                         <td class="px-6 py-4">
                             <div class="flex flex-col">
-                                <span class="text-sm font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{{ $branch->name }}</span>
+                                <span class="text-sm font-black text-slate-800 tracking-tight group-hover:text-{{ $accentColor }}-600 transition-colors">{{ $branch->name }}</span>
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 font-mono">{{ $branch->code }}</span>
                             </div>
                         </td>
@@ -67,7 +74,7 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <a href="{{ route(($routePrefix ?? 'master.') . 'branches.edit', $branch) }}" 
-                                   class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-slate-200">
+                                   class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-{{ $accentColor }}-600 hover:bg-{{ $accentColor }}-50 rounded-xl transition-all border border-slate-200">
                                     <span class="material-symbols-outlined text-[18px]">edit</span>
                                 </a>
                                 <form method="POST" action="{{ route(($routePrefix ?? 'master.') . 'branches.destroy', $branch) }}"

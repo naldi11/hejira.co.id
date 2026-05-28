@@ -51,7 +51,10 @@ class ProductController extends Controller
 
         $products = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('master.products.index', [
+        $viewPath = "master.products.{$info['scope']}.index";
+        $view = view()->exists($viewPath) ? $viewPath : 'master.products.index';
+
+        return view($view, [
             'products' => $products,
             'layout' => $info['layout'],
             'routePrefix' => $info['route'],
@@ -66,7 +69,10 @@ class ProductController extends Controller
         $units = $this->getModelClass('Unit', $info['scope'])::orderBy('name')->get();
         $brands = $this->getModelClass('Brand', $info['scope'])::orderBy('name')->get();
 
-        return view('master.products.form', [
+        $viewPath = "master.products.{$info['scope']}.form";
+        $view = view()->exists($viewPath) ? $viewPath : 'master.products.form';
+
+        return view($view, [
             'categories' => $categories,
             'units' => $units,
             'brands' => $brands,
@@ -84,9 +90,9 @@ class ProductController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:200',
             'barcode' => "nullable|string|max:50|unique:{$tableName},barcode",
-            'category_id' => "required|exists:master_product_categories,id",
-            'unit_id' => "required|exists:master_units,id",
-            'brand_id' => "nullable|exists:master_brands,id",
+            'category_id' => "required|string",
+            'unit_id' => "required|string",
+            'brand_id' => "nullable|string",
             'rack' => 'nullable|string|max:20',
             'hpp' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -108,6 +114,8 @@ class ProductController extends Controller
             'barcode.unique' => 'Gagal menyimpan produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
 
+        $data = $this->resolveRelations($data, $info['scope']);
+
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         }
@@ -120,18 +128,10 @@ class ProductController extends Controller
         // Simpan entity_scope dari entitas aktif untuk kompatibilitas
         $data['entity_scope']    = $info['scope'] === 'gudang' ? 'all' : $info['scope'];
 
-        
         $product = $this->getModelClass('Product', $info['scope'])::create($data);
         
-        if ($request->has('tiered_prices') && is_array($request->tiered_prices)) {
-            foreach ($request->tiered_prices as $tier) {
-                if (!empty($tier['min_qty']) && !empty($tier['price'])) {
-                    $product->tieredPrices()->create([
-                        'min_qty' => $tier['min_qty'],
-                        'price' => $tier['price']
-                    ]);
-                }
-            }
+        if ($request->has('tiered_prices')) {
+            $this->saveTieredPrices($product, $request->tiered_prices);
         }
         
         $this->logger->log('create', 'master.product', "Tambah produk: {$product->name}", $product);
@@ -149,7 +149,10 @@ class ProductController extends Controller
         $units = $this->getModelClass('Unit', $info['scope'])::orderBy('name')->get();
         $brands = $this->getModelClass('Brand', $info['scope'])::orderBy('name')->get();
 
-        return view('master.products.form', [
+        $viewPath = "master.products.{$info['scope']}.form";
+        $view = view()->exists($viewPath) ? $viewPath : 'master.products.form';
+
+        return view($view, [
             'product' => $product,
             'categories' => $categories,
             'units' => $units,
@@ -169,9 +172,9 @@ class ProductController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:200',
             'barcode' => "nullable|string|max:50|unique:{$tableName},barcode," . $product->id,
-            'category_id' => "required|exists:master_product_categories,id",
-            'unit_id' => "required|exists:master_units,id",
-            'brand_id' => "nullable|exists:master_brands,id",
+            'category_id' => "required|string",
+            'unit_id' => "required|string",
+            'brand_id' => "nullable|string",
             'rack' => 'nullable|string|max:20',
             'hpp' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -193,6 +196,8 @@ class ProductController extends Controller
             'barcode.unique' => 'Gagal memperbarui produk: Barcode sudah terdaftar dan digunakan oleh produk lain. Silakan periksa kembali barcode yang dimasukkan.',
         ]);
 
+        $data = $this->resolveRelations($data, $info['scope']);
+
         if ($request->hasFile('image')) {
             if ($product->image) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
@@ -208,16 +213,8 @@ class ProductController extends Controller
 
         $product->update($data);
         
-        $product->tieredPrices()->delete();
-        if ($request->has('tiered_prices') && is_array($request->tiered_prices)) {
-            foreach ($request->tiered_prices as $tier) {
-                if (!empty($tier['min_qty']) && !empty($tier['price'])) {
-                    $product->tieredPrices()->create([
-                        'min_qty' => $tier['min_qty'],
-                        'price' => $tier['price']
-                    ]);
-                }
-            }
+        if ($request->has('tiered_prices')) {
+            $this->saveTieredPrices($product, $request->tiered_prices);
         }
 
 
@@ -260,4 +257,47 @@ class ProductController extends Controller
         }
     }
 
+    private function resolveRelations(array $data, string $scope): array
+    {
+        if (isset($data['category_id']) && !is_numeric($data['category_id'])) {
+            $cat = $this->getModelClass('ProductCategory', $scope)::firstOrCreate(
+                ['name' => $data['category_id']],
+                ['entity_scope' => $scope === 'gudang' ? 'all' : $scope]
+            );
+            $data['category_id'] = $cat->id;
+        }
+
+        if (isset($data['unit_id']) && !is_numeric($data['unit_id'])) {
+            $unit = $this->getModelClass('Unit', $scope)::firstOrCreate(
+                ['name' => $data['unit_id']],
+                ['abbreviation' => substr($data['unit_id'], 0, 3), 'entity_scope' => $scope === 'gudang' ? 'all' : $scope]
+            );
+            $data['unit_id'] = $unit->id;
+        }
+
+        if (!empty($data['brand_id']) && !is_numeric($data['brand_id'])) {
+            $brand = $this->getModelClass('Brand', $scope)::firstOrCreate(
+                ['name' => $data['brand_id']],
+                ['entity_scope' => $scope === 'gudang' ? 'all' : $scope]
+            );
+            $data['brand_id'] = $brand->id;
+        }
+
+        return $data;
+    }
+
+    private function saveTieredPrices(Product $product, ?array $tieredPrices): void
+    {
+        $product->tieredPrices()->delete();
+        if (is_array($tieredPrices)) {
+            foreach ($tieredPrices as $tier) {
+                if (!empty($tier['min_qty']) && !empty($tier['price'])) {
+                    $product->tieredPrices()->create([
+                        'min_qty' => $tier['min_qty'],
+                        'price'   => $tier['price']
+                    ]);
+                }
+            }
+        }
+    }
 }

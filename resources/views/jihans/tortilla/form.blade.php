@@ -1,216 +1,183 @@
 @extends('layouts.jihans')
 @section('title', 'Input Produksi Tortilla')
-@section('page-title', 'Form Input Produksi Tortilla')
-
-@push('styles')
-    <style>
-        .ts-control { border-radius: 0.5rem; min-height: 42px; background-color: #fbf9f8; }
-        .ts-dropdown { border-radius: 0.5rem; }
-    </style>
-@endpush
+@section('page-title', 'Input Produksi Tortilla')
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface" 
-         x-data="productionForm({
-            rates: {
-                tb: {{ $rates->tb_rate }},
-                ts: {{ $rates->ts_rate }},
-                tk: {{ $rates->tk_rate }},
-                tc: {{ $rates->tc_rate }},
-                kribab: {{ $rates->kribab_rate }}
-            }
-         })">
+<div class="space-y-6" x-data="productionForm()">
 
-        <form method="POST" action="{{ route('jihans.tortilla.store') }}" class="space-y-lg">
-            @csrf
-
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant">
-                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Informasi Sesi</h3>
-                </div>
-                <div class="p-md grid grid-cols-1 md:grid-cols-2 gap-md">
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Tanggal Produksi <span class="text-error">*</span></label>
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Catatan Sesi</label>
-                        <div class="bg-surface-container-low rounded-t-lg border-b-2 border-outline-variant focus-within:border-primary transition-colors">
-                            <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Contoh: Produksi Pagi"
-                                class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md text-on-surface py-sm px-sm outline-none">
-                        </div>
-                    </div>
-                </div>
+    @if($errors->any())
+    <div class="bg-red-50 border border-red-200 rounded-2xl p-5">
+        <div class="flex gap-3">
+            <span class="material-symbols-outlined text-red-500 text-[20px] shrink-0 mt-0.5">error</span>
+            <div>
+                <p class="text-sm font-bold text-red-700 mb-1">Terdapat kesalahan:</p>
+                <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
+                    @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
-
-            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-                <div class="px-md py-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
-                    <h3 class="font-label-lg text-label-lg font-semibold text-on-surface-variant uppercase tracking-wider">Data Produksi Karyawan</h3>
-                    <button type="button" @click="addRow()"
-                        class="inline-flex items-center gap-xs px-sm py-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-on-primary-fixed-variant transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">add</span>
-                        Tambah Karyawan
-                    </button>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                            <tr class="bg-surface-container-low border-b border-outline-variant">
-                                <th class="px-md py-sm font-label-sm text-on-surface-variant w-1/4">Nama Karyawan</th>
-                                <th class="px-sm py-sm font-label-sm text-on-surface-variant text-center w-24">TB</th>
-                                <th class="px-sm py-sm font-label-sm text-on-surface-variant text-center w-24">TS</th>
-                                <th class="px-sm py-sm font-label-sm text-on-surface-variant text-center w-24">TK</th>
-                                <th class="px-sm py-sm font-label-sm text-on-surface-variant text-center w-24">TC</th>
-                                <th class="px-sm py-sm font-label-sm text-on-surface-variant text-center w-24">KRIBAB</th>
-                                <th class="px-md py-sm font-label-sm text-on-surface-variant text-right">Total Upah</th>
-                                <th class="px-md py-sm font-label-sm text-on-surface-variant text-center w-12"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-surface-container">
-                            <template x-for="(row, index) in rows" :key="row.id">
-                                <tr class="hover:bg-surface-container-lowest/50 transition-colors">
-                                    <td class="px-md py-sm">
-                                        <select :name="`details[${index}][karyawan_id]`" class="karyawan-select" required
-                                            x-model="row.karyawan_id" :data-id="row.id">
-                                            <option value="">Pilih Karyawan</option>
-                                            @foreach($karyawans as $k)
-                                                <option value="{{ $k->id }}">{{ $k->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td class="px-sm py-sm">
-                                        <input type="number" :name="`details[${index}][tb_qty]`" x-model.number="row.tb" min="0"
-                                            class="w-full text-center py-xs px-xs border border-outline-variant rounded-md focus:ring-1 focus:ring-primary outline-none">
-                                    </td>
-                                    <td class="px-sm py-sm">
-                                        <input type="number" :name="`details[${index}][ts_qty]`" x-model.number="row.ts" min="0"
-                                            class="w-full text-center py-xs px-xs border border-outline-variant rounded-md focus:ring-1 focus:ring-primary outline-none">
-                                    </td>
-                                    <td class="px-sm py-sm">
-                                        <input type="number" :name="`details[${index}][tk_qty]`" x-model.number="row.tk" min="0"
-                                            class="w-full text-center py-xs px-xs border border-outline-variant rounded-md focus:ring-1 focus:ring-primary outline-none">
-                                    </td>
-                                    <td class="px-sm py-sm">
-                                        <input type="number" :name="`details[${index}][tc_qty]`" x-model.number="row.tc" min="0"
-                                            class="w-full text-center py-xs px-xs border border-outline-variant rounded-md focus:ring-1 focus:ring-primary outline-none">
-                                    </td>
-                                    <td class="px-sm py-sm">
-                                        <input type="number" :name="`details[${index}][kribab_qty]`" x-model.number="row.kribab" min="0"
-                                            class="w-full text-center py-xs px-xs border border-outline-variant rounded-md focus:ring-1 focus:ring-primary outline-none">
-                                    </td>
-                                    <td class="px-md py-sm text-right font-bold text-on-surface" x-text="formatCurrency(calculateRowTotal(row))"></td>
-                                    <td class="px-md py-sm text-center">
-                                        <button type="button" @click="removeRow(index)" class="text-error hover:bg-error-container p-xs rounded-full transition-colors">
-                                            <span class="material-symbols-outlined text-[20px]">delete</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-surface-container-low font-bold">
-                                <td class="px-md py-sm">TOTAL KESELURUHAN</td>
-                                <td class="px-sm py-sm text-center" x-text="totalQty('tb')"></td>
-                                <td class="px-sm py-sm text-center" x-text="totalQty('ts')"></td>
-                                <td class="px-sm py-sm text-center" x-text="totalQty('tk')"></td>
-                                <td class="px-sm py-sm text-center" x-text="totalQty('tc')"></td>
-                                <td class="px-sm py-sm text-center" x-text="totalQty('kribab')"></td>
-                                <td class="px-md py-sm text-right text-primary text-lg" x-text="formatCurrency(grandTotal())"></td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-md pb-lg">
-                <button type="submit" class="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant transition-all">
-                    <span class="material-symbols-outlined text-[18px]">save</span>
-                    Simpan Data Produksi
-                </button>
-                <a href="{{ route('jihans.tortilla.index') }}" class="inline-flex items-center gap-sm px-md py-sm bg-surface-container border border-outline-variant text-on-surface-variant rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">
-                    Batal
-                </a>
-            </div>
-        </form>
+        </div>
     </div>
+    @endif
 
-    @push('scripts')
-        <script>
-            function productionForm(config) {
-                return {
-                    rates: config.rates,
-                    rows: [],
-                    nextId: 1,
-                    
-                    init() {
-                        this.addRow();
-                    },
+    <form method="POST" action="{{ route('jihans.tortilla.store') }}" class="space-y-6">
+        @csrf
 
-                    addRow() {
-                        const id = this.nextId++;
-                        this.rows.push({
-                            id: id,
-                            karyawan_id: '',
-                            tb: 0,
-                            ts: 0,
-                            tk: 0,
-                            tc: 0,
-                            kribab: 0
-                        });
-                        
-                        this.$nextTick(() => {
-                            this.initTomSelect(id);
-                        });
-                    },
+        {{-- SEKSI 1 — INFORMASI SESI --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                <div class="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-orange-600 text-[20px]">calendar_today</span>
+                </div>
+                <h3 class="font-black text-slate-800 text-sm uppercase tracking-wider">Informasi Sesi</h3>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Tanggal Produksi <span class="text-red-500">*</span></label>
+                    <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Catatan Sesi</label>
+                    <input type="text" name="notes" value="{{ old('notes') }}" placeholder="Contoh: Produksi Pagi"
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+                </div>
+            </div>
+        </div>
 
-                    removeRow(index) {
-                        if (this.rows.length > 1) {
-                            const rowId = this.rows[index].id;
-                            const select = document.querySelector(`.karyawan-select[data-id="${rowId}"]`);
-                            if (select && select.tomselect) {
-                                select.tomselect.destroy();
-                            }
-                            this.rows.splice(index, 1);
-                        }
-                    },
+        {{-- SEKSI 2 — DATA PRODUKSI PER KARYAWAN --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-orange-600 text-[20px]">group</span>
+                    </div>
+                    <h3 class="font-black text-slate-800 text-sm uppercase tracking-wider">Data Produksi per Karyawan</h3>
+                </div>
+                <button type="button" @click="addRow()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-black hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 active:scale-[0.98]">
+                    <span class="material-symbols-outlined text-[16px]">person_add</span>
+                    Tambah Karyawan
+                </button>
+            </div>
 
-                    initTomSelect(id) {
-                        const el = document.querySelector(`.karyawan-select[data-id="${id}"]`);
-                        if (el) {
-                            new TomSelect(el, {
-                                create: false,
-                                sortField: { field: "text", direction: "asc" },
-                                placeholder: 'Pilih Karyawan'
-                            });
-                        }
-                    },
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left min-w-[680px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-wider w-1/3">Nama Karyawan</th>
+                            <th class="px-3 py-3 text-xs font-black text-slate-500 uppercase tracking-wider text-center">TB</th>
+                            <th class="px-3 py-3 text-xs font-black text-slate-500 uppercase tracking-wider text-center">TS</th>
+                            <th class="px-3 py-3 text-xs font-black text-slate-500 uppercase tracking-wider text-center">TK</th>
+                            <th class="px-3 py-3 text-xs font-black text-slate-500 uppercase tracking-wider text-center">TC</th>
+                            <th class="px-3 py-3 text-xs font-black text-slate-500 uppercase tracking-wider text-center">Kribab</th>
+                            <th class="px-3 py-3 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="(row, index) in rows" :key="row.id">
+                            <tr class="hover:bg-orange-50/30 transition-colors">
+                                <td class="px-6 py-3">
+                                    <select :name="`details[${index}][karyawan_id]`"
+                                            class="karyawan-select w-full" required
+                                            x-model="row.karyawan_id" :data-id="row.id">
+                                        <option value="">Pilih Karyawan...</option>
+                                        @foreach($karyawans as $k)
+                                        <option value="{{ $k->id }}">{{ $k->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                @foreach(['tb','ts','tk','tc','kribab'] as $v)
+                                <td class="px-3 py-3">
+                                    <input type="number"
+                                           :name="`details[${index}][{{ $v }}_qty]`"
+                                           x-model.number="row.{{ $v }}"
+                                           min="0" value="0"
+                                           class="w-20 text-center py-2 px-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+                                </td>
+                                @endforeach
+                                <td class="px-3 py-3">
+                                    <button type="button" @click="removeRow(index)"
+                                            class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            :disabled="rows.length <= 1" :class="rows.length <= 1 ? 'opacity-30 cursor-not-allowed' : ''">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-orange-50 border-t-2 border-orange-200">
+                            <td class="px-6 py-4 font-black text-slate-700 text-xs uppercase tracking-wider">Total</td>
+                            <td class="px-3 py-4 text-center font-black text-slate-700" x-text="totalQty('tb')"></td>
+                            <td class="px-3 py-4 text-center font-black text-slate-700" x-text="totalQty('ts')"></td>
+                            <td class="px-3 py-4 text-center font-black text-slate-700" x-text="totalQty('tk')"></td>
+                            <td class="px-3 py-4 text-center font-black text-slate-700" x-text="totalQty('tc')"></td>
+                            <td class="px-3 py-4 text-center font-black text-slate-700" x-text="totalQty('kribab')"></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
 
-                    calculateRowTotal(row) {
-                        return (row.tb * this.rates.tb) +
-                               (row.ts * this.rates.ts) +
-                               (row.tk * this.rates.tk) +
-                               (row.tc * this.rates.tc) +
-                               (row.kribab * this.rates.kribab);
-                    },
+        {{-- Tombol Submit --}}
+        <div class="flex items-center gap-4 pb-4">
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-8 py-3.5 bg-orange-600 text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/25 active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[20px]">save</span>
+                Simpan & Update Stok
+            </button>
+            <a href="{{ route('jihans.tortilla.index') }}"
+               class="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-slate-600 border border-slate-200 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">
+                Batal
+            </a>
+        </div>
+    </form>
+</div>
 
-                    grandTotal() {
-                        return this.rows.reduce((sum, row) => sum + this.calculateRowTotal(row), 0);
-                    },
+@push('scripts')
+<script>
+    function productionForm() {
+        return {
+            rows: [],
+            nextId: 1,
 
-                    totalQty(field) {
-                        return this.rows.reduce((sum, row) => sum + (row[field] || 0), 0);
-                    },
+            init() {
+                this.addRow();
+            },
 
-                    formatCurrency(value) {
-                        return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-                    }
+            addRow() {
+                const id = this.nextId++;
+                this.rows.push({ id, karyawan_id: '', tb: 0, ts: 0, tk: 0, tc: 0, kribab: 0 });
+                this.$nextTick(() => this.initTomSelect(id));
+            },
+
+            removeRow(index) {
+                if (this.rows.length <= 1) return;
+                const rowId = this.rows[index].id;
+                const el = document.querySelector(`.karyawan-select[data-id="${rowId}"]`);
+                if (el?.tomselect) el.tomselect.destroy();
+                this.rows.splice(index, 1);
+            },
+
+            initTomSelect(id) {
+                const el = document.querySelector(`.karyawan-select[data-id="${id}"]`);
+                if (el && typeof TomSelect !== 'undefined') {
+                    new TomSelect(el, {
+                        create: false,
+                        sortField: { field: 'text', direction: 'asc' },
+                        placeholder: 'Pilih Karyawan...',
+                    });
                 }
-            }
-        </script>
-    @endpush
+            },
+
+            totalQty(field) {
+                return this.rows.reduce((sum, row) => sum + (parseInt(row[field]) || 0), 0);
+            },
+        }
+    }
+</script>
+@endpush
 @endsection

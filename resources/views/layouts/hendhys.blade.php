@@ -6,19 +6,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Hendhys Brownies') — HEJIRA</title>
 
-    {{-- <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script> --}}
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     {{-- NOTE: To avoid conflicts, we use Vite for js, but Tailwind CDN for this specific layout --}}
     <!-- TomSelect CSS & JS (Loaded globally in head to prevent AlpineJS race conditions) -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-
+ 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+ 
     <script id="tailwind-config">
     tailwind.config = {
         darkMode: "class",
@@ -76,27 +77,37 @@
                 "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
                 "spacing": { "xl": "64px", "lg": "40px", "xs": "4px", "sm": "12px", "md": "24px", "margin-mobile": "16px", "gutter": "16px", "base": "8px", "margin-desktop": "32px" },
                 "fontFamily": {
-                    "headline-lg": ["Montserrat"], "label-lg": ["Inter"], "display-lg": ["Montserrat"], "headline-md": ["Montserrat"], 
-                    "body-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "title-lg": ["Inter"], "headline-lg-mobile": ["Montserrat"]
+                    "sans": ["Poppins", "sans-serif"],
+                    "headline-lg": ["Poppins"], "label-lg": ["Poppins"], "display-lg": ["Poppins"], "headline-md": ["Poppins"], 
+                    "body-lg": ["Poppins"], "label-sm": ["Poppins"], "body-md": ["Poppins"], "title-lg": ["Poppins"], "headline-lg-mobile": ["Poppins"]
                 },
                 "fontSize": {
-                    "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
-                    "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
-                    "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                    "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
                     "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
                     "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
                     "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
-                    "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
-                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "500" }]
+                },
+                "fontWeight": {
+                    "semibold": "500",
+                    "bold": "500",
+                    "extrabold": "500",
+                    "black": "500",
                 }
             },
         },
     }
     </script>
     <style>
+        *, body, input, select, textarea, button {
+            font-family: 'Poppins', sans-serif !important;
+        }
         body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined' !important; }
         .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
         [x-cloak] { display: none !important; }
         /* Scrollbar customization */
@@ -220,9 +231,6 @@
                 <div x-show="masterOpen" x-collapse x-cloak class="mt-1 space-y-1">
                     @foreach([
                         ['route' => 'hendhys.master.products.index',          'label' => 'Produk'],
-                        ['route' => 'hendhys.master.categories.index',        'label' => 'Kategori'],
-                        ['route' => 'hendhys.master.units.index',             'label' => 'Satuan'],
-                        ['route' => 'hendhys.master.brands.index',            'label' => 'Brand'],
                         ['route' => 'hendhys.master.payment-methods.index',   'label' => 'Metode Bayar'],
                     ] as $item)
                         <a href="{{ route($item['route']) }}" class="block pl-[44px] pr-sm py-[8px] rounded-lg text-[13px] transition-colors {{ request()->routeIs($item['route']) ? 'text-on-secondary-container font-bold bg-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $item['label'] }}</a>
@@ -289,7 +297,9 @@
             @endif
         </div>
 
-        @yield('content')
+        <div class="@if(!request()->routeIs('hendhys.pos.*')) p-6 md:p-8 @endif flex-1 flex flex-col min-w-0">
+            @yield('content')
+        </div>
     </main>
     
     @yield('right-sidebar')

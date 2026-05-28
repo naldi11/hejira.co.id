@@ -1,338 +1,300 @@
 @extends('layouts.gudang')
 @section('title', ($po->id ? 'Edit' : 'Buat') . ' Purchase Order')
-@section('page-title', 'Purchase Order')
+@section('page-title', $po->id ? 'Edit PO ' . $po->po_number : 'Buat Purchase Order Baru')
 
 @php
     $formattedDetails = [];
     if ($po->id) {
-        $formattedDetails = $po->details->map(function($d) {
-            return [
-                'product_id' => $d->product_id,
-                'quantity' => $d->quantity_ordered,
-                'unit_id' => $d->unit_id,
-                'price' => (float)$d->price,
-            ];
-        })->toArray();
+        $formattedDetails = $po->details->map(fn($d) => [
+            'product_id' => $d->product_id,
+            'quantity'   => (int) $d->quantity_ordered,
+            'unit_id'    => $d->unit_id,
+            'price'      => (float) $d->price,
+            'notes'      => $d->notes ?? '',
+        ])->toArray();
     }
 @endphp
 
 @section('content')
-<div x-data="poForm()" class="max-w-6xl mx-auto space-y-8 pb-20">
+<div x-data="poForm()" class="space-y-6">
 
-    {{-- Header & Back --}}
-    <div class="flex items-center justify-between">
-        <a href="{{ route('gudang.po.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
-            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Batal & Kembali
+    {{-- Back Button --}}
+    <div class="flex items-center gap-3">
+        <a href="{{ route('gudang.po.index') }}"
+           class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition-colors group text-sm">
+            <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Kembali ke Daftar PO
         </a>
-        <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">{{ $po->id ? 'Edit Dokumen PO' : 'Draft Pesanan Baru' }}</h2>
     </div>
 
     {{-- Validation Errors --}}
-    @if ($errors->any())
-    <div class="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-rose-800 space-y-2">
-        <div class="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            Terjadi Kesalahan Validasi
+    @if($errors->any())
+    <div class="flex gap-3 bg-red-50 border border-red-200 rounded-2xl p-5">
+        <span class="material-symbols-outlined text-red-500 text-[20px] shrink-0 mt-0.5">error</span>
+        <div>
+            <p class="text-sm font-bold text-red-700 mb-1">Perbaiki kesalahan berikut:</p>
+            <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
+                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+            </ul>
         </div>
-        <ul class="list-disc pl-5 text-xs font-semibold space-y-1">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
     </div>
     @endif
 
-    <form action="{{ $po->id ? route('gudang.po.update', $po) : route('gudang.po.store') }}" method="POST" class="space-y-8">
+    <form action="{{ $po->id ? route('gudang.po.update', $po) : route('gudang.po.store') }}"
+          method="POST" class="space-y-6">
         @csrf
         @if($po->id) @method('PUT') @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {{-- Left: Main Info --}}
-            <div class="lg:col-span-2 space-y-8">
-                
-                {{-- Metadata Card --}}
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 sm:p-10 space-y-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier / Vendor <span class="text-rose-500">*</span></label>
-                            <div wire:ignore>
-                                <select name="supplier_id" required 
-                                        x-init="tsSupplier = new TomSelect($el, {
-                                            create: false,
-                                            placeholder: 'Pilih Supplier...',
-                                            dropdownParent: 'body'
-                                        })"
-                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                    <option value="">Pilih Supplier...</option>
-                                    @foreach($suppliers as $s)
-                                        <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tanggal Pesanan <span class="text-rose-500">*</span></label>
-                            <input type="date" name="date" value="{{ old('date', $po->date?->format('Y-m-d') ?? date('Y-m-d')) }}" required
-                                   class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none">
-                        </div>
-                    </div>
-
-                    {{-- Items Section --}}
-                    <div class="pt-8 border-t border-slate-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-black text-slate-900 font-headline tracking-tight">Daftar Barang</h3>
-                            <button type="button" @click="addItem()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
-                                <span class="material-symbols-outlined text-[18px]">add</span>
-                                Tambah Item
-                            </button>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                        <th class="pb-4 pl-2" style="width: 40%; min-width: 250px;">Pilih Produk</th>
-                                        <th class="pb-4 pl-2" style="width: 15%; min-width: 120px;">Satuan</th>
-                                        <th class="pb-4 text-center" style="width: 12%; min-width: 90px;">Qty</th>
-                                        <th class="pb-4 text-right" style="width: 18%; min-width: 160px;">Harga Satuan</th>
-                                        <th class="pb-4 text-right" style="width: 12%; min-width: 120px;">Subtotal</th>
-                                        <th class="pb-4 text-center" style="width: 3%; min-width: 50px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    <template x-for="(item, index) in items" :key="index">
-                                        <tr class="group">
-                                            <td class="py-4 pr-4" style="width: 40%; min-width: 250px;">
-                                                <div wire:ignore>
-                                                    <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required
-                                                            x-init="$nextTick(() => {
-                                                                item.tsProduct = new TomSelect($el, {
-                                                                    create: false,
-                                                                    placeholder: 'Pilih Produk...',
-                                                                    dropdownParent: 'body',
-                                                                    onChange: function(value) {
-                                                                        item.product_id = value;
-                                                                        onProductChange(item);
-                                                                    }
-                                                                });
-                                                                if (item.product_id) {
-                                                                    item.tsProduct.setValue(item.product_id, true);
-                                                                }
-                                                            })"
-                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                                        <option value="">Pilih Produk...</option>
-                                                        @foreach($products as $p)
-                                                            <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </td>
-                                            <td class="py-4 pr-2" style="width: 15%; min-width: 120px;">
-                                                <div wire:ignore>
-                                                    <select x-model="item.unit_id" :name="'items['+index+'][unit_id]'" required
-                                                            x-init="$nextTick(() => {
-                                                                item.tsUnit = new TomSelect($el, {
-                                                                    create: false,
-                                                                    placeholder: 'Pilih Satuan...',
-                                                                    dropdownParent: 'body',
-                                                                    onChange: function(value) {
-                                                                        item.unit_id = value;
-                                                                    }
-                                                                });
-                                                                if (item.unit_id) {
-                                                                    item.tsUnit.setValue(item.unit_id, true);
-                                                                }
-                                                            })"
-                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                                        <option value="">Pilih Satuan...</option>
-                                                        @foreach($units as $u)
-                                                            <option value="{{ $u->id }}">{{ $u->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </td>
-                                            <td class="py-4 px-2" style="width: 12%; min-width: 90px;">
-                                                <input type="number" x-model.number="item.quantity" :name="'items['+index+'][quantity]'" min="1" step="any" required
-                                                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
-                                            </td>
-                                            <td class="py-4 px-2" style="width: 18%; min-width: 160px;">
-                                                <div class="relative">
-                                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Rp</span>
-                                                    <input type="number" x-model.number="item.price" :name="'items['+index+'][price]'" min="0" step="any" required
-                                                           class="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-right text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
-                                                </div>
-                                            </td>
-                                            <td class="py-4 px-2 text-right" style="width: 12%; min-width: 120px;">
-                                                <span class="text-xs font-black text-slate-900 tabular-nums" x-text="formatNumber(item.quantity * item.price)"></span>
-                                            </td>
-                                            <td class="py-4 pl-4 text-center" style="width: 3%; min-width: 50px;">
-                                                <button type="button" @click="removeItem(index)" class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 transition-colors">
-                                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div x-show="items.length === 0" class="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                            <span class="material-symbols-outlined text-slate-300 text-[48px] mb-2">playlist_add</span>
-                            <p class="text-slate-400 font-bold">Belum ada item ditambahkan.</p>
-                            <button type="button" @click="addItem()" class="mt-4 text-indigo-600 text-xs font-black uppercase tracking-widest hover:underline">Klik untuk tambah</button>
-                        </div>
-                    </div>
-                </div>
+        {{-- ═══ BAGIAN 1: Header PO ═══ --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Informasi Pesanan</h3>
             </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
 
-            {{-- Right: Sidebar Summary --}}
-            <div class="space-y-8">
-                
-                {{-- Date & Note --}}
-                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-6">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Catatan Tambahan</label>
-                        <textarea name="notes" rows="4" placeholder="Instruksi pengiriman, termin pembayaran, dll..."
-                                  class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 transition-all outline-none resize-none">{{ old('notes', $po->notes) }}</textarea>
-                    </div>
+                {{-- Supplier --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Supplier / Vendor <span class="text-red-500">*</span>
+                    </label>
+                    <select id="supplier_select" name="supplier_id" required>
+                        <option value="">Pilih supplier...</option>
+                        @foreach($suppliers as $s)
+                        <option value="{{ $s->id }}" {{ old('supplier_id', $po->supplier_id) == $s->id ? 'selected' : '' }}>
+                            {{ $s->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                {{-- Grand Total Card --}}
-                <div class="bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 p-10 text-white relative overflow-hidden">
-                    <div class="relative z-10 space-y-6">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-indigo-400">payments</span>
-                            <h3 class="text-sm font-black uppercase tracking-[0.2em]">Ringkasan Biaya</h3>
-                        </div>
-                        
-                        <div class="space-y-4 pt-4 border-t border-white/10">
-                            <div class="flex justify-between items-center text-slate-400">
-                                <span class="text-xs font-bold uppercase tracking-widest">Total Item</span>
-                                <span class="text-sm font-black tabular-nums" x-text="items.length"></span>
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Total Tagihan</span>
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-indigo-400 text-lg font-black italic">Rp</span>
-                                    <span class="text-4xl font-black tracking-tighter tabular-nums" x-text="formatNumber(calculateTotal())"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-indigo-600/30 active:scale-[0.98] mt-4">
-                            Simpan & Kirim PO
-                        </button>
-                    </div>
-                    
-                    {{-- Decoration --}}
-                    <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                {{-- Tanggal PO --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Tanggal PO <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="date" required
+                           value="{{ old('date', $po->date?->format('Y-m-d') ?? date('Y-m-d')) }}"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none">
                 </div>
 
+                {{-- Catatan --}}
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Catatan</label>
+                    <textarea name="notes" rows="2" placeholder="Instruksi pengiriman, termin pembayaran, dsb (opsional)..."
+                              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none resize-none">{{ old('notes', $po->notes) }}</textarea>
+                </div>
             </div>
         </div>
+
+        {{-- ═══ BAGIAN 2: Daftar Item ═══ --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Daftar Item Pesanan</h3>
+                <button type="button" @click="addItem()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Tambah Item
+                </button>
+            </div>
+
+            {{-- Empty State --}}
+            <div x-show="items.length === 0" class="py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-[56px] block mb-3">shopping_cart</span>
+                <p class="text-slate-400 font-bold text-sm">Belum ada item. Klik "Tambah Item" untuk mulai.</p>
+            </div>
+
+            {{-- Item Table --}}
+            <div x-show="items.length > 0" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left" style="min-width:260px">Produk</th>
+                            <th class="px-4 py-3 text-center" style="min-width:130px">Satuan</th>
+                            <th class="px-4 py-3 text-center" style="min-width:100px">Qty</th>
+                            <th class="px-4 py-3 text-right" style="min-width:160px">Harga Satuan (Rp)</th>
+                            <th class="px-6 py-3 text-right" style="min-width:140px">Subtotal</th>
+                            <th class="px-3 py-3 text-center" style="min-width:48px"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="(item, index) in items" :key="index">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+
+                                {{-- Produk --}}
+                                <td class="px-6 py-3">
+                                    <select :id="'product_'+index"
+                                            :name="`items[${index}][product_id]`"
+                                            required
+                                            x-init="$nextTick(() => {
+                                                let sel = $('#product_'+index);
+                                                sel.select2({
+                                                    placeholder: 'Pilih produk...',
+                                                    width: '100%',
+                                                    minimumResultsForSearch: 5
+                                                }).on('select2:select', e => {
+                                                    item.product_id = e.params.data.id;
+                                                    onProductChange(item, index);
+                                                });
+                                                if (item.product_id) sel.val(item.product_id).trigger('change.select2');
+                                            })"
+                                            class="w-full">
+                                        <option value="">Pilih produk...</option>
+                                        @foreach($products as $p)
+                                        <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+
+                                {{-- Satuan --}}
+                                <td class="px-4 py-3">
+                                    <select :id="'unit_'+index"
+                                            :name="`items[${index}][unit_id]`"
+                                            required
+                                            x-init="$nextTick(() => {
+                                                let sel = $('#unit_'+index);
+                                                sel.select2({
+                                                    placeholder: 'Satuan...',
+                                                    width: '100%',
+                                                    minimumResultsForSearch: Infinity
+                                                }).on('select2:select', e => {
+                                                    item.unit_id = e.params.data.id;
+                                                });
+                                                if (item.unit_id) sel.val(item.unit_id).trigger('change.select2');
+                                            })"
+                                            class="w-full">
+                                        <option value="">—</option>
+                                        @foreach($units as $u)
+                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+
+                                {{-- Qty --}}
+                                <td class="px-4 py-3">
+                                    <input type="number" :name="`items[${index}][quantity]`"
+                                           x-model.number="item.quantity"
+                                           min="1" step="1" required
+                                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-center text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none tabular-nums">
+                                </td>
+
+                                {{-- Harga --}}
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+                                        <span class="px-2.5 text-xs font-bold text-slate-400 border-r border-slate-200 bg-white py-2.5 shrink-0">Rp</span>
+                                        <input type="number" :name="`items[${index}][price]`"
+                                               x-model.number="item.price"
+                                               min="0" step="1" required
+                                               class="flex-1 px-3 py-2.5 bg-transparent text-sm font-bold text-right text-slate-900 outline-none tabular-nums">
+                                    </div>
+                                </td>
+
+                                {{-- Subtotal --}}
+                                <td class="px-6 py-3 text-right">
+                                    <span class="font-bold text-slate-800 tabular-nums"
+                                          x-text="'Rp ' + formatNum(item.quantity * item.price)"></span>
+                                </td>
+
+                                {{-- Delete --}}
+                                <td class="px-3 py-3 text-center">
+                                    <button type="button" @click="removeItem(index)"
+                                            class="w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Grand Total --}}
+            <div x-show="items.length > 0" class="px-6 py-4 bg-indigo-50 border-t-2 border-indigo-200 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-indigo-700">
+                    <span class="text-xs font-bold uppercase tracking-wider">Total Item:</span>
+                    <span class="font-bold" x-text="items.length"></span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Grand Total</span>
+                    <span class="text-2xl font-bold text-indigo-700 tabular-nums"
+                          x-text="'Rp ' + formatNum(grandTotal())"></span>
+                </div>
+            </div>
+        </div>
+
+        {{-- ═══ TOMBOL SUBMIT ═══ --}}
+        <div class="flex items-center justify-between">
+            <a href="{{ route('gudang.po.index') }}"
+               class="px-6 py-3 text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">
+                Batal
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold text-sm uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/25 active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[20px]">save</span>
+                {{ $po->id ? 'Simpan Perubahan' : 'Buat Purchase Order' }}
+            </button>
+        </div>
+
     </form>
 </div>
 @endsection
 
-@push('styles')
-<style>
-    .ts-wrapper {
-        width: 100% !important;
-    }
-    .ts-control {
-        border-radius: 0.75rem !important; /* rounded-xl */
-        padding: 0.65rem 1rem !important;
-        font-size: 0.75rem !important; /* text-xs */
-        font-weight: 700 !important;
-        background-color: rgb(248 250 252) !important; /* bg-slate-50 */
-        border: 1px solid rgb(226 232 240) !important; /* border-slate-200 */
-        color: rgb(51 65 85) !important; /* text-slate-700 */
-        transition: all 0.2s !important;
-    }
-    .ts-wrapper.single .ts-control {
-        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
-        background-position: right 0.75rem center !important;
-        background-size: 1rem !important;
-        background-repeat: no-repeat !important;
-    }
-    .focus .ts-control {
-        background-color: #fff !important;
-        border-color: #6366f1 !important; /* focus:border-indigo-500 */
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
-    }
-    .ts-dropdown {
-        border-radius: 0.75rem !important;
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08) !important;
-        border: 1px solid rgb(226 232 240) !important;
-        font-size: 0.75rem !important;
-    }
-    .ts-dropdown .active {
-        background-color: #eef2ff !important; /* bg-indigo-50 */
-        color: #4f46e5 !important; /* text-indigo-600 */
-        font-weight: bold !important;
-    }
-</style>
-@endpush
-
 @push('scripts')
 <script>
-    function poForm() {
-        return {
-            items: @json(old('items', $formattedDetails)),
-            products: @json($products),
-            tsSupplier: null,
-            
-            init() {
-                if(this.items.length === 0) {
-                    this.addItem();
-                }
-            },
+$(document).ready(function() {
+    // Init Select2 untuk supplier
+    $('#supplier_select').select2({
+        placeholder: 'Pilih supplier...',
+        width: '100%',
+        minimumResultsForSearch: 5
+    });
+});
 
-            addItem() {
-                this.items.push({
-                    product_id: '',
-                    unit_id: '',
-                    quantity: 1,
-                    price: 0
-                });
-            },
+function poForm() {
+    return {
+        items:    @json(old('items', $formattedDetails)),
+        products: @json($products),
 
-            removeItem(index) {
-                const item = this.items[index];
-                if (item.tsProduct) item.tsProduct.destroy();
-                if (item.tsUnit) item.tsUnit.destroy();
-                this.items.splice(index, 1);
-            },
+        init() {
+            if (this.items.length === 0) this.addItem();
+        },
 
-            onProductChange(item) {
-                if (!item.product_id) {
-                    item.unit_id = '';
-                    item.price = 0;
-                    if (item.tsUnit) item.tsUnit.setValue('', true);
-                    return;
-                }
-                const prod = this.products.find(p => p.id == item.product_id);
-                if (prod) {
-                    item.unit_id = prod.unit_id || '';
-                    item.price = parseFloat(prod.hpp) || 0;
-                    
-                    // Sync dengan TomSelect Satuan
-                    if (item.tsUnit && prod.unit_id) {
-                        item.tsUnit.setValue(prod.unit_id, true);
-                    }
-                }
-            },
+        addItem() {
+            this.items.push({ product_id: '', unit_id: '', quantity: 1, price: 0, notes: '' });
+        },
 
-            calculateTotal() {
-                return this.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-            },
+        removeItem(index) {
+            // Destroy Select2 sebelum hapus item
+            const prodSel = $('#product_' + index);
+            const unitSel = $('#unit_' + index);
+            if (prodSel.hasClass('select2-hidden-accessible')) prodSel.select2('destroy');
+            if (unitSel.hasClass('select2-hidden-accessible')) unitSel.select2('destroy');
+            this.items.splice(index, 1);
+        },
 
-            formatNumber(num) {
-                return new Intl.NumberFormat('id-ID').format(num);
+        onProductChange(item, index) {
+            if (!item.product_id) {
+                item.unit_id = '';
+                item.price   = 0;
+                $('#unit_' + index).val('').trigger('change.select2');
+                return;
             }
-        }
+            const p = this.products.find(x => x.id == item.product_id);
+            if (!p) return;
+            item.unit_id = p.unit_id ?? '';
+            item.price   = parseFloat(p.hpp) || 0;
+            if (p.unit_id) {
+                $('#unit_' + index).val(p.unit_id).trigger('change.select2');
+            }
+        },
+
+        grandTotal() {
+            return this.items.reduce((s, i) => s + (i.quantity * i.price), 0);
+        },
+
+        formatNum(n) {
+            return new Intl.NumberFormat('id-ID').format(Math.round(n));
+        },
     }
+}
 </script>
 @endpush

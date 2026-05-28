@@ -9,11 +9,34 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    // Safelist untuk dynamic Blade class seperti bg-{{ $accentColor }}-600
+    safelist: [
+        { pattern: /^bg-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^text-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^border-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^ring-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^shadow-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^hover:bg-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^hover:text-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^hover:border-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^focus:border-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^focus:ring-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^group-hover:bg-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+        { pattern: /^group-hover:text-(orange|amber|indigo)-(50|100|200|300|400|500|600|700|800|900)$/ },
+    ],
+
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+                headline: ['Poppins', ...defaultTheme.fontFamily.sans],
             },
+            fontWeight: {
+                semibold: '500',
+                bold: '500',
+                extrabold: '500',
+                black: '500',
+            }
         },
     },
 

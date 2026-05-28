@@ -22,25 +22,11 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');
             Route::resource('products',  \App\Http\Controllers\Master\ProductController::class)->except(['show']);
             
-            Route::get('categories',               [\App\Http\Controllers\Master\ProductCategoryController::class, 'index'])->name('categories.index');
-            Route::post('categories',              [\App\Http\Controllers\Master\ProductCategoryController::class, 'store'])->name('categories.store');
-            Route::put('categories/{category}',    [\App\Http\Controllers\Master\ProductCategoryController::class, 'update'])->name('categories.update');
-            Route::delete('categories/{category}', [\App\Http\Controllers\Master\ProductCategoryController::class, 'destroy'])->name('categories.destroy');
-
-            Route::get('units',           [\App\Http\Controllers\Master\UnitController::class, 'index'])->name('units.index');
-            Route::post('units',          [\App\Http\Controllers\Master\UnitController::class, 'store'])->name('units.store');
-            Route::put('units/{unit}',    [\App\Http\Controllers\Master\UnitController::class, 'update'])->name('units.update');
-            Route::delete('units/{unit}', [\App\Http\Controllers\Master\UnitController::class, 'destroy'])->name('units.destroy');
-
-            Route::get('brands',            [\App\Http\Controllers\Master\BrandController::class, 'index'])->name('brands.index');
-            Route::post('brands',           [\App\Http\Controllers\Master\BrandController::class, 'store'])->name('brands.store');
-            Route::put('brands/{brand}',    [\App\Http\Controllers\Master\BrandController::class, 'update'])->name('brands.update');
-            Route::delete('brands/{brand}', [\App\Http\Controllers\Master\BrandController::class, 'destroy'])->name('brands.destroy');
-
             Route::resource('payment-methods', \App\Http\Controllers\Master\PaymentMethodController::class)->except(['show']);
             Route::resource('karyawan', \App\Http\Controllers\Master\KaryawanController::class)->except(['show']);
-            Route::get('production-rates', [\App\Http\Controllers\Master\ProductionRateController::class, 'edit'])->name('production-rates.edit');
-            Route::put('production-rates', [\App\Http\Controllers\Master\ProductionRateController::class, 'update'])->name('production-rates.update');
+
+            Route::get('production-config', [\App\Http\Controllers\Jihans\JihansProductionConfigController::class, 'edit'])->name('production-config.edit');
+            Route::put('production-config', [\App\Http\Controllers\Jihans\JihansProductionConfigController::class, 'update'])->name('production-config.update');
         });
 
         // Produksi Tortilla (Opsi A)

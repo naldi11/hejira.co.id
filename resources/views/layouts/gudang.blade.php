@@ -10,11 +10,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- TomSelect CSS & JS (Loaded globally in head to prevent AlpineJS race conditions) -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <!-- jQuery (dibutuhkan Select2) -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <!-- Select2 JS (dimuat sebelum Alpine agar komponen siap saat init) -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -33,29 +36,74 @@
                         "50": "#f8fafc", "100": "#f1f5f9", "200": "#e2e8f0", "300": "#cbd5e1", "400": "#94a3b8", "500": "#64748b", "600": "#475569", "700": "#334155", "800": "#1e293b", "900": "#0f172a", "950": "#020617",
                     }
                 },
-                "borderRadius": { "2xl": "1rem", "3xl": "1.5rem" },
                 "fontFamily": {
-                    "sans": ["Inter", "ui-sans-serif", "system-ui"],
-                    "headline": ["Montserrat", "sans-serif"],
+                    "sans": ["Poppins", "sans-serif"],
+                    "headline": ["Poppins", "sans-serif"],
                 },
+                "fontWeight": {
+                    "semibold": "500",
+                    "bold": "500",
+                    "extrabold": "500",
+                    "black": "500",
+                }
             },
         },
     }
     </script>
     <style>
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        *, body, input, select, textarea, button { font-family: 'Poppins', sans-serif !important; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined' !important; }
         .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
         [x-cloak] { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-        
         aside .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
         aside .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
         .nav-link-active { @apply bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 font-semibold; }
         .nav-link-inactive { @apply text-slate-400 hover:bg-slate-800/50 hover:text-slate-100; }
+
+        /* ── Select2 Custom Theme (Indigo/Slate) ── */
+        .select2-container { width: 100% !important; }
+        .select2-container--default .select2-selection--single {
+            height: auto;
+            padding: 0.6rem 2.5rem 0.6rem 0.875rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgb(226 232 240);
+            background-color: rgb(248 250 252);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgb(51 65 85);
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 1.5; color: rgb(51 65 85); padding: 0; font-size: 0.8rem; font-weight: 600;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: rgb(148 163 184); font-weight: 400;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; top: 0; right: 0.5rem; }
+        .select2-container--default.select2-container--open .select2-selection--single,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background-color: #fff;
+        }
+        .select2-dropdown {
+            border-radius: 0.75rem; border: 1px solid rgb(226 232 240);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12); font-size: 0.8rem; font-weight: 500; overflow: hidden;
+        }
+        .select2-container--default .select2-results__option { padding: 0.5rem 0.875rem; color: rgb(51 65 85); }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #eef2ff; color: #4338ca; font-weight: 600;
+        }
+        .select2-container--default .select2-results__option--selected { background-color: #e0e7ff; color: #4f46e5; font-weight: 700; }
+        .select2-search--dropdown .select2-search__field {
+            border-radius: 0.5rem; border: 1px solid rgb(226 232 240);
+            padding: 0.4rem 0.75rem; font-size: 0.8rem; outline: none;
+        }
+        .select2-search--dropdown .select2-search__field:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.1); }
+        .select2-results__option[aria-disabled=true] { color: rgb(148 163 184); }
+        /* ── end Select2 ── */
     </style>
     @stack('styles')
 </head>
@@ -76,12 +124,12 @@
 
             {{-- Logo --}}
             <div class="flex items-center gap-4 px-8 py-8 shrink-0">
-                <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 rotate-3 transition-transform hover:rotate-0 duration-300">
-                    <span class="text-xl font-black text-white tracking-tighter font-headline">GT</span>
+                <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
+                    <span class="text-xl font-bold text-white tracking-tight">GT</span>
                 </div>
                 <div>
-                    <h1 class="font-black text-xl leading-none tracking-tight text-white font-headline">Gudang<span class="text-indigo-400">Tempua</span></h1>
-                    <p class="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-1">Management System</p>
+                    <h1 class="font-bold text-xl leading-none tracking-tight text-white">Gudang<span class="text-indigo-400">Tempua</span></h1>
+                    <p class="text-xs text-slate-400 mt-1">Management System</p>
                 </div>
             </div>
 
@@ -89,33 +137,30 @@
             <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto custom-scrollbar">
 
                 <a href="{{ route('gudang.dashboard') }}"
-                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 {{ request()->routeIs('gudang.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
-                    <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('gudang.dashboard') ? 'fill' : '' }}">dashboard</span>
-                    <span class="text-sm tracking-wide">Dashboard</span>
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('gudang.dashboard') ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <span class="material-symbols-outlined text-[22px]">dashboard</span>
+                    <span class="text-sm">Dashboard</span>
                 </a>
 
                 {{-- Master Data Dropdown --}}
                 <div x-data="{ open: {{ request()->routeIs('master.*') ? 'true' : 'false' }} }" class="space-y-1 pt-4">
-                    <p class="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">Core Data</p>
-                    <button @click="open = !open" type="button" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-all duration-300 focus:outline-none">
+                    <p class="px-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Core Data</p>
+                    <button @click="open = !open" type="button" class="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors focus:outline-none">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-[22px]">database</span>
-                            <span class="font-medium text-sm tracking-wide">Master Data</span>
+                            <span class="font-medium text-sm">Master Data</span>
                         </div>
-                        <span class="material-symbols-outlined text-[20px] transition-transform duration-500" :class="open ? 'rotate-180 text-indigo-400' : ''">expand_more</span>
+                        <span class="material-symbols-outlined text-[20px] transition-transform" :class="open ? 'rotate-180' : ''">expand_more</span>
                     </button>
                     
                     <div x-show="open" x-collapse x-cloak class="space-y-1 mt-1">
                         @foreach([
                             ['route' => 'master.suppliers.index',   'label' => 'Supplier', 'icon' => 'local_shipping'],
                             ['route' => 'master.products.index',    'label' => 'Produk', 'icon' => 'inventory_2'],
-                            ['route' => 'master.categories.index',  'label' => 'Kategori', 'icon' => 'category'],
-                            ['route' => 'master.units.index',       'label' => 'Satuan', 'icon' => 'straighten'],
-                            ['route' => 'master.brands.index',      'label' => 'Brand', 'icon' => 'verified'],
                             ['route' => 'master.branches.index',    'label' => 'Cabang', 'icon' => 'store'],
                         ] as $item)
                         <a href="{{ route($item['route']) }}"
-                           class="flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-xl text-[13px] transition-all duration-300 {{ request()->routeIs($item['route']) ? 'text-indigo-400 font-bold bg-indigo-500/10' : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/30' }}">
+                           class="flex items-center gap-3 pl-12 pr-4 py-2.5 rounded-lg text-sm transition-colors {{ request()->routeIs($item['route']) ? 'text-indigo-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
                             <span class="material-symbols-outlined text-[18px]">{{ $item['icon'] }}</span>
                             {{ $item['label'] }}
                         </a>
@@ -125,7 +170,7 @@
 
                 {{-- Gudang Operasional --}}
                 <div class="pt-6 space-y-1.5">
-                    <p class="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">Inventory Logic</p>
+                    <p class="px-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Inventory</p>
                     
                     @foreach([
                         ['route' => 'gudang.po.index',               'label' => 'Purchase Order',    'icon' => 'shopping_cart_checkout'],
@@ -139,13 +184,13 @@
                         $badgeVal = $badgeName ? ($$badgeName ?? 0) : 0; 
                     @endphp
                     <a href="{{ route($item['route']) }}"
-                       class="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 {{ request()->routeIs(str_replace('.index', '', $item['route']).'*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
+                       class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ request()->routeIs(str_replace('.index', '', $item['route']).'*') ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                         <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-[22px] {{ request()->routeIs(str_replace('.index', '', $item['route']).'*') ? 'fill' : '' }}">{{ $item['icon'] }}</span>
-                            <span class="text-sm tracking-wide">{{ $item['label'] }}</span>
+                            <span class="material-symbols-outlined text-[22px]">{{ $item['icon'] }}</span>
+                            <span class="text-sm">{{ $item['label'] }}</span>
                         </div>
                         @if(isset($item['badge']) && $badgeVal > 0)
-                            <span id="{{ str_replace('_count', '_badge', $item['badge']) }}" class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center shadow-lg animate-bounce">
+                            <span id="{{ str_replace('_count', '_badge', $item['badge']) }}" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full text-center">
                                 {{ $badgeVal }}
                             </span>
                         @endif
@@ -155,10 +200,10 @@
 
                 {{-- User Management --}}
                 <div class="pt-6 space-y-1.5">
-                    <p class="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-2">Access</p>
-                    <a href="{{ route('master.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 {{ request()->routeIs('master.users.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
-                        <span class="material-symbols-outlined text-[22px] {{ request()->routeIs('master.users.*') ? 'fill' : '' }}">manage_accounts</span>
-                        <span class="text-sm tracking-wide">Manajemen User</span>
+                    <p class="px-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Access</p>
+                    <a href="{{ route('master.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('master.users.*') ? 'bg-indigo-600 text-white font-medium' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                        <span class="material-symbols-outlined text-[22px]">manage_accounts</span>
+                        <span class="text-sm">Manajemen User</span>
                     </a>
                 </div>
             </nav>

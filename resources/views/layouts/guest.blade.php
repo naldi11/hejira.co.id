@@ -10,53 +10,31 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <style>
-            body {
-                font-family: 'Outfit', sans-serif;
+            *, body, input, select, textarea, button {
+                font-family: 'Poppins', sans-serif !important;
             }
         </style>
     </head>
-    <body class="antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-animated-gradient relative overflow-hidden">
-            <!-- Decorative Elements -->
-            <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div class="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-            <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+    <body class="antialiased bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-center items-center p-6 relative">
+        <!-- Radial Gradient Latar Belakang yang Sangat Samar -->
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(59,130,246,0.05),transparent_50%)] pointer-events-none"></div>
 
-            <div class="z-10 w-full sm:max-w-md mt-6 px-8 py-10 glass-card overflow-hidden sm:rounded-3xl transition-all duration-500 hover:shadow-blue-500/20">
-                <div class="flex flex-col items-center mb-8">
-                    <a href="/" class="mb-4 transform transition-transform hover:scale-110 duration-300">
-                        <x-application-logo class="w-20 h-20 fill-current text-blue-600 drop-shadow-lg" />
-                    </a>
-                    <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Selamat Datang</h2>
-                    <p class="text-gray-500 mt-1">Silakan masuk ke akun Anda</p>
-                </div>
-
+        <div class="w-full sm:max-w-md relative z-10">
+            <!-- Card Utama -->
+            <div class="bg-white p-8 sm:p-10 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40">
                 {{ $slot }}
             </div>
-        </div>
 
-        <style>
-            @keyframes blob {
-                0% { transform: translate(0px, 0px) scale(1); }
-                33% { transform: translate(30px, -50px) scale(1.1); }
-                66% { transform: translate(-20px, 20px) scale(0.9); }
-                100% { transform: translate(0px, 0px) scale(1); }
-            }
-            .animate-blob {
-                animation: blob 7s infinite;
-            }
-            .animation-delay-2000 {
-                animation-delay: 2s;
-            }
-            .animation-delay-4000 {
-                animation-delay: 4s;
-            }
-        </style>
+            <!-- Footer Sederhana -->
+            <div class="text-center mt-8 text-[11px] text-slate-400">
+                <p>&copy; {{ date('Y') }} HEJIRA Systems. All rights reserved.</p>
+            </div>
+        </div>
     </body>
 </html>

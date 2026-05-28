@@ -22,10 +22,10 @@ class TortillaRecapExport implements FromCollection, WithHeadings, WithMapping, 
     public function headings(): array
     {
         return [
-            ['REKAP GAJI KARYAWAN TORTILLA'],
+            ['REKAP PRODUKSI KARYAWAN TORTILLA'],
             ['Periode: ' . $this->period],
             [''],
-            ['Nama Karyawan', 'Total Hadir', 'TB', 'TS', 'TK', 'TC', 'KRIBAB', 'Total Gaji (Rp)']
+            ['Nama Karyawan', 'Total Hadir', 'TB', 'TS', 'TK', 'TC', 'KRIBAB']
         ];
     }
 
@@ -39,7 +39,6 @@ class TortillaRecapExport implements FromCollection, WithHeadings, WithMapping, 
             $item->total_tk,
             $item->total_tc,
             $item->total_kribab,
-            $item->total_gaji
         ];
     }
 

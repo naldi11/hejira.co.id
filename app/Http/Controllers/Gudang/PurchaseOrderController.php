@@ -63,10 +63,12 @@ class PurchaseOrderController extends Controller
             'items.*.price'        => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $newPo = null;
+
+        DB::transaction(function () use ($request, &$newPo) {
             $total = collect($request->items)->sum(fn ($i) => (int)$i['quantity'] * (float)$i['price']);
 
-            $po = PurchaseOrder::create([
+            $newPo = PurchaseOrder::create([
                 'po_number'    => $this->numbers->generateYearly('GDG-PO', 'gudang_purchase_orders', 'po_number'),
                 'supplier_id'  => $request->supplier_id,
                 'date'         => $request->date,
@@ -78,7 +80,7 @@ class PurchaseOrderController extends Controller
             ]);
 
             foreach ($request->items as $item) {
-                $po->details()->create([
+                $newPo->details()->create([
                     'product_id'        => $item['product_id'],
                     'quantity_ordered'  => (int)$item['quantity'],
                     'quantity_received' => 0,
@@ -89,10 +91,12 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
-            $this->logger->log('create', 'gudang.po', "Buat PO: {$po->po_number}", $po);
+            $this->logger->log('create', 'gudang.po', "Buat PO: {$newPo->po_number}", $newPo);
         });
 
-        return redirect()->route('gudang.po.index')->with('success', 'Purchase Order berhasil dibuat.');
+        return redirect()
+            ->route('gudang.receiving.create', ['po_id' => $newPo->id])
+            ->with('success', "PO {$newPo->po_number} berhasil dibuat. Silakan input penerimaan barang.");
     }
 
     public function show(PurchaseOrder $po)
@@ -162,16 +166,6 @@ class PurchaseOrderController extends Controller
         return redirect()->route('gudang.po.show', $po)->with('success', 'PO berhasil diperbarui.');
     }
 
-    public function send(PurchaseOrder $po)
-    {
-        abort_if($po->status !== 'draft', 403);
-
-        $po->update(['status' => 'sent', 'updated_by' => auth()->id()]);
-        $this->logger->log('update', 'gudang.po', "PO dikirim ke supplier: {$po->po_number}", $po);
-
-        return back()->with('success', "PO {$po->po_number} ditandai sebagai Terkirim.");
-    }
-
     public function cancel(PurchaseOrder $po)
     {
         abort_if(!in_array($po->status, ['draft', 'sent']), 403, 'PO tidak bisa dibatalkan.');
@@ -188,4 +182,27 @@ class PurchaseOrderController extends Controller
 
         return view('gudang.purchase-orders.print', compact('po'));
     }
+
+    /** Endpoint JSON untuk AJAX di form penerimaan barang */
+    public function json(PurchaseOrder $po)
+    {
+        $po->load(['supplier', 'details.product.unit', 'details.unit']);
+
+        return response()->json([
+            'id'          => $po->id,
+            'po_number'   => $po->po_number,
+            'supplier_id' => $po->supplier_id,
+            'supplier'    => ['id' => $po->supplier->id, 'name' => $po->supplier->name],
+            'details'     => $po->details->map(fn($d) => [
+                'product_id'        => $d->product_id,
+                'product_name'      => $d->product->name,
+                'quantity_ordered'  => (int) $d->quantity_ordered,
+                'quantity_received' => (int) $d->quantity_received,
+                'unit_id'           => $d->unit_id,
+                'unit'              => $d->unit ? ['id' => $d->unit->id, 'abbreviation' => $d->unit->abbreviation, 'name' => $d->unit->name] : null,
+                'price'             => (float) $d->price,
+            ]),
+        ]);
+    }
 }
+

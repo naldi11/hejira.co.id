@@ -12,7 +12,6 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             BranchSeeder::class,
             UserSeeder::class,
-            MasterPaymentMethodSeeder::class,
         ]);
     }
 }

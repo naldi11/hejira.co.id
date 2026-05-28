@@ -3,6 +3,14 @@
 @section('page-title', 'Master Data — Produk')
 
 @section('content')
+@php
+    $accentColor = 'indigo';
+    if (($currentScope ?? '') === 'jihans') {
+        $accentColor = 'orange';
+    } elseif (($currentScope ?? '') === 'hendhys') {
+        $accentColor = 'amber';
+    }
+@endphp
     <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-black text-slate-900 font-headline">Daftar Produk</h2>
@@ -20,7 +28,7 @@
                 Import
             </button>
             <a href="{{ route(($routePrefix ?? 'master.') . 'products.create') }}"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $accentColor }}-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-lg shadow-{{ $accentColor }}-600/20">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 Tambah Produk
             </a>
@@ -33,12 +41,12 @@
             <div class="flex-1 min-w-[280px] relative">
                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau kode produk..."
-                    class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm">
+                    class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm">
             </div>
             
             <div class="min-w-[180px]">
                 <select name="visibility"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
                     <option value="">Semua Visibilitas</option>
                     <option value="gudang"  {{ request('visibility') === 'gudang'  ? 'selected' : '' }}>Ada di Gudang</option>
                     <option value="jihans"  {{ request('visibility') === 'jihans'  ? 'selected' : '' }}>Ada di Jihan's</option>
@@ -48,7 +56,7 @@
 
             <div class="min-w-[180px]">
                 <select name="status"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
                     <option value="">Semua Status</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
                     <option value="discontinued" {{ request('status') === 'discontinued' ? 'selected' : '' }}>Discontinue</option>
@@ -94,7 +102,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 group-hover:border-indigo-200 transition-colors">
+                                    <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 group-hover:border-{{ $accentColor }}-200 transition-colors">
                                         @if($product->image)
                                             <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
                                         @else

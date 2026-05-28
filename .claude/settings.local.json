@@ -35,7 +35,9 @@
       "Bash(grep *)",
       "Bash(Get-ChildItem -Path \"C:\\\\laragon\\\\www\\\\project-ketua\\\\app\\\\Http\\\\Controllers\\\\Gudang\" -Filter \"*.php\")",
       "Bash(Select-Object -ExpandProperty Name)",
-      "Bash(Find \"C:\\\\laragon\\\\www\\\\project-ketua\\\\resources\\\\views\\\\master\" -name \"*.blade.php\" -type f)"
+      "Bash(Find \"C:\\\\laragon\\\\www\\\\project-ketua\\\\resources\\\\views\\\\master\" -name \"*.blade.php\" -type f)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

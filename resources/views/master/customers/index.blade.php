@@ -3,6 +3,14 @@
 @section('page-title', 'Master Data — Customer')
 
 @section('content')
+@php
+    $accentColor = 'indigo';
+    if (($currentScope ?? '') === 'jihans') {
+        $accentColor = 'orange';
+    } elseif (($currentScope ?? '') === 'hendhys') {
+        $accentColor = 'amber';
+    }
+@endphp
     <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-black text-slate-900 font-headline">Daftar Customer</h2>
@@ -10,7 +18,7 @@
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route(($routePrefix ?? 'master.') . 'customers.create') }}"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
+                class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $accentColor }}-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-lg shadow-{{ $accentColor }}-600/20">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
                 Tambah Customer
             </a>
@@ -23,12 +31,12 @@
             <div class="flex-1 min-w-[280px] relative">
                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, kode, atau telepon..."
-                    class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm">
+                    class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm">
             </div>
             
             <div class="min-w-[180px]">
                 <select name="type"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
                     <option value="">Semua Tipe</option>
                     <option value="Pelanggan Individual" {{ request('type') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
                     <option value="Pelanggan Retail" {{ request('type') === 'Pelanggan Retail' ? 'selected' : '' }}>Retail</option>
@@ -38,7 +46,7 @@
 
             <div class="min-w-[180px]">
                 <select name="status"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
+                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
                     <option value="">Semua Status</option>
                     <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
                     <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
@@ -83,7 +91,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm border border-indigo-100">
+                                    <div class="w-10 h-10 rounded-full bg-{{ $accentColor }}-50 text-{{ $accentColor }}-600 flex items-center justify-center font-black text-sm border border-{{ $accentColor }}-100">
                                         {{ strtoupper(substr($customer->name, 0, 1)) }}
                                     </div>
                                     <p class="text-sm font-black text-slate-900">{{ $customer->name }}</p>

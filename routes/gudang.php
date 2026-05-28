@@ -24,9 +24,9 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
 
         // Purchase Order
         Route::resource('po', PurchaseOrderController::class)->except(['destroy']);
-        Route::post('po/{po}/send',   [PurchaseOrderController::class, 'send'])->name('po.send');
         Route::post('po/{po}/cancel', [PurchaseOrderController::class, 'cancel'])->name('po.cancel');
         Route::get('po/{po}/print',   [PurchaseOrderController::class, 'print'])->name('po.print');
+        Route::get('po/{po}/json',    [PurchaseOrderController::class, 'json'])->name('po.json');
 
         // Penerimaan Barang (GRN)
         Route::get('receiving',                                           [ReceivingController::class, 'index'])->name('receiving.index');
@@ -71,20 +71,5 @@ Route::middleware(['auth', 'role:admin_gudang'])
         Route::resource('products',  ProductController::class)->except(['show']);
         Route::resource('branches',  BranchController::class)->except(['show']);
         Route::resource('users',     App\Http\Controllers\Master\UserController::class)->except(['show']);
-
-        Route::get('categories',               [ProductCategoryController::class, 'index'])->name('categories.index');
-        Route::post('categories',              [ProductCategoryController::class, 'store'])->name('categories.store');
-        Route::put('categories/{category}',    [ProductCategoryController::class, 'update'])->name('categories.update');
-        Route::delete('categories/{category}', [ProductCategoryController::class, 'destroy'])->name('categories.destroy');
-
-        Route::get('units',           [UnitController::class, 'index'])->name('units.index');
-        Route::post('units',          [UnitController::class, 'store'])->name('units.store');
-        Route::put('units/{unit}',    [UnitController::class, 'update'])->name('units.update');
-        Route::delete('units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
-
-        Route::get('brands',            [BrandController::class, 'index'])->name('brands.index');
-        Route::post('brands',           [BrandController::class, 'store'])->name('brands.store');
-        Route::put('brands/{brand}',    [BrandController::class, 'update'])->name('brands.update');
-        Route::delete('brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
 
     });

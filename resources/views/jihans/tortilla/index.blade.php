@@ -1,119 +1,148 @@
 @extends('layouts.jihans')
 @section('title', 'Produksi Tortilla')
-@section('page-title', 'Produksi Tortilla per Karyawan')
+@section('page-title', 'Produksi Tortilla')
 
 @section('content')
-    <div class="p-margin-mobile md:p-margin-desktop w-full bg-surface space-y-md">
+<div class="space-y-6">
 
-        @if (session('success'))
-            <div class="mb-md bg-tertiary-container text-on-tertiary-container p-sm rounded-lg shadow-sm border border-tertiary/20 flex items-center gap-sm">
-                <span class="material-symbols-outlined text-tertiary">check_circle</span>
-                <p class="text-sm font-medium">{{ session('success') }}</p>
-            </div>
-        @endif
-
-        {{-- Header & Actions --}}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
-            <div class="flex items-center gap-sm">
-                <a href="{{ route('jihans.tortilla.recap') }}"
-                    class="inline-flex items-center gap-xs px-md py-sm bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-secondary-fixed-dim transition-all">
-                    <span class="material-symbols-outlined text-[18px]">payments</span>
-                    Rekap Gaji Mingguan
-                </a>
-            </div>
-            <div class="flex items-center gap-sm">
-                <a href="{{ route('jihans.tortilla.create') }}"
-                    class="inline-flex items-center gap-sm px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg text-label-lg shadow-sm hover:bg-on-primary-fixed-variant transition-all">
-                    <span class="material-symbols-outlined text-[18px]">add</span>
-                    Input Produksi Baru
-                </a>
-            </div>
-        </div>
-
-        {{-- Filters --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden p-md">
-            <form method="GET" class="flex flex-wrap gap-sm">
-                <div class="relative flex-1 min-w-[200px]">
-                    <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. Sesi..."
-                        class="w-full pl-xl pr-sm py-sm bg-surface-container-low border-b border-outline-variant focus:border-primary focus:border-b-2 focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant rounded-t-lg transition-colors outline-none">
-                </div>
-                <div class="flex items-center gap-xs">
-                    <input type="date" name="date_from" value="{{ request('date_from') }}"
-                        class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
-                    <span class="text-on-surface-variant">s/d</span>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}"
-                        class="px-sm py-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface outline-none focus:border-primary">
-                </div>
-                <button type="submit" class="px-md py-sm bg-surface-container border border-outline-variant text-on-surface rounded-lg font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">
-                    Filter
-                </button>
-                @if(request()->anyFilled(['search', 'date_from', 'date_to']))
-                    <a href="{{ route('jihans.tortilla.index') }}" class="px-md py-sm text-error font-label-lg text-label-lg flex items-center gap-xs hover:bg-error-container rounded-lg transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">close</span>
-                        Reset
-                    </a>
-                @endif
-            </form>
-        </div>
-
-        {{-- Table --}}
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-surface-container-low border-b border-outline-variant">
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">TANGGAL</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">NO. SESI</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">JML KARYAWAN</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">CATATAN</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">OLEH</th>
-                            <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-surface-container">
-                        @forelse($sessions as $session)
-                            <tr class="hover:bg-surface-container transition-colors">
-                                <td class="px-md py-sm font-body-md text-body-md text-on-surface">
-                                    {{ \Carbon\Carbon::parse($session->date)->format('d/m/Y') }}
-                                </td>
-                                <td class="px-md py-sm font-mono text-sm font-bold text-on-surface">
-                                    {{ $session->session_number }}
-                                </td>
-                                <td class="px-md py-sm text-on-surface font-body-md">
-                                    {{ $session->details_count }} orang
-                                </td>
-                                <td class="px-md py-sm text-on-surface-variant text-sm italic">
-                                    {{ $session->notes ?? '-' }}
-                                </td>
-                                <td class="px-md py-sm text-on-surface-variant text-xs">
-                                    {{ $session->creator->name ?? 'System' }}
-                                </td>
-                                <td class="px-md py-sm text-right">
-                                    <a href="{{ route('jihans.tortilla.show', $session) }}"
-                                        class="inline-flex items-center gap-xs px-sm py-xs bg-surface-container border border-outline-variant text-primary rounded-lg font-label-sm text-label-sm hover:bg-primary-container transition-colors shadow-sm">
-                                        <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                        Detail
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-md py-xl text-center text-on-surface-variant">
-                                    <span class="material-symbols-outlined text-[48px] opacity-20 block mb-sm">assignment</span>
-                                    <p class="font-label-lg">Belum ada data produksi tortilla.</p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($sessions->hasPages())
-                <div class="px-md py-sm bg-surface-container-low border-t border-outline-variant">
-                    {{ $sessions->links() }}
-                </div>
-            @endif
-        </div>
-
+    @if(session('success'))
+    <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+        <p class="text-sm font-semibold">{{ session('success') }}</p>
     </div>
+    @endif
+
+    @if(session('error'))
+    <div class="flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 px-5 py-4 rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-red-500 text-[20px]">error</span>
+        <p class="text-sm font-semibold">{{ session('error') }}</p>
+    </div>
+    @endif
+
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Produksi Tortilla</h2>
+            <p class="text-sm text-slate-500 mt-1">Riwayat sesi produksi per karyawan</p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+            <a href="{{ route('jihans.tortilla.recap') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold hover:bg-amber-200 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+                Rekap Produksi
+            </a>
+            <a href="{{ route('jihans.tortilla.create') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Input Produksi Baru
+            </a>
+        </div>
+    </div>
+
+    {{-- Filter --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <form method="GET" class="flex flex-wrap items-center gap-3">
+            {{-- Search --}}
+            <div class="relative flex-1 min-w-[200px]">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] pointer-events-none">search</span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. Sesi..."
+                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+            </div>
+
+            {{-- Date Range --}}
+            <div class="flex items-center gap-2">
+                <input type="date" name="date_from" value="{{ request('date_from') }}"
+                       class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:border-orange-400 transition-all">
+                <span class="text-slate-400 text-sm font-bold">—</span>
+                <input type="date" name="date_to" value="{{ request('date_to') }}"
+                       class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:border-orange-400 transition-all">
+            </div>
+
+            <button type="submit"
+                    class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition-all">
+                Filter
+            </button>
+
+            @if(request()->anyFilled(['search', 'date_from', 'date_to']))
+            <a href="{{ route('jihans.tortilla.index') }}"
+               class="flex items-center gap-1.5 px-4 py-2.5 text-red-600 bg-red-50 border border-red-100 rounded-xl text-sm font-bold hover:bg-red-100 transition-all">
+                <span class="material-symbols-outlined text-[16px]">close</span>
+                Reset
+            </a>
+            @endif
+        </form>
+    </div>
+
+    {{-- Table --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider">Tanggal</th>
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider">No. Sesi</th>
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider text-center">Jml Karyawan</th>
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider">Catatan</th>
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider">Dibuat Oleh</th>
+                        <th class="px-6 py-4 font-black text-slate-500 text-xs uppercase tracking-wider text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($sessions as $session)
+                    <tr class="hover:bg-orange-50/40 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="text-slate-700 font-bold">{{ \Carbon\Carbon::parse($session->date)->format('d M Y') }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-xs font-black bg-orange-50 text-orange-700 border border-orange-100 px-2.5 py-1 rounded-lg">{{ $session->session_number }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black text-xs">
+                                {{ $session->details_count }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 text-sm italic">
+                            {{ $session->notes ?: '—' }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black shrink-0">
+                                    {{ substr($session->creator->name ?? 'S', 0, 1) }}
+                                </div>
+                                <span class="text-slate-600 text-sm">{{ $session->creator->name ?? 'Sistem' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="{{ route('jihans.tortilla.show', $session) }}"
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200 transition-all">
+                                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                Detail
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center">
+                            <span class="material-symbols-outlined text-[56px] text-slate-200 block mb-3">assignment</span>
+                            <p class="text-slate-400 font-bold text-sm">Belum ada data produksi tortilla.</p>
+                            <a href="{{ route('jihans.tortilla.create') }}"
+                               class="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                                Input Produksi Pertama
+                            </a>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($sessions->hasPages())
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {{ $sessions->links() }}
+        </div>
+        @endif
+    </div>
+
+</div>
 @endsection

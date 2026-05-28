@@ -33,4 +33,10 @@ class PurchaseOrder extends Model
     {
         return $this->status === 'draft';
     }
+
+    // Barang bisa diterima selama PO belum cancelled/completed
+    public function isReceivable(): bool
+    {
+        return in_array($this->status, ['draft', 'sent', 'partial']);
+    }
 }

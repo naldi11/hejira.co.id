@@ -3,6 +3,14 @@
 @section('page-title', 'Keamanan & Akses')
 
 @section('content')
+@php
+    $accentColor = 'indigo';
+    if (($currentScope ?? '') === 'jihans') {
+        $accentColor = 'orange';
+    } elseif (($currentScope ?? '') === 'hendhys') {
+        $accentColor = 'amber';
+    }
+@endphp
 <div class="space-y-6">
 
     {{-- Header --}}
@@ -12,7 +20,7 @@
             <p class="text-sm text-slate-500 font-medium">Kelola hak akses, entitas bisnis, dan kredensial pengguna sistem.</p>
         </div>
         <a href="{{ route(($routePrefix ?? 'master.') . 'users.create') }}"
-           class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]">
+           class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $accentColor }}-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-xl shadow-{{ $accentColor }}-600/20 active:scale-[0.98]">
             <span class="material-symbols-outlined text-[20px]">person_add</span>
             Tambah Pengguna
         </a>
@@ -41,7 +49,7 @@
                     <tr class="hover:bg-slate-50/50 transition-colors group">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-indigo-600 border border-slate-200 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-{{ $accentColor }}-600 border border-slate-200 shadow-inner group-hover:bg-{{ $accentColor }}-600 group-hover:text-white transition-all">
                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                 </div>
                                 <div class="flex flex-col">
@@ -80,7 +88,7 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                                 <a href="{{ route(($routePrefix ?? 'master.') . 'users.edit', $user) }}" 
-                                   class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-slate-200">
+                                   class="w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-{{ $accentColor }}-600 hover:bg-{{ $accentColor }}-50 rounded-xl transition-all border border-slate-200">
                                     <span class="material-symbols-outlined text-[18px]">edit</span>
                                 </a>
                                 <form action="{{ route(($routePrefix ?? 'master.') . 'users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pengguna {{ $user->name }}?');">

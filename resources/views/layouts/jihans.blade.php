@@ -24,68 +24,22 @@
         darkMode: "class",
         theme: {
             extend: {
-                "colors": {
-                    "primary-fixed": "#ffdbc9",
-                    "surface-container-low": "#f5f3f3",
-                    "surface-container-highest": "#e4e2e2",
-                    "surface-container": "#efeded",
-                    "on-secondary-container": "#6e5c00",
-                    "secondary": "#705d00",
-                    "primary-fixed-dim": "#ffb68c",
-                    "surface-container-high": "#eae8e7",
-                    "primary": "#6c2f00",
-                    "on-surface-variant": "#54433a",
-                    "inverse-on-surface": "#f2f0f0",
-                    "error-container": "#ffdad6",
-                    "on-secondary-fixed-variant": "#544600",
-                    "secondary-fixed": "#ffe16d",
-                    "secondary-fixed-dim": "#e9c400",
-                    "inverse-surface": "#303030",
-                    "outline": "#877369",
-                    "on-primary-fixed": "#321200",
-                    "on-error-container": "#93000a",
-                    "surface": "#fbf9f8",
-                    "tertiary-container": "#5a5a38",
-                    "on-background": "#1b1c1c",
-                    "outline-variant": "#dac2b6",
-                    "surface-container-lowest": "#ffffff",
-                    "on-tertiary-container": "#d3d1a7",
-                    "background": "#fbf9f8",
-                    "surface-bright": "#fbf9f8",
-                    "on-primary-fixed-variant": "#753401",
-                    "inverse-primary": "#ffb68c",
-                    "tertiary-fixed": "#e6e5b9",
-                    "on-tertiary-fixed-variant": "#484828",
-                    "primary-container": "#8b4513",
-                    "tertiary-fixed-dim": "#cac99f",
-                    "on-secondary-fixed": "#221b00",
-                    "on-primary": "#ffffff",
-                    "on-surface": "#1b1c1c",
-                    "tertiary": "#424223",
-                    "surface-dim": "#dbd9d9",
-                    "error": "#ba1a1a",
-                    "on-tertiary": "#ffffff",
-                    "on-tertiary-fixed": "#1d1d03",
-                    "surface-variant": "#e4e2e2",
-                    "on-error": "#ffffff",
-                    "secondary-container": "#fcd400",
-                    "on-secondary": "#ffffff",
-                    "on-primary-container": "#ffc29f",
-                    "surface-tint": "#934b19"
+                fontFamily: {
+                    "sans": ["Poppins", "sans-serif"],
+                    "headline": ["Poppins", "sans-serif"],
                 },
-                "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
-                "spacing": { "xl": "64px", "lg": "40px", "xs": "4px", "sm": "12px", "md": "24px", "margin-mobile": "16px", "gutter": "16px", "base": "8px", "margin-desktop": "32px" },
-                "fontFamily": {
-                    "headline-lg": ["Montserrat"], "label-lg": ["Inter"], "display-lg": ["Montserrat"], "headline-md": ["Montserrat"], 
-                    "body-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "title-lg": ["Inter"], "headline-lg-mobile": ["Montserrat"]
-                },
+                // Note: fontWeight, borderRadius, dan spacing TIDAK di-override
+                // agar class bawaan Tailwind (font-bold=700, font-black=900, rounded-3xl, dll) tetap bekerja normal.
             },
         },
     }
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined'; }
+        *, body, input, select, textarea, button {
+            font-family: 'Poppins', sans-serif !important;
+        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined' !important; }
         .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
         [x-cloak] { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -109,7 +63,7 @@
              @click="sidebarOpen = false"></div>
 
         {{-- SIDEBAR --}}
-        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-orange-700 text-orange-50 flex flex-col shadow-2xl lg:static lg:shrink-0 transition-all duration-300 ease-in-out border-r border-orange-800"
+        <aside class="print:hidden fixed inset-y-0 left-0 z-50 w-64 bg-orange-700 text-orange-50 flex flex-col shadow-2xl lg:static lg:shrink-0 transition-all duration-300 ease-in-out border-r border-orange-800"
                :class="sidebarOpen ? 'translate-x-0 lg:ml-0' : '-translate-x-full lg:-ml-64'">
 
             {{-- Logo Area --}}
@@ -198,13 +152,10 @@
                     <div x-show="open" x-collapse x-cloak class="pt-1 pb-2">
                         @foreach([
                             ['route' => 'jihans.master.products.index',          'label' => 'Daftar Produk'],
-                            ['route' => 'jihans.master.categories.index',        'label' => 'Kategori'],
-                            ['route' => 'jihans.master.units.index',             'label' => 'Satuan'],
-                            ['route' => 'jihans.master.brands.index',            'label' => 'Brand'],
                             ['route' => 'jihans.master.customers.index',         'label' => 'Pelanggan'],
                             ['route' => 'jihans.master.karyawan.index',          'label' => 'Karyawan'],
                             ['route' => 'jihans.master.payment-methods.index',   'label' => 'Metode Bayar'],
-                            ['route' => 'jihans.master.production-rates.edit',   'label' => 'Tarif Produksi'],
+                            ['route' => 'jihans.master.production-config.edit',  'label' => 'Konfigurasi Produksi'],
                         ] as $item)
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center gap-3 pl-10 pr-3 py-2 rounded-lg text-[13px] transition-all duration-200 {{ request()->routeIs($item['route']) ? 'text-white font-semibold bg-orange-800/80 relative before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:bg-orange-300 before:rounded-full' : 'text-orange-200 hover:text-white hover:bg-orange-800/40' }}">

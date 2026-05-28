@@ -3,356 +3,474 @@
 @section('page-title', 'Penerimaan Barang')
 
 @section('content')
-<div x-data="grnForm()" class="max-w-6xl mx-auto space-y-8 pb-20">
+<div x-data="grnForm()" class="space-y-6">
 
-    {{-- Header & Back --}}
-    <div class="flex items-center justify-between">
-        <a href="{{ route('gudang.receiving.index') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors group">
-            <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Batal & Kembali
+    {{-- Back --}}
+    <div>
+        <a href="{{ route('gudang.receiving.index') }}"
+           class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 font-bold transition-colors group text-sm">
+            <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            Batal &amp; Kembali
         </a>
-        <h2 class="text-xl font-black text-slate-800 font-headline tracking-tight">Dokumen Penerimaan Barang (GRN)</h2>
     </div>
 
     {{-- Validation Errors --}}
-    @if ($errors->any())
-    <div class="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-rose-800 space-y-2">
-        <div class="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            Terjadi Kesalahan Validasi
+    @if($errors->any())
+    <div class="flex gap-3 bg-red-50 border border-red-200 rounded-2xl p-5">
+        <span class="material-symbols-outlined text-red-500 text-[20px] shrink-0 mt-0.5">error</span>
+        <div>
+            <p class="text-sm font-bold text-red-700 mb-1">Perbaiki kesalahan berikut:</p>
+            <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
+                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+            </ul>
         </div>
-        <ul class="list-disc pl-5 text-xs font-semibold space-y-1">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
     </div>
     @endif
 
-    <form action="{{ route('gudang.receiving.store') }}" method="POST" class="space-y-8">
+    @if(session('success'))
+    <div class="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 px-5 py-4 rounded-2xl text-sm font-bold">
+        <span class="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    <form action="{{ route('gudang.receiving.store') }}" method="POST"
+          class="space-y-6" enctype="multipart/form-data">
         @csrf
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {{-- Left: Main Info --}}
-            <div class="lg:col-span-2 space-y-8">
-                
-                {{-- Metadata Card --}}
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 sm:p-10 space-y-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Referensi PO <span class="text-slate-400 font-medium">(Opsional)</span></label>
-                            <div wire:ignore>
-                                <select name="purchase_order_id" x-model="po_id" 
-                                        x-init="tsPo = new TomSelect($el, { 
-                                            create: false, 
-                                            placeholder: 'Input Manual (Tanpa PO)',
-                                            dropdownParent: 'body',
-                                            onChange: function(value) {
-                                                po_id = value;
-                                                loadPoDetails();
-                                            }
-                                        })"
-                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                                    <option value="">Input Manual (Tanpa PO)</option>
-                                    @foreach($purchaseOrders as $po)
-                                        <option value="{{ $po->id }}">{{ $po->po_number }} - {{ $po->supplier->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Supplier <span class="text-rose-500">*</span></label>
-                            <div wire:ignore>
-                                <select name="supplier_id" x-model="supplier_id" required :disabled="po_id != ''"
-                                        x-init="tsSupplier = new TomSelect($el, {
-                                            create: false,
-                                            placeholder: 'Pilih Supplier...',
-                                            dropdownParent: 'body',
-                                            onChange: function(value) {
-                                                supplier_id = value;
-                                            }
-                                        })"
-                                        class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none disabled:opacity-60 disabled:cursor-not-allowed">
-                                    <option value="">Pilih Supplier...</option>
-                                    @foreach($suppliers as $s)
-                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+        {{-- Hidden input for supplier_id when select is disabled --}}
+        <template x-if="po_id !== ''">
+            <input type="hidden" name="supplier_id" :value="supplier_id">
+        </template>
 
-                    {{-- Items Section --}}
-                    <div class="pt-8 border-t border-slate-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-black text-slate-900 font-headline tracking-tight">Verifikasi Barang Masuk</h3>
-                            <button type="button" @click="addItem()" x-show="!po_id" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
-                                <span class="material-symbols-outlined text-[18px]">add</span>
-                                Tambah Item
-                            </button>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                        <th class="pb-4 pl-2">Produk</th>
-                                        <th x-show="po_id" class="pb-4 text-center" style="width: 100px;">Pesan</th>
-                                        <th class="pb-4 text-center" style="width: 120px;">Terima</th>
-                                        <th class="pb-4 text-center" style="width: 80px;">Satuan</th>
-                                        <th class="pb-4 text-center" style="width: 50px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    <template x-for="(item, index) in items" :key="index">
-                                        <tr class="group">
-                                            <td class="py-4 pr-4">
-                                                <div wire:ignore>
-                                                    <select x-model="item.product_id" :name="'items['+index+'][product_id]'" required :disabled="po_id != ''"
-                                                            x-init="$nextTick(() => {
-                                                                item.tsProduct = new TomSelect($el, {
-                                                                    create: false,
-                                                                    placeholder: 'Pilih Produk...',
-                                                                    dropdownParent: 'body',
-                                                                    onChange: function(value) {
-                                                                        item.product_id = value;
-                                                                        onProductChange(item);
-                                                                    }
-                                                                });
-                                                                if (item.product_id) {
-                                                                    item.tsProduct.setValue(item.product_id, true);
-                                                                }
-                                                                
-                                                                // Disable TomSelect dynamically if PO is selected
-                                                                $watch('po_id', val => {
-                                                                    if (val) {
-                                                                        item.tsProduct.disable();
-                                                                    } else {
-                                                                        item.tsProduct.enable();
-                                                                    }
-                                                                });
-                                                            })"
-                                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none disabled:opacity-100">
-                                                        <option value="">Pilih Produk...</option>
-                                                        @foreach($products as $p)
-                                                            <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <input type="hidden" :name="'items['+index+'][product_id]'" :value="item.product_id" x-if="po_id != ''">
-                                            </td>
-                                            <td x-show="po_id" class="py-4 px-2 text-center">
-                                                <span class="text-xs font-bold text-slate-400 tabular-nums" x-text="item.ordered_qty"></span>
-                                            </td>
-                                            <td class="py-4 px-2">
-                                                <input type="number" x-model.number="item.quantity" :name="'items['+index+'][quantity]'" min="0" :max="po_id ? item.ordered_qty : null" step="any" required
-                                                       class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black text-center text-slate-900 focus:bg-white focus:border-indigo-500 transition-all outline-none tabular-nums">
-                                            </td>
-                                            <td class="py-4 px-2 text-center">
-                                                <span class="text-[10px] font-black text-slate-500 uppercase bg-slate-100 px-2 py-1 rounded-lg" x-text="item.unit_name || 'PCS'"></span>
-                                                <input type="hidden" :name="'items['+index+'][unit_id]'" :value="item.unit_id">
-                                                <input type="hidden" :name="'items['+index+'][hpp_price]'" :value="item.hpp_price">
-                                            </td>
-                                            <td class="py-4 pl-4 text-center">
-                                                <button type="button" @click="removeItem(index)" x-show="!po_id" class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-rose-500 transition-colors">
-                                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div x-show="items.length === 0" class="py-12 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                            <span class="material-symbols-outlined text-slate-300 text-[48px] mb-2">inventory_2</span>
-                            <p class="text-slate-400 font-bold">Silakan pilih PO atau tambah item manual.</p>
-                        </div>
-                    </div>
-                </div>
+        {{-- ═══ BAGIAN 1: Header GRN ═══ --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Informasi Penerimaan</h3>
             </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
 
-            {{-- Right: Sidebar Details --}}
-            <div class="space-y-8">
-                
-                {{-- Ref Info --}}
-                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8 space-y-6">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tanggal Terima <span class="text-rose-500">*</span></label>
-                        <input type="date" name="date" value="{{ date('Y-m-d') }}" required
-                               class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">No. Surat Jalan / Faktur</label>
-                        <input type="text" name="reference_number" placeholder="Contoh: SJ/2024/001"
-                               class="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Catatan</label>
-                        <textarea name="notes" rows="3" placeholder="Kondisi barang, kurir, dll..."
-                                  class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 transition-all outline-none resize-none"></textarea>
-                    </div>
+                {{-- Referensi PO --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Referensi PO
+                        <span class="normal-case font-normal text-slate-400">(opsional)</span>
+                    </label>
+                    <select id="po_select" name="po_id">
+                        <option value="">— Input Manual (Tanpa PO) —</option>
+                        @foreach($purchaseOrders as $poItem)
+                        <option value="{{ $poItem->id }}"
+                            {{ (isset($po) && $po->id == $poItem->id) || old('po_id') == $poItem->id ? 'selected' : '' }}>
+                            {{ $poItem->po_number }} — {{ $poItem->supplier->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                {{-- Action Card --}}
-                <div class="bg-[#0f172a] rounded-[2.5rem] shadow-2xl shadow-slate-900/20 p-10 text-white relative overflow-hidden">
-                    <div class="relative z-10 space-y-6">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-indigo-400">task_alt</span>
-                            <h3 class="text-sm font-black uppercase tracking-[0.2em]">Finalisasi</h3>
-                        </div>
-                        
-                        <p class="text-slate-400 text-xs font-medium leading-relaxed">
-                            Dengan mengklik tombol di bawah, stok di gudang akan otomatis bertambah sesuai dengan jumlah yang Anda input.
-                        </p>
-
-                        <button type="submit" class="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs transition-all shadow-xl shadow-indigo-600/30 active:scale-[0.98]">
-                            Konfirmasi Penerimaan
-                        </button>
-                    </div>
-                    
-                    <span class="material-symbols-outlined absolute -right-6 -bottom-6 text-white/5 text-[140px] rotate-12">local_shipping</span>
+                {{-- Supplier --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Supplier <span class="text-red-500">*</span>
+                    </label>
+                    <select id="supplier_select" name="supplier_id" required
+                            :disabled="po_id !== ''">
+                        <option value="">Pilih supplier...</option>
+                        @foreach($suppliers as $s)
+                        <option value="{{ $s->id }}" {{ old('supplier_id') == $s->id ? 'selected' : '' }}>
+                            {{ $s->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
+                {{-- Tanggal Terima --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Tanggal Terima <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="date" value="{{ date('Y-m-d') }}" required
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none">
+                </div>
+
+                {{-- No. Surat Jalan --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">No. Surat Jalan / Faktur</label>
+                    <input type="text" name="reference_number" placeholder="Contoh: SJ/2024/001"
+                           value="{{ old('reference_number') }}"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none">
+                </div>
+
+                {{-- Catatan --}}
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Catatan</label>
+                    <textarea name="notes" rows="1" placeholder="Kondisi barang, kurir, dll..."
+                              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none resize-none">{{ old('notes') }}</textarea>
+                </div>
             </div>
         </div>
+
+        {{-- ═══ BAGIAN 2: Daftar Barang Masuk ═══ --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Verifikasi Barang Masuk</h3>
+                    <p x-show="po_id" class="text-xs text-indigo-600 font-bold mt-0.5">
+                        ↳ Item diisi otomatis dari PO
+                    </p>
+                </div>
+                <button type="button" @click="addItem()" x-show="!po_id"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98]">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Tambah Item
+                </button>
+            </div>
+
+            {{-- Loading state --}}
+            <div x-show="loadingPo" class="py-12 text-center">
+                <span class="material-symbols-outlined text-indigo-400 text-[40px] animate-spin block mb-2">progress_activity</span>
+                <p class="text-sm text-slate-500 font-bold">Memuat data PO...</p>
+            </div>
+
+            {{-- Empty state --}}
+            <div x-show="!loadingPo && items.length === 0" class="py-16 text-center">
+                <span class="material-symbols-outlined text-slate-200 text-[56px] block mb-3">inventory_2</span>
+                <p class="text-slate-400 font-bold text-sm">Pilih PO di atas atau klik "Tambah Item".</p>
+            </div>
+
+            {{-- Table --}}
+            <div x-show="!loadingPo && items.length > 0" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left" style="min-width:220px">Produk</th>
+                            <th x-show="po_id" class="px-4 py-3 text-center" style="min-width:80px">Dipesan</th>
+                            <th class="px-4 py-3 text-left" style="min-width:180px">Jumlah Terima</th>
+                            <th class="px-4 py-3 text-left" style="min-width:180px">Batch &amp; Kedaluwarsa</th>
+                            <th class="px-4 py-3 text-left" style="min-width:150px">Catatan</th>
+                            <th class="px-3 py-3 text-center" style="min-width:48px"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="(item, index) in items" :key="index">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+
+                                {{-- Produk --}}
+                                <td class="px-6 py-4">
+                                    <template x-if="po_id">
+                                        <div>
+                                            <p class="font-bold text-slate-800 text-sm" x-text="item.product_name"></p>
+                                            <input type="hidden" :name="`items[${index}][product_id]`" :value="item.product_id">
+                                            <input type="hidden" :name="`items[${index}][unit_id]`" :value="item.unit_id">
+                                            <input type="hidden" :name="`items[${index}][hpp_price]`" :value="item.hpp_price">
+                                        </div>
+                                    </template>
+                                    <template x-if="!po_id">
+                                        <div>
+                                            <select :id="'prod_'+index" :name="`items[${index}][product_id]`" required
+                                                    x-init="$nextTick(() => {
+                                                        let s = $('#prod_'+index);
+                                                        s.select2({ placeholder: 'Pilih produk...', width: '100%', minimumResultsForSearch: 5 })
+                                                         .on('select2:select', e => {
+                                                              item.product_id = e.params.data.id;
+                                                              onProductChange(item);
+                                                          });
+                                                        if (item.product_id) s.val(item.product_id).trigger('change.select2');
+                                                    })"
+                                                    class="w-full">
+                                                <option value="">Pilih produk...</option>
+                                                @foreach($products as $p)
+                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="hidden" :name="`items[${index}][unit_id]`" :value="item.unit_id">
+                                            <input type="hidden" :name="`items[${index}][hpp_price]`" :value="item.hpp_price">
+                                        </div>
+                                    </template>
+                                </td>
+
+                                {{-- Dipesan (hanya saat PO) --}}
+                                <td x-show="po_id" class="px-4 py-4 text-center">
+                                    <span class="text-sm font-bold text-slate-400 tabular-nums"
+                                          x-text="item.ordered_qty + ' ' + item.unit_name"></span>
+                                </td>
+
+                                {{-- Qty Terima (Bagus vs Rusak) --}}
+                                <td class="px-4 py-4">
+                                    <div class="space-y-2">
+                                        {{-- Qty Bagus --}}
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-14 text-xs font-bold text-green-600">Bagus:</span>
+                                            <input type="number" :name="`items[${index}][quantity_bagus]`"
+                                                   x-model.number="item.quantity_bagus"
+                                                   min="0" step="1" required
+                                                   class="w-20 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-center text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none tabular-nums">
+                                            <span class="text-xs font-semibold text-slate-400" x-text="item.unit_name"></span>
+                                        </div>
+                                        {{-- Qty Rusak --}}
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-14 text-xs font-bold text-red-500">Rusak:</span>
+                                            <input type="number" :name="`items[${index}][quantity_rusak]`"
+                                                   x-model.number="item.quantity_rusak"
+                                                   min="0" step="1" required
+                                                   class="w-20 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-center text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all outline-none tabular-nums">
+                                            <span class="text-xs font-semibold text-slate-400" x-text="item.unit_name"></span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Batch & Expired --}}
+                                <td class="px-4 py-4 space-y-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">No. Batch</label>
+                                        <input type="text" x-model="item.batch_number"
+                                               :name="`items[${index}][batch_number]`"
+                                               placeholder="Contoh: NO BATCH"
+                                               class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none uppercase">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tgl Kedaluwarsa</label>
+                                        <input type="date" x-model="item.expired_date"
+                                               :name="`items[${index}][expired_date]`"
+                                               class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none">
+                                    </div>
+                                </td>
+
+                                {{-- Catatan Item --}}
+                                <td class="px-4 py-4">
+                                    <textarea :name="`items[${index}][notes]`" x-model="item.notes" rows="2" placeholder="Catatan item..."
+                                              class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:bg-white focus:border-indigo-500 transition-all outline-none resize-none"></textarea>
+                                </td>
+
+                                {{-- Delete --}}
+                                <td class="px-3 py-4 text-center">
+                                    <button type="button" @click="removeItem(index)" x-show="!po_id"
+                                            class="w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- ═══ BAGIAN 3: Foto & Submit ═══ --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {{-- Upload Foto --}}
+            <div class="md:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                    Foto Bukti Penerimaan
+                    <span class="normal-case font-normal text-slate-400">(opsional, maks 5MB/foto)</span>
+                </label>
+
+                {{-- Preview Grid --}}
+                <div x-show="photos.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                    <template x-for="(photo, pIdx) in photos" :key="pIdx">
+                        <div class="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                            <img :src="photo.url" class="w-full h-full object-cover">
+                            
+                            {{-- Overlay info / Hover --}}
+                            <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button type="button" @click="removePhoto(pIdx)"
+                                        class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors active:scale-95">
+                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    {{-- Tambah Foto Card inside the grid --}}
+                    <button type="button" onclick="document.getElementById('photoInput').click()"
+                            class="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-slate-50 transition-all text-slate-400">
+                        <span class="material-symbols-outlined text-[24px] mb-1">add_a_photo</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider">Tambah</span>
+                    </button>
+                </div>
+
+                {{-- Default dashed upload area (shown when no photos) --}}
+                <div x-show="photos.length === 0" 
+                     class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer"
+                     onclick="document.getElementById('photoInput').click()">
+                    <span class="material-symbols-outlined text-slate-300 text-[36px] block mb-2">add_a_photo</span>
+                    <p class="text-sm font-bold text-slate-500">Klik untuk upload foto</p>
+                    <p class="text-xs text-slate-400 mt-1">JPG, PNG, WebP</p>
+                </div>
+
+                <input type="file" id="photoInput" name="photos[]" accept="image/*" multiple class="hidden"
+                       @change="handlePhotoChange($event)">
+                <p x-show="photos.length > 0" class="text-xs font-bold text-indigo-600 mt-2" 
+                   x-text="photos.length + ' foto dipilih'"></p>
+            </div>
+
+            {{-- Submit Card --}}
+            <div class="bg-slate-900 rounded-2xl shadow-xl p-6 flex flex-col justify-between text-white">
+                <div class="space-y-2 mb-6">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <span class="material-symbols-outlined text-[22px]">task_alt</span>
+                    </div>
+                    <h3 class="font-bold text-sm uppercase tracking-wider">Konfirmasi Penerimaan</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Stok gudang aktif akan bertambah sesuai kuantitas Bagus yang diterima setelah dikonfirmasi.
+                    </p>
+                </div>
+                <button type="submit"
+                        class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/30 active:scale-[0.98]">
+                    Konfirmasi &amp; Simpan
+                </button>
+            </div>
+        </div>
+
     </form>
 </div>
 @endsection
 
-@push('styles')
-<style>
-    .ts-wrapper {
-        width: 100% !important;
-    }
-    .ts-control {
-        border-radius: 0.75rem !important; /* rounded-xl */
-        padding: 0.65rem 1rem !important;
-        font-size: 0.75rem !important; /* text-xs */
-        font-weight: 700 !important;
-        background-color: rgb(248 250 252) !important; /* bg-slate-50 */
-        border: 1px solid rgb(226 232 240) !important; /* border-slate-200 */
-        color: rgb(51 65 85) !important; /* text-slate-700 */
-        transition: all 0.2s !important;
-    }
-    .ts-wrapper.single .ts-control {
-        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
-        background-position: right 0.75rem center !important;
-        background-size: 1rem !important;
-        background-repeat: no-repeat !important;
-    }
-    .focus .ts-control {
-        background-color: #fff !important;
-        border-color: #6366f1 !important; /* focus:border-indigo-500 */
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08) !important;
-    }
-    .ts-dropdown {
-        border-radius: 0.75rem !important;
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08) !important;
-        border: 1px solid rgb(226 232 240) !important;
-        font-size: 0.75rem !important;
-    }
-    .ts-dropdown .active {
-        background-color: #eef2ff !important; /* bg-indigo-50 */
-        color: #4f46e5 !important; /* text-indigo-600 */
-        font-weight: bold !important;
-    }
-</style>
-@endpush
-
 @push('scripts')
 <script>
-    function grnForm() {
-        return {
-            po_id: '',
-            supplier_id: '',
-            items: [],
-            products: @json($products),
-            tsPo: null,
-            tsSupplier: null,
-            
-            init() {
-                // Initialize with one empty item if manual
-                if(this.items.length === 0) this.addItem();
-                
-                // Watch po_id to enable/disable Supplier select
-                this.$watch('po_id', val => {
-                    if (this.tsSupplier) {
-                        if (val) {
-                            this.tsSupplier.disable();
-                        } else {
-                            this.tsSupplier.enable();
-                        }
-                    }
-                });
-            },
+$(document).ready(function() {
 
-            addItem() {
-                this.items.push({
-                    product_id: '',
-                    quantity: 1,
-                    ordered_qty: 0,
-                    unit_id: '',
-                    unit_name: 'PCS',
-                    hpp_price: 0
-                });
-            },
+    // ── Init Select2 untuk PO select ──
+    $('#po_select').select2({
+        placeholder: '— Input Manual (Tanpa PO) —',
+        allowClear: true,
+        width: '100%'
+    }).on('select2:select select2:unselect', function(e) {
+        const val = $(this).val() || '';
+        const comp = window._grnComp;
+        if (comp) {
+            comp.po_id = val;
+            comp.loadPoDetails();
+        }
+    });
 
-            removeItem(index) {
-                const item = this.items[index];
-                if (item.tsProduct) item.tsProduct.destroy();
-                this.items.splice(index, 1);
-            },
+    // ── Init Select2 untuk Supplier select ──
+    $('#supplier_select').select2({
+        placeholder: 'Pilih supplier...',
+        width: '100%'
+    }).on('select2:select', function(e) {
+        const comp = window._grnComp;
+        if (comp) comp.supplier_id = $(this).val();
+    });
 
-            onProductChange(item) {
-                if (!item.product_id) {
-                    item.unit_id = '';
-                    item.unit_name = 'PCS';
-                    item.hpp_price = 0;
-                    return;
-                }
-                const prod = this.products.find(p => p.id == item.product_id);
-                if (prod) {
-                    item.unit_id = prod.unit_id || '';
-                    item.unit_name = prod.unit ? prod.unit.abbreviation : 'PCS';
-                    item.hpp_price = parseFloat(prod.hpp) || 0;
-                }
-            },
+    // Auto-load jika po_id sudah ada dari URL
+    const comp = window._grnComp;
+    if (comp && comp.po_id) {
+        comp.loadPoDetails();
+    }
+});
 
-            loadPoDetails() {
-                if(!this.po_id) {
-                    this.items = [];
-                    this.addItem();
-                    this.supplier_id = '';
-                    if (this.tsSupplier) this.tsSupplier.setValue('', true);
-                    return;
-                }
+function grnForm() {
+    return {
+        po_id: '{{ isset($po) && $po->id ? $po->id : '' }}',
+        supplier_id: '',
+        items: [],
+        photos: [],
+        products: @json($products),
+        loadingPo: false,
 
-                // Fetch PO details via AJAX
-                axios.get(`/gudang/purchase-orders/${this.po_id}/json`)
-                    .then(res => {
-                        const po = res.data;
-                        this.supplier_id = po.supplier_id;
-                        if (this.tsSupplier) this.tsSupplier.setValue(po.supplier_id, true);
-                        
-                        this.items = po.details.map(d => {
-                            const remaining = (parseFloat(d.quantity_ordered) || 0) - (parseFloat(d.quantity_received) || 0);
-                            return {
-                                product_id: d.product_id,
-                                quantity: Math.max(0, remaining), // Default to remaining quantity
-                                ordered_qty: parseFloat(d.quantity_ordered) || 0,
-                                unit_id: d.unit_id,
-                                unit_name: d.unit ? d.unit.abbreviation : 'PCS',
-                                hpp_price: parseFloat(d.price) || 0
-                            };
-                        });
-                    })
-                    .catch(err => {
-                        alert('Gagal memuat detail PO. Pastikan koneksi stabil.');
-                    });
+        init() {
+            // Simpan referensi ke komponen agar bisa diakses dari jQuery
+            window._grnComp = this;
+
+            if (this.po_id) {
+                // PO sudah dipilih dari redirect — langsung load
+                this.loadPoDetails();
+            } else if (this.items.length === 0) {
+                this.addItem();
             }
+        },
+
+        addItem() {
+            this.items.push({
+                product_id: '', product_name: '', 
+                quantity_bagus: 1, quantity_rusak: 0,
+                ordered_qty: 0, unit_id: '', unit_name: 'PCS',
+                hpp_price: 0, batch_number: '', expired_date: '', notes: ''
+            });
+        },
+
+        removeItem(index) {
+            const s = $('#prod_' + index);
+            if (s.length && s.hasClass('select2-hidden-accessible')) s.select2('destroy');
+            this.items.splice(index, 1);
+        },
+
+        onProductChange(item) {
+            if (!item.product_id) { item.unit_id = ''; item.unit_name = 'PCS'; item.hpp_price = 0; return; }
+            const p = this.products.find(x => x.id == item.product_id);
+            if (!p) return;
+            item.unit_id   = p.unit_id ?? '';
+            item.unit_name = p.unit?.abbreviation ?? 'PCS';
+            item.hpp_price = parseFloat(p.hpp) || 0;
+        },
+
+        loadPoDetails() {
+            if (!this.po_id) {
+                this.items = [];
+                this.addItem();
+                this.supplier_id = '';
+                $('#supplier_select').val('').trigger('change.select2');
+                return;
+            }
+
+            this.loadingPo = true;
+            this.items = [];
+
+            axios.get(`/gudang/po/${this.po_id}/json`)
+                .then(res => {
+                    const po = res.data;
+                    this.supplier_id = po.supplier_id;
+
+                    // Update Select2 supplier
+                    $('#supplier_select').val(po.supplier_id).trigger('change.select2');
+
+                    this.items = po.details.map(d => ({
+                        product_id:     d.product_id,
+                        product_name:   d.product_name,
+                        quantity_bagus: Math.max(0, d.quantity_ordered - d.quantity_received),
+                        quantity_rusak: 0,
+                        ordered_qty:    d.quantity_ordered,
+                        unit_id:        d.unit_id,
+                        unit_name:      d.unit?.abbreviation ?? 'PCS',
+                        hpp_price:      d.price,
+                        batch_number:   '',
+                        expired_date:   '',
+                        notes:          ''
+                    }));
+                })
+                .catch(() => {
+                    alert('Gagal memuat detail PO.');
+                })
+                .finally(() => {
+                    this.loadingPo = false;
+                });
+        },
+
+        handlePhotoChange(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                if (this.photos.some(p => p.file.name === file.name && p.file.size === file.size)) return;
+                this.photos.push({
+                    file: file,
+                    url: URL.createObjectURL(file)
+                });
+            });
+            this.syncFileInput();
+        },
+
+        removePhoto(index) {
+            URL.revokeObjectURL(this.photos[index].url);
+            this.photos.splice(index, 1);
+            this.syncFileInput();
+        },
+
+        syncFileInput() {
+            const dt = new DataTransfer();
+            this.photos.forEach(p => dt.items.add(p.file));
+            document.getElementById('photoInput').files = dt.files;
         }
     }
+}
 </script>
 @endpush
