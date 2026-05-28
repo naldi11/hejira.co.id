@@ -11,7 +11,7 @@
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.15; margin: 0; padding: 0; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000; line-height: 1.25; margin: 0; padding: 0; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -20,7 +20,7 @@
             left: 0;
             right: 0;
             height: 0.5cm;
-            font-size: 7.5px;
+            font-size: 9px;
             color: #000;
             border-bottom: 1px solid #000;
             padding-bottom: 2px;
@@ -37,7 +37,7 @@
             left: 0;
             right: 0;
             height: 0.4cm;
-            font-size: 7.5px;
+            font-size: 9px;
             color: #000;
             padding-top: 2px;
         }
@@ -55,49 +55,50 @@
         }
 
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 2px; }
         .header-table td { vertical-align: top; padding: 0; }
-        .logo-cell { width: 34px; padding-right: 0; }
-        .logo { width: 28px; height: 28px; display: block; object-fit: contain; }
+        .logo-cell { width: 45px; padding-right: 0; }
+        .logo { width: 38px; height: 38px; display: block; object-fit: contain; }
         
-        .brand-cell { padding-left: 6px; text-align: left; }
-        .report-title { font-size: 10px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
-        .brand-name { font-size: 9px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
-        .brand-sub { font-size: 7px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
-        .brand-addr { font-size: 7px; color: #000; margin: 0; line-height: 1.2; }
+        .brand-cell { padding-left: 8px; text-align: left; }
+        .report-title { font-size: 14px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
+        .brand-name { font-size: 12px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
+        .brand-sub { font-size: 9px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
+        .brand-addr { font-size: 9px; color: #000; margin: 0; line-height: 1.2; }
         
         .period-cell { text-align: right; vertical-align: top; }
-        .period-label { font-size: 7.5px; font-weight: bold; color: #000; }
+        .period-label { font-size: 10px; font-weight: bold; color: #000; }
 
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
         table.data th { 
             background: none; 
             color: #000; 
-            padding: 4px 2px; 
+            padding: 5px 2px; 
             border-top: 1px solid #000;
             border-bottom: 3px double #000; 
-            font-size: 8.5px; 
+            font-size: 11px; 
             text-align: left;
             font-weight: bold;
         }
         table.data td { 
-            padding: 4px 2px; 
+            padding: 5px 2px; 
             border: none;
             vertical-align: middle;
-            font-size: 8px;
+            font-size: 10px;
         }
         
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
+        .text-left { text-align: left !important; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
         .font-bold { font-weight: bold; }
         
         .total-row { font-weight: bold; }
         .total-row td {
             border-top: 1px solid #000 !important;
             border-bottom: 1px solid #000 !important;
-            padding: 4px 2px;
-            font-size: 8px;
+            padding: 5px 2px;
+            font-size: 10px;
         }
     </style>
 </head>

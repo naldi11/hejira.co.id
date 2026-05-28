@@ -11,7 +11,7 @@
             margin-left: 0.8cm;
             margin-right: 0.8cm;
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.4; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000; line-height: 1.35; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -20,7 +20,7 @@
             left: 0;
             right: 0;
             height: 0.5cm;
-            font-size: 8px;
+            font-size: 9px;
             color: #000;
             border-bottom: 1px solid #000;
             padding-bottom: 3px;
@@ -47,11 +47,11 @@
         .brand-cell { padding-left: 10px; }
         .report-title { font-size: 14px; font-weight: bold; color: #000; margin-bottom: 2px; }
         .brand-name { font-size: 12px; font-weight: 800; color: #000; margin: 0; }
-        .brand-sub { font-size: 8px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 8px; color: #000; margin: 0; }
+        .brand-sub { font-size: 9px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .brand-addr { font-size: 9px; color: #000; margin: 0; }
         
         .period-cell { text-align: right; }
-        .period-label { font-size: 9px; font-weight: bold; color: #000; }
+        .period-label { font-size: 10px; font-weight: bold; color: #000; }
 
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
@@ -61,7 +61,7 @@
             padding: 5px 2px; 
             border-top: 1px solid #000;
             border-bottom: 3px double #000; 
-            font-size: 9px; 
+            font-size: 11px; 
             text-align: left;
             font-weight: bold;
         }
@@ -69,10 +69,12 @@
             padding: 5px 2px; 
             border: none;
             vertical-align: middle;
+            font-size: 10px;
         }
         
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
+        .text-left { text-align: left !important; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
         .font-bold { font-weight: bold; }
         
         .total-row { font-weight: bold; }
@@ -80,6 +82,7 @@
             border-top: 1px solid #000 !important;
             border-bottom: 3px double #000 !important;
             padding: 5px 2px;
+            font-size: 10px;
         }
     </style>
 </head>
