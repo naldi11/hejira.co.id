@@ -294,9 +294,11 @@ class ReportController extends Controller
             $rows = $query->get();
         }
 
-        $orientation = ($type === 'harian' || $type === 'pelanggan') ? 'portrait' : 'landscape';
+        // Laporan harian kini menggunakan landscape A5 sesuai template baru
+        $orientation = ($type === 'pelanggan') ? 'portrait' : 'landscape';
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jihans.reports.pdf', compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
+        $viewName = ($type === 'harian') ? 'jihans.reports.harian_pdf' : 'jihans.reports.pdf';
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
                 ->setPaper('a5', $orientation);
         $pdf->getDomPDF()->set_option("enable_php", true);
 
