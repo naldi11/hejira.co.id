@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Exports\Master\CustomersTemplateExport;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CustomerController extends Controller
 {
@@ -150,7 +152,7 @@ class CustomerController extends Controller
 
     public function downloadTemplate()
     {
-        return response()->download(public_path('Daftar Pelanggan.xls'));
+        return Excel::download(new CustomersTemplateExport(), 'Template_Import_Customer.xlsx');
     }
 
     public function import(Request $request)
