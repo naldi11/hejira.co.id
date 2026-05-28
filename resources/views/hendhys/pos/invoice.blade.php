@@ -28,7 +28,7 @@
             margin: 0 auto;
             background: #fff;
             box-shadow: none;
-            padding: 4mm 6mm; /* Memberikan margin fisik aman sebagai padding */
+            padding: 9mm 6mm 4mm 6mm; /* Diperbesar dari atas agar Kop/No Transaksi tidak terpotong batas cetak printer */
             min-height: 5.5in;
             box-sizing: border-box;
         }
