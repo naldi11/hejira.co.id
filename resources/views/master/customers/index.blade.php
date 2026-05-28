@@ -16,7 +16,17 @@
             <h2 class="text-2xl font-black text-slate-900 font-headline">Daftar Customer</h2>
             <p class="text-sm font-medium text-slate-500 mt-1">{{ $customers->total() }} customer terdaftar dalam sistem</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route(($routePrefix ?? 'master.') . 'customers.template') }}"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                Template
+            </a>
+            <button type="button" onclick="document.getElementById('importModal').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                Import
+            </button>
             <a href="{{ route(($routePrefix ?? 'master.') . 'customers.create') }}"
                 class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $accentColor }}-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-lg shadow-{{ $accentColor }}-600/20">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
@@ -160,5 +170,34 @@
                 {{ $customers->links() }}
             </div>
         @endif
+    </div>
+
+    {{-- Import Modal --}}
+    <div id="importModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" x-cloak>
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="document.getElementById('importModal').classList.add('hidden')"></div>
+        <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="p-8">
+                <div class="w-16 h-16 bg-{{ $accentColor }}-50 text-{{ $accentColor }}-600 rounded-3xl flex items-center justify-center mb-6">
+                    <span class="material-symbols-outlined text-[32px]">upload_file</span>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 font-headline mb-2">Import Data Customer</h3>
+                <p class="text-sm text-slate-500 mb-8 leading-relaxed">Pilih file Excel (.xlsx) yang sesuai dengan format template kami untuk mengunggah customer secara massal.</p>
+                
+                <form action="{{ route(($routePrefix ?? 'master.') . 'customers.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-8">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Pilih File</label>
+                        <input type="file" name="file" accept=".xlsx,.xls,.csv" required 
+                            class="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl px-6 py-10 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-slate-900 file:text-white hover:bg-slate-100 transition-all cursor-pointer">
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" 
+                            class="flex-1 px-6 py-4 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">Batal</button>
+                        <button type="submit" 
+                            class="flex-1 px-6 py-4 bg-{{ $accentColor }}-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-{{ $accentColor }}-700 transition-all shadow-lg shadow-{{ $accentColor }}-600/20">Import Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection

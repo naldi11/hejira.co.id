@@ -65,6 +65,8 @@ Route::middleware(['auth', 'role:admin_gudang'])
     ->group(function () {
 
         Route::resource('suppliers', SupplierController::class)->except(['show']);
+        Route::get('customers/template', [CustomerController::class, 'downloadTemplate'])->name('customers.template');
+        Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
         Route::resource('customers', CustomerController::class)->except(['show']);
         Route::get('products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
         Route::post('products/import', [ProductController::class, 'import'])->name('products.import');

@@ -64,10 +64,12 @@ class CustomerController extends Controller
             'type'      => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'phone'     => 'nullable|string|max:20',
             'email'     => 'nullable|email|max:100',
+            'province'  => 'nullable|string|max:100',
+            'city'      => 'nullable|string|max:100',
+            'district'  => 'nullable|string|max:100',
             'address'   => 'nullable|string',
             'notes'     => 'nullable|string',
             'is_active' => 'boolean',
-            
         ]);
 
         $tableName = 'master_customers';
@@ -111,6 +113,9 @@ class CustomerController extends Controller
             'type'         => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
             'phone'        => 'nullable|string|max:20',
             'email'        => 'nullable|email|max:100',
+            'province'     => 'nullable|string|max:100',
+            'city'         => 'nullable|string|max:100',
+            'district'     => 'nullable|string|max:100',
             'address'      => 'nullable|string',
             'notes'        => 'nullable|string',
             'is_active'    => 'boolean',
@@ -141,5 +146,27 @@ class CustomerController extends Controller
         $this->logger->log('delete', 'master.customer', "Hapus customer: $name");
 
         return redirect()->route($info['route'].'customers.index')->with('success', "Customer $name berhasil dihapus.");
+    }
+
+    public function downloadTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\Master\CustomersTemplateExport, "Customer_Template.xlsx");
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        $info = $this->getScopeInfo($request);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\Master\CustomersImport, $request->file('file'));
+            $this->logger->log('import', 'master.customer', "Import customer via Excel");
+            return redirect()->route($info['route'] . 'customers.index')->with('success', 'Customer berhasil di-import dan diperbarui dari file Excel.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
     }
 }

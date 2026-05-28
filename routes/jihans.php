@@ -17,6 +17,8 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         // Master Data (Scoped to Jihans)
         Route::prefix('master')->name('master.')->group(function () {
             Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
+            Route::get('customers/template', [\App\Http\Controllers\Master\CustomerController::class, 'downloadTemplate'])->name('customers.template');
+            Route::post('customers/import', [\App\Http\Controllers\Master\CustomerController::class, 'import'])->name('customers.import');
             Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
             Route::get('products/template', [\App\Http\Controllers\Master\ProductController::class, 'downloadTemplate'])->name('products.template');
             Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');

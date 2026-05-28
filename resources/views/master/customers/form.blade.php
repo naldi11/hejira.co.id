@@ -70,11 +70,42 @@
                             </select>
                         </div>
 
+                        {{-- Provinsi --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Provinsi</label>
+                            <input type="text" name="province" value="{{ old('province', $customer->province ?? '') }}"
+                                placeholder="Contoh: Jawa Timur"
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                            @error('province') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Kabupaten / Kota --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Kabupaten / Kota</label>
+                            <input type="text" name="city" value="{{ old('city', $customer->city ?? '') }}"
+                                placeholder="Contoh: Surabaya"
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                            @error('city') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Kecamatan --}}
+                        <div>
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Kecamatan</label>
+                            <input type="text" name="district" value="{{ old('district', $customer->district ?? '') }}"
+                                placeholder="Contoh: Gubeng"
+                                class="bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-bold text-slate-900">
+                            @error('district') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Spacer to balance grid --}}
+                        <div class="hidden md:block"></div>
+
                         {{-- Alamat --}}
                         <div class="md:col-span-2">
                             <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Alamat Lengkap</label>
-                            <textarea name="address" rows="3" placeholder="Masukkan alamat lengkap customer..."
+                            <textarea name="address" rows="3" placeholder="Masukkan alamat lengkap customer (jalan, no, RT/RW)..."
                                 class="bg-slate-50 border-2 border-slate-100 rounded-3xl px-6 py-4 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none w-full font-medium text-slate-700">{{ old('address', $customer->address ?? '') }}</textarea>
+                            @error('address') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
                         </div>
 
                         {{-- Catatan --}}
