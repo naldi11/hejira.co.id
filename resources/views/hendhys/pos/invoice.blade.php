@@ -24,8 +24,9 @@
 
         /* ===== Wrapper ===== */
         .page-wrapper {
+            width: 8.2in; /* Dibatasi ke 8.2 inci agar area cetak tidak mengenai lubang traktor kanan (mencegah terpotong samping) */
             max-width: 100%;
-            margin: 0 auto;
+            margin: 0;
             background: #fff;
             box-shadow: none;
             padding: 9mm 6mm 4mm 6mm; /* Diperbesar dari atas agar Kop/No Transaksi tidak terpotong batas cetak printer */
