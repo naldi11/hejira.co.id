@@ -6,7 +6,7 @@
 <style>
     @media print {
         @page {
-            size: 9.5in 5.5in landscape;
+            size: 9.5in 5.5in;
             margin: 0; /* Menonaktifkan header & footer default browser secara otomatis */
         }
         body { 

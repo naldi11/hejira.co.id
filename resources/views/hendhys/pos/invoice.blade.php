@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: 9.5in 5.5in landscape;
+            size: 9.5in 5.5in;
             margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
         }
 
