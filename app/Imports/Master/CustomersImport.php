@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class CustomersImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel\Concerns\WithStartRow
+class CustomersImport implements ToCollection, WithHeadingRow, WithStartRow
 {
     private $numberGenerator;
 
@@ -24,30 +24,34 @@ class CustomersImport implements ToCollection, WithHeadingRow, \Maatwebsite\Exce
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
-            if (!isset($row['nama_lengkap']) || trim($row['nama_lengkap']) === '') {
-                continue;
+            // Prepare a case‑insensitive map of the row
+            $rowData = array_change_key_case($row->toArray(), CASE_LOWER);
+
+            // Helper to fetch a value with several possible keys
+            $get = function(array $keys) use ($rowData) {
+                foreach ($keys as $k) {
+                    if (isset($rowData[$k]) && trim($rowData[$k]) !== '') {
+                        return trim($rowData[$k]);
+                    }
+                }
+                return null;
+            };
+
+            // Nama wajib
+            $name = $get(['nama_lengkap', 'nama lengkap', 'name']);
+            if (!$name) {
+                continue; // lewati baris tanpa nama
             }
 
-            $name = trim($row['nama_lengkap']);
-            $phone = isset($row['nomor_telepon']) ? trim($row['nomor_telepon']) : null;
-            $email = isset($row['alamat_email']) ? trim($row['alamat_email']) : null;
-
-            $type = trim($row['tipe'] ?? 'Pelanggan Individual');
-            $validTypes = ['Pelanggan Individual', 'Pelanggan Retail', 'Pelanggan Agen'];
-            if (!in_array($type, $validTypes)) {
-                $type = 'Pelanggan Individual';
-            }
-
-            $province = isset($row['provinsi']) ? trim($row['provinsi']) : null;
-            $city = isset($row['kab_kota']) ? trim($row['kab_kota']) : null;
-            $district = isset($row['kecamatan']) ? trim($row['kecamatan']) : null;
-            $address = isset($row['alamat_lengkap']) ? trim($row['alamat_lengkap']) : null;
-            $notes = isset($row['catatan']) ? trim($row['catatan']) : null;
-
-            $entityScope = strtolower(trim($row['entitas_scope'] ?? 'all'));
-            if (!in_array($entityScope, ['gudang', 'jihans', 'hendhys', 'all'])) {
-                $entityScope = 'all';
-            }
+            $phone    = $get(['nomor_telepon', 'nomor telepon', 'phone']);
+            $email    = $get(['alamat_email', 'alamat email', 'email']);
+            $type     = $get(['tipe', 'type']) ?? 'Pelanggan Individual';
+            $province = $get(['provinsi', 'province']);
+            $city     = $get(['kab_kota', 'kab/kota', 'city']);
+            $district = $get(['kecamatan', 'district']);
+            $address  = $get(['alamat_lengkap', 'alamat lengkap', 'address']);
+            $notes    = $get(['catatan', 'notes']);
+            $entityScope = strtolower($get(['entitas_scope', 'entitas scope', 'entity_scope']) ?? 'all');
 
             // Determine visibility boolean values based on scope
             $visibleGudang  = in_array($entityScope, ['gudang', 'all']);
