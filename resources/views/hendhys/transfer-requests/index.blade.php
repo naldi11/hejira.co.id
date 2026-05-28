@@ -104,17 +104,7 @@
                         @endif
                     </td>
                     <td class="p-4 text-right">
-                        @php
-                            $pendingDO = $req->transferOuts->where('status', 'sent')->first();
-                        @endphp
-                        @if($pendingDO)
-                            <a href="{{ route('hendhys.transfer-requests.receive-form-gudang', $pendingDO->id) }}" class="inline-flex items-center gap-1 bg-[#d97706] hover:bg-[#b45309] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Terima Barang
-                            </a>
-                        @else
-                            <a href="{{ route('hendhys.transfer-requests.show', $req->id) }}" class="text-[#d97706] hover:text-[#b45309] font-medium text-xs bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-md transition-colors">Detail</a>
-                        @endif
+                        <a href="{{ route('hendhys.transfer-requests.show', $req->id) }}" class="text-[#d97706] hover:text-[#b45309] font-medium text-xs bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-md transition-colors">Detail</a>
                     </td>
                 </tr>
                 @empty

@@ -134,13 +134,7 @@ class TransferOutController extends Controller
             $transfer->load('details');
             $this->stock->processTransferOut($transfer);
 
-            // Mark linked request as completed if all items sent
-            if ($request->request_id) {
-                $tr = TransferRequest::find($request->request_id);
-                if ($tr && in_array($tr->status, ['approved', 'partial'])) {
-                    $tr->update(['status' => 'completed']);
-                }
-            }
+
 
             $this->logger->log('create', 'gudang.transfer_out',
                 "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);
