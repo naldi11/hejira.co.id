@@ -189,12 +189,12 @@ class ReportController extends Controller
                     't.transaction_number',
                     't.date',
                     'u.name as operator',
-                    'c.code as customer_code',
-                    't.customer_name',
-                    'c.address as customer_address',
+                    DB::raw("COALESCE(c.code, 'UMUM') as customer_code"),
+                    DB::raw("COALESCE(c.name, t.customer_name, 'Pelanggan Umum') as customer_name"),
+                    DB::raw("COALESCE(c.address, 'Umum') as customer_address"),
                     't.grand_total',
-                    't.discount_total',
-                    't.tax_total'
+                    't.discount_amount as discount_total',
+                    't.tax_amount as tax_total'
                 ])
                 ->orderBy('t.date', 'desc')
                 ->orderBy('t.id', 'desc')

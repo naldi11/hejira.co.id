@@ -27,7 +27,7 @@
     <div class="print-area bg-white p-8 max-w-4xl mx-auto text-gray-800">
         <div class="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-orange-600 mb-2">JIHAN'S FOOD</h1>
+                <h1 class="text-3xl font-bold text-orange-600 mb-2">JIHAAN'S FOOD</h1>
                 <p class="text-sm">{{ $transaction->branch->name ?? 'Pusat' }}</p>
                 <p class="text-sm">{{ $transaction->branch->address ?? 'Alamat' }}</p>
                 <p class="text-sm">Telp: {{ $transaction->branch->phone ?? '-' }}</p>
@@ -42,7 +42,7 @@
 
         <div class="mb-8">
             <h3 class="font-bold mb-2 text-gray-700">Kepada Yth:</h3>
-            <p class="text-lg font-semibold">{{ $transaction->customer_name ?? 'Pelanggan Umum' }}</p>
+            <p class="text-lg font-semibold">{{ $transaction->customer ? $transaction->customer->name : ($transaction->customer_name ?? 'Pelanggan Umum') }}</p>
             @if($transaction->customer)
                 <p class="text-sm">{{ $transaction->customer->phone }}</p>
                 <p class="text-sm">{{ $transaction->customer->address }}</p>

@@ -240,6 +240,10 @@
                 refNumber: '',
                 isLoading: false,
 
+                get paymentMethod() {
+                    return (this.selectedMethod && this.selectedMethod.bank_name) ? 'transfer' : 'cash';
+                },
+
                 init() {
                     const savedData = localStorage.getItem('hendhys_pos_cart');
                     if (savedData) {

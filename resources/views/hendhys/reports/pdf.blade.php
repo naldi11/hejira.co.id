@@ -6,10 +6,38 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 1cm;
+            margin-top: 1.4cm;
+            margin-bottom: 0.8cm;
+            margin-left: 0.8cm;
+            margin-right: 0.8cm;
         }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 9px; color: #000; line-height: 1.4; }
         
+        /* Fixed Header/Footer for PDF Pages */
+        .page-header {
+            position: fixed;
+            top: -1.0cm;
+            left: 0;
+            right: 0;
+            height: 0.5cm;
+            font-size: 8px;
+            color: #000;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3px;
+        }
+        .page-header-left {
+            float: left;
+        }
+        .page-header-right {
+            float: right;
+        }
+        .page-number:before {
+            content: counter(page);
+        }
+        .page-count:before {
+            content: counter(pages);
+        }
+
         /* Header Layout */
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 5px; }
         .header-table td { vertical-align: top; }
@@ -20,7 +48,7 @@
         .report-title { font-size: 14px; font-weight: bold; color: #000; margin-bottom: 2px; }
         .brand-name { font-size: 12px; font-weight: 800; color: #000; margin: 0; }
         .brand-sub { font-size: 8px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 8px; color: #333; margin: 0; }
+        .brand-addr { font-size: 8px; color: #000; margin: 0; }
         
         .period-cell { text-align: right; }
         .period-label { font-size: 9px; font-weight: bold; color: #000; }
@@ -34,7 +62,6 @@
             border-top: 1px solid #000;
             border-bottom: 3px double #000; 
             font-size: 9px; 
-            text-transform: uppercase; 
             text-align: left;
             font-weight: bold;
         }
@@ -54,10 +81,14 @@
             border-bottom: 3px double #000 !important;
             padding: 5px 2px;
         }
-        .footer { margin-top: 20px; text-align: right; font-size: 8px; color: #666; border-top: 1px dashed #ccc; padding-top: 5px; }
     </style>
 </head>
 <body>
+    <div class="page-header">
+        <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
+        <div class="page-header-right"><span class="page-number"></span>/<span class="page-count"></span></div>
+    </div>
+
     <table class="header-table">
         <tr>
             <td class="logo-cell">
@@ -73,9 +104,6 @@
                 <div class="period-label">
                     PERIODE : {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/y') : \Carbon\Carbon::now()->format('d/m/y') }}
                 </div>
-                <div style="font-size: 8px; color: #666; margin-top: 3px;">
-                    Dicetak: {{ now()->translatedFormat('d/m/Y H:i') }}
-                </div>
             </td>
         </tr>
     </table>
@@ -83,17 +111,17 @@
     @if($isDetailed)
         {{-- LHI DETAIL Layout --}}
         @foreach($rows as $tx)
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+        <div style="margin-bottom: 25px; page-break-inside: avoid;">
             <!-- Transaksi Header Table -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 9px;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 8.5px;">
                 <thead>
-                    <tr style="font-weight: bold; border-bottom: 1px solid #000;">
-                        <th style="text-align: left; width: 18%; padding: 3px 0;">No Transaksi</th>
-                        <th style="text-align: left; width: 12%; padding: 3px 0;">Tanggal</th>
-                        <th style="text-align: left; width: 12%; padding: 3px 0;">Dept.</th>
-                        <th style="text-align: left; width: 13%; padding: 3px 0;">Kode Pel.</th>
-                        <th style="text-align: left; width: 20%; padding: 3px 0;">Nama Pelanggan</th>
-                        <th style="text-align: left; width: 25%; padding: 3px 0;">Alamat</th>
+                    <tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000;">
+                        <th style="text-align: left; width: 18%; padding: 3px 0; font-weight: bold;">No Transaksi</th>
+                        <th style="text-align: left; width: 12%; padding: 3px 0; font-weight: bold;">Tanggal</th>
+                        <th style="text-align: left; width: 12%; padding: 3px 0; font-weight: bold;">Dept.</th>
+                        <th style="text-align: left; width: 13%; padding: 3px 0; font-weight: bold;">Kode Pel.</th>
+                        <th style="text-align: left; width: 20%; padding: 3px 0; font-weight: bold;">Nama Pelanggan</th>
+                        <th style="text-align: left; width: 25%; padding: 3px 0; font-weight: bold;">Alamat</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -101,25 +129,25 @@
                         <td style="padding: 4px 0; font-weight: bold;">{{ $tx->transaction_number }}</td>
                         <td style="padding: 4px 0;">{{ \Carbon\Carbon::parse($tx->date)->format('d/m/Y') }}</td>
                         <td style="padding: 4px 0;">{{ strtoupper($tx->operator ?? '-') }}</td>
-                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_code ?? $tx->customer_name ?? 'UMUM') }}</td>
-                        <td style="padding: 4px 0; font-weight: bold;">{{ strtoupper($tx->customer_name ?? 'PELANGGAN UMUM') }}</td>
-                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_address ?? 'UMUM') }}</td>
+                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_code) }}</td>
+                        <td style="padding: 4px 0; font-weight: bold;">{{ strtoupper($tx->customer_name) }}</td>
+                        <td style="padding: 4px 0;">{{ strtoupper($tx->customer_address) }}</td>
                     </tr>
                 </tbody>
             </table>
 
             <!-- Sub-tabel Item Details -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 9px; margin-bottom: 5px;">
+            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 8px; margin-bottom: 5px;">
                 <thead>
-                    <tr style="font-style: italic; border-bottom: 1px solid #000;">
+                    <tr style="font-style: italic; border-bottom: 1px dashed #000;">
                         <th style="text-align: left; width: 5%; padding: 2px 0;">No.</th>
                         <th style="text-align: left; width: 15%; padding: 2px 0;">Kd. Item</th>
                         <th style="text-align: left; width: 35%; padding: 2px 0;">Nama Item</th>
                         <th style="text-align: center; width: 10%; padding: 2px 0;">Jml</th>
                         <th style="text-align: center; width: 10%; padding: 2px 0;">Satuan</th>
                         <th style="text-align: right; width: 10%; padding: 2px 0;">Harga</th>
-                        <th style="text-align: right; width: 5%; padding: 2px 0;">Pot.%</th>
-                        <th style="text-align: right; width: 10%; padding: 2px 0;">Total</th>
+                        <th style="text-align: right; width: 10%; padding: 2px 0;">Pot.%</th>
+                        <th style="text-align: right; width: 15%; padding: 2px 0;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -147,7 +175,7 @@
             </table>
 
             <!-- Ringkasan Biaya di bawah sub-tabel -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 9px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 10px;">
+            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 8px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 10px;">
                 <tr>
                     <td style="width: 25%; text-align: left; padding: 4px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
                     <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
@@ -155,7 +183,6 @@
                     <td style="width: 25%; text-align: right; padding: 4px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
                 </tr>
             </table>
-            <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
         </div>
         @endforeach
     @else
@@ -212,9 +239,5 @@
             </tfoot>
         </table>
     @endif
-
-    <div class="footer">
-        Laporan ini digenerate secara otomatis oleh Sistem Hendhys Brownies.
-    </div>
 </body>
 </html>
