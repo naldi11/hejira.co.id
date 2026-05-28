@@ -9,7 +9,7 @@
         branchId: '{{ old('branch_id', $transferRequest && $transferRequest->from_entity === 'hendhys' ? $transferRequest->branch_id : '') }}',
         
         @if($transferRequest)
-        items: {{ $transferRequest->details->filter(fn($d) => $d->quantity_approved > $d->quantity_sent)->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'stock'=>(int)($d->product->current_stock??0),'quantity_approved'=>$d->quantity_approved,'quantity_sent'=>$d->quantity_sent,'quantity'=>max(0,$d->quantity_approved - $d->quantity_sent),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>$d->product->hpp])->values()->toJson() }},
+        items: {{ $transferRequest->details->filter(fn($d) => $d->quantity_approved > $d->quantity_sent)->map(fn($d)=>['product_id'=>$d->product_id,'product_name'=>$d->product->name,'stock'=>(int)($d->product->current_stock??0),'quantity_approved'=>(float)$d->quantity_approved,'quantity_sent'=>(float)$d->quantity_sent,'quantity'=>(float)max(0,$d->quantity_approved - $d->quantity_sent),'unit_id'=>$d->unit_id,'unit_name'=>$d->unit->abbreviation,'hpp_price'=>(float)$d->product->hpp])->values()->toJson() }},
         @else
         items: [],
         @endif

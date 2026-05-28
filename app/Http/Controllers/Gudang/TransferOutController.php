@@ -56,6 +56,14 @@ class TransferOutController extends Controller
             $transferRequest = TransferRequest::with('details.product', 'details.unit', 'branch')
                 ->whereIn('status', ['approved', 'partial'])
                 ->findOrFail($request->request_id);
+
+            // Load actual warehouse stock for each requested product
+            foreach ($transferRequest->details as $detail) {
+                if ($detail->product) {
+                    $whStock = GudangStock::where('product_id', $detail->product_id)->value('quantity') ?? 0;
+                    $detail->product->setAttribute('current_stock', $whStock);
+                }
+            }
         }
 
         return view('gudang.transfer-out.form', compact('products', 'units', 'branches', 'transferRequest'));
