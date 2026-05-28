@@ -1,12 +1,9 @@
 @extends('layouts.hendhys')
 @section('title', 'Proses Pembayaran')
 @section('page-title', 'Checkout')
-@section('wrapper-attributes', 'x-data="checkoutSystem()" x-cloak')
-
 @section('content')
-    <!-- Use flex center since exactly matching the modal layout from user provided HTML -->
-    <div
-        class="h-full w-full flex items-center justify-center p-margin-mobile md:p-margin-desktop bg-surface/50 backdrop-blur-sm z-50">
+    <div x-data="checkoutSystem()" x-cloak
+        class="h-full w-full flex items-center justify-center p-4 md:p-8 z-50">
 
         <!-- Empty Cart Alert -->
         <div x-show="!cartData || cartData.items.length === 0"
@@ -258,10 +255,11 @@
                                     return item;
                                 });
                             }
-                            this.cartData = data;
-                            this.amountPaid = this.cartData.grandTotal;
+                            this.cartData = (data && data.items) ? data : null;
+                            this.amountPaid = this.cartData ? (this.cartData.grandTotal || 0) : 0;
                         } catch (e) {
                             this.cartData = null;
+                            this.amountPaid = 0;
                         }
                     }
 
