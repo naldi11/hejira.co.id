@@ -217,5 +217,48 @@
 
     </div>
 
+    {{-- Pengiriman / Distribusi Terkait --}}
+    @if($branchRequest->transferOuts->isNotEmpty())
+    <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden no-print">
+        <div class="px-md py-sm border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary text-[20px]">local_shipping</span>
+            <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Pengiriman / Distribusi Terkait</h3>
+        </div>
+        <div class="p-md space-y-sm">
+            @foreach($branchRequest->transferOuts as $transfer)
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between p-sm rounded-lg border border-outline-variant bg-surface-container/20 gap-sm">
+                    <div>
+                        <p class="font-bold text-on-surface">{{ $transfer->transfer_number }}</p>
+                        <p class="text-xs text-on-surface-variant">Tanggal: {{ \Carbon\Carbon::parse($transfer->date)->translatedFormat('d F Y') }}</p>
+                        <p class="text-xs mt-1">
+                            Status: 
+                            @if($transfer->status === 'sent')
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Dikirim (Belum Diterima)</span>
+                            @else
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">Diterima</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div>
+                        @if($transfer->status === 'sent' && !$isPusat)
+                            <a href="{{ route('hendhys.transfer-to-branch.receive-form', $transfer->id) }}" 
+                               class="inline-flex items-center gap-xs px-md py-xs bg-primary text-on-primary rounded-lg text-xs font-bold shadow-sm hover:bg-on-primary-fixed-variant transition-all">
+                                <span class="material-symbols-outlined text-[14px]">call_received</span>
+                                Konfirmasi Penerimaan
+                            </a>
+                        @else
+                            <a href="{{ route('hendhys.transfer-to-branch.show', $transfer->id) }}" 
+                               class="inline-flex items-center gap-xs px-md py-xs bg-surface-container border border-outline-variant text-on-surface rounded-lg text-xs hover:bg-surface-container-high transition-all">
+                                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                Lihat Detail
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
 </div>
 @endsection
