@@ -53,22 +53,22 @@
         .page-count:before {
             content: counter(pages);
         }
-
-        /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
-        .header-table td { vertical-align: top; padding: 0; }
-        .logo-cell { width: 34px; padding-right: 0; }
-        .logo { width: 30px; height: 30px; object-fit: contain; }
         
-        .brand-cell { padding-left: 2px; }
+        /* Header Layout Fixed */
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 2px; }
+        .header-table td { padding: 0; }
+        .logo-cell { width: 32px; vertical-align: middle; }
+        .logo { width: 30px; height: 30px; object-fit: contain; display: block; }
+        
+        .brand-cell { padding-left: 8px; text-align: left; vertical-align: middle; }
         .report-title { font-size: 10px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-name { font-size: 9px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-sub { font-size: 7px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
         .brand-addr { font-size: 7px; color: #000; margin: 0; line-height: 1.2; }
         
-        .period-cell { text-align: right; }
+        .period-cell { text-align: right; vertical-align: top; width: 180px; }
         .period-label { font-size: 7.5px; font-weight: bold; color: #000; }
-
+        
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 5px; }
         table.data th { 
@@ -121,7 +121,7 @@
             @endif
         }
     </script>
-
+    
     @if(!$isDetailed)
         <div class="page-header">
             <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
@@ -147,10 +147,8 @@
                     @endif
                 </div>
                 <h1 class="brand-name">JIHAAN'S FOOD</h1>
-                <p class="brand-sub">MANUFACTURE FOR KEBAB</p>
-                <p class="brand-sub">&amp; TORTILLA</p>
-                <p class="brand-addr">Jl. Beringin Pasar 7</p>
-                <p class="brand-addr">081362148090 - 085373736060</p>
+                <p class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</p>
+                <p class="brand-addr">Jl. Beringin Pasar 7 | 081362148090 - 085373736060</p>
             </td>
             <td class="period-cell">
                 <div class="period-label">
@@ -183,7 +181,6 @@
                     <td style="padding: 2px 0;">{{ strtoupper($tx->customer_address) }}</td>
                 </tr>
             </table>
-
             {{-- Detail item --}}
             <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px;">
                 <thead>
@@ -220,7 +217,6 @@
                     </tr>
                 </tbody>
             </table>
-
             {{-- Ringkasan biaya --}}
             <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
                 <tr>
@@ -289,7 +285,7 @@
                     <td class="text-right">{{ number_format($rows->sum('kartu_debit'), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->sum('kartu_kredit'), 0, ',', '.') }}</td>
                 </tr>
-            </tfoot>
+            </footer>
         </table>
     @endif
 </body>
