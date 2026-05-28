@@ -125,12 +125,12 @@
                                             </td>
                                             <td class="px-6 py-5 text-center">
                                                 <input type="hidden" name="items[{{ $i }}][id]" value="{{ $item->id }}" form="approve-form">
-                                                <input type="number" name="items[{{ $i }}][quantity_approved]" value="{{ $item->quantity_requested }}" min="0.001" step="any" max="{{ $item->quantity_requested }}" form="approve-form"
+                                                <input type="number" name="items[{{ $i }}][quantity_approved]" value="{{ (float) $item->quantity_requested }}" min="0.001" step="any" max="{{ (float) $item->quantity_requested }}" form="approve-form"
                                                     class="w-28 px-3 py-2 text-center text-sm font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none tabular-nums">
                                             </td>
                                         @else
                                             <td class="px-6 py-5 text-center">
-                                                <span class="text-sm font-bold text-slate-700 tabular-nums">{{ $item->quantity_approved ?? '-' }}</span>
+                                                <span class="text-sm font-bold text-slate-700 tabular-nums">{{ $item->quantity_approved !== null ? (float) $item->quantity_approved : '-' }}</span>
                                             </td>
                                         @endif
                                         <td class="px-6 py-5 text-center">
