@@ -94,17 +94,13 @@
                                     if (this.qtyBagus === '' || isNaN(this.qtyBagus)) return;
                                     if (this.qtyBagus < 0) this.qtyBagus = 0;
                                     if (this.qtyBagus > this.qtySent) this.qtyBagus = this.qtySent;
-                                    if (this.qtyBagus + this.qtyRusak > this.qtySent) {
-                                        this.qtyRusak = parseFloat((this.qtySent - this.qtyBagus).toFixed(3));
-                                    }
+                                    this.qtyRusak = parseFloat((this.qtySent - this.qtyBagus).toFixed(3));
                                 },
                                 validateRusak() {
                                     if (this.qtyRusak === '' || isNaN(this.qtyRusak)) return;
                                     if (this.qtyRusak < 0) this.qtyRusak = 0;
                                     if (this.qtyRusak > this.qtySent) this.qtyRusak = this.qtySent;
-                                    if (this.qtyBagus + this.qtyRusak > this.qtySent) {
-                                        this.qtyBagus = parseFloat((this.qtySent - this.qtyRusak).toFixed(3));
-                                    }
+                                    this.qtyBagus = parseFloat((this.qtySent - this.qtyRusak).toFixed(3));
                                 }
                             }">
                             <td class="px-8 py-5">

@@ -69,14 +69,14 @@ class ReceiptController extends Controller
             'photos.*'                 => 'image|max:5120',
         ]);
 
-        // Validate sum of good + damaged does not exceed shipped quantity
+        // Validate sum of good + damaged equals shipped quantity
         foreach ($transferOut->details as $detail) {
             $qtyBagus = (float) ($request->quantity_bagus[$detail->id] ?? 0);
             $qtyRusak = (float) ($request->quantity_rusak[$detail->id] ?? 0);
             $qtySent  = (float) $detail->quantity;
-            if ($qtyBagus + $qtyRusak > $qtySent) {
+            if (abs(($qtyBagus + $qtyRusak) - $qtySent) > 0.001) {
                 return back()->withInput()->withErrors([
-                    'received_quantities' => "Jumlah Bagus + Rusak untuk produk {$detail->product->name} tidak boleh melebihi Qty Kirim ({$qtySent})."
+                    'received_quantities' => "Jumlah Bagus + Rusak untuk produk {$detail->product->name} harus sama dengan Qty Kirim ({$qtySent})."
                 ]);
             }
         }
