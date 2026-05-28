@@ -150,7 +150,7 @@ class CustomerController extends Controller
 
     public function downloadTemplate()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\Master\CustomersTemplateExport, "Customer_Template.xlsx");
+        return response()->download(public_path('Daftar Pelanggan.xls'));
     }
 
     public function import(Request $request)
