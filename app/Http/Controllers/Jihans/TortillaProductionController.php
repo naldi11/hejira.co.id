@@ -8,6 +8,8 @@ use App\Models\JihansTortillaSessionDetail;
 use App\Models\JihansProductionConfig;
 use App\Models\Karyawan;
 use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -71,6 +73,93 @@ class TortillaProductionController extends Controller
 
         DB::transaction(function () use ($request) {
             $config = JihansProductionConfig::current();
+
+            // Auto-check and create products if they don't exist
+            $variants = [
+                'tb'     => ['field' => 'tb_product_id',     'name' => 'Tortilla Besar'],
+                'ts'     => ['field' => 'ts_product_id',     'name' => 'Tortilla Sedang'],
+                'tk'     => ['field' => 'tk_product_id',     'name' => 'Tortilla Kecil'],
+                'tc'     => ['field' => 'tc_product_id',     'name' => 'Tortilla Catering'],
+                'kribab' => ['field' => 'kribab_product_id', 'name' => 'Kribab'],
+            ];
+
+            $configUpdated = false;
+
+            foreach ($variants as $key => $v) {
+                $field = $v['field'];
+                $defaultName = $v['name'];
+
+                // Check if product is set and exists in DB
+                $productExists = false;
+                if ($config->$field) {
+                    $productExists = Product::where('id', $config->$field)->exists();
+                }
+
+                if (!$productExists) {
+                    // Search if there is already a product with this name in jihans / all scope
+                    $product = Product::where('name', $defaultName)
+                        ->where(function ($q) {
+                            $q->where('entity_scope', 'jihans')
+                              ->orWhere('entity_scope', 'all');
+                        })
+                        ->first();
+
+                    if (!$product) {
+                        // Create ProductCategory if "Tortilla" doesn't exist
+                        $category = ProductCategory::where('name', 'Tortilla')->first();
+                        if (!$category) {
+                            $category = ProductCategory::create([
+                                'name' => 'Tortilla',
+                                'entity_scope' => 'all',
+                                'visible_gudang' => true,
+                                'visible_jihans' => true,
+                                'visible_hendhys' => false,
+                            ]);
+                        }
+
+                        // Get first available unit, or "Pak"
+                        $unit = Unit::where('abbreviation', 'PAK')
+                            ->orWhere('abbreviation', 'Pak')
+                            ->orWhere('name', 'Pak')
+                            ->first();
+                        if (!$unit) {
+                            $unit = Unit::first();
+                        }
+                        $unitId = $unit ? $unit->id : 1;
+
+                        // Generate code
+                        $code = $this->numbers->generate('PRD', 'master_products', 'code');
+
+                        $product = Product::create([
+                            'code'            => $code,
+                            'name'            => $defaultName,
+                            'category_id'     => $category->id,
+                            'unit_id'         => $unitId,
+                            'hpp'             => 0,
+                            'selling_price'   => 0,
+                            'stock_min'       => 0,
+                            'ppn_type'        => 'none',
+                            'ppn_rate'        => 0,
+                            'product_type'    => 'INV',
+                            'source_type'     => 'produced',
+                            'entity_scope'    => 'jihans',
+                            'visible_jihans'  => true,
+                            'visible_gudang'  => false,
+                            'visible_hendhys' => false,
+                            'status'          => 'active',
+                            'created_by'      => auth()->id(),
+                        ]);
+                    }
+
+                    $config->$field = $product->id;
+                    $configUpdated = true;
+                }
+            }
+
+            if ($configUpdated) {
+                $config->updated_by = auth()->id();
+                $config->save();
+            }
 
             $session = JihansTortillaSession::create([
                 'session_number'    => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
