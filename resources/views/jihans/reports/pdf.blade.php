@@ -163,7 +163,6 @@
     @if($isDetailed)
         {{-- LHI DETAIL Layout - Flat structure untuk menghindari page break berlebihan --}}
         @foreach($rows as $txIndex => $tx)
-        <div style="margin-bottom: 6px;">
             {{-- Header transaksi --}}
             <table style="width: 100%; border-collapse: collapse; font-size: 7.5px; border-top: 1px solid #000; border-bottom: 1px solid #000;">
                 <tr style="font-weight: bold;">
@@ -222,7 +221,7 @@
             </table>
 
             {{-- Ringkasan biaya --}}
-            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
+            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 8px;">
                 <tr>
                     <td style="width: 25%; text-align: left; padding: 2px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
                     <td style="width: 25%; text-align: left; padding: 2px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
@@ -230,7 +229,6 @@
                     <td style="width: 25%; text-align: right; padding: 2px 0;">Total Akhir : {{ number_format($tx->grand_total, 0, ',', '.') }}</td>
                 </tr>
             </table>
-        </div>
         @endforeach
     @else
         {{-- SUMMARY Layout --}}
