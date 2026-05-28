@@ -57,10 +57,10 @@
         /* Header Layout */
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
         .header-table td { vertical-align: top; padding: 0; }
-        .logo-cell { width: 40px; }
-        .logo { width: 32px; height: 32px; object-fit: contain; }
+        .logo-cell { width: 34px; padding-right: 0; }
+        .logo { width: 30px; height: 30px; object-fit: contain; }
         
-        .brand-cell { padding-left: 6px; }
+        .brand-cell { padding-left: 2px; }
         .report-title { font-size: 10px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-name { font-size: 9px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
         .brand-sub { font-size: 7px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
