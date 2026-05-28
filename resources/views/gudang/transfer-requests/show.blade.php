@@ -28,7 +28,7 @@
         </a>
         
         <div class="flex items-center gap-3">
-            @if($transferRequest->status === 'approved')
+            @if(in_array($transferRequest->status, ['approved', 'partial']))
                 <a href="{{ route('gudang.transfer-out.create', ['request_id' => $transferRequest->id]) }}" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20">
                     <span class="material-symbols-outlined text-[20px]">local_shipping</span>
                     Proses Pengiriman
