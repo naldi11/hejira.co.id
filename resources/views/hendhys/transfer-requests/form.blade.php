@@ -47,12 +47,28 @@
                         <tbody>
                             <template x-for="(item, index) in items" :key="item.id">
                                 <tr class="border-b border-gray-100 last:border-0">
-                                    <td class="py-3 px-2">
-                                        <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
-                                                class="w-full text-sm border-gray-300 rounded-lg focus:ring-[#d97706] focus:border-[#d97706] text-gray-800 bg-white">
+                                    <td class="px-4 py-3">
+                                        <select x-model="item.product_id" 
+                                                :name="'items['+index+'][product_id]'" 
+                                                @change="updateUnit(index)" 
+                                                required 
+                                                x-init="$nextTick(() => { 
+                                                    let ts = new TomSelect($el, {
+                                                        create: false,
+                                                        sortField: {field: 'text', direction: 'asc'},
+                                                        placeholder: '-- Pilih Barang --',
+                                                        onChange: function(value) {
+                                                            item.product_id = value;
+                                                            $el.dispatchEvent(new Event('change'));
+                                                        }
+                                                    });
+                                                })"
+                                                class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
                                             <option value="">-- Pilih Barang --</option>
-                                            @foreach($products as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                            @foreach($products as $product)
+                                                <option value="{{ $product->id }}" data-unit="{{ $product->unit_id }}">
+                                                    {{ $product->name }} ({{ $product->code }})
+                                                </option>
                                             @endforeach
                                         </select>
                                     </td>
@@ -109,6 +125,18 @@ document.addEventListener('alpine:init', () => {
         removeItem(index) {
             if(this.items.length > 1) {
                 this.items.splice(index, 1);
+            }
+        },
+        
+        updateUnit(index) {
+            const selectElement = document.querySelector(`select[name="items[${index}][product_id]"]`);
+            if (selectElement && selectElement.selectedIndex >= 0) {
+                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                const unitId = selectedOption.getAttribute('data-unit');
+                
+                if (unitId) {
+                    this.items[index].unit_id = unitId;
+                }
             }
         }
     }))

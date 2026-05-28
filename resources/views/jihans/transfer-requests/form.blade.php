@@ -54,7 +54,22 @@
                         <template x-for="(item, index) in items" :key="item.id">
                             <tr>
                                 <td class="px-4 py-3">
-                                    <select x-model="item.product_id" :name="'items['+index+'][product_id]'" @change="updateUnit(index)" required class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
+                                    <select x-model="item.product_id" 
+                                            :name="'items['+index+'][product_id]'" 
+                                            @change="updateUnit(index)" 
+                                            required 
+                                            x-init="$nextTick(() => { 
+                                                let ts = new TomSelect($el, {
+                                                    create: false,
+                                                    sortField: {field: 'text', direction: 'asc'},
+                                                    placeholder: '-- Pilih Barang --',
+                                                    onChange: function(value) {
+                                                        item.product_id = value;
+                                                        $el.dispatchEvent(new Event('change'));
+                                                    }
+                                                });
+                                            })"
+                                            class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500 shadow-sm text-sm">
                                         <option value="">-- Pilih Barang --</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->id }}" data-unit="{{ $product->unit_id }}">
