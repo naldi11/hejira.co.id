@@ -11,7 +11,7 @@
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 9.5px; color: #000; line-height: 1.35; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.3; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -55,19 +55,19 @@
         }
 
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px; }
         .header-table td { vertical-align: top; }
-        .logo-cell { width: 50px; }
-        .logo { width: 40px; height: 40px; object-fit: contain; }
+        .logo-cell { width: 45px; }
+        .logo { width: 35px; height: 35px; object-fit: contain; }
         
-        .brand-cell { padding-left: 10px; }
-        .report-title { font-size: 13px; font-weight: bold; color: #000; margin-bottom: 2px; }
-        .brand-name { font-size: 12px; font-weight: bold; color: #000; margin: 0; }
-        .brand-sub { font-size: 9px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 9px; color: #000; margin: 0; }
+        .brand-cell { padding-left: 8px; }
+        .report-title { font-size: 11px; font-weight: bold; color: #000; margin-bottom: 1px; }
+        .brand-name { font-size: 10px; font-weight: bold; color: #000; margin: 0; }
+        .brand-sub { font-size: 7.5px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .brand-addr { font-size: 7.5px; color: #000; margin: 0; }
         
         .period-cell { text-align: right; }
-        .period-label { font-size: 9px; font-weight: bold; color: #000; }
+        .period-label { font-size: 7.5px; font-weight: bold; color: #000; }
 
         /* Data Table */
         table.data { width: 100%; border-collapse: collapse; margin-top: 5px; }
@@ -77,7 +77,7 @@
             padding: 4px 2px; 
             border-top: 1px solid #000;
             border-bottom: 3px double #000; 
-            font-size: 9.5px; 
+            font-size: 8.5px; 
             text-align: left;
             font-weight: bold;
         }
@@ -85,7 +85,7 @@
             padding: 4px 2px; 
             border: none;
             vertical-align: middle;
-            font-size: 9px;
+            font-size: 8px;
         }
         
         .text-right { text-align: right; }
@@ -97,7 +97,7 @@
             border-top: 1px solid #000 !important;
             border-bottom: 1px solid #000 !important;
             padding: 4px 2px;
-            font-size: 9px;
+            font-size: 8px;
         }
     </style>
 </head>
@@ -164,9 +164,9 @@
     @if($isDetailed)
         {{-- LHI DETAIL Layout --}}
         @foreach($rows as $tx)
-        <div style="margin-bottom: 25px; page-break-inside: avoid;">
+        <div style="margin-bottom: 12px; page-break-inside: avoid;">
             <!-- Transaksi Header Table -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 8.5px;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 8px;">
                 <thead>
                     <tr style="font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000;">
                         <th style="text-align: left; width: 18%; padding: 3px 0; font-weight: bold;">No Transaksi</th>
@@ -190,7 +190,7 @@
             </table>
 
             <!-- Sub-tabel Item Details -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 8px; margin-bottom: 5px;">
+            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; margin-bottom: 4px;">
                 <thead>
                     <tr style="font-style: italic; border-bottom: 1px dashed #000;">
                         <th style="text-align: left; width: 5%; padding: 2px 0;">No.</th>
@@ -228,7 +228,7 @@
             </table>
 
             <!-- Ringkasan Biaya di bawah sub-tabel -->
-            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 8px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 10px;">
+            <table style="width: 95%; border-collapse: collapse; margin-left: 20px; font-size: 7.5px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin-bottom: 8px;">
                 <tr>
                     <td style="width: 25%; text-align: left; padding: 4px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
                     <td style="width: 25%; text-align: left; padding: 4px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>
