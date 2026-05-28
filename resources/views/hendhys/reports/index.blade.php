@@ -16,10 +16,10 @@
                     'color' => 'bg-blue-600'
                 ],
                 [
-                    'title' => 'Laporan Harian',
-                    'desc' => 'Rekapitulasi penjualan harian dari semua kasir.',
+                    'title' => 'Laporan Perpelanggan Detail',
+                    'desc' => 'Detail rincian transaksi penjualan per pelanggan.',
                     'route' => 'hendhys.reports.harian',
-                    'icon' => 'calendar_today',
+                    'icon' => 'assignment_ind',
                     'color' => 'bg-amber-600'
                 ],
                 [
