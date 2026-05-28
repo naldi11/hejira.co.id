@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Product as JihansProduct;
-use App\Models\Jihans\Unit as JihansUnit;
+use App\Models\Unit as JihansUnit;
 
 class JihansPendingDetail extends Model
 {

@@ -66,7 +66,7 @@ class PendingController extends Controller
                 ]);
 
                 foreach ($request->items as $item) {
-                    $product = \App\Models\Hendhys\Product::find($item['product_id']);
+                    $product = \App\Models\Product::find($item['product_id']);
                     HendhysPendingDetail::create([
                         'pending_id'      => $pending->id,
                         'product_id'      => $item['product_id'],

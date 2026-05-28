@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Product as HendhysProduct;
-use App\Models\Hendhys\Unit as HendhysUnit;
+use App\Models\Unit as HendhysUnit;
 
 class HendhysTransactionDetail extends Model
 {

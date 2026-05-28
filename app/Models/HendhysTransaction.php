@@ -24,7 +24,7 @@ class HendhysTransaction extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Hendhys\Customer::class);
+        return $this->belongsTo(\App\Models\Customer::class);
     }
 
     public function details(): HasMany

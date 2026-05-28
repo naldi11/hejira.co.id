@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Hendhys\Customer as HendhysCustomer;
+use App\Models\Customer as HendhysCustomer;
 
 class HendhysPendingTransaction extends Model
 {
