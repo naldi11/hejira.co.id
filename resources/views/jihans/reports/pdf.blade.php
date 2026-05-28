@@ -266,7 +266,7 @@
                 </tr>
             </thead>
             @foreach($rows as $txIndex => $tx)
-                <tbody style="page-break-inside: avoid;">
+                <tbody>
                     <!-- Transaksi Header Row -->
                     <tr>
                         <td style="padding: 4px 0; font-weight: bold; font-size: 8px; vertical-align: top;">
