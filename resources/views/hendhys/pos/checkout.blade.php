@@ -125,7 +125,7 @@
                     </div>
 
                     <!-- Transfer Settings (Visible when Transfer is selected) -->
-                    <div x-show="paymentMethod === 'transfer'" class="animate-fade-in space-y-md">
+                    <div x-show="selectedMethod && selectedMethod.bank_name" class="animate-fade-in space-y-md">
                         <div>
                             <label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs">Nama Bank /
                                 E-Wallet</label>
@@ -203,7 +203,7 @@
                     <!-- Action Button -->
                     <div class="p-md bg-surface-container-lowest shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.02)]">
                         <button @click="processCheckout"
-                            :disabled="isLoading || (paymentMethod === 'cash' && amountPaid < (cartData?cartData.grandTotal:0))"
+                            :disabled="isLoading || (!selectedMethod?.bank_name && amountPaid < (cartData?cartData.grandTotal:0))"
                             class="w-full bg-primary text-on-primary font-label-lg text-label-lg py-md rounded-lg shadow-level-2 hover:bg-on-primary-fixed-variant transition-all  flex items-center justify-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             <span x-show="!isLoading" class="material-symbols-outlined icon-fill">check_circle</span>
                             <span x-show="!isLoading">Selesaikan Pesanan & Cetak</span>
@@ -237,10 +237,6 @@
                 bankName: '',
                 refNumber: '',
                 isLoading: false,
-
-                get paymentMethod() {
-                    return (this.selectedMethod && this.selectedMethod.bank_name) ? 'transfer' : 'cash';
-                },
 
                 init() {
                     const savedData = localStorage.getItem('hendhys_pos_cart');
