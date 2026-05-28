@@ -49,20 +49,20 @@
         }
 
         .brand-logo-container {
-            display: inline-block;
-            vertical-align: top;
-            width: 55px;
-            margin-right: 8px;
+            display: table-cell;
+            vertical-align: middle;
+            width: 58px;
+            padding-right: 8px;
         }
         .brand-logo {
             width: 50px;
             height: 50px;
             object-fit: contain;
+            display: block;
         }
         .brand-text {
-            display: inline-block;
-            vertical-align: top;
-            width: calc(100% - 65px);
+            display: table-cell;
+            vertical-align: middle;
         }
         .invoice-title {
             font-size: 17px;
@@ -214,15 +214,17 @@
     {{-- ===== HEADER ===== --}}
     <div class="header-section">
         <div class="header-left">
-            <div class="brand-logo-container">
-                <img src="{{ asset('logo/jihans-logo.png') }}" class="brand-logo" onerror="this.style.display='none'">
-            </div>
-            <div class="brand-text">
-                <div class="invoice-title">FAKTUR PENJUALAN</div>
-                 <div class="brand-name">JIHAAN'S FOOD</div>
-                <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
-                <div class="brand-detail">JL. Beringin Pasar 7</div>
-                <div class="brand-detail">081362148090 - 085373736060</div>
+            <div style="display: table; width: 100%;">
+                <div class="brand-logo-container">
+                    <img src="{{ asset('logo/jihans-logo.png') }}" class="brand-logo" onerror="this.style.display='none'">
+                </div>
+                <div class="brand-text">
+                    <div class="invoice-title">FAKTUR PENJUALAN</div>
+                     <div class="brand-name">JIHAAN'S FOOD</div>
+                    <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
+                    <div class="brand-detail">JL. Beringin Pasar 7</div>
+                    <div class="brand-detail">081362148090 - 085373736060</div>
+                </div>
             </div>
         </div>
         
