@@ -6,12 +6,12 @@
     <style>
         @page {
             size: A5 {{ $orientation }};
-            margin-top: {{ $isDetailed ? '0.8cm' : '1.2cm' }};
+            margin-top: {{ $isDetailed ? '0.3cm' : '1.2cm' }};
             margin-bottom: {{ $isDetailed ? '1.0cm' : '0.6cm' }};
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.3; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 8px; color: #000; line-height: 1.15; margin: 0; padding: 0; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
@@ -55,16 +55,16 @@
         }
 
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 2px; border-bottom: 1px solid #000; padding-bottom: 2px; }
-        .header-table td { vertical-align: top; }
-        .logo-cell { width: 45px; }
-        .logo { width: 35px; height: 35px; object-fit: contain; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
+        .header-table td { vertical-align: top; padding: 0; }
+        .logo-cell { width: 40px; }
+        .logo { width: 32px; height: 32px; object-fit: contain; }
         
-        .brand-cell { padding-left: 8px; }
-        .report-title { font-size: 11px; font-weight: bold; color: #000; margin-bottom: 1px; }
-        .brand-name { font-size: 10px; font-weight: bold; color: #000; margin: 0; }
-        .brand-sub { font-size: 7.5px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .brand-addr { font-size: 7.5px; color: #000; margin: 0; }
+        .brand-cell { padding-left: 6px; }
+        .report-title { font-size: 10px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
+        .brand-name { font-size: 9px; font-weight: bold; color: #000; margin: 0; line-height: 1.2; }
+        .brand-sub { font-size: 7px; color: #000; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2; }
+        .brand-addr { font-size: 7px; color: #000; margin: 0; line-height: 1.2; }
         
         .period-cell { text-align: right; }
         .period-label { font-size: 7.5px; font-weight: bold; color: #000; }
@@ -151,7 +151,6 @@
                 <p class="brand-sub">&amp; TORTILLA</p>
                 <p class="brand-addr">Jl. Beringin Pasar 7</p>
                 <p class="brand-addr">081362148090 - 085373736060</p>
-                <p class="brand-addr">-</p>
             </td>
             <td class="period-cell">
                 <div class="period-label">
