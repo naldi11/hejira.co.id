@@ -24,6 +24,13 @@ class CustomersImport implements ToCollection, WithHeadingRow, WithStartRow
 
     public function collection(Collection $rows)
     {
+        // Log number of rows received for import
+        \Log::info('CustomersImport: rows count = ' . $rows->count());
+        // Log first few rows for debugging (limit 5)
+        $rows->take(5)->each(function($row, $index) {
+            \Log::info('Row ' . $index . ': ' . json_encode($row->toArray()));
+        });
+    {
         foreach ($rows as $row) {
             // Prepare a case‑insensitive map of the row
             $rowData = array_change_key_case($row->toArray(), CASE_LOWER);
