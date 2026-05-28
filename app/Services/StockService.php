@@ -14,6 +14,7 @@ use App\Models\JihansStockInDetail;
 use App\Models\JihansStockMovement;
 use App\Models\Product;
 use App\Models\TransferOut;
+use App\Models\Branch;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -228,7 +229,15 @@ class StockService
 
     public function creditHendhys(int $productId, int $unitId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
+        $isPusat = true;
         if ($branchId) {
+            $branch = Branch::find($branchId);
+            if ($branch && $branch->type !== 'pusat') {
+                $isPusat = false;
+            }
+        }
+
+        if (!$isPusat) {
             $stock = HendhysStockBranch::firstOrCreate(
                 ['branch_id' => $branchId, 'product_id' => $productId],
                 ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
@@ -249,7 +258,15 @@ class StockService
 
     public function debitHendhys(int $productId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
+        $isPusat = true;
         if ($branchId) {
+            $branch = Branch::find($branchId);
+            if ($branch && $branch->type !== 'pusat') {
+                $isPusat = false;
+            }
+        }
+
+        if (!$isPusat) {
             $stock = HendhysStockBranch::where('branch_id', $branchId)->where('product_id', $productId)->firstOrFail();
         } else {
             $stock = HendhysStockPusat::where('product_id', $productId)->firstOrFail();
