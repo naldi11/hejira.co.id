@@ -15,8 +15,8 @@
             font-family: 'Courier New', Courier, monospace;
             background: #fff;
             color: #000;
-            font-size: 9px;
-            line-height: 1.3;
+            font-size: 11.5px;
+            line-height: 1.4;
         }
 
         /* ===== Wrapper ===== */
@@ -30,7 +30,7 @@
         /* ===== Header Grid ===== */
         .header-section {
             width: 100%;
-            margin-bottom: 5px;
+            margin-bottom: 12px;
             display: table;
         }
         .header-left {
@@ -62,56 +62,56 @@
             width: calc(100% - 60px);
         }
         .invoice-title {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 2px;
             letter-spacing: 1px;
         }
         .brand-name {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
         }
         .brand-sub {
-            font-size: 8px;
+            font-size: 9.5px;
             font-weight: bold;
         }
         .brand-detail {
-            font-size: 8px;
+            font-size: 9.5px;
         }
 
         /* ===== Metadata Table ===== */
         .meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8.5px;
+            font-size: 10.5px;
         }
         .meta-table td {
-            padding: 1px 2px;
+            padding: 2.5px 2px;
             vertical-align: top;
         }
 
         /* ===== Items Table ===== */
         .table-section {
             width: 100%;
-            margin-top: 5px;
-            margin-bottom: 5px;
+            margin-top: 8px;
+            margin-bottom: 8px;
         }
         table.items-table {
             width: 100%;
             border-collapse: collapse;
         }
         table.items-table th {
-            padding: 3px 2px;
-            font-size: 9px;
+            padding: 6px 3px;
+            font-size: 11px;
             font-weight: bold;
             border-top: 1px solid #000;
             border-bottom: 3px double #000;
             text-align: left;
         }
         table.items-table td {
-            padding: 3px 2px;
+            padding: 6px 3px;
             border: none;
-            font-size: 9px;
+            font-size: 11px;
         }
         table.items-table th.text-center, table.items-table td.text-center { text-align: center; }
         table.items-table th.text-right, table.items-table td.text-right { text-align: right; }
@@ -120,8 +120,8 @@
         .bottom-section {
             width: 100%;
             display: table;
-            margin-top: 5px;
-            font-size: 8.5px;
+            margin-top: 12px;
+            font-size: 10.5px;
         }
         .bottom-left {
             display: table-cell;
@@ -146,13 +146,13 @@
             border-collapse: collapse;
         }
         .totals-table td {
-            padding: 2px 0;
+            padding: 3px 0;
         }
 
         /* ===== Signature Section ===== */
         .signature-table {
             width: 100%;
-            margin-top: 5px;
+            margin-top: 12px;
             margin-bottom: 5px;
             text-align: center;
         }
@@ -216,7 +216,7 @@
             </div>
             <div class="brand-text">
                 <div class="invoice-title">FAKTUR PENJUALAN</div>
-                <div class="brand-name">JIHAN'S FOOD</div>
+                 <div class="brand-name">JIHAAN'S FOOD</div>
                 <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
                 <div class="brand-detail">JL. Beringin Pasar 7</div>
                 <div class="brand-detail">081362148090 - 085373736060</div>
@@ -306,7 +306,7 @@
                     <td>Hormat Kami,</td>
                     <td>Penerima,</td>
                 </tr>
-                <tr style="height: 30px;">
+                <tr style="height: 50px;">
                     <td colspan="2"></td>
                 </tr>
                 <tr>
@@ -325,7 +325,7 @@
                 <tr>
                     <td>Jml Item</td>
                     <td>:</td>
-                    <td class="text-right font-bold" style="font-size: 10px;">{{ (int) $transaction->details->sum('quantity') }}</td>
+                    <td class="text-right font-bold" style="font-size: 11.5px;">{{ (int) $transaction->details->sum('quantity') }}</td>
                 </tr>
                 <tr>
                     <td>Potongan</td>
@@ -336,7 +336,7 @@
                 <tr>
                     <td>Tunai</td>
                     <td>:</td>
-                    <td class="text-right font-bold" style="font-size: 10px;">
+                    <td class="text-right font-bold" style="font-size: 11.5px;">
                         {{ number_format($payment ? $payment->amount : 0, 0, ',', '.') }}
                     </td>
                 </tr>
@@ -355,7 +355,7 @@
                     <td>:</td>
                     <td class="text-right">{{ number_format($transaction->other_costs ?? 0, 0, ',', '.') }}</td>
                 </tr>
-                <tr style="border-top: 1px solid #000; font-size: 10px; font-weight: bold;">
+                <tr style="border-top: 1px solid #000; font-size: 11.5px; font-weight: bold;">
                     <td style="padding-top: 3px;">Total Akhir</td>
                     <td style="padding-top: 3px;">:</td>
                     <td class="text-right font-bold text-black" style="padding-top: 3px;">
@@ -369,19 +369,7 @@
     {{-- ===== DOUBLE BOTTOM BORDER ===== --}}
     <div style="border-bottom: 3px double #000; margin-top: 2px; margin-bottom: 4px; width: 100%;"></div>
 
-    {{-- ===== FOOTER BANK & CUSTOMER SERVICE ===== --}}
-    <div style="width: 100%; display: table; font-size: 8px;">
-        <div style="display: table-cell; width: 50%; vertical-align: top;">
-            {{-- Spacing --}}
-        </div>
-        <div style="display: table-cell; width: 50%; vertical-align: top; text-align: right; font-weight: bold; line-height: 1.2;">
-            BANK BRI<br>
-            1092-0100-0385-583<br>
-            A/N ANNY RITONGA
-        </div>
-    </div>
-
-    <div style="width: 100%; text-align: center; font-size: 8px; font-weight: bold; margin-top: 5px;">
+    <div style="width: 100%; text-align: center; font-size: 10px; font-weight: bold; margin-top: 10px;">
         Layanan Pelanggan 085373736060
     </div>
 </div>

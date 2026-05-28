@@ -326,40 +326,36 @@
         {{-- MODAL PAYMENT --}}
         <div x-show="showPaymentModal"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" style="display: none;">
-            <div class="bg-white rounded border border-gray-500 shadow-2xl w-[400px] flex flex-col"
+            <div class="bg-[#f0f0f0] border-2 border-gray-400 rounded shadow-2xl w-[400px] flex flex-col ipos-window"
                 @click.away="showPaymentModal = false">
                 <div class="bg-green-700 text-white px-3 py-1.5 flex justify-between items-center cursor-move">
-                    <span class="font-bold text-sm">Pembayaran</span>
+                    <span class="font-bold text-sm">Pembayaran Tunai</span>
                     <button @click="showPaymentModal = false" class="text-white hover:text-red-300 font-bold">X</button>
                 </div>
-                <div class="p-4 bg-gray-100 flex flex-col gap-3">
+                <div class="p-4 flex flex-col gap-3">
                     <div>
                         <label class="text-xs font-semibold block mb-1">Total Tagihan</label>
                         <input type="text" class="ipos-input text-right text-2xl font-bold text-red-600 bg-white py-2"
                             :value="formatCurrency(grandTotal)" disabled>
                     </div>
-                    <div>
-                        <label class="text-xs font-semibold block mb-1">Metode Pembayaran</label>
-                        <select x-model="paymentMethodId" class="ipos-input py-1.5" @change="updatePaymentMethodInfo()">
-                            <template x-for="pm in paymentMethods" :key="pm.id">
-                                <option :value="pm.id" x-text="pm.name"></option>
-                            </template>
-                        </select>
-                    </div>
 
-                    <div x-show="selectedPaymentMethod && selectedPaymentMethod.bank_name" 
-                         class="bg-blue-50 border border-blue-200 p-2 rounded text-xs space-y-1">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Bank:</span>
-                            <span class="font-bold" x-text="selectedPaymentMethod.bank_name"></span>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1.5">Nominal Cepat (Quick Cash)</label>
+                        <div class="grid grid-cols-3 gap-1 mb-1">
+                            <button type="button" @click="amountPaid = grandTotal"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">Uang Pas</button>
+                            <button type="button" @click="amountPaid = 10000"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">10.000</button>
+                            <button type="button" @click="amountPaid = 20000"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">20.000</button>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">No. Rek:</span>
-                            <span class="font-bold" x-text="selectedPaymentMethod.account_number"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">A/N:</span>
-                            <span class="font-bold" x-text="selectedPaymentMethod.account_name"></span>
+                        <div class="grid grid-cols-3 gap-1">
+                            <button type="button" @click="amountPaid = 50000"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">50.000</button>
+                            <button type="button" @click="amountPaid = 100000"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">100.000</button>
+                            <button type="button" @click="amountPaid = 200000"
+                                class="bg-gray-200 hover:bg-gray-300 text-xs font-bold py-2 border border-gray-400 rounded">200.000</button>
                         </div>
                     </div>
 
@@ -369,21 +365,20 @@
                             @keydown.enter="processTransaction()"
                             class="ipos-input text-right text-2xl font-bold text-blue-600 py-2">
                     </div>
-                    <div class="text-right">
+                    <div class="text-right py-1">
                         <span class="text-xs font-bold text-gray-600">Kembali: </span>
-                        <span class="text-lg font-bold text-green-600"
+                        <span class="text-2xl font-bold text-green-600"
                             x-text="amountPaid > grandTotal ? formatCurrency(amountPaid - grandTotal) : 'Rp 0'"></span>
                     </div>
-
-                    <div class="mt-2 pt-2 border-t border-gray-300">
-                        <input type="text" x-model="referenceNumber" placeholder="No. Referensi / Catatan Bayar" class="ipos-input">
-                    </div>
                 </div>
-                <div class="p-2 bg-gray-200 border-t border-gray-400 text-right">
+                <div class="p-2 bg-gray-200 border-t border-gray-400 text-right flex justify-end gap-2">
+                    <button @click="showPaymentModal = false" class="ipos-button bg-gray-300 hover:bg-gray-400">
+                        <span class="font-bold text-red-600">Batal [Esc]</span>
+                    </button>
                     <button @click="processTransaction()" :disabled="isProcessing"
-                        class="ipos-button inline-flex flex-row gap-1 bg-green-200">
-                        <span x-show="!isProcessing">Simpan & Cetak [Enter]</span>
-                        <span x-show="isProcessing">Memproses...</span>
+                        class="ipos-button bg-green-200 hover:bg-green-300">
+                        <span x-show="!isProcessing" class="font-bold text-green-700">Simpan & Cetak [Enter]</span>
+                        <span x-show="isProcessing" class="font-bold">Memproses...</span>
                     </button>
                 </div>
             </div>
@@ -430,7 +425,12 @@
 
                 init() {
                     if (this.paymentMethods.length > 0) {
-                        this.paymentMethodId = this.paymentMethods[0].id;
+                        const cashMethod = this.paymentMethods.find(pm => 
+                            (!pm.bank_name && !pm.account_number) || 
+                            pm.name.toLowerCase().includes('tunai') || 
+                            pm.name.toLowerCase().includes('cash')
+                        );
+                        this.paymentMethodId = cashMethod ? cashMethod.id : this.paymentMethods[0].id;
                         this.updatePaymentMethodInfo();
                     }
 

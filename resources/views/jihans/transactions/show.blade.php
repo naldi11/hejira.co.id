@@ -107,7 +107,6 @@
         <div class="flex justify-between items-end border-t border-gray-200 pt-6">
             <div class="text-sm text-gray-600">
                 <p class="font-bold mb-1 text-gray-800">Status Pembayaran: <span class="uppercase {{ $transaction->status == 'sukses' ? 'text-green-600' : 'text-orange-600' }}">{{ $transaction->status }}</span></p>
-                <p>Metode: <span class="capitalize">{{ $transaction->payment_method }}</span></p>
                 @if($transaction->notes)
                     <p class="mt-2 italic">Catatan: {{ $transaction->notes }}</p>
                 @endif
