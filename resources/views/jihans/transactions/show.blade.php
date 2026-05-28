@@ -7,7 +7,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: A5 landscape;   /* Setengah A4 landscape */
+            size: 210mm 148mm; /* Memaksa width 210mm dan height 148mm (Landscape) */
             margin: 4mm 6mm;
         }
 
