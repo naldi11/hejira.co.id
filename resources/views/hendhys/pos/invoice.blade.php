@@ -9,8 +9,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: 9.5in 5.5in;
-            margin: 4mm 6mm;
+            size: 9.5in 5.5in landscape;
+            margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
         }
 
         body {
@@ -18,16 +18,19 @@
             background: #fff;
             color: #000;
             font-size: 11px;
+            padding: 0;
+            margin: 0;
         }
 
         /* ===== Wrapper ===== */
         .page-wrapper {
-            max-width: 9.5in;
-            margin: 10px auto;
+            max-width: 100%;
+            margin: 0 auto;
             background: #fff;
             box-shadow: none;
-            padding: 0;
+            padding: 4mm 6mm; /* Memberikan margin fisik aman sebagai padding */
             min-height: 5.5in;
+            box-sizing: border-box;
         }
 
         /* ===== Header Strip ===== */

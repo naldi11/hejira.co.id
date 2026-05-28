@@ -6,8 +6,8 @@
 <style>
     @media print {
         @page {
-            size: 9.5in 5.5in;
-            margin: 4mm 6mm;
+            size: 9.5in 5.5in landscape;
+            margin: 0; /* Menonaktifkan header & footer default browser secara otomatis */
         }
         body { 
             visibility: hidden; 
@@ -15,6 +15,8 @@
             font-family: 'Courier New', Courier, monospace !important;
             color: #000 !important;
             font-size: 11px !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .print-area, .print-area * { 
             visibility: visible; 
@@ -27,10 +29,11 @@
             top: 0; 
             width: 100%; 
             margin: 0; 
-            padding: 10px; 
+            padding: 4mm 6mm; /* Memberikan margin fisik aman sebagai padding */
             box-shadow: none !important;
             border: none !important;
             background: #fff !important;
+            box-sizing: border-box !important;
         }
         .no-print { display: none !important; }
         /* Hide sidebar/header if any are not caught by body visibility hidden */

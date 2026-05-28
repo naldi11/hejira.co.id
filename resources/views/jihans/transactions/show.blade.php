@@ -7,8 +7,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: 9.5in 5.5in;
-            margin: 4mm 6mm;
+            size: 9.5in 5.5in landscape;
+            margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
         }
 
         body {
@@ -17,14 +17,17 @@
             color: #000;
             font-size: 13px;
             line-height: 1.35;
+            padding: 0;
+            margin: 0;
         }
 
         /* ===== Wrapper ===== */
         .page-wrapper {
             width: 100%;
             background: #fff;
-            padding: 0;
+            padding: 4mm 6mm; /* Memberikan margin fisik aman sebagai padding */
             margin: 0 auto;
+            box-sizing: border-box;
         }
 
         /* ===== Header Grid ===== */
