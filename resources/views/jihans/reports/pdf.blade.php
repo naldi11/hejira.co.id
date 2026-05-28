@@ -55,7 +55,7 @@
         }
 
         /* Header Layout */
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 2px; border-bottom: 1px solid #000; padding-bottom: 2px; }
         .header-table td { vertical-align: top; }
         .logo-cell { width: 45px; }
         .logo { width: 35px; height: 35px; object-fit: contain; }
