@@ -28,7 +28,7 @@ class StockController extends Controller
                       });
                 })
                 ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
+                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock', 'hendhys_stock_pusat.quantity_return as return_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {
@@ -64,7 +64,7 @@ class StockController extends Controller
             }
 
             $branchStocks = $branchStocksQuery
-                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.branch_id')
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock', 'hendhys_stock_branch.branch_id')
                 ->orderBy('master_products.name')
                 ->paginate(20, ['*'], 'branch_page')
                 ->withQueryString();
@@ -77,7 +77,7 @@ class StockController extends Controller
                     $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
                         ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
                 })
-                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock')
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {

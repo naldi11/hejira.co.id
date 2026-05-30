@@ -66,7 +66,10 @@
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">Sumber</th>
                             <th
                                 class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
-                                Stok</th>
+                                Stok Normal</th>
+                            <th
+                                class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                Stok Return</th>
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Satuan
                             </th>
                             <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-center">Aksi</th>
@@ -96,6 +99,14 @@
                                         <span class="font-bold text-on-surface text-base">{{ $qty }}</span>
                                     @endif
                                 </td>
+                                <td class="px-md py-sm text-right">
+                                    @php $retQty = (float) ($stock->return_stock ?? 0); @endphp
+                                    @if($retQty > 0)
+                                        <span class="px-sm py-[2px] bg-orange-100 text-orange-800 rounded font-bold text-sm">{{ $retQty }}</span>
+                                    @else
+                                        <span class="text-on-surface-variant text-sm">-</span>
+                                    @endif
+                                </td>
                                 <td class="px-md py-sm text-on-surface-variant">{{ $stock->unit->abbreviation ?? '-' }}</td>
                                 <td class="px-md py-sm text-center">
                                     @if($isPusat)
@@ -120,7 +131,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="p-8 text-center text-on-surface-variant">
+                                <td colspan="7" class="p-8 text-center text-on-surface-variant">
                                     <span class="material-symbols-outlined text-4xl text-outline mb-xs block">inventory_2</span>
                                     <p>Data stok tidak ditemukan.</p>
                                 </td>
@@ -182,7 +193,10 @@
                                     Produk</th>
                                 <th
                                     class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
-                                    Stok Cabang</th>
+                                    Stok Normal</th>
+                                <th
+                                    class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold text-right">
+                                    Stok Return</th>
                                 <th class="px-md py-sm font-label-lg text-label-lg text-on-surface-variant font-semibold">Satuan
                                 </th>
                             </tr>
@@ -204,11 +218,19 @@
                                             <span class="font-bold text-on-surface text-base">{{ $qty }}</span>
                                         @endif
                                     </td>
+                                    <td class="px-md py-sm text-right">
+                                        @php $retQty = (float) ($item->return_stock ?? 0); @endphp
+                                        @if($retQty > 0)
+                                            <span class="px-sm py-[2px] bg-orange-100 text-orange-800 rounded font-bold text-sm">{{ $retQty }}</span>
+                                        @else
+                                            <span class="text-on-surface-variant text-sm">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-md py-sm text-on-surface-variant">{{ $item->unit->abbreviation ?? '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="p-xl text-center text-on-surface-variant">
+                                    <td colspan="5" class="p-xl text-center text-on-surface-variant">
                                         <span class="material-symbols-outlined text-4xl text-outline mb-xs block">inventory_2</span>
                                         <p class="font-body-md">
                                             {{ $selectedBranchId ? 'Tidak ada stok untuk cabang ini.' : 'Pilih cabang untuk melihat stok.' }}

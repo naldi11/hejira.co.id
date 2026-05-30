@@ -12,7 +12,7 @@ class HendhysStockBranch extends Model
     protected $table    = 'hendhys_stock_branch';
     public    $timestamps = false;
 
-    protected $fillable = ['branch_id', 'product_id', 'quantity', 'unit_id', 'last_updated'];
+    protected $fillable = ['branch_id', 'product_id', 'quantity', 'quantity_return', 'unit_id', 'last_updated'];
 
     public function branch(): BelongsTo  { return $this->belongsTo(Branch::class); }
     public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class); }

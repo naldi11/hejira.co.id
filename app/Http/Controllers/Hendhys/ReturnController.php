@@ -148,13 +148,20 @@ class ReturnController extends Controller
                     'received_by' => $user->id
                 ]);
 
-                // Asumsi: Barang retur karena rusak/basi tidak dimasukkan kembali ke stok barang jadi Pusat yang bisa dijual.
-                // Oleh karena itu, kita TIDAK melakukan creditHendhys untuk Pusat di sini.
-                // Barang dianggap "Write-off" atau dihancurkan.
-                // Jika ingin masuk ke stok khusus (misal "stok defect"), bisa dibuatkan tabel tersendiri.
+                foreach ($return->details as $detail) {
+                    $this->stockService->creditHendhysReturn(
+                        $detail->product_id,
+                        $detail->unit_id,
+                        $detail->quantity,
+                        null, // null untuk Pusat
+                        'return_receiving',
+                        $return->id,
+                        $user->id
+                    );
+                }
             });
 
-            return back()->with('success', 'Retur barang dari cabang berhasil diterima. Barang tidak ditambahkan ke stok aktif karena statusnya rusak/basi.');
+            return back()->with('success', 'Retur barang dari cabang berhasil diterima dan dimasukkan ke Stok Return Pusat.');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menerima retur: ' . $e->getMessage());

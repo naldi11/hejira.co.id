@@ -212,11 +212,23 @@
                     Return ke Gudang
                 </a>
             </li>
+            <li>
+                <a href="{{ route('hendhys.returns.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.returns.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.returns.*') ? 'fill' : '' }}">assignment_returned</span>
+                    Penerimaan Return (Cabang)
+                </a>
+            </li>
             @else
             <li>
                 <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
                     <span class="material-symbols-outlined {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'fill' : '' }}">call_received</span>
                     Penerimaan Barang
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('hendhys.returns.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.returns.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.returns.*') ? 'fill' : '' }}">keyboard_return</span>
+                    Return ke Pusat
                 </a>
             </li>
             @endif

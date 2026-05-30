@@ -12,7 +12,7 @@ class HendhysStockPusat extends Model
     protected $table    = 'hendhys_stock_pusat';
     public    $timestamps = false;
 
-    protected $fillable = ['product_id', 'quantity', 'unit_id', 'last_updated'];
+    protected $fillable = ['product_id', 'quantity', 'quantity_return', 'unit_id', 'last_updated'];
 
     public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class); }
     public function unit(): BelongsTo    { return $this->belongsTo(HendhysUnit::class); }

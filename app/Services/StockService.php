@@ -256,6 +256,36 @@ class StockService
         $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
+    public function creditHendhysReturn(int $productId, int $unitId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
+    {
+        $isPusat = true;
+        if ($branchId) {
+            $branch = Branch::find($branchId);
+            if ($branch && $branch->type !== 'pusat') {
+                $isPusat = false;
+            }
+        }
+
+        if (!$isPusat) {
+            $stock = HendhysStockBranch::firstOrCreate(
+                ['branch_id' => $branchId, 'product_id' => $productId],
+                ['quantity' => 0, 'quantity_return' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
+            );
+        } else {
+            $stock = HendhysStockPusat::firstOrCreate(
+                ['product_id' => $productId],
+                ['quantity' => 0, 'quantity_return' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
+            );
+        }
+
+        $before = (float) $stock->quantity_return;
+        $after  = $before + $qty;
+        $stock->update(['quantity_return' => $after, 'last_updated' => now()]);
+
+        // Catat di pergerakan stok sebagai return masuk
+        $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
+    }
+
     public function debitHendhys(int $productId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
         $isPusat = true;
