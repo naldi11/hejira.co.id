@@ -7,7 +7,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            size: 9.5in 5.5in;
+            size: 9.5in auto;
             margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
         }
 
@@ -194,8 +194,8 @@
 
         @media print {
             .action-bar { display: none !important; }
-            body { background: white; width: 100%; height: 100%; }
-            .page-wrapper { margin: 0; box-shadow: none; border-radius: 0; width: 100%; height: 100%; }
+            body { background: white; }
+            .page-wrapper { margin: 0; box-shadow: none; width: 8.2in; }
         }
     </style>
 </head>
