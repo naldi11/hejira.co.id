@@ -357,7 +357,7 @@
                     const cartQty = this.cart.filter(i => i.product_id === productId)
                         .reduce((s, i) => s + i.qty, 0);
                     const held = Number(this.heldQty[productId] || 0);
-                    return Math.max(0, dbStock - cartQty - held);
+                    return Math.round(Math.max(0, dbStock - cartQty - held));
                 },
 
                 loadResumeCart() {

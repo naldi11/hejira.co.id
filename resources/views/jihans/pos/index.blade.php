@@ -304,7 +304,7 @@
                                     <td x-text="product.code"></td>
                                     <td x-text="product.barcode"></td>
                                     <td x-text="product.name"></td>
-                                    <td class="text-center" x-text="product.current_stock"></td>
+                                    <td class="text-center" x-text="Math.round(parseFloat(product.current_stock || 0))"></td>
                                     <td class="text-center" x-text="product.unit ? product.unit.abbreviation : ''"></td>
                                     <td class="text-right" x-text="formatCurrency(product.selling_price)"></td>
                                 </tr>
