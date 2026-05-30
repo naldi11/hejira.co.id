@@ -140,6 +140,12 @@
                     <span class="text-sm">Request ke Gudang</span>
                 </a>
 
+                <a href="{{ route('jihans.returns-to-gudang.index') }}" 
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('jihans.returns-to-gudang.*') ? 'bg-orange-800 shadow-md text-white font-medium' : 'text-orange-100 hover:bg-orange-600/50 hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/></svg>
+                    <span class="text-sm">Return ke Gudang</span>
+                </a>
+
                 {{-- Master Data Dropdown --}}
                 <div class="pt-5 pb-2">
                     <p class="px-3 text-[10px] font-bold text-orange-200/90 uppercase tracking-widest">Master Data</p>

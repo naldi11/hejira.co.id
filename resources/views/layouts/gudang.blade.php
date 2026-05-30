@@ -178,6 +178,7 @@
                         ['route' => 'gudang.stock.index',             'label' => 'Stok Gudang',       'icon' => 'inventory'],
                         ['route' => 'gudang.transfer-requests.index', 'label' => 'Transfer Request',  'icon' => 'move_to_inbox', 'badge' => 'gudang_pending_count'],
                         ['route' => 'gudang.transfer-out.index',      'label' => 'Transfer Keluar',   'icon' => 'output'],
+                        ['route' => 'gudang.returns.index',           'label' => 'Penerimaan Retur',  'icon' => 'keyboard_return'],
                     ] as $item)
                     @php 
                         $badgeName = $item['badge'] ?? null;
