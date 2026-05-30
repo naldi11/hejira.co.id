@@ -161,7 +161,7 @@
                     <tr class="hover:bg-surface-container/50 transition-colors">
                         <td class="px-md py-sm text-center font-label-sm text-label-sm text-on-surface-variant">{{ $index + 1 }}</td>
                         <td class="px-md py-sm">
-                            <p class="font-label-lg text-label-lg font-bold text-on-surface">{{ $detail->product->name }}</p>
+                            <p class="font-label-lg text-label-lg font-bold text-on-surface">{{ $detail->product?->name ?? '(Produk Dihapus)' }}</p>
                         </td>
                         <td class="px-md py-sm text-right">
                             <span class="font-label-lg text-label-lg font-bold text-on-surface">{{ floatval($detail->quantity_requested) }}</span>
