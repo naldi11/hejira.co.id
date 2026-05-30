@@ -22,7 +22,7 @@ class HendhysPendingDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(HendhysProduct::class);
+        return $this->belongsTo(HendhysProduct::class)->withTrashed();
     }
 
     public function unit(): BelongsTo

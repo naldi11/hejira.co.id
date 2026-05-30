@@ -17,7 +17,7 @@ class PoDetail extends Model
         'unit_id', 'price', 'total', 'notes',
     ];
 
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
+    public function product(): BelongsTo { return $this->belongsTo(Product::class)->withTrashed(); }
     public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
     public function po(): BelongsTo      { return $this->belongsTo(PurchaseOrder::class, 'po_id'); }
 

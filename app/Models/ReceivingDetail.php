@@ -16,7 +16,7 @@ class ReceivingDetail extends Model
         'receiving_id', 'product_id', 'quantity_ordered', 'quantity', 'unit_id', 'hpp_price', 'total', 'notes', 'kondisi',
     ];
 
-    public function product(): BelongsTo    { return $this->belongsTo(Product::class); }
+    public function product(): BelongsTo    { return $this->belongsTo(Product::class)->withTrashed(); }
     public function unit(): BelongsTo       { return $this->belongsTo(Unit::class); }
     public function receiving(): BelongsTo  { return $this->belongsTo(Receiving::class); }
 }

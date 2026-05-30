@@ -17,6 +17,6 @@ class TransferOutDetail extends Model
     ];
 
     public function transfer(): BelongsTo { return $this->belongsTo(TransferOut::class, 'transfer_id'); }
-    public function product(): BelongsTo  { return $this->belongsTo(Product::class); }
+    public function product(): BelongsTo  { return $this->belongsTo(Product::class)->withTrashed(); }
     public function unit(): BelongsTo     { return $this->belongsTo(Unit::class); }
 }

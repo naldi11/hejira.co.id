@@ -89,7 +89,7 @@
                     @foreach($transferOut->details as $item)
                     @php $grandTotal += $item->total; @endphp
                     <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ $item->product->name }}</td>
+                        <td class="px-5 py-3 font-medium text-gray-800">{{ $item->product?->name ?? '(Produk Dihapus)' }}</td>
                         <td class="px-5 py-3 text-center font-bold text-gray-900">{{ floatval($item->quantity) }}</td>
                         <td class="px-5 py-3 text-center text-gray-500">{{ $item->unit->abbreviation ?? '-' }}</td>
                         <td class="px-5 py-3 text-right text-gray-500">Rp {{ number_format($item->hpp_price, 0, ',', '.') }}</td>

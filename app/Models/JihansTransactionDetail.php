@@ -31,7 +31,7 @@ class JihansTransactionDetail extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(JihansProduct::class);
+        return $this->belongsTo(JihansProduct::class)->withTrashed();
     }
 
     public function unit(): BelongsTo
