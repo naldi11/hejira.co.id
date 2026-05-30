@@ -6,6 +6,7 @@ use App\Http\Controllers\Jihans\PosController;
 use App\Http\Controllers\Jihans\PendingController;
 use App\Http\Controllers\Jihans\TransferRequestController;
 use App\Http\Controllers\Jihans\StockController;
+use App\Http\Controllers\Jihans\GudangReturnController;
 
 Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihans'])
     ->prefix('jihans')
@@ -34,6 +35,9 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         // Produksi Tortilla (Opsi A)
         Route::get('tortilla/recap', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'recap'])->name('tortilla.recap');
         Route::get('tortilla/recap/export', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'exportRecap'])->name('tortilla.recap.export');
+        Route::get('tortilla/prediksi/create', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'createPrediksi'])->name('tortilla.prediksi.create');
+        Route::post('tortilla/prediksi', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'storePrediksi'])->name('tortilla.prediksi.store');
+        Route::get('tortilla/{tortilla}/faktur', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'printFaktur'])->name('tortilla.faktur');
         Route::resource('tortilla', \App\Http\Controllers\Jihans\TortillaProductionController::class)->except(['edit', 'update', 'destroy']);
 
         // POS Kasir
@@ -55,6 +59,9 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form');
         Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive');
         Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print');
+
+        // Retur ke Gudang
+        Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
         // Stok
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');

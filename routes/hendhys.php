@@ -69,6 +69,9 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('returns', ReturnController::class)->except(['edit', 'update', 'destroy']);
         Route::post('returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
 
+        // Retur ke Gudang
+        Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
+
         // Stok Pusat & Cabang
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');

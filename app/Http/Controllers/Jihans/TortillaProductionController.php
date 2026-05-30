@@ -45,7 +45,136 @@ class TortillaProductionController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('jihans.tortilla.form', compact('karyawans'));
+        return view('jihans.tortilla.form', [
+            'karyawans'  => $karyawans,
+            'type'       => 'aktual',
+            'formAction' => route('jihans.tortilla.store'),
+            'warning'    => null,
+        ]);
+    }
+
+    public function createPrediksi()
+    {
+        $existingToday = JihansTortillaSession::whereDate('date', today())
+            ->whereIn('type', ['prediksi', 'aktual'])
+            ->first();
+
+        $warning = null;
+        if ($existingToday) {
+            $warning = $existingToday->type === 'aktual'
+                ? 'Aktual produksi hari ini sudah diinput. Prediksi tidak diperlukan lagi.'
+                : 'Prediksi hari ini sudah ada. Menyimpan ulang akan gagal.';
+        }
+
+        $karyawans = Karyawan::where('entity_scope', 'jihans')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('jihans.tortilla.form', [
+            'karyawans'  => $karyawans,
+            'type'       => 'prediksi',
+            'formAction' => route('jihans.tortilla.prediksi.store'),
+            'warning'    => $warning,
+        ]);
+    }
+
+    public function storePrediksi(Request $request)
+    {
+        $request->validate([
+            'date'                  => 'required|date',
+            'notes'                 => 'nullable|string',
+            'details'               => 'required|array|min:1',
+            'details.*.karyawan_id' => 'required|exists:master_karyawan,id',
+            'details.*.tb_qty'      => 'required|integer|min:0',
+            'details.*.ts_qty'      => 'required|integer|min:0',
+            'details.*.tk_qty'      => 'required|integer|min:0',
+            'details.*.tc_qty'      => 'required|integer|min:0',
+            'details.*.kribab_qty'  => 'required|integer|min:0',
+        ]);
+
+        $existing = JihansTortillaSession::whereDate('date', $request->date)
+            ->whereIn('type', ['prediksi', 'aktual'])
+            ->first();
+
+        if ($existing) {
+            $msg = $existing->type === 'aktual'
+                ? 'Aktual produksi tanggal ini sudah ada. Prediksi tidak bisa dibuat.'
+                : 'Prediksi untuk tanggal ini sudah ada.';
+            return back()->withInput()->withErrors(['date' => $msg]);
+        }
+
+        $totalQtyAll = collect($request->details)->sum(function ($d) {
+            return ($d['tb_qty'] ?? 0) + ($d['ts_qty'] ?? 0) + ($d['tk_qty'] ?? 0)
+                 + ($d['tc_qty'] ?? 0) + ($d['kribab_qty'] ?? 0);
+        });
+
+        if ($totalQtyAll <= 0) {
+            return back()->withInput()->withErrors(['details' => 'Minimal ada 1 karyawan dengan jumlah produksi > 0.']);
+        }
+
+        $session = null;
+
+        DB::transaction(function () use ($request, &$session) {
+            $config = JihansProductionConfig::current();
+
+            $session = JihansTortillaSession::create([
+                'session_number'    => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
+                'type'              => 'prediksi',
+                'date'              => $request->date,
+                'notes'             => $request->notes,
+                'created_by'        => auth()->id(),
+                'tb_product_id'     => $config->tb_product_id,
+                'ts_product_id'     => $config->ts_product_id,
+                'tk_product_id'     => $config->tk_product_id,
+                'tc_product_id'     => $config->tc_product_id,
+                'kribab_product_id' => $config->kribab_product_id,
+            ]);
+
+            foreach ($request->details as $detail) {
+                $session->details()->create([
+                    'karyawan_id' => $detail['karyawan_id'],
+                    'tb_qty'      => $detail['tb_qty'],
+                    'ts_qty'      => $detail['ts_qty'],
+                    'tk_qty'      => $detail['tk_qty'],
+                    'tc_qty'      => $detail['tc_qty'],
+                    'kribab_qty'  => $detail['kribab_qty'],
+                ]);
+            }
+
+            $this->logger->log('create', 'jihans.tortilla', "Input prediksi produksi tortilla: {$session->session_number}", $session);
+        });
+
+        return redirect()->route('jihans.tortilla.faktur', $session)
+            ->with('success', 'Prediksi berhasil disimpan. Cetak faktur di bawah ini.');
+    }
+
+    public function printFaktur(JihansTortillaSession $tortilla)
+    {
+        if (!$tortilla->isPrediksi()) {
+            return redirect()->route('jihans.tortilla.show', $tortilla)
+                ->withErrors(['type' => 'Faktur hanya tersedia untuk sesi prediksi.']);
+        }
+
+        $tortilla->load(['details.karyawan', 'creator']);
+
+        $totals = [
+            'tb'     => $tortilla->details->sum('tb_qty'),
+            'ts'     => $tortilla->details->sum('ts_qty'),
+            'tk'     => $tortilla->details->sum('tk_qty'),
+            'tc'     => $tortilla->details->sum('tc_qty'),
+            'kribab' => $tortilla->details->sum('kribab_qty'),
+        ];
+
+        $variants = [
+            'tb'     => 'Tortilla Besar',
+            'ts'     => 'Tortilla Sedang',
+            'tk'     => 'Tortilla Kecil',
+            'tc'     => 'Tortilla Catering',
+            'kribab' => 'Kribab',
+        ];
+
+        return view('jihans.tortilla.faktur-prediksi', compact('tortilla', 'totals', 'variants'));
     }
 
     public function store(Request $request)
@@ -163,6 +292,7 @@ class TortillaProductionController extends Controller
 
             $session = JihansTortillaSession::create([
                 'session_number'    => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
+                'type'              => 'aktual',
                 'date'              => $request->date,
                 'notes'             => $request->notes,
                 'created_by'        => auth()->id(),
@@ -172,6 +302,12 @@ class TortillaProductionController extends Controller
                 'tc_product_id'     => $config->tc_product_id,
                 'kribab_product_id' => $config->kribab_product_id,
             ]);
+
+            // Override prediksi hari yang sama jika ada
+            JihansTortillaSession::where('type', 'prediksi')
+                ->whereDate('date', $request->date)
+                ->whereNull('overridden_at')
+                ->update(['overridden_at' => now()]);
 
             $productQtyMap = [];
 

@@ -112,10 +112,16 @@
                     <p class="px-3 text-[10px] font-bold text-orange-300 uppercase tracking-widest">Manufaktur</p>
                 </div>
 
-                <a href="{{ route('jihans.tortilla.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('jihans.tortilla.*') ? 'bg-orange-800 shadow-md text-white font-medium' : 'text-orange-100 hover:bg-orange-600/50 hover:text-white' }}">
+                <a href="{{ route('jihans.tortilla.prediksi.create') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('jihans.tortilla.prediksi.*') ? 'bg-orange-800 shadow-md text-white font-medium' : 'text-orange-100 hover:bg-orange-600/50 hover:text-white' }}">
+                    <svg class="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span class="text-sm">Prediksi Produksi</span>
+                </a>
+
+                <a href="{{ route('jihans.tortilla.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ request()->routeIs('jihans.tortilla.*') && !request()->routeIs('jihans.tortilla.prediksi.*') && !request()->routeIs('jihans.tortilla.faktur') ? 'bg-orange-800 shadow-md text-white font-medium' : 'text-orange-100 hover:bg-orange-600/50 hover:text-white' }}">
                     <svg class="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    <span class="text-sm">Produksi Tortilla</span>
+                    <span class="text-sm">Aktual Produksi</span>
                 </a>
 
                 <div class="pt-5 pb-2">

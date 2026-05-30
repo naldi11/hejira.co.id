@@ -165,17 +165,7 @@
                 {{-- Customer Info: Manual Input + Autocomplete --}}
                 <div class="shrink-0 px-sm pt-sm pb-xs bg-surface border-b border-outline-variant space-y-xs"
                     @click.outside="customerSuggestions = []">
-                    {{-- Tipe Pelanggan --}}
-                    <div
-                        class="flex items-center bg-surface-container-low rounded-t-lg border-b border-outline-variant focus-within:border-primary focus-within:border-b-2 transition-all px-xs">
-                        <span class="material-symbols-outlined text-outline text-[16px] shrink-0 mr-xs">group</span>
-                        <select x-model="customerType"
-                            class="w-full bg-transparent border-none focus:ring-0 text-[12px] font-medium text-on-surface py-sm px-0 outline-none">
-                            <option value="Pelanggan Individual">Pelanggan Individual</option>
-                            <option value="Pelanggan Retail">Pelanggan Retail</option>
-                            <option value="Pelanggan Agen">Pelanggan Agen</option>
-                        </select>
-                    </div>
+
                     {{-- Nama Pelanggan --}}
                     <div class="relative">
                         <div

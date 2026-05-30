@@ -56,6 +56,10 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
         Route::post('transfer-out',              [TransferOutController::class, 'store'])->name('transfer-out.store');
         Route::get('transfer-out/{transferOut}', [TransferOutController::class, 'show'])->name('transfer-out.show');
 
+        // Retur Masuk dari Jihans / Hendhys
+        Route::resource('returns', \App\Http\Controllers\Gudang\ReturnController::class)->only(['index', 'show']);
+        Route::post('returns/{return}/receive', [\App\Http\Controllers\Gudang\ReturnController::class, 'receive'])->name('returns.receive');
+
     });
 
 // ── Master Data (dikelola Admin Gudang) ──────────────────────────────────────

@@ -35,15 +35,7 @@
                             @error('name') <p class="text-rose-500 text-[10px] font-black uppercase tracking-widest mt-2 ml-1">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- Tipe --}}
-                        <div>
-                            <label class="text-xs font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Tipe Customer <span class="text-rose-500">*</span></label>
-                            <select name="type" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none font-bold text-slate-900 appearance-none cursor-pointer">
-                                <option value="Pelanggan Individual" {{ old('type', $customer->type ?? 'Pelanggan Individual') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
-                                <option value="Pelanggan Retail"     {{ old('type', $customer->type ?? '') === 'Pelanggan Retail'     ? 'selected' : '' }}>Retail</option>
-                                <option value="Pelanggan Agen"       {{ old('type', $customer->type ?? '') === 'Pelanggan Agen'       ? 'selected' : '' }}>Agen</option>
-                            </select>
-                        </div>
+
 
                         {{-- Telepon --}}
                         <div>

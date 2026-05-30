@@ -44,15 +44,7 @@
                     class="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm">
             </div>
             
-            <div class="min-w-[180px]">
-                <select name="type"
-                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-{{ $accentColor }}-500 focus:ring-4 focus:ring-{{ $accentColor }}-500/10 transition-all outline-none text-sm appearance-none cursor-pointer">
-                    <option value="">Semua Tipe</option>
-                    <option value="Pelanggan Individual" {{ request('type') === 'Pelanggan Individual' ? 'selected' : '' }}>Individual</option>
-                    <option value="Pelanggan Retail" {{ request('type') === 'Pelanggan Retail' ? 'selected' : '' }}>Retail</option>
-                    <option value="Pelanggan Agen" {{ request('type') === 'Pelanggan Agen' ? 'selected' : '' }}>Agen</option>
-                </select>
-            </div>
+
 
             <div class="min-w-[180px]">
                 <select name="status"
@@ -87,7 +79,7 @@
                     <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kode</th>
                         <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Customer</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tipe</th>
+
                         <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Telepon</th>
                         <th class="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                         <th class="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Aksi</th>
@@ -107,15 +99,7 @@
                                     <p class="text-sm font-black text-slate-900">{{ $customer->name }}</p>
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
-                                @if(str_contains(strtolower($customer->type), 'agen'))
-                                    <span class="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-amber-100">Agen</span>
-                                @elseif(str_contains(strtolower($customer->type), 'retail'))
-                                    <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-blue-100">Retail</span>
-                                @else
-                                    <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200">Individual</span>
-                                @endif
-                            </td>
+
                             <td class="px-6 py-4 text-sm font-bold text-slate-500">
                                 {{ $customer->phone ?? '-' }}
                             </td>

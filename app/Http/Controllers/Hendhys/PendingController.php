@@ -40,7 +40,7 @@ class PendingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'customer_type' => 'required|in:Pelanggan Individual,Pelanggan Retail,Pelanggan Agen',
+            'customer_type' => 'nullable|string',
             'customer_phone' => 'nullable|string|max:20',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',

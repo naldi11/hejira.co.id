@@ -92,40 +92,21 @@
                 <label class="text-xs font-semibold">Tanggal</label>
                 <input type="date" x-model="transactionDate" class="ipos-input">
 
-                <label class="text-xs font-semibold">Tipe Plg</label>
-                <select x-model="customerType" @change="customerId = ''; customerName = ''" class="ipos-input">
-                    <option value="">-- Pilih Tipe --</option>
-                    @foreach($customerTypes as $type)
-                        <option value="{{ $type['value'] }}">{{ $type['label'] }}</option>
-                    @endforeach
-                </select>
-
                 <label class="text-xs font-semibold">Pelanggan</label>
                 <div class="flex gap-1">
-                    <template x-if="customerType !== ''">
-                        <div class="flex-1">
-                            <template x-if="filteredCustomers.length > 0">
-                                <select x-model="customerId"
-                                    @change="customerName = $el.options[$el.selectedIndex].dataset.name || ''"
-                                    class="ipos-input w-full">
-                                    <option value="" data-name="">-- Pilih Pelanggan --</option>
-                                    <template x-for="c in filteredCustomers" :key="c.id">
-                                        <option :value="c.id" :data-name="c.name"
-                                            x-text="c.name + (c.phone ? ' | ' + c.phone : '')"></option>
-                                    </template>
-                                </select>
-                            </template>
-                            <template x-if="filteredCustomers.length === 0">
-                                <input type="text" x-model="customerName"
-                                    placeholder="Belum ada pelanggan tipe ini (ketik manual)" class="ipos-input w-full">
-                            </template>
-                        </div>
-                    </template>
-                    <template x-if="customerType === ''">
-                        <input type="text" disabled placeholder="Pilih tipe dulu..."
-                            class="ipos-input flex-1 bg-gray-100 cursor-not-allowed">
-                    </template>
+                    <select x-model="customerId"
+                        @change="customerName = $el.options[$el.selectedIndex].dataset.name || ''"
+                        class="ipos-input w-full">
+                        <option value="" data-name="">-- Pelanggan Umum / Ketik Manual --</option>
+                        <template x-for="c in customers" :key="c.id">
+                            <option :value="c.id" :data-name="c.name"
+                                x-text="c.name + (c.phone ? ' | ' + c.phone : '')"></option>
+                        </template>
+                    </select>
                 </div>
+
+                <label class="text-xs font-semibold" x-show="!customerId">Nama Manual</label>
+                <input type="text" x-model="customerName" x-show="!customerId" placeholder="Ketik nama pelanggan manual..." class="ipos-input">
 
                 <label class="text-xs font-semibold">Keterangan</label>
                 <input type="text" x-model="notes" class="ipos-input">
@@ -392,7 +373,7 @@
                 products: @json($products),
                 customers: @json($customers),
                 cart: [],
-                customerType: '',
+                customerType: 'Pelanggan Retail',
                 customerId: '',
                 customerName: '',
                 notes: '',

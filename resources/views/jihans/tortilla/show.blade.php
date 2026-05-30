@@ -12,11 +12,20 @@
             <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
             Kembali ke Daftar
         </a>
-        <button onclick="window.print()"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition-all print:hidden">
-            <span class="material-symbols-outlined text-[18px]">print</span>
-            Cetak
-        </button>
+        <div class="flex items-center gap-2 print:hidden">
+            @if($tortilla->isPrediksi())
+            <a href="{{ route('jihans.tortilla.faktur', $tortilla) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl text-sm font-bold hover:bg-yellow-600 transition-all shadow-lg shadow-yellow-500/20">
+                <span class="material-symbols-outlined text-[18px]">receipt</span>
+                Cetak Faktur
+            </a>
+            @endif
+            <button onclick="window.print()"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition-all">
+                <span class="material-symbols-outlined text-[18px]">print</span>
+                Cetak
+            </button>
+        </div>
     </div>
 
     {{-- Header Card --}}
@@ -25,6 +34,22 @@
             <div>
                 <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Nomor Sesi</p>
                 <h2 class="text-2xl font-black text-slate-900 font-mono">{{ $tortilla->session_number }}</h2>
+                <div class="mt-2">
+                    @if($tortilla->isPrediksi())
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span>
+                            PREDIKSI
+                            @if($tortilla->isOverridden())
+                                &mdash; Digantikan pada {{ $tortilla->overridden_at->format('d/m/Y H:i') }}
+                            @endif
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                            AKTUAL
+                        </span>
+                    @endif
+                </div>
                 @if($tortilla->notes)
                 <p class="text-sm text-slate-500 italic mt-1">{{ $tortilla->notes }}</p>
                 @endif

@@ -206,6 +206,12 @@
                     Request Stok (Gudang)
                 </a>
             </li>
+            <li>
+                <a href="{{ route('hendhys.returns-to-gudang.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.returns-to-gudang.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">
+                    <span class="material-symbols-outlined {{ request()->routeIs('hendhys.returns-to-gudang.*') ? 'fill' : '' }}">keyboard_return</span>
+                    Return ke Gudang
+                </a>
+            </li>
             @else
             <li>
                 <a href="{{ route('hendhys.transfer-to-branch.index') }}" class="flex items-center gap-sm px-sm py-sm rounded-lg font-label-lg text-label-lg transition-all  duration-200 {{ request()->routeIs('hendhys.transfer-to-branch.*') ? 'bg-secondary-container text-on-secondary-container font-bold' : 'text-on-surface-variant hover:bg-surface-container-high' }}">

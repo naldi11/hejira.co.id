@@ -1,6 +1,6 @@
 @extends('layouts.jihans')
-@section('title', 'Input Produksi Tortilla')
-@section('page-title', 'Input Produksi Tortilla')
+@section('title', ($type ?? 'aktual') === 'prediksi' ? 'Input Prediksi Produksi Tortilla' : 'Input Produksi Tortilla')
+@section('page-title', ($type ?? 'aktual') === 'prediksi' ? 'Prediksi Produksi Tortilla' : 'Input Produksi Tortilla')
 
 @section('content')
 <div class="space-y-6" x-data="productionForm()">
@@ -21,8 +21,16 @@
     </div>
     @endif
 
-    <form method="POST" action="{{ route('jihans.tortilla.store') }}" class="space-y-6">
+    @if($warning ?? null)
+    <div class="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 px-5 py-4 rounded-2xl shadow-sm">
+        <span class="material-symbols-outlined text-amber-500 text-[20px]">warning</span>
+        <p class="text-sm font-semibold">{{ $warning }}</p>
+    </div>
+    @endif
+
+    <form method="POST" action="{{ $formAction ?? route('jihans.tortilla.store') }}" class="space-y-6">
         @csrf
+        <input type="hidden" name="type" value="{{ $type ?? 'aktual' }}">
 
         {{-- SEKSI 1 — INFORMASI SESI --}}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -127,7 +135,7 @@
             <button type="submit"
                     class="inline-flex items-center gap-2 px-8 py-3.5 bg-orange-600 text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-orange-700 transition-all shadow-xl shadow-orange-600/25 active:scale-[0.98]">
                 <span class="material-symbols-outlined text-[20px]">save</span>
-                Simpan & Update Stok
+                {{ ($type ?? 'aktual') === 'prediksi' ? 'Simpan Prediksi & Cetak Faktur' : 'Simpan & Update Stok' }}
             </button>
             <a href="{{ route('jihans.tortilla.index') }}"
                class="inline-flex items-center gap-2 px-6 py-3.5 bg-white text-slate-600 border border-slate-200 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">
