@@ -15,7 +15,7 @@
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-2xl font-black text-slate-800 font-headline tracking-tight">Data Cabang Hendhys</h2>
+            <h2 class="text-2xl font-black text-slate-800 font-headline tracking-tight">Data Cabang</h2>
             <p class="text-sm text-slate-500 font-medium">Manajemen unit bisnis dan outlet resmi Hendhys Brownies.</p>
         </div>
         <a href="{{ route(($routePrefix ?? 'master.') . 'branches.create') }}"
