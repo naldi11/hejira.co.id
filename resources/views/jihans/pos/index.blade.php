@@ -77,6 +77,35 @@
             border-top-color: #666;
             border-left-color: #666;
         }
+
+        /* TomSelect iPOS Retro Styling */
+        .ts-wrapper.ipos-select-ts {
+            padding: 0 !important;
+            border: none !important;
+            width: 100% !important;
+        }
+        .ts-wrapper.ipos-select-ts .ts-control {
+            border: 1px solid #999 !important;
+            border-top-color: #666 !important;
+            border-left-color: #666 !important;
+            padding: 4px 6px !important;
+            font-size: 13px !important;
+            background-color: #fff !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+        .ts-wrapper.ipos-select-ts .ts-control input {
+            font-size: 13px !important;
+        }
+        .ts-wrapper.ipos-select-ts.focus .ts-control {
+            background-color: #ffffcc !important;
+            outline: none !important;
+        }
+        .ts-dropdown {
+            font-size: 13px !important;
+            border-radius: 0 !important;
+            border: 1px solid #999 !important;
+        }
     </style>
 
     <div class="w-full ipos-window p-2 flex flex-col" style="height: calc(100vh - 90px); min-height: 700px;"
@@ -93,15 +122,12 @@
                 <input type="date" x-model="transactionDate" class="ipos-input">
 
                 <label class="text-xs font-semibold">Pelanggan</label>
-                <div class="flex gap-1">
-                    <select x-model="customerId"
-                        @change="customerName = $el.options[$el.selectedIndex].dataset.name || ''"
-                        class="ipos-input w-full">
-                        <option value="" data-name="">-- Pelanggan Umum / Ketik Manual --</option>
-                        <template x-for="c in customers" :key="c.id">
-                            <option :value="c.id" :data-name="c.name"
-                                x-text="c.name + (c.phone ? ' | ' + c.phone : '')"></option>
-                        </template>
+                <div class="flex gap-1 w-full" id="customer-select-wrapper">
+                    <select id="customer-select" x-ref="customerSelect" class="ipos-select-ts w-full">
+                        <option value="">-- Pelanggan Umum / Ketik Manual --</option>
+                        @foreach($customers as $c)
+                            <option value="{{ $c->id }}">{{ $c->name }}{{ $c->phone ? ' | ' . $c->phone : '' }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -146,18 +172,24 @@
                             <td class="text-center p-0">
                                 <input type="number" x-model.number="item.quantity" @change="validateQuantity(index)"
                                     @focus="selectedCartIndex = index"
-                                    class="w-full text-center outline-none bg-transparent" min="1" step="1">
+                                    class="w-full text-center outline-none bg-transparent" min="1" step="1"
+                                    :id="'cart-qty-' + index"
+                                    @keydown="handleCartInputKeydown($event, index, 'qty')">
                             </td>
                             <td class="text-center" x-text="item.unit_name"></td>
                             <td class="text-right p-0">
                                 <input type="number" x-model.number="item.price" @change="validateQuantity(index)"
                                     @focus="selectedCartIndex = index" class="w-full text-right outline-none bg-transparent"
-                                    min="0">
+                                    min="0"
+                                    :id="'cart-price-' + index"
+                                    @keydown="handleCartInputKeydown($event, index, 'price')">
                             </td>
                             <td class="text-right p-0">
                                 <input type="number" x-model.number="item.discount" @change="validateQuantity(index)"
                                     @focus="selectedCartIndex = index" class="w-full text-right outline-none bg-transparent"
-                                    min="0">
+                                    min="0"
+                                    :id="'cart-discount-' + index"
+                                    @keydown="handleCartInputKeydown($event, index, 'discount')">
                             </td>
                             <td class="text-right font-bold" x-text="formatCurrency(item.total)"></td>
                         </tr>
@@ -404,7 +436,35 @@
                 referenceNumber: '',
                 isProcessing: false,
 
-                init() {
+                 init() {
+                    // Inisialisasi TomSelect untuk Pelanggan Jihans
+                    this.$nextTick(() => {
+                        const selectEl = document.getElementById('customer-select');
+                        if (selectEl) {
+                            const ts = new TomSelect(selectEl, {
+                                create: false,
+                                placeholder: "-- Pelanggan Umum / Ketik Manual --",
+                                allowEmptyOption: true,
+                                sortField: {
+                                    field: "text",
+                                    direction: "asc"
+                                },
+                                onChange: (value) => {
+                                    this.customerId = value;
+                                    const client = this.customers.find(c => c.id == value);
+                                    this.customerName = client ? client.name : '';
+                                }
+                            });
+
+                            // Jika ada perubahan customerId dari luar (misal resume pending)
+                            this.$watch('customerId', (newVal) => {
+                                if (ts.getValue() !== newVal) {
+                                    ts.setValue(newVal);
+                                }
+                            });
+                        }
+                    });
+
                     if (this.paymentMethods.length > 0) {
                         const cashMethod = this.paymentMethods.find(pm => 
                             (!pm.bank_name && !pm.account_number) || 
@@ -501,7 +561,7 @@
                     this.showSearchModal = false;
                 },
 
-                handleSearchKeydown(e) {
+                 handleSearchKeydown(e) {
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
                         if (this.selectedSearchIndex < this.filteredProducts.length - 1) {
@@ -527,6 +587,50 @@
                             if (product) { this.selectItem(product); }
                         }
                     }
+                },
+
+                handleCartInputKeydown(e, index, field) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const nextIndex = index + 1;
+                        if (nextIndex < this.cart.length) {
+                            this.selectedCartIndex = nextIndex;
+                            this.focusCartInput(nextIndex, field);
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prevIndex = index - 1;
+                        if (prevIndex >= 0) {
+                            this.selectedCartIndex = prevIndex;
+                            this.focusCartInput(prevIndex, field);
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        if (field === 'qty') {
+                            e.preventDefault();
+                            this.focusCartInput(index, 'price');
+                        } else if (field === 'price') {
+                            e.preventDefault();
+                            this.focusCartInput(index, 'discount');
+                        }
+                    } else if (e.key === 'ArrowLeft') {
+                        if (field === 'discount') {
+                            e.preventDefault();
+                            this.focusCartInput(index, 'price');
+                        } else if (field === 'price') {
+                            e.preventDefault();
+                            this.focusCartInput(index, 'qty');
+                        }
+                    }
+                },
+
+                focusCartInput(index, field) {
+                    this.$nextTick(() => {
+                        const el = document.getElementById(`cart-${field}-${index}`);
+                        if (el) {
+                            el.focus();
+                            el.select();
+                        }
+                    });
                 },
 
                 isProductSelected(productId) {

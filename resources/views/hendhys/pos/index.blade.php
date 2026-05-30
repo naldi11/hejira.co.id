@@ -246,7 +246,9 @@
                                     </button>
                                     <input type="number" x-model.number="item.qty" @change="validateQty(index)"
                                         class="w-10 text-center bg-transparent border-none border-x border-outline-variant p-0 h-8 focus:ring-0 text-on-surface outline-none font-bold text-sm"
-                                        min="1" :max="item.max_stock">
+                                        min="1" :max="item.max_stock"
+                                        :id="'hendhys-qty-' + index"
+                                        @keydown="handleCartInputKeydown($event, index)">
                                     <button @click="updateQty(index, 1)"
                                         class="w-8 h-8 flex items-center justify-center text-primary hover:bg-primary-container  transition-colors">
                                         <span class="material-symbols-outlined text-[18px]">add</span>
@@ -419,6 +421,32 @@
                     const item = this.cart[index];
                     const newQty = item.qty + change;
                     if (newQty > 0 && newQty <= item.max_stock) item.qty = newQty;
+                },
+
+                handleCartInputKeydown(e, index) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const nextIndex = index + 1;
+                        if (nextIndex < this.cart.length) {
+                            this.focusCartInput(nextIndex);
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prevIndex = index - 1;
+                        if (prevIndex >= 0) {
+                            this.focusCartInput(prevIndex);
+                        }
+                    }
+                },
+
+                focusCartInput(index) {
+                    this.$nextTick(() => {
+                        const el = document.getElementById(`hendhys-qty-${index}`);
+                        if (el) {
+                            el.focus();
+                            el.select();
+                        }
+                    });
                 },
 
                 validateQty(index) {
