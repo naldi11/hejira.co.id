@@ -24,7 +24,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');
             Route::resource('products', \App\Http\Controllers\Master\ProductController::class)->except(['show']);
 
-            Route::resource('payment-methods', \App\Http\Controllers\Master\PaymentMethodController::class)->except(['show']);
+
         });
 
         // Produksi (khusus pusat)

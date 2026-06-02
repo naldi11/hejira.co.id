@@ -103,9 +103,9 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black shrink-0">
-                                    {{ substr($detail->karyawan->name, 0, 1) }}
+                                    {{ $detail->karyawan ? substr($detail->karyawan->name, 0, 1) : 'P' }}
                                 </div>
-                                <span class="font-bold text-slate-800">{{ $detail->karyawan->name }}</span>
+                                <span class="font-bold text-slate-800">{{ $detail->karyawan->name ?? 'Total Pabrik (Prediksi)' }}</span>
                             </div>
                         </td>
                         <td class="px-4 py-4 text-center font-black text-slate-800 text-base">{{ $detail->tb_qty }}</td>

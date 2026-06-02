@@ -96,19 +96,19 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($sessions as $session)
                     <tr class="hover:bg-orange-50/40 transition-colors group">
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-slate-700 font-bold">{{ \Carbon\Carbon::parse($session->date)->format('d M Y') }}</span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <span class="font-mono text-xs font-black bg-orange-50 text-orange-700 border border-orange-100 px-2.5 py-1 rounded-lg">{{ $session->session_number }}</span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             @if($session->type === 'prediksi')
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span>
                                     Prediksi
                                     @if($session->isOverridden())
-                                        <span class="ml-1 text-yellow-400 font-normal">(Digantikan)</span>
+                                        <span class="ml-1 text-yellow-500 font-normal">(Digantikan)</span>
                                     @endif
                                 </span>
                             @else
@@ -118,15 +118,15 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
                             <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black text-xs">
                                 {{ $session->details_count }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-slate-500 text-sm italic">
+                        <td class="px-6 py-4 text-slate-500 text-sm italic min-w-[150px]">
                             {{ $session->notes ?: '—' }}
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center gap-2">
                                 <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-black shrink-0">
                                     {{ substr($session->creator->name ?? 'S', 0, 1) }}
@@ -134,7 +134,7 @@
                                 <span class="text-slate-600 text-sm">{{ $session->creator->name ?? 'Sistem' }}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-2">
                                 @if($session->isPrediksi())
                                 <a href="{{ route('jihans.tortilla.faktur', $session) }}"
@@ -142,6 +142,13 @@
                                     <span class="material-symbols-outlined text-[14px]">receipt</span>
                                     Faktur
                                 </a>
+                                @if(!$session->isOverridden())
+                                <a href="{{ route('jihans.tortilla.create', ['date' => \Carbon\Carbon::parse($session->date)->format('Y-m-d')]) }}"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white border border-orange-700 rounded-lg text-xs font-bold hover:bg-orange-700 shadow-sm transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">edit_square</span>
+                                    Input Aktual
+                                </a>
+                                @endif
                                 @endif
                                 <a href="{{ route('jihans.tortilla.show', $session) }}"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-bold hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200 transition-all">

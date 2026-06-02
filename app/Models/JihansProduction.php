@@ -20,6 +20,7 @@ class JihansProduction extends Model
         'unit_id',
         'notes',
         'created_by',
+        'status',
     ];
 
     protected $casts = [

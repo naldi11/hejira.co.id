@@ -67,7 +67,6 @@ class PosController extends Controller
             'tax_amount'        => 'required|numeric|min:0',
             'other_costs'       => 'required|numeric|min:0',
             'grand_total'       => 'required|numeric|min:0',
-            'payment_method_id' => 'required|exists:master_payment_methods,id',
             'amount_paid'       => 'required|numeric|min:0',
             'reference_number'  => 'nullable|string|max:100',
             'notes'             => 'nullable|string',
@@ -132,11 +131,11 @@ class PosController extends Controller
 
             // Catat Pembayaran
             $trx->payments()->create([
-                'payment_method_id' => $request->payment_method_id,
-                'payment_method'    => null, // Menghindari enum jika field baru diisi
+                'payment_method_id' => null,
+                'payment_method'    => 'cash', 
                 'amount'            => $request->amount_paid,
                 'reference_number'  => $request->reference_number,
-                'bank_name'         => null, // Diambil dari payment_method_id relasi
+                'bank_name'         => null, 
                 'notes'             => null,
             ]);
 

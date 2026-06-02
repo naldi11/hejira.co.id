@@ -38,8 +38,18 @@ class TortillaProductionController extends Controller
         return view('jihans.tortilla.index', compact('sessions'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $targetDate = $request->query('date', date('Y-m-d'));
+
+        $existingAktual = JihansTortillaSession::whereDate('date', $targetDate)
+            ->where('type', 'aktual')
+            ->first();
+
+        $warning = $existingAktual 
+            ? 'Aktual produksi untuk tanggal ' . $targetDate . ' sudah diinput. Anda tidak bisa menginput ulang atau mengeditnya.'
+            : null;
+
         $karyawans = Karyawan::where('entity_scope', 'jihans')
             ->where('is_active', true)
             ->orderBy('name')
@@ -49,7 +59,8 @@ class TortillaProductionController extends Controller
             'karyawans'  => $karyawans,
             'type'       => 'aktual',
             'formAction' => route('jihans.tortilla.store'),
-            'warning'    => null,
+            'warning'    => $warning,
+            'targetDate' => $targetDate,
         ]);
     }
 
@@ -82,15 +93,13 @@ class TortillaProductionController extends Controller
     public function storePrediksi(Request $request)
     {
         $request->validate([
-            'date'                  => 'required|date',
-            'notes'                 => 'nullable|string',
-            'details'               => 'required|array|min:1',
-            'details.*.karyawan_id' => 'required|exists:master_karyawan,id',
-            'details.*.tb_qty'      => 'required|integer|min:0',
-            'details.*.ts_qty'      => 'required|integer|min:0',
-            'details.*.tk_qty'      => 'required|integer|min:0',
-            'details.*.tc_qty'      => 'required|integer|min:0',
-            'details.*.kribab_qty'  => 'required|integer|min:0',
+            'date'       => 'required|date',
+            'notes'      => 'nullable|string',
+            'tb_qty'     => 'required|integer|min:0',
+            'ts_qty'     => 'required|integer|min:0',
+            'tk_qty'     => 'required|integer|min:0',
+            'tc_qty'     => 'required|integer|min:0',
+            'kribab_qty' => 'required|integer|min:0',
         ]);
 
         $existing = JihansTortillaSession::whereDate('date', $request->date)
@@ -104,19 +113,96 @@ class TortillaProductionController extends Controller
             return back()->withInput()->withErrors(['date' => $msg]);
         }
 
-        $totalQtyAll = collect($request->details)->sum(function ($d) {
-            return ($d['tb_qty'] ?? 0) + ($d['ts_qty'] ?? 0) + ($d['tk_qty'] ?? 0)
-                 + ($d['tc_qty'] ?? 0) + ($d['kribab_qty'] ?? 0);
-        });
+        $totalQtyAll = ($request->tb_qty ?? 0) + ($request->ts_qty ?? 0) + ($request->tk_qty ?? 0)
+                     + ($request->tc_qty ?? 0) + ($request->kribab_qty ?? 0);
 
         if ($totalQtyAll <= 0) {
-            return back()->withInput()->withErrors(['details' => 'Minimal ada 1 karyawan dengan jumlah produksi > 0.']);
+            return back()->withInput()->withErrors(['details' => 'Total produksi harus lebih dari 0.']);
         }
 
         $session = null;
 
         DB::transaction(function () use ($request, &$session) {
             $config = JihansProductionConfig::current();
+
+            // Auto-check and create products if they don't exist
+            $variants = [
+                'tb'     => ['field' => 'tb_product_id',     'name' => 'Tortilla Besar'],
+                'ts'     => ['field' => 'ts_product_id',     'name' => 'Tortilla Sedang'],
+                'tk'     => ['field' => 'tk_product_id',     'name' => 'Tortilla Kecil'],
+                'tc'     => ['field' => 'tc_product_id',     'name' => 'Tortilla Catering'],
+                'kribab' => ['field' => 'kribab_product_id', 'name' => 'Kribab'],
+            ];
+
+            $configUpdated = false;
+
+            foreach ($variants as $key => $v) {
+                $field = $v['field'];
+                $defaultName = $v['name'];
+
+                $productExists = false;
+                if ($config->$field) {
+                    $productExists = Product::where('id', $config->$field)->exists();
+                }
+
+                if (!$productExists) {
+                    $product = Product::where('name', $defaultName)
+                        ->where(function ($q) {
+                            $q->where('entity_scope', 'jihans')
+                              ->orWhere('entity_scope', 'all');
+                        })
+                        ->first();
+
+                    if (!$product) {
+                        $category = ProductCategory::where('name', 'Tortilla')->first();
+                        if (!$category) {
+                            $category = ProductCategory::create([
+                                'name' => 'Tortilla',
+                                'entity_scope' => 'all',
+                                'visible_gudang' => true,
+                                'visible_jihans' => true,
+                                'visible_hendhys' => false,
+                            ]);
+                        }
+
+                        $unit = Unit::where('abbreviation', 'PAK')->orWhere('abbreviation', 'Pak')->orWhere('name', 'Pak')->first();
+                        if (!$unit) {
+                            $unit = Unit::first();
+                        }
+                        $unitId = $unit ? $unit->id : 1;
+
+                        $code = $this->numbers->generate('PRD', 'master_products', 'code');
+
+                        $product = Product::create([
+                            'code'            => $code,
+                            'name'            => $defaultName,
+                            'category_id'     => $category->id,
+                            'unit_id'         => $unitId,
+                            'hpp'             => 0,
+                            'selling_price'   => 0,
+                            'stock_min'       => 0,
+                            'ppn_type'        => 'none',
+                            'ppn_rate'        => 0,
+                            'product_type'    => 'INV',
+                            'source_type'     => 'produced',
+                            'entity_scope'    => 'jihans',
+                            'visible_jihans'  => true,
+                            'visible_gudang'  => false,
+                            'visible_hendhys' => false,
+                            'status'          => 'active',
+                            'created_by'      => auth()->id(),
+                        ]);
+                    }
+
+                    $config->$field = $product->id;
+                    $configUpdated = true;
+                }
+            }
+
+            if ($configUpdated) {
+                $config->updated_by = auth()->id();
+                $config->save();
+            }
 
             $session = JihansTortillaSession::create([
                 'session_number'    => $this->numbers->generateYearly('JHS-TOR', 'jihans_tortilla_sessions', 'session_number'),
@@ -131,15 +217,46 @@ class TortillaProductionController extends Controller
                 'kribab_product_id' => $config->kribab_product_id,
             ]);
 
-            foreach ($request->details as $detail) {
-                $session->details()->create([
-                    'karyawan_id' => $detail['karyawan_id'],
-                    'tb_qty'      => $detail['tb_qty'],
-                    'ts_qty'      => $detail['ts_qty'],
-                    'tk_qty'      => $detail['tk_qty'],
-                    'tc_qty'      => $detail['tc_qty'],
-                    'kribab_qty'  => $detail['kribab_qty'],
-                ]);
+            // Save single detail row with null karyawan for prediction
+            $session->details()->create([
+                'karyawan_id' => null,
+                'tb_qty'      => $request->tb_qty,
+                'ts_qty'      => $request->ts_qty,
+                'tk_qty'      => $request->tk_qty,
+                'tc_qty'      => $request->tc_qty,
+                'kribab_qty'  => $request->kribab_qty,
+            ]);
+
+            $productQtyMap = [];
+            $variantMap = [
+                $session->tb_product_id     => (int) $request->tb_qty,
+                $session->ts_product_id     => (int) $request->ts_qty,
+                $session->tk_product_id     => (int) $request->tk_qty,
+                $session->tc_product_id     => (int) $request->tc_qty,
+                $session->kribab_product_id => (int) $request->kribab_qty,
+            ];
+            
+            foreach ($variantMap as $pid => $qty) {
+                if ($pid && $qty > 0) {
+                    $productQtyMap[$pid] = ($productQtyMap[$pid] ?? 0) + $qty;
+                }
+            }
+
+            // Tambah stok Jihans per produk untuk PREDIKSI
+            if (!empty($productQtyMap)) {
+                $products = Product::whereIn('id', array_keys($productQtyMap))->get()->keyBy('id');
+                foreach ($productQtyMap as $productId => $totalQty) {
+                    if ($products->has($productId)) {
+                        $this->stockService->creditJihans(
+                            $productId,
+                            $products[$productId]->unit_id,
+                            $totalQty,
+                            'production',
+                            $session->id,
+                            auth()->id()
+                        );
+                    }
+                }
             }
 
             $this->logger->log('create', 'jihans.tortilla', "Input prediksi produksi tortilla: {$session->session_number}", $session);
@@ -198,6 +315,14 @@ class TortillaProductionController extends Controller
 
         if ($totalQtyAll <= 0) {
             return back()->withInput()->withErrors(['details' => 'Minimal ada 1 karyawan dengan jumlah produksi > 0.']);
+        }
+
+        $existingAktual = JihansTortillaSession::whereDate('date', $request->date)
+            ->where('type', 'aktual')
+            ->first();
+
+        if ($existingAktual) {
+            return back()->withInput()->withErrors(['date' => 'Aktual produksi untuk tanggal ini sudah diinput dan tidak bisa diubah.']);
         }
 
         DB::transaction(function () use ($request) {
@@ -304,10 +429,29 @@ class TortillaProductionController extends Controller
             ]);
 
             // Override prediksi hari yang sama jika ada
-            JihansTortillaSession::where('type', 'prediksi')
+            $existingPrediksi = JihansTortillaSession::with('details')->where('type', 'prediksi')
                 ->whereDate('date', $request->date)
                 ->whereNull('overridden_at')
-                ->update(['overridden_at' => now()]);
+                ->first();
+
+            $oldProductQtyMap = [];
+            if ($existingPrediksi) {
+                foreach ($existingPrediksi->details as $oldDetail) {
+                    $variantMap = [
+                        $existingPrediksi->tb_product_id     => (int) $oldDetail->tb_qty,
+                        $existingPrediksi->ts_product_id     => (int) $oldDetail->ts_qty,
+                        $existingPrediksi->tk_product_id     => (int) $oldDetail->tk_qty,
+                        $existingPrediksi->tc_product_id     => (int) $oldDetail->tc_qty,
+                        $existingPrediksi->kribab_product_id => (int) $oldDetail->kribab_qty,
+                    ];
+                    foreach ($variantMap as $pid => $qty) {
+                        if ($pid && $qty > 0) {
+                            $oldProductQtyMap[$pid] = ($oldProductQtyMap[$pid] ?? 0) + $qty;
+                        }
+                    }
+                }
+                $existingPrediksi->update(['overridden_at' => now()]);
+            }
 
             $productQtyMap = [];
 
@@ -336,15 +480,30 @@ class TortillaProductionController extends Controller
                 }
             }
 
-            // Update stok Jihans per produk
-            if (!empty($productQtyMap)) {
-                $products = Product::whereIn('id', array_keys($productQtyMap))->get()->keyBy('id');
-                foreach ($productQtyMap as $productId => $totalQty) {
-                    if ($products->has($productId)) {
+            // Update stok Jihans berdasarkan SELISIH (Aktual - Prediksi)
+            $allProductIds = array_unique(array_merge(array_keys($oldProductQtyMap), array_keys($productQtyMap)));
+            if (!empty($allProductIds)) {
+                $products = Product::whereIn('id', $allProductIds)->get()->keyBy('id');
+                foreach ($allProductIds as $productId) {
+                    if (!$products->has($productId)) continue;
+                    
+                    $oldQty = $oldProductQtyMap[$productId] ?? 0;
+                    $newQty = $productQtyMap[$productId] ?? 0;
+                    $delta = $newQty - $oldQty;
+
+                    if ($delta > 0) {
                         $this->stockService->creditJihans(
                             $productId,
                             $products[$productId]->unit_id,
-                            $totalQty,
+                            $delta,
+                            'production',
+                            $session->id,
+                            auth()->id()
+                        );
+                    } elseif ($delta < 0) {
+                        $this->stockService->debitJihans(
+                            $productId,
+                            abs($delta),
                             'production',
                             $session->id,
                             auth()->id()
@@ -397,8 +556,11 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(tc_qty) as total_tc'),
                 DB::raw('SUM(kribab_qty) as total_kribab')
             )
-            ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
-                $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
+            ->whereHas('session', function ($s) use ($dateFrom, $dateTo) {
+                $s->where('type', 'aktual');
+                if ($dateFrom && $dateTo) {
+                    $s->whereBetween('date', [$dateFrom, $dateTo]);
+                }
             })
             ->with('karyawan')
             ->groupBy('karyawan_id')
@@ -436,8 +598,11 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(tc_qty) as total_tc'),
                 DB::raw('SUM(kribab_qty) as total_kribab')
             )
-            ->when($dateFrom && $dateTo, function ($q) use ($dateFrom, $dateTo) {
-                $q->whereHas('session', fn($s) => $s->whereBetween('date', [$dateFrom, $dateTo]));
+            ->whereHas('session', function ($s) use ($dateFrom, $dateTo) {
+                $s->where('type', 'aktual');
+                if ($dateFrom && $dateTo) {
+                    $s->whereBetween('date', [$dateFrom, $dateTo]);
+                }
             })
             ->with('karyawan')
             ->groupBy('karyawan_id')

@@ -43,8 +43,8 @@
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Tanggal Produksi <span class="text-red-500">*</span></label>
-                    <input type="date" name="date" value="{{ old('date', date('Y-m-d')) }}" required
-                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+                    <input type="date" name="date" value="{{ old('date', $targetDate ?? date('Y-m-d')) }}" required {{ isset($targetDate) && request()->has('date') ? 'readonly' : '' }}
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all {{ isset($targetDate) && request()->has('date') ? 'opacity-70 cursor-not-allowed' : '' }}">
                 </div>
                 <div>
                     <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Catatan Sesi</label>
@@ -54,8 +54,9 @@
             </div>
         </div>
 
-        {{-- SEKSI 2 — DATA PRODUKSI PER KARYAWAN --}}
+        {{-- SEKSI 2 — DATA PRODUKSI --}}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            @if(($type ?? 'aktual') === 'aktual')
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -128,6 +129,32 @@
                     </tfoot>
                 </table>
             </div>
+            @else
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                <div class="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined text-orange-600 text-[20px]">inventory_2</span>
+                </div>
+                <h3 class="font-black text-slate-800 text-sm uppercase tracking-wider">Total Produksi (Prediksi)</h3>
+            </div>
+            <div class="p-6 grid grid-cols-2 md:grid-cols-5 gap-5">
+                @php
+                    $variantsMap = [
+                        'tb' => 'Tortilla Besar',
+                        'ts' => 'Tortilla Sedang',
+                        'tk' => 'Tortilla Kecil',
+                        'tc' => 'Tortilla Catering',
+                        'kribab' => 'Kribab',
+                    ];
+                @endphp
+                @foreach($variantsMap as $v => $label)
+                <div>
+                    <label class="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2">{{ $label }}</label>
+                    <input type="number" name="{{ $v }}_qty" value="{{ old($v.'_qty', 0) }}" min="0" required
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-black text-slate-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/10 transition-all">
+                </div>
+                @endforeach
+            </div>
+            @endif
         </div>
 
         {{-- Tombol Submit --}}

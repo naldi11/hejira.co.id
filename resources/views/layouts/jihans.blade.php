@@ -165,7 +165,7 @@
                             ['route' => 'jihans.master.products.index',          'label' => 'Daftar Produk'],
                             ['route' => 'jihans.master.customers.index',         'label' => 'Pelanggan'],
                             ['route' => 'jihans.master.karyawan.index',          'label' => 'Karyawan'],
-                            ['route' => 'jihans.master.payment-methods.index',   'label' => 'Metode Bayar'],
+
                             ['route' => 'jihans.master.production-config.edit',  'label' => 'Konfigurasi Produksi'],
                         ] as $item)
                         <a href="{{ route($item['route']) }}"

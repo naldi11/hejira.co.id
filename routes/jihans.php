@@ -25,7 +25,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');
             Route::resource('products',  \App\Http\Controllers\Master\ProductController::class)->except(['show']);
             
-            Route::resource('payment-methods', \App\Http\Controllers\Master\PaymentMethodController::class)->except(['show']);
+
             Route::resource('karyawan', \App\Http\Controllers\Master\KaryawanController::class)->except(['show']);
 
             Route::get('production-config', [\App\Http\Controllers\Jihans\JihansProductionConfigController::class, 'edit'])->name('production-config.edit');

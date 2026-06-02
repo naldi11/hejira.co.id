@@ -108,13 +108,13 @@
         }
     </style>
 
-    <div class="w-full ipos-window p-2 flex flex-col" style="height: calc(100vh - 90px); min-height: 700px;"
+    <div class="w-full ipos-window p-2 flex flex-col min-w-0 overflow-hidden" style="min-height: calc(100vh - 90px);"
         x-data="posSystem()" @keydown.window="handleGlobalKeydown($event)">
 
         {{-- Top Section --}}
-        <div class="flex gap-4 mb-2">
+        <div class="grid grid-cols-2 gap-4 mb-2">
             {{-- Left Form --}}
-            <div class="w-1/2 bg-white border border-gray-400 p-3 grid grid-cols-[100px_1fr] gap-y-2 items-center">
+            <div class="bg-white border border-gray-400 p-3 grid grid-cols-[100px_1fr] gap-y-2 items-center">
                 <label class="text-xs font-semibold">No. Transaksi</label>
                 <input type="text" class="ipos-input bg-gray-200" value="[AUTO]" disabled>
 
@@ -139,7 +139,7 @@
             </div>
 
             {{-- Right Total Display --}}
-            <div class="w-1/2 flex flex-col items-end justify-end p-4 bg-black border-[3px] border-gray-600 rounded">
+            <div class="flex flex-col items-end justify-end p-4 bg-black border-[3px] border-gray-600 rounded">
                 <span class="text-green-500 font-bold text-lg mb-1">TOTAL</span>
                 <span class="text-green-500 font-mono font-bold text-6xl tracking-wider leading-none"
                     x-text="formatCurrency(grandTotal)"></span>
@@ -147,7 +147,7 @@
         </div>
 
         {{-- Middle Section: Table --}}
-        <div class="bg-white border border-gray-400 overflow-auto relative" style="flex: 1 1 0; min-height: 310px;">
+        <div class="bg-white border border-gray-400 overflow-auto relative min-w-0" style="flex: 1 1 auto; max-height: 550px;">
             <table class="w-full ipos-table whitespace-nowrap">
                 <thead>
                     <tr>
@@ -204,9 +204,9 @@
         </div>
 
         {{-- Bottom Section --}}
-        <div class="mt-2 mb-6 pb-2 flex gap-4">
+        <div class="mt-2 mb-6 pb-2 grid grid-cols-3 gap-4">
             {{-- Summaries --}}
-            <div class="w-1/3 bg-white border border-gray-400 p-2 grid grid-cols-[100px_1fr] gap-y-1 items-center">
+            <div class="col-span-1 bg-white border border-gray-400 p-2 grid grid-cols-[100px_1fr] gap-y-1 items-center">
                 <label class="text-xs font-semibold">Sub Total</label>
                 <input type="text" class="ipos-input bg-gray-200 text-right font-bold" :value="formatCurrency(subtotal)"
                     disabled>
@@ -238,7 +238,7 @@
             </div>
 
             {{-- Actions --}}
-            <div class="w-2/3 flex flex-wrap gap-2 items-end justify-end">
+            <div class="col-span-2 flex flex-wrap gap-2 items-end justify-end">
                 <button class="ipos-button" @click="openSearchModal()">
                     <span class="font-bold">Tambah [Ins]</span>
                 </button>
@@ -386,12 +386,14 @@
                 </div>
                 <div class="p-2 bg-gray-200 border-t border-gray-400 text-right flex justify-end gap-2">
                     <button @click="showPaymentModal = false" class="ipos-button bg-gray-300 hover:bg-gray-400">
-                        <span class="font-bold text-red-600">Batal [Esc]</span>
+                <div class="flex justify-end gap-2 p-3 border-t bg-gray-100">
+                    <button class="px-4 py-2 bg-gray-200 border border-gray-400 rounded font-semibold hover:bg-gray-300"
+                        @click="showPaymentModal = false">
+                        Batal [Esc]
                     </button>
-                    <button @click="processTransaction()" :disabled="isProcessing"
-                        class="ipos-button bg-green-200 hover:bg-green-300">
-                        <span x-show="!isProcessing" class="font-bold text-green-700">Simpan & Cetak [Enter]</span>
-                        <span x-show="isProcessing" class="font-bold">Memproses...</span>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50"
+                        @click="processTransaction()" :disabled="isProcessing">
+                        <span x-text="isProcessing ? 'Memproses...' : 'Simpan & Cetak [Enter]'"></span>
                     </button>
                 </div>
             </div>
@@ -807,7 +809,6 @@
                                 tax_amount: this.taxAmount,
                                 other_costs: this.otherCosts,
                                 grand_total: this.grandTotal,
-                                payment_method_id: this.paymentMethodId,
                                 amount_paid: this.amountPaid,
                                 reference_number: this.referenceNumber,
                                 notes: this.notes,
@@ -826,7 +827,13 @@
                         if (response.ok && data.success) {
                             window.location.href = data.redirect;
                         } else {
-                            throw new Error(data.error || 'Terjadi kesalahan saat memproses transaksi.');
+                            const errorMsg = data.message || data.error || 'Terjadi kesalahan saat memproses transaksi.';
+                            // Show the first validation error if exists
+                            if (data.errors) {
+                                const firstKey = Object.keys(data.errors)[0];
+                                throw new Error(data.errors[firstKey][0]);
+                            }
+                            throw new Error(errorMsg);
                         }
 
                     } catch (error) {

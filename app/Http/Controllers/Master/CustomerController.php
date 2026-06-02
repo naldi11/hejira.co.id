@@ -76,7 +76,10 @@ class CustomerController extends Controller
 
         $tableName = 'master_customers';
         $data['code']      = $this->numbers->generate('CST', $tableName, 'code');
-        $data['type']      = $data['type'] ?: 'Pelanggan Individual';
+        $data['type']      = $data['type'] ?? 'Pelanggan Individual';
+        if (empty($data['type'])) {
+            $data['type'] = 'Pelanggan Individual';
+        }
         $data['created_by'] = auth()->id();
         $data['entity_scope']    = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
         $data['visible_gudang']  = $request->boolean('visible_gudang',  in_array($info['scope'], ['gudang']));
@@ -126,7 +129,10 @@ class CustomerController extends Controller
         ]);
 
         $old = $customer->toArray();
-        $data['type']            = $data['type'] ?: ($customer->type ?: 'Pelanggan Individual');
+        $data['type']            = $data['type'] ?? ($customer->type ?: 'Pelanggan Individual');
+        if (empty($data['type'])) {
+            $data['type'] = 'Pelanggan Individual';
+        }
         $data['is_active']       = $request->boolean('is_active', true);
         $data['entity_scope']    = $request->input('entity_scope', $customer->entity_scope);
         $data['visible_gudang']  = $request->boolean('visible_gudang');
