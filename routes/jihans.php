@@ -13,7 +13,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
     ->name('jihans.')
     ->group(function () {
 
-        Route::get('/dashboard', fn () => view('jihans.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Jihans\DashboardController::class, 'index'])->name('dashboard');
 
         // Master Data (Scoped to Jihans)
         Route::prefix('master')->name('master.')->group(function () {

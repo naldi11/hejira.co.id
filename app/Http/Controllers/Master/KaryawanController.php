@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Karyawan;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class KaryawanController extends Controller
 {
@@ -28,7 +29,7 @@ class KaryawanController extends Controller
 
         $karyawans = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('master.karyawan.index', [
+        return Inertia::render('Master/Karyawan/Index', [
             'karyawans'    => $karyawans,
             'layout'       => $info['layout'],
             'routePrefix'  => $info['route'],
@@ -39,7 +40,7 @@ class KaryawanController extends Controller
     public function create(Request $request)
     {
         $info = $this->getScopeInfo($request);
-        return view('master.karyawan.form', [
+        return Inertia::render('Master/Karyawan/Form', [
             'layout'       => $info['layout'],
             'routePrefix'  => $info['route'],
             'currentScope' => $info['scope'],
@@ -70,7 +71,7 @@ class KaryawanController extends Controller
     public function edit(Request $request, Karyawan $karyawan)
     {
         $info = $this->getScopeInfo($request);
-        return view('master.karyawan.form', [
+        return Inertia::render('Master/Karyawan/Form', [
             'karyawan'     => $karyawan,
             'layout'       => $info['layout'],
             'routePrefix'  => $info['route'],

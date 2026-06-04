@@ -7,6 +7,7 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './resources/js/**/*.{js,jsx}',
     ],
 
     // Safelist untuk dynamic Blade class seperti bg-{{ $accentColor }}-600
@@ -27,6 +28,9 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                primary: '#4f46e5',
+            },
             fontFamily: {
                 sans: ['Poppins', ...defaultTheme.fontFamily.sans],
                 headline: ['Poppins', ...defaultTheme.fontFamily.sans],
@@ -36,7 +40,16 @@ export default {
                 bold: '500',
                 extrabold: '500',
                 black: '500',
-            }
+            },
+            // Shimmer effect for skeleton loaders (a light gradient sweeping across)
+            keyframes: {
+                shimmer: {
+                    '100%': { transform: 'translateX(100%)' },
+                },
+            },
+            animation: {
+                shimmer: 'shimmer 1.5s infinite',
+            },
         },
     },
 

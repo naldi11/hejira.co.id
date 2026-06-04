@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysTransferRequestResource;
 use App\Models\Product;
 use App\Models\TransferRequest;
 use App\Models\TransferRequestDetail;
@@ -10,6 +11,7 @@ use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TransferRequestController extends Controller
 {
@@ -34,13 +36,24 @@ class TransferRequestController extends Controller
         $requests = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
         // Load incoming transfers from Gudang with status 'sent'
-        $incomingTransfers = \App\Models\TransferOut::where('to_entity', 'hendhys')
+        $incoming = \App\Models\TransferOut::where('to_entity', 'hendhys')
             ->where('branch_id', auth()->user()->branch_id)
             ->where('status', 'sent')
             ->with(['creator', 'request'])
-            ->get();
+            ->get()
+            ->map(fn ($do) => [
+                'id'              => $do->id,
+                'transfer_number' => $do->transfer_number,
+                'date'            => $do->date?->format('d/m/Y'),
+                'request_number'  => $do->request?->request_number,
+                'creator'         => $do->creator?->name ?? 'Gudang',
+            ]);
 
-        return view('hendhys.transfer-requests.index', compact('requests', 'incomingTransfers'));
+        return Inertia::render('Hendhys/TransferRequests/Index', [
+            'requests'          => HendhysTransferRequestResource::collection($requests),
+            'incomingTransfers' => $incoming,
+            'filters'           => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
@@ -52,11 +65,17 @@ class TransferRequestController extends Controller
         $products = Product::where('status', 'active')
             ->where('source_type', 'purchased')
             ->visibleInGudang()
+            ->with('unit')
             ->orderBy('name')
-            ->get();
-        $units = Unit::all();
+            ->get()
+            ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id]);
 
-        return view('hendhys.transfer-requests.form', compact('products', 'units'));
+        $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
+
+        return Inertia::render('Hendhys/TransferRequests/Create', [
+            'products' => $products,
+            'units'    => $units,
+        ]);
     }
 
     public function store(Request $request)
@@ -125,6 +144,9 @@ class TransferRequestController extends Controller
         }
 
         $transferRequest->load(['creator', 'approver', 'details.product', 'details.unit', 'transferOuts']);
-        return view('hendhys.transfer-requests.show', compact('transferRequest'));
+
+        return Inertia::render('Hendhys/TransferRequests/Show', [
+            'request' => new HendhysTransferRequestResource($transferRequest),
+        ]);
     }
 }

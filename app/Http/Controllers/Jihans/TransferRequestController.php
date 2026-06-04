@@ -3,103 +3,95 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Jihans\StoreTransferRequestRequest;
+use App\Http\Resources\Jihans\TransferRequestResource;
 use App\Models\Product;
+use App\Models\TransferOut;
 use App\Models\TransferRequest;
 use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TransferRequestController extends Controller
 {
     public function __construct(
         private NumberGeneratorService $numbers,
         private ActivityLogService $logger
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
-        $q = TransferRequest::where('from_entity', 'jihans')->with(['approver', 'creator', 'transferOuts']);
+        $requests = TransferRequest::where('from_entity', 'jihans')
+            ->with(['creator', 'transferOuts'])
+            ->when($request->filled('search'), fn ($q) => $q->where('request_number', 'like', "%{$request->search}%"))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->orderByDesc('created_at')
+            ->paginate(15)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->where('request_number', 'like', "%$search%");
-        }
+        $incoming = TransferOut::where('to_entity', 'jihans')->where('status', 'sent')
+            ->with(['creator', 'request'])->get()
+            ->map(fn ($do) => [
+                'id'              => $do->id,
+                'transfer_number' => $do->transfer_number,
+                'date'            => $do->date?->format('d/m/Y'),
+                'request_number'  => $do->request?->request_number,
+                'creator'         => $do->creator?->name ?? 'Gudang',
+            ]);
 
-        if ($request->filled('status')) {
-            $q->where('status', $request->status);
-        }
-
-        $requests = $q->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
-
-        // Load incoming transfers from Gudang with status 'sent'
-        $incomingTransfers = \App\Models\TransferOut::where('to_entity', 'jihans')
-            ->where('status', 'sent')
-            ->with(['creator', 'request'])
-            ->get();
-
-        return view('jihans.transfer-requests.index', compact('requests', 'incomingTransfers'));
+        return Inertia::render('Jihans/TransferRequests/Index', [
+            'requests'          => TransferRequestResource::collection($requests),
+            'incomingTransfers' => $incoming,
+            'filters'           => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
     {
-        $products = Product::where('status', 'active')
-            ->where('source_type', 'purchased')
-            ->visibleInGudang()
-            ->with('unit')
-            ->orderBy('name')
-            ->get();
-
-        $units = Unit::all();
-
-        return view('jihans.transfer-requests.form', compact('products', 'units'));
+        return Inertia::render('Jihans/TransferRequests/Create', [
+            'products' => Product::where('status', 'active')->where('source_type', 'purchased')->visibleInGudang()->with('unit')->orderBy('name')->get()
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id]),
+            'units'    => Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]),
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreTransferRequestRequest $request)
     {
-        $request->validate([
-            'date' => 'required|date',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_id' => 'required|exists:master_units,id',
-        ]);
+        $data = $request->validated();
 
-        // Blokir produk produksi sendiri dari Transfer Request
-        $producedNames = Product::whereIn('id', collect($request->items)->pluck('product_id'))
-            ->where('source_type', 'produced')
-            ->pluck('name');
+        // Block self-produced products from being requested from the warehouse.
+        $producedNames = Product::whereIn('id', collect($data['items'])->pluck('product_id'))
+            ->where('source_type', 'produced')->pluck('name');
 
         if ($producedNames->isNotEmpty()) {
             return back()->withInput()->withErrors([
-                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa diminta dari Gudang: '
-                           . $producedNames->implode(', '),
+                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa diminta dari Gudang: ' . $producedNames->implode(', '),
             ]);
         }
 
-        DB::transaction(function () use ($request) {
-            $transferRequest = TransferRequest::create([
+        DB::transaction(function () use ($data) {
+            $tr = TransferRequest::create([
                 'request_number' => $this->numbers->generateYearly('REQ-JHS', 'gudang_transfer_requests', 'request_number'),
-                'from_entity' => 'jihans',
-                'branch_id' => null, // Jihans doesn't use branch
-                'date' => $request->date,
-                'status' => 'pending',
-                'notes' => $request->notes,
-                'requested_by' => auth()->id(),
+                'from_entity'    => 'jihans',
+                'branch_id'      => null,
+                'date'           => $data['date'],
+                'status'         => 'pending',
+                'notes'          => $data['notes'] ?? null,
+                'requested_by'   => auth()->id(),
             ]);
 
-            foreach ($request->items as $item) {
-                $transferRequest->details()->create([
-                    'product_id' => $item['product_id'],
+            foreach ($data['items'] as $item) {
+                $tr->details()->create([
+                    'product_id'         => $item['product_id'],
                     'quantity_requested' => $item['quantity'],
-                    'unit_id' => $item['unit_id'],
+                    'unit_id'            => $item['unit_id'],
                 ]);
             }
 
-            event(new \App\Events\TransferRequestCreated($transferRequest));
-            $this->logger->log('create', 'jihans.transfer_request', "Request stok Jihan's ke Gudang: {$transferRequest->request_number}", $transferRequest);
+            event(new \App\Events\TransferRequestCreated($tr));
+            $this->logger->log('create', 'jihans.transfer_request', "Request stok Jihan's ke Gudang: {$tr->request_number}", $tr);
         });
 
         return redirect()->route('jihans.transfer-requests.index')->with('success', 'Request stok berhasil dikirim ke Gudang Utama.');
@@ -109,8 +101,10 @@ class TransferRequestController extends Controller
     {
         abort_if($transferRequest->from_entity !== 'jihans', 403);
 
-        $transferRequest->load(['details.product', 'details.unit', 'approver', 'transferOuts']);
+        $transferRequest->load(['details.product', 'details.unit', 'creator', 'transferOuts']);
 
-        return view('jihans.transfer-requests.show', compact('transferRequest'));
+        return Inertia::render('Jihans/TransferRequests/Show', [
+            'request' => new TransferRequestResource($transferRequest),
+        ]);
     }
 }

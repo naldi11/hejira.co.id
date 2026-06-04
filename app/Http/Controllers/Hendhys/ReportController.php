@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Inertia\Inertia;
 
 class ReportController extends Controller
 {
@@ -35,7 +36,7 @@ class ReportController extends Controller
 
     public function index()
     {
-        return view('hendhys.reports.index');
+        return Inertia::render('Hendhys/Reports/Index');
     }
 
     public function laci(Request $request)
@@ -55,7 +56,10 @@ class ReportController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        return view('hendhys.reports.laci', compact('rows'));
+        return Inertia::render('Hendhys/Reports/Laci', [
+            'rows'    => $rows,
+            'filters' => $request->only('date_from', 'date_to'),
+        ]);
     }
 
     public function harian(Request $request)
@@ -63,7 +67,6 @@ class ReportController extends Controller
         $user    = auth()->user();
         $isPusat = optional($user->branch)->type === 'pusat';
 
-        // Laporan Perpelanggan Detail: list transaksi dengan detail pelanggan
         $rows = DB::table('hendhys_transactions as t')
             ->leftJoin('master_users as u', 'u.id', '=', 't.created_by')
             ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
@@ -93,7 +96,10 @@ class ReportController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        return view('hendhys.reports.harian', compact('rows'));
+        return Inertia::render('Hendhys/Reports/Harian', [
+            'rows'    => $rows,
+            'filters' => $request->only('search', 'date_from', 'date_to'),
+        ]);
     }
 
     public function mingguan(Request $request)
@@ -115,7 +121,10 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('hendhys.reports.mingguan', compact('rows'));
+        return Inertia::render('Hendhys/Reports/Mingguan', [
+            'rows'    => $rows,
+            'filters' => $request->only('date_from', 'date_to'),
+        ]);
     }
 
     public function bulanan(Request $request)
@@ -136,7 +145,10 @@ class ReportController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return view('hendhys.reports.bulanan', compact('rows'));
+        return Inertia::render('Hendhys/Reports/Bulanan', [
+            'rows'    => $rows,
+            'filters' => $request->only('date_from', 'date_to'),
+        ]);
     }
 
     public function pelanggan(Request $request)
@@ -178,13 +190,15 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('hendhys.reports.pelanggan', compact('rows'));
+        return Inertia::render('Hendhys/Reports/Pelanggan', [
+            'rows'    => $rows,
+            'filters' => $request->only('search', 'date_from', 'date_to'),
+        ]);
     }
 
     public function pdf(Request $request, $type)
     {
-        $user    = auth()->user();
-        $branch  = $user->branch;
+        // ⏭️ PDF export tetap Blade/DomPDF
         $user    = auth()->user();
         $branch  = $user->branch;
         $title   = "Laporan " . ucfirst($type);

@@ -10,6 +10,7 @@ use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class ProductController extends Controller
 {
@@ -51,11 +52,10 @@ class ProductController extends Controller
 
         $products = $q->orderBy('name')->paginate(20)->withQueryString();
 
-        $viewPath = "master.products.{$info['scope']}.index";
-        $view = view()->exists($viewPath) ? $viewPath : 'master.products.index';
-
-        return view($view, [
-            'products' => $products,
+        return Inertia::render('Master/Products/Index', [
+            // If there's a ProductResource, use it. Otherwise, fallback to the paginator object.
+            'products' => class_exists(\App\Http\Resources\Master\ProductResource::class) ? \App\Http\Resources\Master\ProductResource::collection($products) : $products,
+            'filters'  => $request->only('search', 'status', 'visibility'),
             'layout' => $info['layout'],
             'routePrefix' => $info['route'],
             'currentScope' => $info['scope']
@@ -69,10 +69,7 @@ class ProductController extends Controller
         $units = $this->getModelClass('Unit', $info['scope'])::orderBy('name')->get();
         $brands = $this->getModelClass('Brand', $info['scope'])::orderBy('name')->get();
 
-        $viewPath = "master.products.{$info['scope']}.form";
-        $view = view()->exists($viewPath) ? $viewPath : 'master.products.form';
-
-        return view($view, [
+        return Inertia::render('Master/Products/Form', [
             'categories' => $categories,
             'units' => $units,
             'brands' => $brands,
@@ -149,11 +146,8 @@ class ProductController extends Controller
         $units = $this->getModelClass('Unit', $info['scope'])::orderBy('name')->get();
         $brands = $this->getModelClass('Brand', $info['scope'])::orderBy('name')->get();
 
-        $viewPath = "master.products.{$info['scope']}.form";
-        $view = view()->exists($viewPath) ? $viewPath : 'master.products.form';
-
-        return view($view, [
-            'product' => $product,
+        return Inertia::render('Master/Products/Form', [
+            'product' => class_exists(\App\Http\Resources\Master\ProductResource::class) ? new \App\Http\Resources\Master\ProductResource($product) : $product,
             'categories' => $categories,
             'units' => $units,
             'brands' => $brands,

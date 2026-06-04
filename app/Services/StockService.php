@@ -15,6 +15,7 @@ use App\Models\JihansStockMovement;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\Branch;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -343,5 +344,29 @@ class StockService
     public function updateProductHpp(int $productId, float $hppPrice): void
     {
         \App\Models\Product::where('id', $productId)->update(['hpp' => $hppPrice]);
+    }
+
+    // ── Gudang stock listing (read model) ────────────────────────────────────
+
+    /**
+     * Paginated warehouse stock: every active INV product left-joined with its
+     * current Gudang balance. Eager-loads unit + category to avoid N+1.
+     */
+    public function paginateGudangStock(?string $search = null, bool $lowStockOnly = false, int $perPage = 20): LengthAwarePaginator
+    {
+        return Product::query()
+            ->with(['unit', 'category'])
+            ->visibleInGudang()
+            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
+            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
+            ->where('master_products.status', 'active')
+            ->where('master_products.product_type', 'INV')
+            ->when($search, fn ($q, $s) => $q->where(fn ($w) => $w
+                ->where('master_products.name', 'like', "%{$s}%")
+                ->orWhere('master_products.code', 'like', "%{$s}%")))
+            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(gudang_stock.quantity, 0) <= master_products.stock_min'))
+            ->orderBy('master_products.name')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

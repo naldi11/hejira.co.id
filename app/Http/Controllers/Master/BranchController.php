@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\SaveBranchRequest;
+use App\Http\Resources\Master\BranchResource;
 use App\Models\Branch;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BranchController extends Controller
 {
@@ -13,35 +16,30 @@ class BranchController extends Controller
 
     public function index(Request $request)
     {
-        $q = Branch::withCount('users');
+        $branches = Branch::withCount('users')
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$request->search}%")
+                ->orWhere('code', 'like', "%{$request->search}%")))
+            ->orderByRaw("CASE type WHEN 'pusat' THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->paginate(20)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
-                                   ->orWhere('code', 'like', "%$search%"));
-        }
-
-        $branches = $q->orderByRaw("FIELD(type,'pusat','cabang')")->orderBy('name')->paginate(20)->withQueryString();
-
-        return view('master.branches.index', compact('branches'));
+        return Inertia::render('Master/Branches/Index', [
+            'branches' => BranchResource::collection($branches),
+            'filters'  => $request->only('search'),
+        ]);
     }
 
     public function create()
     {
-        return view('master.branches.form');
+        return Inertia::render('Master/Branches/Form');
     }
 
-    public function store(Request $request)
+    public function store(SaveBranchRequest $request)
     {
-        $data = $request->validate([
-            'code'      => 'required|string|max:20|unique:master_branches,code',
-            'name'      => 'required|string|max:100',
-            'type'      => 'required|in:pusat,cabang',
-            'address'   => 'nullable|string',
-            'phone'     => 'nullable|string|max:20',
-            'is_active' => 'boolean',
-        ]);
-
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active', true);
+
         $branch = Branch::create($data);
         $this->logger->log('create', 'master.branch', "Tambah cabang: {$branch->name}", $branch);
 
@@ -50,21 +48,15 @@ class BranchController extends Controller
 
     public function edit(Branch $branch)
     {
-        return view('master.branches.form', compact('branch'));
+        return Inertia::render('Master/Branches/Form', [
+            'branch' => new BranchResource($branch),
+        ]);
     }
 
-    public function update(Request $request, Branch $branch)
+    public function update(SaveBranchRequest $request, Branch $branch)
     {
-        $data = $request->validate([
-            'code'      => 'required|string|max:20|unique:master_branches,code,' . $branch->id,
-            'name'      => 'required|string|max:100',
-            'type'      => 'required|in:pusat,cabang',
-            'address'   => 'nullable|string',
-            'phone'     => 'nullable|string|max:20',
-            'is_active' => 'boolean',
-        ]);
-
         $old = $branch->toArray();
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active', true);
         $branch->update($data);
 

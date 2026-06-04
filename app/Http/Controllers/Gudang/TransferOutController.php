@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Gudang\StoreTransferOutRequest;
+use App\Http\Resources\Gudang\TransferOutResource;
 use App\Models\Branch;
 use App\Models\GudangStock;
 use App\Models\Product;
@@ -14,6 +16,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TransferOutController extends Controller
 {
@@ -25,102 +28,115 @@ class TransferOutController extends Controller
 
     public function index(Request $request)
     {
-        $q = TransferOut::with(['request', 'branch', 'creator']);
+        $transfers = TransferOut::with(['request', 'branch', 'creator'])
+            ->when($request->filled('search'), fn ($q) => $q->where('transfer_number', 'like', "%{$request->search}%"))
+            ->when($request->filled('to_entity'), fn ($q) => $q->where('to_entity', $request->to_entity))
+            ->orderByDesc('date')->orderByDesc('id')
+            ->paginate(15)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->where('transfer_number', 'like', "%$search%");
-        }
-
-        if ($request->filled('to_entity')) $q->where('to_entity', $request->to_entity);
-
-        $transfers = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(15)->withQueryString();
-
-        return view('gudang.transfer-out.index', compact('transfers'));
+        return Inertia::render('Gudang/TransferOut/Index', [
+            'transfers' => TransferOutResource::collection($transfers),
+            'filters'   => $request->only('search', 'to_entity'),
+        ]);
     }
 
     public function create(Request $request)
     {
-        $products  = Product::where('status', 'active')
+        $products = Product::where('status', 'active')
             ->visibleInGudang()
-            ->with(['unit'])
+            ->with('unit')
             ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
             ->select('master_products.*', 'gudang_stock.quantity as current_stock')
             ->orderBy('master_products.name')
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id'    => $p->id,
+                'name'  => $p->name,
+                'stock' => (int) ($p->current_stock ?? 0),
+                'unit_id'   => $p->unit_id,
+                'unit_name' => $p->unit?->abbreviation ?? 'PCS',
+                'hpp'   => (float) $p->hpp,
+            ]);
 
-        $units    = Unit::orderBy('name')->get();
-        $branches = Branch::where('is_active', true)->orderByRaw("FIELD(type,'pusat','cabang')")->get();
+        $branches = Branch::where('is_active', true)
+            ->orderByRaw("FIELD(type,'pusat','cabang')")
+            ->get()
+            ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'type' => $b->type]);
 
         $transferRequest = null;
         if ($request->filled('request_id')) {
-            $transferRequest = TransferRequest::with('details.product', 'details.unit', 'branch')
+            $tr = TransferRequest::with('details.product', 'details.unit', 'branch')
                 ->whereIn('status', ['approved', 'partial'])
                 ->findOrFail($request->request_id);
 
-            // Load actual warehouse stock for each requested product
-            foreach ($transferRequest->details as $detail) {
-                if ($detail->product) {
-                    $whStock = GudangStock::where('product_id', $detail->product_id)->value('quantity') ?? 0;
-                    $detail->product->setAttribute('current_stock', $whStock);
-                }
-            }
+            $stocks = GudangStock::whereIn('product_id', $tr->details->pluck('product_id'))->pluck('quantity', 'product_id');
+
+            $transferRequest = [
+                'id'             => $tr->id,
+                'request_number' => $tr->request_number,
+                'from_entity'    => $tr->from_entity,
+                'branch_id'      => $tr->branch_id,
+                'branch'         => $tr->branch?->name,
+                'items'          => $tr->details
+                    ->filter(fn ($d) => $d->quantity_approved > $d->quantity_sent)
+                    ->map(fn ($d) => [
+                        'product_id'        => $d->product_id,
+                        'product_name'      => $d->product?->name,
+                        'stock'             => (int) ($stocks[$d->product_id] ?? 0),
+                        'quantity_approved' => (float) $d->quantity_approved,
+                        'quantity_sent'     => (float) $d->quantity_sent,
+                        'quantity'          => (float) max(0, $d->quantity_approved - $d->quantity_sent),
+                        'unit_id'           => $d->unit_id,
+                        'unit_name'         => $d->unit?->abbreviation,
+                        'hpp_price'         => (float) $d->product?->hpp,
+                    ])->values(),
+            ];
         }
 
-        return view('gudang.transfer-out.form', compact('products', 'units', 'branches', 'transferRequest'));
+        return Inertia::render('Gudang/TransferOut/Create', [
+            'products'        => $products,
+            'branches'        => $branches,
+            'transferRequest' => $transferRequest,
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreTransferOutRequest $request)
     {
-        $request->validate([
-            'to_entity'          => 'required|in:jihans,hendhys',
-            'branch_id'          => 'nullable|required_if:to_entity,hendhys|exists:master_branches,id',
-            'date'               => 'required|date',
-            'request_id'         => 'nullable|exists:gudang_transfer_requests,id',
-            'notes'              => 'nullable|string',
-            'items'              => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity'   => 'required|integer|min:1',
-            'items.*.unit_id'    => 'required|exists:master_units,id',
-            'items.*.hpp_price'  => 'required|numeric|min:0',
-        ]);
+        $data = $request->validated();
 
-        // Validate stock sufficiency
-        foreach ($request->items as $item) {
+        // Stock sufficiency check.
+        foreach ($data['items'] as $item) {
             $stock = GudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
-            $product = Product::find($item['product_id']);
-
             if ($item['quantity'] > $stock) {
-                $availableStock = (int) $stock;
-                return back()->withErrors([
-                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: {$availableStock}",
-                ])->withInput();
+                $product = Product::find($item['product_id']);
+                return back()->withInput()->withErrors([
+                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: " . (int) $stock,
+                ]);
             }
         }
 
-        // Blokir produk produksi sendiri dari Transfer Out
-        $producedNames = Product::whereIn('id', collect($request->items)->pluck('product_id'))
-            ->where('source_type', 'produced')
-            ->pluck('name');
+        // Block self-produced products from being transferred out of the warehouse.
+        $producedNames = Product::whereIn('id', collect($data['items'])->pluck('product_id'))
+            ->where('source_type', 'produced')->pluck('name');
 
         if ($producedNames->isNotEmpty()) {
             return back()->withInput()->withErrors([
-                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa dikirim dari Gudang: '
-                           . $producedNames->implode(', '),
+                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa dikirim dari Gudang: ' . $producedNames->implode(', '),
             ]);
         }
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($data) {
             $transfer = TransferOut::create([
                 'transfer_number' => $this->numbers->generateYearly('GDG-TRF', 'gudang_transfer_out', 'transfer_number'),
-                'request_id'      => $request->request_id,
-                'to_entity'       => $request->to_entity,
-                'branch_id'       => $request->to_entity === 'hendhys' ? $request->branch_id : null,
-                'date'            => $request->date,
-                'notes'           => $request->notes,
+                'request_id'      => $data['request_id'] ?? null,
+                'to_entity'       => $data['to_entity'],
+                'branch_id'       => $data['to_entity'] === 'hendhys' ? $data['branch_id'] : null,
+                'date'            => $data['date'],
+                'notes'           => $data['notes'] ?? null,
                 'created_by'      => auth()->id(),
             ]);
 
-            foreach ($request->items as $item) {
+            foreach ($data['items'] as $item) {
                 $transfer->details()->create([
                     'product_id' => $item['product_id'],
                     'quantity'   => $item['quantity'],
@@ -130,14 +146,10 @@ class TransferOutController extends Controller
                 ]);
             }
 
-            // Process stock movements
             $transfer->load('details');
             $this->stock->processTransferOut($transfer);
 
-
-
-            $this->logger->log('create', 'gudang.transfer_out',
-                "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);
+            $this->logger->log('create', 'gudang.transfer_out', "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);
         });
 
         return redirect()->route('gudang.transfer-out.index')->with('success', 'Transfer keluar berhasil diproses.');
@@ -147,6 +159,8 @@ class TransferOutController extends Controller
     {
         $transferOut->load(['request', 'branch', 'creator', 'details.product', 'details.unit']);
 
-        return view('gudang.transfer-out.show', compact('transferOut'));
+        return Inertia::render('Gudang/TransferOut/Show', [
+            'transfer' => new TransferOutResource($transferOut),
+        ]);
     }
 }

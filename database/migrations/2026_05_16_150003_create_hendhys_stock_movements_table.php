@@ -13,7 +13,9 @@ return new class extends Migration
             $table->foreignId('branch_id')->nullable()->constrained('master_branches')->nullOnDelete();
             $table->foreignId('product_id')->constrained('master_products');
             $table->enum('type', ['in', 'out']);
-            $table->enum('source', ['transfer_gudang', 'production', 'transfer_to_branch', 'return_from_branch', 'pos_sale', 'adjustment']);
+            // Full source set (later MODIFY migrations widen this on MySQL but are
+            // skipped on sqlite, so the base enum must already allow every value).
+            $table->enum('source', ['transfer_gudang', 'production', 'transfer_to_branch', 'receive_from_pusat', 'return_from_branch', 'return_to_pusat', 'return_gudang', 'pos_sale', 'adjustment']);
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->decimal('quantity', 15, 3);
             $table->decimal('quantity_before', 15, 3);

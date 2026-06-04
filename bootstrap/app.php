@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
         $middleware->alias([
             'role'              => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission'        => \Spatie\Permission\Middleware\PermissionMiddleware::class,
@@ -28,5 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->header('X-Inertia')) {
+                return \Inertia\Inertia::location(route('login'));
+            }
+        });
     })->create();

@@ -12,6 +12,7 @@ use App\Services\StockService;
 use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PosController extends Controller
 {
@@ -36,15 +37,41 @@ class PosController extends Controller
             })->select('master_products.*', DB::raw('COALESCE(hendhys_stock_branch.quantity, 0) as current_stock'));
         }
 
-        $products = $q->with(['unit', 'tieredPrices'])->get();
+        $products = $q->with(['unit', 'tieredPrices'])->get()
+            ->map(fn ($p) => [
+                'id'            => $p->id,
+                'name'          => $p->name,
+                'code'          => $p->code,
+                'jenis'         => $p->jenis,
+                'price'         => (float) $p->price,
+                'unit_id'       => $p->unit_id,
+                'unit'          => $p->unit?->abbreviation ?? 'PCS',
+                'current_stock' => (float) $p->current_stock,
+                'photo'         => $p->photo,
+                'tiered_prices' => $p->tieredPrices->map(fn ($tp) => [
+                    'min_qty' => (int) $tp->min_qty,
+                    'price'   => (float) $tp->price,
+                ]),
+            ]);
 
         // Metode Pembayaran Aktif
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
             ->whereIn('entity_scope', ['hendhys', 'all'])
             ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image']);
+            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image'])
+            ->map(fn ($pm) => [
+                'id'             => $pm->id,
+                'name'           => $pm->name,
+                'bank_name'      => $pm->bank_name,
+                'account_number' => $pm->account_number,
+                'account_name'   => $pm->account_name,
+                'image'          => $pm->image,
+            ]);
 
-        return view('hendhys.pos.index', compact('products', 'paymentMethods'));
+        return Inertia::render('Hendhys/Pos/Index', [
+            'products'       => $products,
+            'paymentMethods' => $paymentMethods,
+        ]);
     }
 
     public function checkout()

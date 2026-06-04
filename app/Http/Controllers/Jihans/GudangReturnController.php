@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Jihans\StoreGudangReturnRequest;
+use App\Http\Resources\Gudang\GudangReturnResource;
 use App\Models\GudangReturn;
 use App\Models\GudangReturnDetail;
 use App\Models\JihansStock;
@@ -12,6 +14,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class GudangReturnController extends Controller
 {
@@ -22,94 +25,70 @@ class GudangReturnController extends Controller
 
     public function index(Request $request)
     {
-        $q = GudangReturn::where('from_entity', 'jihans')
-            ->with(['creator', 'receiver']);
+        $returns = GudangReturn::where('from_entity', 'jihans')
+            ->with(['creator', 'receiver'])->withCount('details')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('search'), fn ($q) => $q->where('return_number', 'like', "%{$request->search}%"))
+            ->orderByDesc('created_at')
+            ->paginate(20)->withQueryString();
 
-        if ($status = $request->status) {
-            $q->where('status', $status);
-        }
-        if ($search = $request->search) {
-            $q->where('return_number', 'like', "%$search%");
-        }
-
-        $returns = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
-
-        return view('jihans.returns-gudang.index', compact('returns'));
+        return Inertia::render('Jihans/Returns/Index', [
+            'returns' => GudangReturnResource::collection($returns),
+            'filters' => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
     {
-        // Ambil produk yang ada di stok Jihans dan quantity > 0
-        $products = Product::where('status', 'active')
-            ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->where('jihans_stock.quantity', '>', 0)
-            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
-            ->with('unit')
-            ->orderBy('master_products.name')
-            ->get();
-
-        $units = Unit::all();
-
-        return view('jihans.returns-gudang.form', compact('products', 'units'));
+        return Inertia::render('Jihans/Returns/Create', [
+            'products' => Product::where('status', 'active')
+                ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
+                ->where('jihans_stock.quantity', '>', 0)
+                ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+                ->with('unit')->orderBy('master_products.name')->get()
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id, 'unit_name' => $p->unit?->abbreviation ?? 'PCS', 'stock' => (float) $p->current_stock]),
+            'units'    => Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]),
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreGudangReturnRequest $request)
     {
-        $user = auth()->user();
-
-        $request->validate([
-            'date' => 'required|date',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.001',
-            'items.*.unit_id' => 'required|exists:master_units,id',
-            'items.*.condition' => 'required|string|max:100',
-            'items.*.notes' => 'nullable|string',
-        ]);
+        $data = $request->validated();
+        $userId = auth()->id();
 
         try {
-            DB::transaction(function () use ($request, $user) {
+            DB::transaction(function () use ($data, $userId) {
                 $ret = GudangReturn::create([
                     'return_number' => $this->numbers->generateYearly('RET-JHS-GDG', 'gudang_returns', 'return_number'),
-                    'from_entity' => 'jihans',
-                    'branch_id' => null,
-                    'date' => $request->date,
-                    'status' => 'sent',
-                    'notes' => $request->notes,
-                    'created_by' => $user->id
+                    'from_entity'   => 'jihans',
+                    'branch_id'     => null,
+                    'date'          => $data['date'],
+                    'status'        => 'sent',
+                    'notes'         => $data['notes'] ?? null,
+                    'created_by'    => $userId,
                 ]);
 
-                foreach ($request->items as $item) {
-                    $stokJihans = JihansStock::where('product_id', $item['product_id'])->first();
-                        
-                    if (!$stokJihans || $stokJihans->quantity < $item['quantity']) {
+                foreach ($data['items'] as $item) {
+                    $stock = JihansStock::where('product_id', $item['product_id'])->first();
+                    if (! $stock || $stock->quantity < $item['quantity']) {
                         throw new \Exception("Stok Jihans tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
                     }
 
                     GudangReturnDetail::create([
-                        'return_id' => $ret->id,
+                        'return_id'  => $ret->id,
                         'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'unit_id' => $item['unit_id'],
-                        'condition' => $item['condition'],
-                        'notes' => $item['notes'] ?? null
+                        'quantity'   => $item['quantity'],
+                        'unit_id'    => $item['unit_id'],
+                        'condition'  => $item['condition'],
+                        'notes'      => $item['notes'] ?? null,
                     ]);
 
-                    // Potong stok Jihans
-                    $this->stockService->debitJihans(
-                        $item['product_id'],
-                        $item['quantity'],
-                        'return_gudang',
-                        $ret->id,
-                        $user->id
-                    );
+                    $this->stockService->debitJihans($item['product_id'], $item['quantity'], 'return_gudang', $ret->id, $userId);
                 }
             });
 
             return redirect()->route('jihans.returns-to-gudang.index')
                 ->with('success', 'Retur barang ke Gudang berhasil dikirim dan stok Jihans telah dikurangi.');
-
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal memproses retur: ' . $e->getMessage());
         }
@@ -117,11 +96,12 @@ class GudangReturnController extends Controller
 
     public function show(GudangReturn $returns_to_gudang)
     {
-        if ($returns_to_gudang->from_entity !== 'jihans') {
-            abort(403, 'Akses ditolak.');
-        }
+        abort_if($returns_to_gudang->from_entity !== 'jihans', 403, 'Akses ditolak.');
 
-        $return = $returns_to_gudang->load(['creator', 'receiver', 'details.product', 'details.unit']);
-        return view('jihans.returns-gudang.show', compact('return'));
+        $returns_to_gudang->load(['creator', 'receiver', 'details.product.unit', 'details.unit']);
+
+        return Inertia::render('Jihans/Returns/Show', [
+            'return' => new GudangReturnResource($returns_to_gudang),
+        ]);
     }
 }

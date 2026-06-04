@@ -3,85 +3,76 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\Master\StoreUserRequest;
+use App\Http\Requests\Master\UpdateUserRequest;
+use App\Http\Resources\Master\UserResource;
 use App\Models\Branch;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['branch', 'roles'])->get();
-        return view('master.users.index', compact('users'));
+        return Inertia::render('Master/Users/Index', [
+            'users' => UserResource::collection(User::with(['branch', 'roles'])->orderBy('name')->get()),
+        ]);
     }
 
     public function create()
     {
-        $branches = Branch::where('is_active', true)->get();
-        $roles = Role::all();
-        return view('master.users.form', compact('branches', 'roles'));
+        return Inertia::render('Master/Users/Form', $this->formOptions());
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:100|unique:master_users',
-            'password' => 'required|string|min:8',
-            'entity' => 'required|in:gudang,jihans,hendhys,owner,all',
-            'branch_id' => 'nullable|exists:master_branches,id',
-            'role' => 'required|exists:roles,name'
-        ]);
+        $data = $request->validated();
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'entity' => $request->entity,
-            'branch_id' => $request->branch_id,
-            'is_active' => $request->boolean('is_active', true),
+            'name'       => $data['name'],
+            'email'      => $data['email'],
+            'password'   => Hash::make($data['password']),
+            'entity'     => $data['entity'],
+            'branch_id'  => $data['branch_id'] ?? null,
+            'is_active'  => $request->boolean('is_active', true),
             'created_by' => auth()->id(),
         ]);
 
-        $user->assignRole($request->role);
+        $user->assignRole($data['role']);
 
         return redirect()->route('master.users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
     public function edit(User $user)
     {
-        $branches = Branch::where('is_active', true)->get();
-        $roles = Role::all();
-        return view('master.users.form', compact('user', 'branches', 'roles'));
+        $user->load('roles');
+
+        return Inertia::render('Master/Users/Form', [
+            ...$this->formOptions(),
+            'user' => new UserResource($user),
+        ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|string|email|max:100|unique:master_users,email,' . $user->id,
-            'entity' => 'required|in:gudang,jihans,hendhys,owner,all',
-            'branch_id' => 'nullable|exists:master_branches,id',
-            'role' => 'required|exists:roles,name'
-        ]);
+        $data = $request->validated();
 
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'entity' => $request->entity,
-            'branch_id' => $request->branch_id,
+        $payload = [
+            'name'      => $data['name'],
+            'email'     => $data['email'],
+            'entity'    => $data['entity'],
+            'branch_id' => $data['branch_id'] ?? null,
             'is_active' => $request->boolean('is_active', true),
         ];
 
-        if ($request->filled('password')) {
-            $request->validate(['password' => 'min:8']);
-            $data['password'] = Hash::make($request->password);
+        if (! empty($data['password'])) {
+            $payload['password'] = Hash::make($data['password']);
         }
 
-        $user->update($data);
-        $user->syncRoles([$request->role]);
+        $user->update($payload);
+        $user->syncRoles([$data['role']]);
 
         return redirect()->route('master.users.index')->with('success', 'User berhasil diperbarui.');
     }
@@ -91,7 +82,18 @@ class UserController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
         }
+
         $user->delete();
+
         return redirect()->route('master.users.index')->with('success', 'User berhasil dihapus.');
+    }
+
+    /** Shared option payload for the create/edit form. */
+    private function formOptions(): array
+    {
+        return [
+            'branches' => Branch::where('is_active', true)->orderBy('name')->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
+            'roles'    => Role::orderBy('name')->pluck('name'),
+        ];
     }
 }

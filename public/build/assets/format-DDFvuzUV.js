@@ -1,0 +1,1 @@
+var e=new Intl.NumberFormat(`id-ID`);function t(t){return e.format(Math.round(Number(t)||0))}function n(t){return`Rp `+e.format(Math.round(Number(t)||0))}function r(e){return e?new Date(e).toLocaleDateString(`id-ID`,{day:`2-digit`,month:`short`,year:`numeric`}):`-`}export{t as n,n as r,r as t};

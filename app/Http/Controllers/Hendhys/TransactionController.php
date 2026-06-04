@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysTransactionResource;
 use App\Models\HendhysTransaction;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TransactionController extends Controller
 {
@@ -22,11 +24,15 @@ class TransactionController extends Controller
 
         $transactions = $query->paginate(20)->withQueryString();
 
-        return view('hendhys.transactions.index', compact('transactions'));
+        return Inertia::render('Hendhys/Transactions/Index', [
+            'transactions' => HendhysTransactionResource::collection($transactions),
+            'filters'      => $request->only('search'),
+        ]);
     }
 
     public function show($id)
     {
+        // ⏭️ Show tetap Blade (faktur/print)
         $transaction = HendhysTransaction::with(['details.product', 'creator', 'customer', 'branch'])->findOrFail($id);
         return view('hendhys.transactions.show', compact('transaction'));
     }

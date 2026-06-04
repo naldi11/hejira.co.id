@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysBranchRequestResource;
 use App\Models\HendhysBranchRequest;
 use App\Models\HendhysBranchRequestDetail;
 use App\Models\Product;
@@ -10,6 +11,7 @@ use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class BranchRequestController extends Controller
 {
@@ -18,7 +20,7 @@ class BranchRequestController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        
+
         $q = HendhysBranchRequest::with(['branch', 'creator', 'approver']);
 
         // Jika user adalah Cabang, hanya lihat request cabangnya sendiri
@@ -35,7 +37,10 @@ class BranchRequestController extends Controller
 
         $requests = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.branch-requests.index', compact('requests'));
+        return Inertia::render('Hendhys/BranchRequests/Index', [
+            'requests' => HendhysBranchRequestResource::collection($requests),
+            'filters'  => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
@@ -47,11 +52,17 @@ class BranchRequestController extends Controller
 
         $products = Product::where('status', 'active')
             ->visibleInHendhys()
+            ->with('unit')
             ->orderBy('name')
-            ->get();
-        $units = Unit::all();
+            ->get()
+            ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id]);
 
-        return view('hendhys.branch-requests.form', compact('products', 'units'));
+        $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
+
+        return Inertia::render('Hendhys/BranchRequests/Create', [
+            'products' => $products,
+            'units'    => $units,
+        ]);
     }
 
     public function store(Request $request)
@@ -88,7 +99,7 @@ class BranchRequestController extends Controller
                         'unit_id' => $item['unit_id']
                     ]);
                 }
-                
+
                 event(new \App\Events\BranchRequestCreated($br));
             });
 
@@ -108,6 +119,9 @@ class BranchRequestController extends Controller
         }
 
         $branchRequest->load(['branch', 'creator', 'approver', 'details.product', 'details.unit', 'transferOuts']);
-        return view('hendhys.branch-requests.show', compact('branchRequest'));
+
+        return Inertia::render('Hendhys/BranchRequests/Show', [
+            'branchRequest' => new HendhysBranchRequestResource($branchRequest),
+        ]);
     }
 }

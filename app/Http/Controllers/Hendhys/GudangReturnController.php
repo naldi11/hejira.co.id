@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysGudangReturnResource;
 use App\Models\GudangReturn;
 use App\Models\GudangReturnDetail;
 use App\Models\HendhysStockPusat;
@@ -12,6 +13,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class GudangReturnController extends Controller
 {
@@ -40,7 +42,10 @@ class GudangReturnController extends Controller
 
         $returns = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.returns-gudang.index', compact('returns'));
+        return Inertia::render('Hendhys/ReturnsToGudang/Index', [
+            'returns' => HendhysGudangReturnResource::collection($returns),
+            'filters' => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
@@ -56,11 +61,22 @@ class GudangReturnController extends Controller
             ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
             ->with('unit')
             ->orderBy('master_products.name')
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id'            => $p->id,
+                'name'          => $p->name,
+                'code'          => $p->code,
+                'unit_id'       => $p->unit_id,
+                'unit'          => $p->unit?->abbreviation ?? 'PCS',
+                'current_stock' => (float) $p->current_stock,
+            ]);
 
-        $units = Unit::all();
+        $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
 
-        return view('hendhys.returns-gudang.form', compact('products', 'units'));
+        return Inertia::render('Hendhys/ReturnsToGudang/Create', [
+            'products' => $products,
+            'units'    => $units,
+        ]);
     }
 
     public function store(Request $request)
@@ -95,7 +111,7 @@ class GudangReturnController extends Controller
 
                 foreach ($request->items as $item) {
                     $stokPusat = HendhysStockPusat::where('product_id', $item['product_id'])->first();
-                        
+
                     if (!$stokPusat || $stokPusat->quantity < $item['quantity']) {
                         throw new \Exception("Stok Pusat tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
                     }
@@ -136,6 +152,9 @@ class GudangReturnController extends Controller
         }
 
         $return = $returns_to_gudang->load(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
-        return view('hendhys.returns-gudang.show', compact('return'));
+
+        return Inertia::render('Hendhys/ReturnsToGudang/Show', [
+            'return' => new HendhysGudangReturnResource($return),
+        ]);
     }
 }

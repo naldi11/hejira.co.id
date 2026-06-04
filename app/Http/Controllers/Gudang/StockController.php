@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
-use App\Models\GudangStock;
+use App\Http\Requests\Gudang\StockAdjustRequest;
+use App\Http\Requests\Gudang\StockIndexRequest;
+use App\Http\Resources\Gudang\ProductStockResource;
+use App\Http\Resources\Gudang\StockMovementResource;
+use App\Http\Resources\UnitResource;
 use App\Models\GudangStockMovement;
 use App\Models\Product;
 use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class StockController extends Controller
 {
@@ -18,67 +23,54 @@ class StockController extends Controller
         private ActivityLogService $logger
     ) {}
 
-    public function index(Request $request)
+    public function index(StockIndexRequest $request)
     {
-        // Join master_products with gudang_stock (left join — show all products)
-        $q = Product::with(['unit', 'category'])
-            ->visibleInGudang()
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
-            ->where('master_products.status', 'active')
-            ->where('master_products.product_type', 'INV');
+        $filters = $request->validated();
 
-        if ($search = $request->search) {
-            $q->where(fn ($w) => $w->where('master_products.name', 'like', "%$search%")
-                                   ->orWhere('master_products.code', 'like', "%$search%"));
-        }
+        $stocks = $this->stock->paginateGudangStock(
+            $filters['search'] ?? null,
+            ($filters['low_stock'] ?? null) === '1',
+        );
 
-        if ($request->low_stock === '1') {
-            $q->whereRaw('COALESCE(gudang_stock.quantity, 0) <= master_products.stock_min');
-        }
-
-        $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
-        $units  = Unit::orderBy('name')->get();
-
-        return view('gudang.stock.index', compact('stocks', 'units'));
+        return Inertia::render('Gudang/Stock/Index', [
+            'stocks'  => ProductStockResource::collection($stocks),
+            'units'   => UnitResource::collection(Unit::orderBy('name')->get()),
+            'filters' => [
+                'search'    => $filters['search'] ?? '',
+                'low_stock' => $filters['low_stock'] ?? '',
+            ],
+        ]);
     }
 
     public function movements(Request $request)
     {
-        $q = GudangStockMovement::with(['product', 'creator']);
+        $movements = GudangStockMovement::with(['product', 'creator'])
+            ->when($request->filled('search'), fn ($q) => $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$request->search}%")))
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
+            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->source))
+            ->orderByDesc('created_at')
+            ->paginate(20)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%$search%"));
-        }
-
-        if ($request->filled('type'))   $q->where('type', $request->type);
-        if ($request->filled('source')) $q->where('source', $request->source);
-
-        $movements = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
-
-        return view('gudang.stock.movements', compact('movements'));
+        return Inertia::render('Gudang/Stock/Movements', [
+            'movements' => StockMovementResource::collection($movements),
+            'filters'   => $request->only('search', 'type', 'source'),
+        ]);
     }
 
-    public function adjust(Request $request)
+    public function adjust(StockAdjustRequest $request)
     {
-        $request->validate([
-            'product_id' => 'required|exists:master_products,id',
-            'unit_id'    => 'required|exists:master_units,id',
-            'quantity'   => 'required|integer|min:0',
-            'notes'      => 'required|string|max:200',
-        ]);
-
-        $product = Product::findOrFail($request->product_id);
+        $data    = $request->validated();
+        $product = Product::findOrFail($data['product_id']);
 
         $this->stock->adjustGudang(
-            $request->product_id,
-            $request->unit_id,
-            $request->quantity,
+            $data['product_id'],
+            $data['unit_id'],
+            $data['quantity'],
             auth()->id(),
-            $request->notes
+            $data['notes'],
         );
 
-        $this->logger->log('update', 'gudang.stock', "Adjustment stok: {$product->name} → {$request->quantity}", null);
+        $this->logger->log('update', 'gudang.stock', "Adjustment stok: {$product->name} → {$data['quantity']}", null);
 
         return back()->with('success', "Stok {$product->name} berhasil disesuaikan.");
     }

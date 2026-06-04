@@ -3,26 +3,28 @@
 namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Jihans\PendingResource;
 use App\Models\JihansPendingTransaction;
-use App\Models\JihansPendingDetail;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PendingController extends Controller
 {
     public function index(Request $request)
     {
-        $q = JihansPendingTransaction::with('creator');
+        $pendings = JihansPendingTransaction::with('creator')->withCount('details')
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
+                ->where('pending_number', 'like', "%{$request->search}%")
+                ->orWhere('customer_name', 'like', "%{$request->search}%")))
+            ->orderByDesc('id')
+            ->paginate(15)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->where('pending_number', 'like', "%$search%")
-              ->orWhere('customer_name', 'like', "%$search%");
-        }
-
-        $pendings = $q->orderBy('id', 'desc')->paginate(15);
-
-        return view('jihans.pending.index', compact('pendings'));
+        return Inertia::render('Jihans/Pending/Index', [
+            'pendings' => PendingResource::collection($pendings),
+            'filters'  => $request->only('search'),
+        ]);
     }
 
     public function store(Request $request)

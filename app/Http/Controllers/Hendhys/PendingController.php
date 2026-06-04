@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysPendingResource;
 use App\Models\Customer;
 use App\Models\HendhysPendingDetail;
 use App\Models\HendhysPendingTransaction;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class PendingController extends Controller
 {
@@ -17,7 +19,7 @@ class PendingController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $q = HendhysPendingTransaction::with(['creator', 'customer']);
+        $q = HendhysPendingTransaction::with(['creator', 'customer'])->withCount('details');
 
         if ($user->branch->type === 'cabang') {
             $q->where('branch_id', $user->branch_id);
@@ -34,7 +36,10 @@ class PendingController extends Controller
 
         $pendings = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.pending.index', compact('pendings'));
+        return Inertia::render('Hendhys/Pending/Index', [
+            'pendings' => HendhysPendingResource::collection($pendings),
+            'filters'  => $request->only('search'),
+        ]);
     }
 
     public function store(Request $request)

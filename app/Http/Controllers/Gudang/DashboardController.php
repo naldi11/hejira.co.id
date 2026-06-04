@@ -3,33 +3,23 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Branch;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\TransferRequest;
-use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $totalProduk = Product::where('status', 'active')->count();
-        $pendingPo = PurchaseOrder::where('status', 'pending')->count();
-        $totalCabang = Branch::where('is_active', true)->count();
-        $pendingRequest = TransferRequest::where('status', 'pending')->count();
-
-        // Get 5 latest POs
-        $recentPos = PurchaseOrder::with('supplier')->latest()->take(5)->get();
-        // Get 5 latest Transfer Requests
-        $recentRequests = TransferRequest::with(['branch'])->latest()->take(5)->get();
-
-        return view('gudang.dashboard', compact(
-            'totalProduk',
-            'pendingPo',
-            'totalCabang',
-            'pendingRequest',
-            'recentPos',
-            'recentRequests'
-        ));
+        return Inertia::render('Gudang/Dashboard', [
+            'stats' => [
+                'total_produk'    => Product::where('status', 'active')->count(),
+                'pending_po'      => PurchaseOrder::where('status', 'pending')->count(),
+                'pending_request' => TransferRequest::where('status', 'pending')->count(),
+                'total_cabang'    => Branch::where('is_active', true)->count(),
+            ],
+        ]);
     }
 }

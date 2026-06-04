@@ -16,6 +16,7 @@ use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Inertia\Inertia;
 
 class TortillaProductionController extends Controller
 {
@@ -35,7 +36,7 @@ class TortillaProductionController extends Controller
 
         $sessions = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
-        return view('jihans.tortilla.index', compact('sessions'));
+        return Inertia::render('Jihans/Tortilla/Index', ['sessions' => $sessions, 'filters' => $request->only('search', 'date_from', 'date_to')]);
     }
 
     public function create(Request $request)
@@ -55,7 +56,7 @@ class TortillaProductionController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('jihans.tortilla.form', [
+        return Inertia::render('Jihans/Tortilla/Form', [
             'karyawans'  => $karyawans,
             'type'       => 'aktual',
             'formAction' => route('jihans.tortilla.store'),
@@ -82,7 +83,7 @@ class TortillaProductionController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('jihans.tortilla.form', [
+        return Inertia::render('Jihans/Tortilla/Form', [
             'karyawans'  => $karyawans,
             'type'       => 'prediksi',
             'formAction' => route('jihans.tortilla.prediksi.store'),
@@ -522,7 +523,7 @@ class TortillaProductionController extends Controller
     public function show(JihansTortillaSession $tortilla)
     {
         $tortilla->load(['details.karyawan', 'creator']);
-        return view('jihans.tortilla.show', compact('tortilla'));
+        return Inertia::render('Jihans/Tortilla/Show', ['tortilla' => $tortilla]);
     }
 
     public function recap(Request $request)
@@ -566,7 +567,7 @@ class TortillaProductionController extends Controller
             ->groupBy('karyawan_id')
             ->get();
 
-        return view('jihans.tortilla.recap', compact('recap', 'dateFrom', 'dateTo', 'periode', 'noFilter'));
+        return Inertia::render('Jihans/Tortilla/Recap', ['recap' => $recap, 'filters' => ['periode' => $periode, 'date_from' => $request->date_from, 'date_to' => $request->date_to], 'noFilter' => $noFilter]);
     }
 
     public function exportRecap(Request $request)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysTransferToBranchResource;
 use App\Models\HendhysBranchRequest;
 use App\Models\HendhysStockPusat;
 use App\Models\HendhysTransferToBranch;
@@ -13,6 +14,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TransferToBranchController extends Controller
 {
@@ -41,7 +43,10 @@ class TransferToBranchController extends Controller
 
         $transfers = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.transfer-to-branch.index', compact('transfers'));
+        return Inertia::render('Hendhys/TransferToBranch/Index', [
+            'transfers' => HendhysTransferToBranchResource::collection($transfers),
+            'filters'   => $request->only('search', 'status'),
+        ]);
     }
 
     public function create(Request $request)
@@ -54,21 +59,51 @@ class TransferToBranchController extends Controller
             $branchRequest = HendhysBranchRequest::with(['branch', 'details.product', 'details.unit'])
                 ->where('status', 'pending')
                 ->findOrFail($request->request_id);
-            return view('hendhys.transfer-to-branch.form', compact('branchRequest'));
+
+            $brData = [
+                'id'             => $branchRequest->id,
+                'request_number' => $branchRequest->request_number,
+                'branch'         => $branchRequest->branch?->name,
+                'branch_id'      => $branchRequest->branch_id,
+                'details'        => $branchRequest->details->map(fn ($d) => [
+                    'id'                 => $d->id,
+                    'product_id'         => $d->product_id,
+                    'product'            => $d->product?->name ?? '-',
+                    'quantity_requested' => (float) $d->quantity_requested,
+                    'unit_id'            => $d->unit_id,
+                    'unit'               => $d->unit?->abbreviation ?? 'PCS',
+                ]),
+            ];
+
+            return Inertia::render('Hendhys/TransferToBranch/Create', [
+                'branchRequest' => $brData,
+            ]);
         }
 
-        // Fitur baru: Distribusi Manual tanpa request.
-        $branches = \App\Models\Branch::where('type', 'cabang')->where('is_active', true)->orderBy('name')->get();
-        // Hanya ambil produk yang ada stoknya di pusat
+        // Fitur: Distribusi Manual tanpa request.
+        $branches = \App\Models\Branch::where('type', 'cabang')->where('is_active', true)->orderBy('name')->get()
+            ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]);
+
         $products = Product::where('status', 'active')
             ->visibleInHendhys()
             ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
             ->with('unit')
             ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
             ->where('hendhys_stock_pusat.quantity', '>', 0)
-            ->get();
+            ->get()
+            ->map(fn ($p) => [
+                'id'            => $p->id,
+                'name'          => $p->name,
+                'code'          => $p->code,
+                'unit_id'       => $p->unit_id,
+                'unit'          => $p->unit?->abbreviation ?? 'PCS',
+                'current_stock' => (float) $p->current_stock,
+            ]);
 
-        return view('hendhys.transfer-to-branch.manual-form', compact('branches', 'products'));
+        return Inertia::render('Hendhys/TransferToBranch/Create', [
+            'branches' => $branches,
+            'products' => $products,
+        ]);
     }
 
     public function store(Request $request)
@@ -194,7 +229,10 @@ class TransferToBranchController extends Controller
         }
 
         $transferToBranch->load(['branch', 'branchRequest', 'creator', 'receiver', 'details.product', 'details.unit', 'photos']);
-        return view('hendhys.transfer-to-branch.show', compact('transferToBranch'));
+
+        return Inertia::render('Hendhys/TransferToBranch/Show', [
+            'transfer' => new HendhysTransferToBranchResource($transferToBranch),
+        ]);
     }
 
     public function showReceiveForm(HendhysTransferToBranch $transferToBranch)
@@ -213,7 +251,10 @@ class TransferToBranchController extends Controller
         }
 
         $transferToBranch->load(['branch', 'branchRequest', 'creator', 'details.product', 'details.unit']);
-        return view('hendhys.transfer-to-branch.receive', compact('transferToBranch'));
+
+        return Inertia::render('Hendhys/TransferToBranch/Receive', [
+            'transfer' => new HendhysTransferToBranchResource($transferToBranch),
+        ]);
     }
 
     public function receive(Request $request, HendhysTransferToBranch $transferToBranch)
@@ -300,6 +341,7 @@ class TransferToBranchController extends Controller
 
     public function printBast(HendhysTransferToBranch $transferToBranch)
     {
+        // ⏭️ Print tetap Blade
         $user = auth()->user();
         if ($user->branch->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');

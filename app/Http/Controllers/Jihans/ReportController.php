@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Carbon\Carbon;
 
 class ReportController extends Controller
@@ -32,7 +33,7 @@ class ReportController extends Controller
 
     public function index()
     {
-        return view('jihans.reports.index');
+        return Inertia::render('Jihans/Reports/Index');
     }
 
     public function laci(Request $request)
@@ -53,7 +54,7 @@ class ReportController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        return view('jihans.reports.laci', compact('rows'));
+        return Inertia::render('Jihans/Reports/Laci', ['rows' => $rows, 'filters' => $request->only('date_from', 'date_to')]);
     }
 
     public function harian(Request $request)
@@ -87,7 +88,7 @@ class ReportController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        return view('jihans.reports.harian', compact('rows'));
+        return Inertia::render('Jihans/Reports/Harian', ['rows' => $rows, 'filters' => $request->only('date_from', 'date_to', 'search')]);
     }
 
     public function mingguan(Request $request)
@@ -110,7 +111,7 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('jihans.reports.mingguan', compact('rows'));
+        return Inertia::render('Jihans/Reports/Mingguan', ['rows' => $rows, 'filters' => $request->only('date_from', 'date_to')]);
     }
 
     public function bulanan(Request $request)
@@ -132,7 +133,7 @@ class ReportController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return view('jihans.reports.bulanan', compact('rows'));
+        return Inertia::render('Jihans/Reports/Bulanan', ['rows' => $rows, 'filters' => $request->only('date_from', 'date_to')]);
     }
 
     public function pelanggan(Request $request)
@@ -171,7 +172,7 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('jihans.reports.pelanggan', compact('rows'));
+        return Inertia::render('Jihans/Reports/Pelanggan', ['rows' => $rows, 'filters' => $request->only('date_from', 'date_to', 'search')]);
     }
 
     public function pdf(Request $request, $type)

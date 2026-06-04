@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysProductionResource;
 use App\Models\HendhysProduction;
 use App\Models\HendhysProductionDetail;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ProductionController extends Controller
 {
@@ -40,7 +42,10 @@ class ProductionController extends Controller
 
         $productions = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.productions.index', compact('productions'));
+        return Inertia::render('Hendhys/Productions/Index', [
+            'productions' => HendhysProductionResource::collection($productions),
+            'filters'     => $request->only('search', 'date_from', 'date_to'),
+        ]);
     }
 
     public function create()
@@ -53,12 +58,17 @@ class ProductionController extends Controller
         $products = Product::where('status', 'active')
             ->where('source_type', 'produced')
             ->visibleInHendhys()
+            ->with('unit')
             ->orderBy('name')
-            ->get();
-            
-        $units = Unit::all();
+            ->get()
+            ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id]);
 
-        return view('hendhys.productions.form', compact('products', 'units'));
+        $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
+
+        return Inertia::render('Hendhys/Productions/Create', [
+            'products' => $products,
+            'units'    => $units,
+        ]);
     }
 
     public function store(Request $request)
@@ -108,7 +118,7 @@ class ProductionController extends Controller
 
             return redirect()->route('hendhys.productions.index')
                 ->with('success', 'Catatan produksi Hendhys berhasil disimpan dan stok Pusat telah bertambah.');
-                
+
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal menyimpan produksi: ' . $e->getMessage());
         }
@@ -121,6 +131,9 @@ class ProductionController extends Controller
         }
 
         $production->load(['creator', 'details.product', 'details.unit']);
-        return view('hendhys.productions.show', compact('production'));
+
+        return Inertia::render('Hendhys/Productions/Show', [
+            'production' => new HendhysProductionResource($production),
+        ]);
     }
 }

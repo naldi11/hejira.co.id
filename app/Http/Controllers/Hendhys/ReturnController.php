@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysReturnResource;
 use App\Models\HendhysReturnFromBranch;
 use App\Models\HendhysReturnDetail;
 use App\Models\HendhysStockBranch;
@@ -12,6 +13,7 @@ use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ReturnController extends Controller
 {
@@ -38,7 +40,10 @@ class ReturnController extends Controller
 
         $returns = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
-        return view('hendhys.returns.index', compact('returns'));
+        return Inertia::render('Hendhys/Returns/Index', [
+            'returns' => HendhysReturnResource::collection($returns),
+            'filters' => $request->only('search', 'status'),
+        ]);
     }
 
     public function create()
@@ -47,10 +52,14 @@ class ReturnController extends Controller
             abort(403, 'Hanya Cabang yang dapat membuat retur barang.');
         }
 
-        $products = Product::where('status', 'active')->orderBy('name')->get();
-        $units = Unit::all();
+        $products = Product::where('status', 'active')->with('unit')->orderBy('name')->get()
+            ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id, 'unit' => $p->unit?->abbreviation ?? 'PCS']);
+        $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
 
-        return view('hendhys.returns.form', compact('products', 'units'));
+        return Inertia::render('Hendhys/Returns/Create', [
+            'products' => $products,
+            'units'    => $units,
+        ]);
     }
 
     public function store(Request $request)
@@ -86,7 +95,7 @@ class ReturnController extends Controller
                     $stokCabang = HendhysStockBranch::where('branch_id', $user->branch_id)
                         ->where('product_id', $item['product_id'])
                         ->first();
-                        
+
                     if (!$stokCabang || $stokCabang->quantity < $item['quantity']) {
                         throw new \Exception("Stok cabang tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
                     }
@@ -127,7 +136,10 @@ class ReturnController extends Controller
         }
 
         $return->load(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
-        return view('hendhys.returns.show', compact('return'));
+
+        return Inertia::render('Hendhys/Returns/Show', [
+            'return' => new HendhysReturnResource($return),
+        ]);
     }
 
     public function receive(Request $request, HendhysReturnFromBranch $return)

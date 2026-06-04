@@ -9,13 +9,16 @@ use App\Http\Controllers\Hendhys\BranchRequestController;
 use App\Http\Controllers\Hendhys\TransferToBranchController;
 use App\Http\Controllers\Hendhys\ReturnController;
 use App\Http\Controllers\Hendhys\StockController;
+use App\Http\Controllers\Hendhys\GudangReturnController;
+
+use App\Http\Controllers\Hendhys\DashboardController;
 
 Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_hendhys'])
     ->prefix('hendhys')
     ->name('hendhys.')
     ->group(function () {
 
-        Route::get('/dashboard', fn() => view('hendhys.dashboard'))->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         // Master Data (Scoped to Hendhys)
         Route::prefix('master')->name('master.')->group(function () {

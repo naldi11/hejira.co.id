@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Exports\Master\CustomersTemplateExport;
+use App\Http\Resources\Master\CustomerResource;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CustomerController extends Controller
@@ -40,21 +42,23 @@ class CustomerController extends Controller
 
         $customers = $q->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('master.customers.index', [
-            'customers' => $customers,
-            'layout' => $info['layout'],
-            'routePrefix' => $info['route'],
-            'currentScope' => $info['scope']
+        return Inertia::render('Master/Customers/Index', [
+            // If there's a CustomerResource, use it. Otherwise, fallback to the paginator object.
+            'customers'    => class_exists(CustomerResource::class) ? CustomerResource::collection($customers) : $customers,
+            'filters'      => $request->only('search', 'status', 'type'),
+            'layout'       => $info['layout'],
+            'routePrefix'  => $info['route'],
+            'currentScope' => $info['scope'],
         ]);
     }
 
     public function create(Request $request)
     {
         $info = $this->getScopeInfo($request);
-        return view('master.customers.form', [
-            'layout' => $info['layout'],
-            'routePrefix' => $info['route'],
-            'currentScope' => $info['scope']
+        return Inertia::render('Master/Customers/Form', [
+            'layout'       => $info['layout'],
+            'routePrefix'  => $info['route'],
+            'currentScope' => $info['scope'],
         ]);
     }
 
@@ -86,7 +90,6 @@ class CustomerController extends Controller
         $data['visible_jihans']  = $request->boolean('visible_jihans',  in_array($info['scope'], ['gudang','jihans']));
         $data['visible_hendhys'] = $request->boolean('visible_hendhys', in_array($info['scope'], ['gudang','hendhys']));
         $data['is_active']       = $request->boolean('is_active', true);
-        
 
         $customer = $this->getModelClass('Customer', $info['scope'])::create($data);
         $this->logger->log('create', 'master.customer', "Tambah customer: {$customer->name}", $customer);
@@ -98,13 +101,12 @@ class CustomerController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $customer = $this->getModelClass('Customer', $info['scope'])::findOrFail($id);
-        
 
-        return view('master.customers.form', [
-            'customer' => $customer,
-            'layout' => $info['layout'],
-            'routePrefix' => $info['route'],
-            'currentScope' => $info['scope']
+        return Inertia::render('Master/Customers/Form', [
+            'customer'     => class_exists(CustomerResource::class) ? new CustomerResource($customer) : $customer,
+            'layout'       => $info['layout'],
+            'routePrefix'  => $info['route'],
+            'currentScope' => $info['scope'],
         ]);
     }
 
@@ -112,7 +114,6 @@ class CustomerController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $customer = $this->getModelClass('Customer', $info['scope'])::findOrFail($id);
-        
 
         $data = $request->validate([
             'name'         => 'required|string|max:150',
@@ -149,7 +150,6 @@ class CustomerController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $customer = $this->getModelClass('Customer', $info['scope'])::findOrFail($id);
-        
 
         $name = $customer->name;
         $customer->delete();

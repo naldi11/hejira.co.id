@@ -28,12 +28,16 @@ class AuthenticatedSessionController extends Controller
         return redirect()->intended($this->redirectRoute($user));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->header('X-Inertia')) {
+            return \Inertia\Inertia::location(route('login'));
+        }
 
         return redirect()->route('login');
     }

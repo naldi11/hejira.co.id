@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Hendhys\HendhysStockMovementResource;
+use App\Http\Resources\Hendhys\HendhysStockResource;
 use App\Models\Branch;
-use App\Models\HendhysStockBranch;
 use App\Models\HendhysStockMovement;
-use App\Models\HendhysStockPusat;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class StockController extends Controller
 {
@@ -44,7 +45,8 @@ class StockController extends Controller
             $branches = Branch::where('is_active', true)
                 ->where('type', 'cabang')
                 ->orderBy('name')
-                ->get();
+                ->get()
+                ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]);
 
             // Stok per cabang yang difilter
             $selectedBranchId = $request->branch_id;
@@ -69,7 +71,14 @@ class StockController extends Controller
                 ->paginate(20, ['*'], 'branch_page')
                 ->withQueryString();
 
-            return view('hendhys.stock.index', compact('stocks', 'user', 'isPusat', 'branches', 'branchStocks', 'selectedBranchId'));
+            return Inertia::render('Hendhys/Stock/Index', [
+                'stocks'           => HendhysStockResource::collection($stocks),
+                'branches'         => $branches,
+                'branchStocks'     => HendhysStockResource::collection($branchStocks),
+                'selectedBranchId' => $selectedBranchId,
+                'isPusat'          => true,
+                'filters'          => $request->only('search', 'branch_id'),
+            ]);
         } else {
             // --- CABANG: hanya stok milik branch sendiri ---
             $q = Product::where('status', 'active')
@@ -89,7 +98,11 @@ class StockController extends Controller
 
             $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
 
-            return view('hendhys.stock.index', compact('stocks', 'user', 'isPusat'));
+            return Inertia::render('Hendhys/Stock/Index', [
+                'stocks'  => HendhysStockResource::collection($stocks),
+                'isPusat' => false,
+                'filters' => $request->only('search'),
+            ]);
         }
     }
 
@@ -131,9 +144,17 @@ class StockController extends Controller
         }
 
         $movements = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
-        $branches = $isPusat ? Branch::where('is_active', true)->where('type', 'cabang')->orderBy('name')->get() : collect();
-        $products = Product::where('status', 'active')->orderBy('name')->get();
+        $branches = $isPusat ? Branch::where('is_active', true)->where('type', 'cabang')->orderBy('name')->get()
+            ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]) : collect();
+        $products = Product::where('status', 'active')->orderBy('name')->get()
+            ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name]);
 
-        return view('hendhys.stock.movements', compact('movements', 'user', 'isPusat', 'branches', 'products'));
+        return Inertia::render('Hendhys/Stock/Movements', [
+            'movements' => HendhysStockMovementResource::collection($movements),
+            'branches'  => $branches,
+            'products'  => $products,
+            'isPusat'   => $isPusat,
+            'filters'   => $request->only('search', 'branch_id', 'product_id', 'type', 'date_from', 'date_to'),
+        ]);
     }
 }

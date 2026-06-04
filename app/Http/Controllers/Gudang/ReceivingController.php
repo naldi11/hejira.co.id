@@ -3,19 +3,23 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Gudang\StoreReceivingRequest;
+use App\Http\Requests\Gudang\UpdateReceivingRequest;
+use App\Http\Requests\Gudang\UploadReceivingPhotoRequest;
+use App\Http\Resources\Gudang\ReceivingResource;
 use App\Models\GudangStock;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Receiving;
 use App\Models\ReceivingPhoto;
 use App\Models\Supplier;
-use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ReceivingController extends Controller
 {
@@ -27,92 +31,52 @@ class ReceivingController extends Controller
 
     public function index(Request $request)
     {
-        $q = Receiving::with(['supplier', 'po', 'creator']);
+        $receivings = Receiving::with(['supplier', 'po', 'creator'])
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
+                ->where('grn_number', 'like', "%{$request->search}%")
+                ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$request->search}%"))))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->orderByDesc('date')->orderByDesc('id')
+            ->paginate(15)->withQueryString();
 
-        if ($search = $request->search) {
-            $q->where(fn ($w) => $w->where('grn_number', 'like', "%$search%")
-                ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%$search%")));
-        }
-
-        if ($request->filled('date_from')) $q->whereDate('date', '>=', $request->date_from);
-        if ($request->filled('date_to'))   $q->whereDate('date', '<=', $request->date_to);
-        if ($request->filled('status'))    $q->where('status', $request->status);
-
-        $receivings = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(15)->withQueryString();
-
-        return view('gudang.receivings.index', compact('receivings'));
+        return Inertia::render('Gudang/Receivings/Index', [
+            'receivings' => ReceivingResource::collection($receivings),
+            'filters'    => $request->only('search', 'date_from', 'date_to'),
+        ]);
     }
 
     public function create(Request $request)
     {
-        $suppliers      = Supplier::where('is_active', true)->orderBy('name')->get();
-        $products       = Product::where('status', 'active')
-            ->visibleInGudang()
-            ->with('unit')
-            ->orderBy('name')
-            ->get();
-        $units          = Unit::orderBy('name')->get();
-        // Tampilkan semua PO yang bisa diterima (draft, sent, partial)
-        $purchaseOrders = PurchaseOrder::with('supplier')
-            ->whereIn('status', ['draft', 'sent', 'partial'])
-            ->orderBy('date', 'desc')
-            ->get();
-        $po = null;
-
-        if ($request->filled('po_id')) {
-            $po = PurchaseOrder::with('details.product', 'details.unit', 'supplier')
-                ->whereIn('status', ['draft', 'sent', 'partial'])
-                ->findOrFail($request->po_id);
-        }
-
-        return view('gudang.receivings.form', compact('suppliers', 'products', 'units', 'purchaseOrders', 'po'));
+        return Inertia::render('Gudang/Receivings/Create', [
+            'suppliers'      => Supplier::where('is_active', true)->orderBy('name')->get()
+                ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
+            'products'       => Product::where('status', 'active')->visibleInGudang()->with('unit')->orderBy('name')->get()
+                ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'unit_id' => $p->unit_id, 'unit_name' => $p->unit?->abbreviation ?? 'PCS', 'hpp' => (float) $p->hpp]),
+            'purchaseOrders' => PurchaseOrder::with('supplier', 'details.product', 'details.unit')
+                ->whereIn('status', ['draft', 'sent', 'partial'])->orderByDesc('date')->get()
+                ->map(fn ($po) => [
+                    'id'          => $po->id,
+                    'po_number'   => $po->po_number,
+                    'supplier_id' => $po->supplier_id,
+                    'supplier'    => $po->supplier?->name,
+                    'details'     => $po->details->map(fn ($d) => [
+                        'product_id'        => $d->product_id,
+                        'product_name'      => $d->product?->name,
+                        'quantity_ordered'  => (float) $d->quantity_ordered,
+                        'quantity_received' => (float) $d->quantity_received,
+                        'unit_id'           => $d->unit_id,
+                        'unit_name'         => $d->unit?->abbreviation ?? 'PCS',
+                        'price'             => (float) $d->price,
+                    ]),
+                ]),
+            'selectedPoId'   => $request->filled('po_id') ? (int) $request->po_id : null,
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreReceivingRequest $request)
     {
-        // Auto-merge supplier_id jika po_id diisi (karena select supplier di-disable di frontend)
-        if ($request->filled('po_id')) {
-            $po = PurchaseOrder::find($request->po_id);
-            if ($po) {
-                $request->merge(['supplier_id' => $po->supplier_id]);
-            }
-        }
-
-        // Sanitasi expired_date & batch_number yang kosong menjadi null sebelum validasi
-        if ($request->has('items')) {
-            $items = $request->items;
-            foreach ($items as $k => $item) {
-                if (isset($item['expired_date']) && trim($item['expired_date']) === '') {
-                    $items[$k]['expired_date'] = null;
-                }
-                if (isset($item['batch_number']) && trim($item['batch_number']) === '') {
-                    $items[$k]['batch_number'] = null;
-                }
-            }
-            $request->merge(['items' => $items]);
-        }
-
-        $request->validate([
-            'supplier_id'          => 'required|exists:master_suppliers,id',
-            'date'                 => 'required|date',
-            'po_id'                => 'nullable|exists:gudang_purchase_orders,id',
-            'notes'                => 'nullable|string',
-            'received_by_name'     => 'nullable|string|max:100',
-            'supplier_rep_name'    => 'nullable|string|max:100',
-            'kendala'              => 'nullable|string',
-            'items'                => 'required|array|min:1',
-            'items.*.product_id'   => 'required|exists:master_products,id',
-            'items.*.quantity_bagus'=> 'required|numeric|min:0',
-            'items.*.quantity_rusak'=> 'required|numeric|min:0',
-            'items.*.unit_id'      => 'required|exists:master_units,id',
-            'items.*.hpp_price'    => 'required|numeric|min:0',
-            'items.*.expired_date' => 'nullable|date',
-            'items.*.batch_number' => 'nullable|string|max:50',
-            'items.*.notes'        => 'nullable|string',
-            'photos'               => 'nullable|array|max:10',
-            'photos.*'             => 'image|max:5120',
-        ]);
-
         DB::transaction(function () use ($request) {
             $receiving = Receiving::create([
                 'grn_number'        => $this->numbers->generateYearly('GDG-GRN', 'gudang_receivings', 'grn_number'),
@@ -136,14 +100,11 @@ class ReceivingController extends Controller
                 'general_notes'    => $request->notes,
             ]);
 
-            // Build map of PO detail quantities for expected_qty
             $poDetailMap = [];
             if ($request->po_id) {
                 $po = PurchaseOrder::with('details')->find($request->po_id);
-                if ($po) {
-                    foreach ($po->details as $d) {
-                        $poDetailMap[$d->product_id] = (float) $d->quantity_ordered;
-                    }
+                foreach ($po?->details ?? [] as $d) {
+                    $poDetailMap[$d->product_id] = (float) $d->quantity_ordered;
                 }
             }
 
@@ -155,7 +116,6 @@ class ReceivingController extends Controller
                     continue;
                 }
 
-                // Simpan Qty Bagus jika ada
                 if ($qtyBagus > 0) {
                     $receiving->details()->create([
                         'product_id'       => $item['product_id'],
@@ -178,17 +138,9 @@ class ReceivingController extends Controller
                         'notes'        => $item['notes'] ?? null,
                     ]);
 
-                    $this->stock->creditGudang(
-                        $item['product_id'],
-                        $item['unit_id'],
-                        $qtyBagus,
-                        'purchase_receiving',
-                        $receiving->id,
-                        auth()->id()
-                    );
+                    $this->stock->creditGudang($item['product_id'], $item['unit_id'], $qtyBagus, 'purchase_receiving', $receiving->id, auth()->id());
                 }
 
-                // Simpan Qty Rusak jika ada
                 if ($qtyRusak > 0) {
                     $notesRusak = trim(($item['notes'] ?? '') . ' (Rusak)');
                     $receiving->details()->create([
@@ -211,8 +163,6 @@ class ReceivingController extends Controller
                         'batch_number' => $item['batch_number'] ?? null,
                         'notes'        => $notesRusak,
                     ]);
-
-                    // Barang rusak tidak dimasukkan ke stok aktif gudang agar tidak mengacaukan stok siap jual/pakai
                 }
 
                 $this->stock->updateProductHpp($item['product_id'], $item['hpp_price']);
@@ -225,17 +175,13 @@ class ReceivingController extends Controller
             if ($request->hasFile('photos')) {
                 foreach ($request->file('photos') as $file) {
                     $path = $file->store("receivings/{$receiving->grn_number}", 'public');
-                    // Simpan di legacy ReceivingPhoto
                     ReceivingPhoto::create([
                         'receiving_id' => $receiving->id,
                         'path'         => $path,
                         'uploaded_by'  => auth()->id(),
                         'created_at'   => now(),
                     ]);
-                    // Simpan di BAST Terpadu
-                    $receiptConfirmation->photos()->create([
-                        'photo_path' => $path,
-                    ]);
+                    $receiptConfirmation->photos()->create(['photo_path' => $path]);
                 }
             }
 
@@ -249,72 +195,48 @@ class ReceivingController extends Controller
     {
         $receiving->load(['supplier', 'po', 'creator', 'details.product', 'details.unit', 'photos', 'closedBy']);
 
-        return view('gudang.receivings.show', compact('receiving'));
+        return Inertia::render('Gudang/Receivings/Show', [
+            'receiving' => new ReceivingResource($receiving),
+        ]);
     }
 
-    public function update(Request $request, Receiving $receiving)
+    public function update(UpdateReceivingRequest $request, Receiving $receiving)
     {
         abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup dan tidak dapat diedit.');
 
-        $request->validate([
-            'received_by_name'      => 'nullable|string|max:100',
-            'supplier_rep_name'     => 'nullable|string|max:100',
-            'kendala'               => 'nullable|string',
-            'notes'                 => 'nullable|string',
-            'items'                 => 'required|array|min:1',
-            'items.*.detail_id'     => 'required|exists:gudang_receiving_details,id',
-            'items.*.quantity'      => 'required|numeric|min:0',
-            'items.*.hpp_price'     => 'required|numeric|min:0',
-            'items.*.kondisi'       => 'nullable|in:baik,rusak,kurang',
-            'items.*.notes'         => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
-        DB::transaction(function () use ($request, $receiving) {
-            foreach ($request->items as $item) {
+        DB::transaction(function () use ($data, $receiving) {
+            foreach ($data['items'] as $item) {
                 $detail = $receiving->details()->findOrFail($item['detail_id']);
-                $oldQty = (float) $detail->quantity;
-                $newQty = (float) $item['quantity'];
-                $delta  = $newQty - $oldQty;
+                $delta  = (float) $item['quantity'] - (float) $detail->quantity;
 
                 if ($delta > 0) {
-                    $this->stock->creditGudang(
-                        $detail->product_id,
-                        $detail->unit_id,
-                        $delta,
-                        'receiving_edit',
-                        $receiving->id,
-                        auth()->id()
-                    );
+                    $this->stock->creditGudang($detail->product_id, $detail->unit_id, $delta, 'receiving_edit', $receiving->id, auth()->id());
                 } elseif ($delta < 0) {
                     $absDelta = abs($delta);
                     $stock = GudangStock::where('product_id', $detail->product_id)->first();
-                    if (!$stock || $stock->quantity < $absDelta) {
+                    if (! $stock || $stock->quantity < $absDelta) {
                         throw new \Exception("Stok tidak mencukupi untuk koreksi produk: {$detail->product->name}");
                     }
-                    $this->stock->debitGudang(
-                        $detail->product_id,
-                        $absDelta,
-                        'receiving_edit',
-                        $receiving->id,
-                        auth()->id()
-                    );
+                    $this->stock->debitGudang($detail->product_id, $absDelta, 'receiving_edit', $receiving->id, auth()->id());
                 }
 
                 $newHpp = (float) $item['hpp_price'];
                 $detail->update([
-                    'quantity'  => $newQty,
+                    'quantity'  => (float) $item['quantity'],
                     'hpp_price' => $newHpp,
-                    'total'     => $newQty * $newHpp,
+                    'total'     => (float) $item['quantity'] * $newHpp,
                     'kondisi'   => $item['kondisi'] ?? null,
                     'notes'     => $item['notes'] ?? null,
                 ]);
             }
 
             $receiving->update([
-                'notes'             => $request->notes,
-                'received_by_name'  => $request->received_by_name,
-                'supplier_rep_name' => $request->supplier_rep_name,
-                'kendala'           => $request->kendala,
+                'notes'             => $data['notes'] ?? null,
+                'received_by_name'  => $data['received_by_name'] ?? null,
+                'supplier_rep_name' => $data['supplier_rep_name'] ?? null,
+                'kendala'           => $data['kendala'] ?? null,
             ]);
 
             $this->logger->log('update', 'gudang.receiving', "Edit GRN: {$receiving->grn_number}", $receiving);
@@ -330,17 +252,11 @@ class ReceivingController extends Controller
         if (empty($receiving->received_by_name)) {
             return back()->withErrors(['close' => 'Nama penerima wajib diisi sebelum menutup GRN.']);
         }
-
         if (empty($receiving->supplier_rep_name)) {
             return back()->withErrors(['close' => 'Nama perwakilan supplier wajib diisi sebelum menutup GRN.']);
         }
 
-        $receiving->update([
-            'status'    => 'closed',
-            'closed_at' => now(),
-            'closed_by' => auth()->id(),
-        ]);
-
+        $receiving->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => auth()->id()]);
         $this->logger->log('close', 'gudang.receiving', "GRN ditutup: {$receiving->grn_number}", $receiving);
 
         return back()->with('success', "GRN {$receiving->grn_number} berhasil diselesaikan dan dikunci.");
@@ -353,21 +269,13 @@ class ReceivingController extends Controller
         return view('gudang.receivings.print', compact('receiving'));
     }
 
-    public function uploadPhoto(Request $request, Receiving $receiving)
+    public function uploadPhoto(UploadReceivingPhotoRequest $request, Receiving $receiving)
     {
         abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup.');
 
-        $request->validate([
-            'photos'   => 'required|array',
-            'photos.*' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
-            'caption'  => 'nullable|string|max:200',
-        ]);
-
-        $currentCount = $receiving->photos()->count();
-        $newCount     = count($request->file('photos'));
-
-        if ($currentCount + $newCount > 10) {
-            return back()->withErrors(['photos' => "Maksimal 10 foto per GRN. Sudah ada {$currentCount} foto."]);
+        $newCount = count($request->file('photos'));
+        if ($receiving->photos()->count() + $newCount > 10) {
+            return back()->withErrors(['photos' => "Maksimal 10 foto per GRN. Sudah ada {$receiving->photos()->count()} foto."]);
         }
 
         foreach ($request->file('photos') as $file) {
@@ -398,19 +306,16 @@ class ReceivingController extends Controller
     private function updatePoReceived(int $poId, array $items): void
     {
         $po = PurchaseOrder::with('details')->find($poId);
-        if (!$po) return;
+        if (! $po) {
+            return;
+        }
 
         foreach ($items as $item) {
-            $qtyBagus = (float) ($item['quantity_bagus'] ?? 0);
-            $qtyRusak = (float) ($item['quantity_rusak'] ?? 0);
-            $totalReceived = $qtyBagus + $qtyRusak;
-
-            if ($totalReceived <= 0) continue;
-
-            $detail = $po->details->where('product_id', $item['product_id'])->first();
-            if ($detail) {
-                $detail->increment('quantity_received', $totalReceived);
+            $totalReceived = (float) ($item['quantity_bagus'] ?? 0) + (float) ($item['quantity_rusak'] ?? 0);
+            if ($totalReceived <= 0) {
+                continue;
             }
+            $po->details->where('product_id', $item['product_id'])->first()?->increment('quantity_received', $totalReceived);
         }
 
         $po->refresh();
