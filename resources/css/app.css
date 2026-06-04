@@ -50,3 +50,5 @@
 [x-cloak] { 
     display: none !important; 
 }
+/* Cache buster Thu Jun  4 13:42:18 WIB 2026 */
+.dummy-cache-buster-123 { color: red; }
