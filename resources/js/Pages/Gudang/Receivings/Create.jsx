@@ -2,7 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
-import Button from '@/components/ui/button/Button';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 

@@ -2,10 +2,6 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
 import InputError from '@/Components/InputError';
-import Label from '@/components/form/Label';
-import Input from '@/components/form/input/InputField';
-import Checkbox from '@/components/form/input/Checkbox';
-import Button from '@/components/ui/button/Button';
 import Icon from '@/Components/Icon';
 
 const route = window.route;
@@ -16,13 +12,15 @@ export default function Login({ status, canResetPassword }) {
         password: '',
         remember: false,
     });
-    
+
     const [showPassword, setShowPassword] = useState(false);
 
     const submit = (e) => {
         e.preventDefault();
         post(route('login'), { onFinish: () => reset('password') });
     };
+
+    const fieldClass = 'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-800 dark:text-white outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all';
 
     return (
         <GuestLayout>
@@ -37,56 +35,68 @@ export default function Login({ status, canResetPassword }) {
                 {status && <div className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-700">{status}</div>}
 
                 <form onSubmit={submit}>
-                    <div className="space-y-6">
+                    <div className="space-y-5">
+                        {/* Email */}
                         <div>
-                            <Label>Email <span className="text-error-500">*</span></Label>
-                            <Input
+                            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Email <span className="text-red-500">*</span>
+                            </label>
+                            <input
                                 id="email"
                                 type="email"
                                 name="email"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 placeholder="Masukkan email Anda"
-                                error={!!errors.email}
+                                autoComplete="email"
+                                className={fieldClass}
                             />
                             <InputError message={errors.email} className="mt-2" />
                         </div>
 
+                        {/* Password */}
                         <div>
-                            <Label>Password <span className="text-error-500">*</span></Label>
+                            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Password <span className="text-red-500">*</span>
+                            </label>
                             <div className="relative">
-                                <Input
+                                <input
                                     id="password"
-                                    type={showPassword ? "text" : "password"}
+                                    type={showPassword ? 'text' : 'password'}
                                     name="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     placeholder="Masukkan password Anda"
-                                    error={!!errors.password}
+                                    autoComplete="current-password"
+                                    className={fieldClass}
                                 />
                                 <span
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                                 >
-                                    {showPassword ? (
-                                        <Icon name="visibility" className="text-gray-500 text-[20px]" />
-                                    ) : (
-                                        <Icon name="visibility_off" className="text-gray-500 text-[20px]" />
-                                    )}
+                                    <Icon
+                                        name={showPassword ? 'visibility' : 'visibility_off'}
+                                        className="text-gray-400 text-[20px]"
+                                    />
                                 </span>
                             </div>
                             <InputError message={errors.password} className="mt-2" />
                         </div>
 
+                        {/* Remember + Lupa password */}
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Checkbox
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
                                     id="remember"
+                                    type="checkbox"
+                                    name="remember"
                                     checked={data.remember}
-                                    onChange={(checked) => setData('remember', checked)}
-                                    label="Ingat saya"
+                                    onChange={(e) => setData('remember', e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                                 />
-                            </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Ingat saya</span>
+                            </label>
+
                             {canResetPassword && (
                                 <Link
                                     href={route('password.request')}
@@ -97,15 +107,14 @@ export default function Login({ status, canResetPassword }) {
                             )}
                         </div>
 
-                        <div>
-                            <Button
-                                className="w-full"
-                                size="sm"
-                                disabled={processing}
-                            >
-                                {processing ? 'Memproses...' : 'Masuk'}
-                            </Button>
-                        </div>
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-bold text-white hover:bg-brand-600 disabled:opacity-60 transition-colors"
+                        >
+                            {processing ? 'Memproses...' : 'Masuk'}
+                        </button>
                     </div>
                 </form>
             </div>

@@ -6,7 +6,7 @@ import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatDate } from '@/lib/format';
-import Button from '@/components/ui/button/Button';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 

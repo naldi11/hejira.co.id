@@ -2,7 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
 import { formatRupiah } from '@/lib/format';
-import Button from '@/components/ui/button/Button';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
