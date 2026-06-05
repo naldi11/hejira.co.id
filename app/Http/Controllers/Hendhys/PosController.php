@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Hendhys\StorePosTransactionRequest;
 use App\Models\Product;
 use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
@@ -43,11 +44,11 @@ class PosController extends Controller
                 'name'          => $p->name,
                 'code'          => $p->code,
                 'jenis'         => $p->jenis,
-                'price'         => (float) $p->price,
+                'price'         => (float) $p->selling_price,
                 'unit_id'       => $p->unit_id,
                 'unit'          => $p->unit?->abbreviation ?? 'PCS',
                 'current_stock' => (float) $p->current_stock,
-                'photo'         => $p->photo,
+                'photo'         => $p->image ? \Illuminate\Support\Facades\Storage::url($p->image) : null,
                 'tiered_prices' => $p->tieredPrices->map(fn ($tp) => [
                     'min_qty' => (int) $tp->min_qty,
                     'price'   => (float) $tp->price,
@@ -113,41 +114,19 @@ class PosController extends Controller
             return response()->json([]);
         }
 
-        $user = auth()->user();
-
-        $query = \App\Models\HendhysTransaction::query()
-            ->whereNotNull('customer_name')
-            ->where('customer_name', '!=', '')
-            ->where('customer_name', 'like', '%' . $q . '%');
-
-        if ($user->branch->type === 'cabang') {
-            $query->where('branch_id', $user->branch_id);
-        } else {
-            $query->whereNull('branch_id');
-        }
-
-        $results = $query
-            ->select('customer_name', 'customer_phone')
-            ->distinct()
-            ->orderBy('customer_name')
-            ->limit(8)
+        // Search only in master_customers
+        $customers = \App\Models\Customer::where('is_active', true)
+            ->where('visible_hendhys', true)
+            ->where('name', 'like', '%' . $q . '%')
+            ->select('name as customer_name', 'phone as customer_phone', 'type as customer_type')
+            ->limit(10)
             ->get();
 
-        return response()->json($results);
+        return response()->json($customers);
     }
 
-    public function store(Request $request)
+    public function store(StorePosTransactionRequest $request)
     {
-        $request->validate([
-            'customer_type' => 'nullable|string',
-            'customer_phone' => 'nullable|string|max:20',
-            'payment_method_id' => 'required|exists:master_payment_methods,id',
-            'amount_paid' => 'required|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
-
         try {
             $transactionId = DB::transaction(function () use ($request) {
                 $user = auth()->user();
@@ -164,7 +143,7 @@ class PosController extends Controller
                     'customer_type' => $request->customer_type ?? 'Pelanggan Individual',
                     'subtotal' => $request->subtotal,
                     'discount_amount' => $request->discount_amount ?? 0,
-                    'ppn_type' => $request->ppn_type,
+                    'ppn_type' => $request->ppn_type ?? 'none',
                     'tax_amount' => $request->tax_amount ?? 0,
                     'other_costs' => $request->other_costs ?? 0,
                     'grand_total' => $request->grand_total,
@@ -198,14 +177,33 @@ class PosController extends Controller
                     );
                 }
 
+                $pmId = $request->payment_method_id;
+                $paymentMethod = 'cash';
+
+                if (!$pmId) {
+                    $defaultPM = \App\Models\PaymentMethod::where('is_active', true)
+                        ->where(function($q) {
+                            $q->where('name', 'like', '%tunai%')
+                              ->orWhere('name', 'like', '%cash%');
+                        })->first();
+                    if (!$defaultPM) {
+                        $defaultPM = \App\Models\PaymentMethod::where('is_active', true)->first();
+                    }
+                    $pmId = $defaultPM?->id;
+                } else {
+                    $pm = \App\Models\PaymentMethod::find($pmId);
+                    $paymentMethod = $pm?->type ?? 'cash';
+                }
+
                 HendhysTransactionPayment::create([
                     'transaction_id' => $transaction->id,
-                    'payment_method_id' => $request->payment_method_id,
-                    'payment_method' => null,
+                    'payment_method_id' => $pmId,
+                    'payment_method' => $paymentMethod,
                     'amount' => $request->amount_paid,
                     'bank_name' => null,
                     'reference_number' => $request->reference_number
                 ]);
+
 
                 return $transaction->id;
             });

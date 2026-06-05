@@ -42,6 +42,9 @@ class TortillaProductionController extends Controller
     public function create(Request $request)
     {
         $targetDate = $request->query('date', date('Y-m-d'));
+        if ($targetDate && strlen($targetDate) > 10) {
+            $targetDate = substr($targetDate, 0, 10);
+        }
 
         $existingAktual = JihansTortillaSession::whereDate('date', $targetDate)
             ->where('type', 'aktual')

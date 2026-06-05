@@ -5,7 +5,7 @@
     <title>Invoice {{ $transaction->transaction_number }}</title>
     <style>
         @page { size: 9.5in 5.5in; margin: 4mm 6mm; }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.3; color: #000; background: #fff; }
+        body { font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; line-height: 1.35; color: #000; background: #fff; }
         .header { margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 6px; }
         .logo { font-size: 18px; font-weight: bold; color: #000; }
         .company-info { float: left; width: 50%; }

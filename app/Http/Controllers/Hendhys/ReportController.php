@@ -19,7 +19,10 @@ class ReportController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->selectRaw("
                 p.transaction_id,
-                SUM(CASE WHEN pm.type = 'tunai'        THEN p.amount ELSE 0 END) as tunai,
+                SUM(CASE
+                    WHEN pm.type = 'tunai' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    ELSE 0 END) as tunai,
                 SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                 SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
             ")
@@ -160,7 +163,10 @@ class ReportController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->selectRaw("
                 p.transaction_id,
-                SUM(CASE WHEN pm.type = 'tunai'        THEN p.amount ELSE 0 END) as tunai,
+                SUM(CASE
+                    WHEN pm.type = 'tunai' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    ELSE 0 END) as tunai,
                 SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                 SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
             ")
@@ -304,7 +310,10 @@ class ReportController extends Controller
                     ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
                     ->selectRaw("
                         p.transaction_id,
-                        SUM(CASE WHEN pm.type = 'tunai'        THEN p.amount ELSE 0 END) as tunai,
+                        SUM(CASE
+                            WHEN pm.type = 'tunai' THEN p.amount
+                            WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                            ELSE 0 END) as tunai,
                         SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                         SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
                     ")

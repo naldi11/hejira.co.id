@@ -7,6 +7,7 @@ import StatusBadge from '@/Components/StatusBadge';
 import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatDate } from '@/lib/format';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
@@ -22,7 +23,7 @@ export default function ReturnsIndex({ returns, filters }) {
             { preserveState: true, preserveScroll: true, replace: true, only: ['returns', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
     };
 
-    const selectClass = 'rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition-all focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10';
+    const selectClass = 'h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-850 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
 
     return (
         <GudangLayout title="Penerimaan Retur" pageTitle="Gudang — Penerimaan Retur">
@@ -30,17 +31,17 @@ export default function ReturnsIndex({ returns, filters }) {
 
             <div className="space-y-6">
                 <div>
-                    <h2 className="font-headline text-2xl font-black tracking-tight text-slate-800">Penerimaan Retur Barang</h2>
-                    <p className="text-sm font-medium text-slate-500">Penerimaan kembali barang retur dari Hendhys Pusat atau Jihan's Food ke Gudang Utama</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Penerimaan Retur Barang</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Penerimaan kembali barang retur dari Hendhys Pusat atau Jihan's Food ke Gudang Utama</p>
                 </div>
 
-                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 bg-slate-50/50 p-6">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                    <div className="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
                         <form onSubmit={reload} className="flex flex-wrap items-center gap-4">
                             <div className="relative min-w-[250px] flex-1">
-                                <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-slate-400" />
+                                <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-gray-400" />
                                 <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari No. Retur..."
-                                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm transition-all focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10" />
+                                    className="w-full h-11 rounded-lg border border-gray-300 bg-transparent pl-11 pr-4 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800" />
                             </div>
                             <select value={form.entity} onChange={(e) => setForm({ ...form, entity: e.target.value })} className={selectClass}>
                                 <option value="">Semua Asal</option>
@@ -52,42 +53,42 @@ export default function ReturnsIndex({ returns, filters }) {
                                 <option value="sent">Dalam Perjalanan</option>
                                 <option value="received">Diterima Gudang</option>
                             </select>
-                            <button type="submit" className="rounded-2xl bg-slate-900 px-8 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-indigo-600">Filter</button>
-                            {hasFilter && <Link href={route('gudang.returns.index')} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 transition-all hover:bg-rose-100"><Icon name="refresh" /></Link>}
+                            <Button type="submit" size="sm">Filter</Button>
+                            {hasFilter && <Link href={route('gudang.returns.index')} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"><Icon name="refresh" /></Link>}
                         </form>
                     </div>
 
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                    <th className="px-6 py-4">Tanggal</th>
-                                    <th className="px-6 py-4">No. Retur</th>
-                                    <th className="px-6 py-4">Asal Entitas</th>
-                                    <th className="px-6 py-4 text-center">Jumlah Item</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Aksi</th>
+                                <tr className="border-b border-gray-150 bg-gray-50/50 text-xs font-bold text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400 tracking-wider">
+                                    <th className="px-6 py-4.5">Tanggal</th>
+                                    <th className="px-6 py-4.5">No. Retur</th>
+                                    <th className="px-6 py-4.5">Asal Entitas</th>
+                                    <th className="px-6 py-4.5 text-center">Jumlah Item</th>
+                                    <th className="px-6 py-4.5 text-center">Status</th>
+                                    <th className="px-6 py-4.5 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {loading ? <SkeletonTableRows rows={6} columns={6} />
                                     : returns.data.length === 0 ? <EmptyState colSpan={6} icon="keyboard_return" message="Belum ada data retur barang masuk." />
                                     : returns.data.map((ret) => (
-                                        <tr key={ret.id} className="transition-colors hover:bg-slate-50/50">
-                                            <td className="px-6 py-4 text-sm text-slate-500">{formatDate(ret.date)}</td>
-                                            <td className="px-6 py-4 text-sm font-black text-slate-800">{ret.return_number}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center gap-2 text-sm text-slate-700">
+                                        <tr key={ret.id} className="group transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-6 py-4.5 text-xs font-semibold text-gray-500 dark:text-gray-400 tabular-nums">{formatDate(ret.date)}</td>
+                                            <td className="px-6 py-4.5 text-sm font-bold text-brand-500 dark:text-brand-400 group-hover:underline">{ret.return_number}</td>
+                                            <td className="px-6 py-4.5">
+                                                <div className="flex items-center gap-2">
                                                     <span className={`h-2 w-2 rounded-full ${ret.from_entity === 'hendhys' ? 'bg-blue-500' : 'bg-purple-500'}`} />
-                                                    <span className="font-bold capitalize">{ret.from_entity}</span>
-                                                    <span className="text-xs text-slate-400">({ret.branch ?? (ret.from_entity === 'hendhys' ? 'Pusat' : 'Produksi')})</span>
-                                                </span>
+                                                    <span className="text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">{ret.from_entity}</span>
+                                                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">({ret.branch ?? (ret.from_entity === 'hendhys' ? 'Pusat' : 'Produksi')})</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 text-center text-sm text-slate-600">{ret.details_count} jenis</td>
-                                            <td className="px-6 py-4 text-center"><StatusBadge status={ret.status} /></td>
-                                            <td className="px-6 py-4 text-right">
-                                                <Link href={route('gudang.returns.show', ret.id)} className="rounded-xl bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-700 transition-all hover:bg-indigo-100">
-                                                    {ret.status === 'sent' ? 'Proses Penerimaan' : 'Lihat Detail'}
+                                            <td className="px-6 py-4.5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{ret.details_count} Jenis</td>
+                                            <td className="px-6 py-4.5 text-center"><StatusBadge status={ret.status} /></td>
+                                            <td className="px-6 py-4.5 text-right">
+                                                <Link href={route('gudang.returns.show', ret.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-white hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-brand-400">
+                                                    {ret.status === 'sent' ? 'Proses Penerimaan' : 'Detail'}
                                                 </Link>
                                             </td>
                                         </tr>
@@ -96,7 +97,7 @@ export default function ReturnsIndex({ returns, filters }) {
                         </table>
                     </div>
 
-                    {returns.meta?.links && <div className="border-t border-slate-100 p-6"><Pagination links={returns.meta.links} /></div>}
+                    {returns.meta?.links && <div className="border-t border-gray-150 p-5 dark:border-gray-800"><Pagination links={returns.meta.links} /></div>}
                 </div>
             </div>
         </GudangLayout>

@@ -104,6 +104,7 @@ class ProductController extends Controller
             'visible_hendhys'    => 'boolean',
             'notes'              => 'nullable|string',
             'image'              => 'nullable|image|max:2048',
+            'image_url'          => 'nullable|string',
             'tiered_prices'      => 'nullable|array',
             'tiered_prices.*.min_qty' => 'required_with:tiered_prices|numeric|min:1',
             'tiered_prices.*.price'   => 'required_with:tiered_prices|numeric|min:0',
@@ -115,6 +116,37 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->filled('image_url')) {
+            try {
+                $url = $request->input('image_url');
+                if (str_starts_with($url, 'data:')) {
+                    $contents = file_get_contents($url);
+                    if ($contents !== false) {
+                        $filename = 'products/' . uniqid() . '.png';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+                        $data['image'] = $filename;
+                    }
+                } else {
+                    $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
+                    if ($response->successful()) {
+                        $contents = $response->body();
+                        $contentType = $response->header('Content-Type');
+                        $ext = 'jpg';
+                        if (str_contains($contentType, 'png')) {
+                            $ext = 'png';
+                        } elseif (str_contains($contentType, 'webp')) {
+                            $ext = 'webp';
+                        } elseif (str_contains($contentType, 'gif')) {
+                            $ext = 'gif';
+                        }
+                        $filename = 'products/' . uniqid() . '.' . $ext;
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+                        $data['image'] = $filename;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to download image: " . $e->getMessage());
+            }
         }
 
         $data['code']            = $this->numbers->generate('PRD', $tableName, 'code');
@@ -183,6 +215,7 @@ class ProductController extends Controller
             'visible_hendhys' => 'boolean',
             'notes'           => 'nullable|string',
             'image'           => 'nullable|image|max:2048',
+            'image_url'       => 'nullable|string',
             'tiered_prices'   => 'nullable|array',
             'tiered_prices.*.min_qty' => 'required_with:tiered_prices|numeric|min:1',
             'tiered_prices.*.price'   => 'required_with:tiered_prices|numeric|min:0',
@@ -197,6 +230,45 @@ class ProductController extends Controller
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
             }
             $data['image'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->filled('image_url')) {
+            if ($product->image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            try {
+                $url = $request->input('image_url');
+                if (str_starts_with($url, 'data:')) {
+                    $contents = file_get_contents($url);
+                    if ($contents !== false) {
+                        $filename = 'products/' . uniqid() . '.png';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+                        $data['image'] = $filename;
+                    }
+                } else {
+                    $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
+                    if ($response->successful()) {
+                        $contents = $response->body();
+                        $contentType = $response->header('Content-Type');
+                        $ext = 'jpg';
+                        if (str_contains($contentType, 'png')) {
+                            $ext = 'png';
+                        } elseif (str_contains($contentType, 'webp')) {
+                            $ext = 'webp';
+                        } elseif (str_contains($contentType, 'gif')) {
+                            $ext = 'gif';
+                        }
+                        $filename = 'products/' . uniqid() . '.' . $ext;
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+                        $data['image'] = $filename;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to download image: " . $e->getMessage());
+            }
+        } elseif ($request->boolean('clear_image')) {
+            if ($product->image) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = null;
         }
 
         $data['visible_gudang']  = $request->boolean('visible_gudang');

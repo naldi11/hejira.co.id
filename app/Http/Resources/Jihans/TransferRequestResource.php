@@ -20,6 +20,7 @@ class TransferRequestResource extends JsonResource
             'status'         => $this->status,
             'notes'          => $this->notes,
             'creator'        => $this->whenLoaded('creator', fn () => $this->creator?->name),
+            'approver'       => $this->whenLoaded('approver', fn () => $this->approver?->name),
 
             'details'        => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'product'            => $d->product?->name ?? '-',

@@ -101,7 +101,7 @@ class TransferRequestController extends Controller
     {
         abort_if($transferRequest->from_entity !== 'jihans', 403);
 
-        $transferRequest->load(['details.product', 'details.unit', 'creator', 'transferOuts']);
+        $transferRequest->load(['details.product', 'details.unit', 'creator', 'approver', 'transferOuts']);
 
         return Inertia::render('Jihans/TransferRequests/Show', [
             'request' => new TransferRequestResource($transferRequest),

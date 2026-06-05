@@ -34,8 +34,8 @@ class TransferOutResource extends JsonResource
                 'unit'      => $d->unit?->abbreviation ?? '-',
                 'hpp_price' => (float) $d->hpp_price,
                 'total'     => (float) $d->total,
-            ])),
-            'grand_total'     => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')),
+            ])->values()->all()),
+            'grand_total'     => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')) ?? 0,
         ];
     }
 }

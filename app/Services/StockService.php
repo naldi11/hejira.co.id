@@ -65,7 +65,10 @@ class StockService
         ?int   $userId = null,
         ?string $notes = null
     ): void {
-        $stock = GudangStock::where('product_id', $productId)->firstOrFail();
+        $stock = GudangStock::firstOrCreate(
+            ['product_id' => $productId],
+            ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
+        );
 
         $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
@@ -177,7 +180,10 @@ class StockService
 
     public function debitJihans(int $productId, float $qty, string $source, ?int $refId, ?int $userId): void
     {
-        $stock = JihansStock::where('product_id', $productId)->firstOrFail();
+        $stock = JihansStock::firstOrCreate(
+            ['product_id' => $productId],
+            ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
+        );
 
         $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
@@ -298,9 +304,15 @@ class StockService
         }
 
         if (!$isPusat) {
-            $stock = HendhysStockBranch::where('branch_id', $branchId)->where('product_id', $productId)->firstOrFail();
+            $stock = HendhysStockBranch::firstOrCreate(
+                ['branch_id' => $branchId, 'product_id' => $productId],
+                ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
+            );
         } else {
-            $stock = HendhysStockPusat::where('product_id', $productId)->firstOrFail();
+            $stock = HendhysStockPusat::firstOrCreate(
+                ['product_id' => $productId],
+                ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
+            );
         }
 
         $before = (int) $stock->quantity;
@@ -359,6 +371,22 @@ class StockService
             ->visibleInGudang()
             ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
             ->select('master_products.*', 'gudang_stock.quantity as current_stock')
+            ->selectRaw("
+                (SELECT COALESCE(SUM(grd.received_quantity), 0)
+                 FROM gudang_return_details grd
+                 JOIN gudang_returns gr ON grd.return_id = gr.id
+                 WHERE grd.product_id = master_products.id
+                   AND gr.status = 'received'
+                   AND grd.condition = 'Rusak (Defect)') as returned_defect_stock
+            ")
+            ->selectRaw("
+                (SELECT COALESCE(SUM(grd.received_quantity), 0)
+                 FROM gudang_return_details grd
+                 JOIN gudang_returns gr ON grd.return_id = gr.id
+                 WHERE grd.product_id = master_products.id
+                   AND gr.status = 'received'
+                   AND grd.condition = 'Kadaluwarsa') as returned_expired_stock
+            ")
             ->where('master_products.status', 'active')
             ->where('master_products.product_type', 'INV')
             ->when($search, fn ($q, $s) => $q->where(fn ($w) => $w

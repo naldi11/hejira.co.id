@@ -68,7 +68,7 @@ class ReturnController extends Controller
                         'condition'         => $itemData['condition'],
                     ]);
 
-                    if ($itemData['received_quantity'] > 0) {
+                    if ($itemData['received_quantity'] > 0 && $itemData['condition'] === 'Bagus (Siap Jual)') {
                         $this->stock->creditGudang(
                             $detail->product_id,
                             $detail->unit_id,
@@ -76,7 +76,7 @@ class ReturnController extends Controller
                             'return_receiving',
                             $return->id,
                             $userId,
-                            'Penerimaan retur dari ' . ($return->from_entity === 'hendhys' ? 'Hendhys' : 'Jihans'),
+                            'Penerimaan retur (Bagus) dari ' . ($return->from_entity === 'hendhys' ? 'Hendhys' : 'Jihans'),
                         );
                     }
                 }

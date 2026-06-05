@@ -17,7 +17,17 @@ class UserController extends Controller
     public function index()
     {
         return Inertia::render('Master/Users/Index', [
-            'users' => UserResource::collection(User::with(['branch', 'roles'])->orderBy('name')->get()),
+            'users' => User::with(['branch', 'roles'])->orderBy('name')->get()->map(fn ($u) => [
+                'id'        => $u->id,
+                'name'      => $u->name,
+                'email'     => $u->email,
+                'entity'    => $u->entity,
+                'branch_id' => $u->branch_id,
+                'branch'    => $u->branch?->name,
+                'roles'     => $u->roles->pluck('name')->values()->all(),
+                'role'      => $u->roles->first()?->name,
+                'is_active' => (bool) $u->is_active,
+            ])->values()->all(),
         ]);
     }
 

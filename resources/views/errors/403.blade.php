@@ -41,12 +41,12 @@
     </head>
     <body class="antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-animated-gradient relative overflow-hidden">
-            <!-- Decorative Elements -->
-            <div class="absolute top-0 -left-4 w-72 h-72 bg-red-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-            <div class="absolute top-0 -right-4 w-72 h-72 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-            <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+             <!-- Decorative Elements (Fixed with pointer-events-none to prevent click blocking) -->
+            <div class="absolute top-0 -left-4 w-72 h-72 bg-red-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob pointer-events-none" style="pointer-events: none;"></div>
+            <div class="absolute top-0 -right-4 w-72 h-72 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 pointer-events-none" style="pointer-events: none;"></div>
+            <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 pointer-events-none" style="pointer-events: none;"></div>
 
-            <div class="z-10 w-full sm:max-w-lg mt-6 px-8 py-12 glass-card overflow-hidden sm:rounded-3xl transition-all duration-500 text-center">
+            <div class="relative z-10 w-full sm:max-w-lg mt-6 px-8 py-12 bg-white/70 backdrop-blur-lg border border-white/20 shadow-2xl overflow-hidden sm:rounded-3xl transition-all duration-500 text-center" style="position: relative; z-index: 10;">
                 
                 <div class="flex justify-center mb-6">
                     <div class="p-4 bg-red-100/50 rounded-full drop-shadow-md">
@@ -64,10 +64,10 @@
                 </p>
 
                 <div class="flex justify-center space-x-4">
-                    <a href="{{ url()->previous() !== url()->current() ? url()->previous() : '/' }}" class="px-6 py-3 bg-white text-gray-700 border border-gray-200 font-semibold rounded-xl hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm">
+                    <a href="{{ url()->previous() !== url()->current() ? url()->previous() : '/' }}" onclick="event.preventDefault(); try { if (window.frameElement) { let el = window.frameElement; while (el.parentNode && el.parentNode !== window.parent.document.body) { el = el.parentNode; } el.remove(); } else if (window.parent && window.parent !== window) { window.parent.history.back(); } else { window.history.back(); } } catch(e) { window.history.back(); }" class="px-6 py-3 bg-white text-gray-700 border border-gray-200 font-semibold rounded-xl hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm cursor-pointer">
                         Kembali
                     </a>
-                    <a href="{{ route('dashboard') }}" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-105">
+                    <a href="{{ route('dashboard') }}" target="_top" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-105 cursor-pointer">
                         Ke Beranda
                     </a>
                 </div>

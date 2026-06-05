@@ -1,15 +1,15 @@
 // Shared status pill. Centralises the colour-per-status mapping used across
 // every Gudang document list (transfer requests, returns, POs, transfers).
 const STYLES = {
-    pending:   'bg-amber-50 text-amber-600 border-amber-100',
-    draft:     'bg-slate-50 text-slate-500 border-slate-100',
-    sent:      'bg-blue-50 text-blue-600 border-blue-100',
-    approved:  'bg-indigo-50 text-indigo-600 border-indigo-100',
-    partial:   'bg-violet-50 text-violet-600 border-violet-100',
-    completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    received:  'bg-emerald-50 text-emerald-600 border-emerald-100',
-    rejected:  'bg-rose-50 text-rose-600 border-rose-100',
-    cancelled: 'bg-rose-50 text-rose-600 border-rose-100',
+    pending:   'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/30',
+    draft:     'bg-gray-50 text-gray-500 border-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
+    sent:      'bg-blue-50 text-blue-750 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/30',
+    approved:  'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-900/30',
+    partial:   'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-900/30',
+    completed: 'bg-emerald-50 text-emerald-705 border-emerald-250 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/30',
+    received:  'bg-emerald-50 text-emerald-705 border-emerald-250 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/30',
+    rejected:  'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-900/30',
+    cancelled: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-900/30',
 };
 
 const LABELS = {
@@ -25,9 +25,9 @@ const LABELS = {
 };
 
 export default function StatusBadge({ status, label }) {
-    const cls = STYLES[status] ?? 'bg-slate-50 text-slate-500 border-slate-100';
+    const cls = STYLES[status] ?? 'bg-gray-50 text-gray-500 border-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
     return (
-        <span className={`inline-flex items-center rounded-xl border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${cls}`}>
+        <span className={`inline-flex items-center rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${cls}`}>
             {label ?? LABELS[status] ?? status}
         </span>
     );

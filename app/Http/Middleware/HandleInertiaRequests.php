@@ -33,8 +33,14 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     'id'     => $user->id,
                     'name'   => $user->name,
+                    'email'  => $user->email,
                     'entity' => $user->entity,
                     'roles'  => $user->getRoleNames(),
+                    'branch' => $user->branch ? [
+                        'id'   => $user->branch->id,
+                        'name' => $user->branch->name,
+                        'type' => $user->branch->type,
+                    ] : null,
                 ] : null,
             ],
 
@@ -44,11 +50,136 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
             ],
 
-            // Sidebar badge: pending transfer requests awaiting Gudang approval.
+            // Dynamic system notifications shared with front-end components
             'notifications' => [
                 'gudang_pending' => fn () => $user && $user->hasAnyRole(['admin_gudang', 'owner'])
                     ? TransferRequest::where('status', 'pending')->count()
                     : 0,
+                'items' => function() use ($user) {
+                    if (!$user) return [];
+
+                    $items = [];
+                    $roles = $user->getRoleNames();
+                    $isAdminGudang = $roles->contains('admin_gudang');
+                    $isOwner = $roles->contains('owner');
+                    $isAdminJihans = $roles->contains('admin_jihans') || $roles->contains('kasir_jihans');
+                    $isAdminHendhys = $roles->contains('admin_hendhys') || $roles->contains('kasir_hendhys');
+
+                    if ($isAdminGudang || $isOwner) {
+                        // 1. Pending transfer requests from outlets
+                        $trCount = TransferRequest::where('status', 'pending')->count();
+                        if ($trCount > 0) {
+                            $items[] = [
+                                'id' => 'gudang_tr_pending',
+                                'title' => 'Permintaan Transfer Baru',
+                                'message' => "Ada {$trCount} permintaan transfer dari outlet menunggu persetujuan Anda.",
+                                'path' => '/gudang/transfer-requests',
+                                'icon' => 'arrow_forward',
+                                'type' => 'warning',
+                                'time' => 'Baru saja'
+                            ];
+                        }
+
+                        // 2. Low stock items in Gudang
+                        $lowStockCount = \App\Models\GudangStock::join('master_products', 'gudang_stock.product_id', '=', 'master_products.id')
+                            ->where('master_products.status', 'active')
+                            ->whereRaw('gudang_stock.quantity <= master_products.stock_min')
+                            ->count();
+                        if ($lowStockCount > 0) {
+                            $items[] = [
+                                'id' => 'gudang_low_stock',
+                                'title' => 'Stok Gudang Menipis',
+                                'message' => "Ada {$lowStockCount} produk di Gudang Utama di bawah batas minimum safety stock.",
+                                'path' => '/gudang/stock',
+                                'icon' => 'warning',
+                                'type' => 'danger',
+                                'time' => 'Hari ini'
+                            ];
+                        }
+
+                        // 3. Draft/sent POs awaiting action
+                        $poCount = \App\Models\PurchaseOrder::whereIn('status', ['draft', 'sent'])->count();
+                        if ($poCount > 0) {
+                            $items[] = [
+                                'id' => 'gudang_po_pending',
+                                'title' => 'Purchase Order Menunggu',
+                                'message' => "Ada {$poCount} PO yang belum diselesaikan (Draft / Terkirim).",
+                                'path' => '/gudang/po',
+                                'icon' => 'shopping_cart',
+                                'type' => 'info',
+                                'time' => 'Hari ini'
+                            ];
+                        }
+                    }
+
+                    if ($isAdminJihans || $isOwner) {
+                        // 1. Incoming transfers in transit
+                        $transitCount = \App\Models\TransferOut::where('to_entity', 'jihans')->where('status', 'sent')->count();
+                        if ($transitCount > 0) {
+                            $items[] = [
+                                'id' => 'jihans_transit',
+                                'title' => 'Pengiriman Gudang Tiba',
+                                'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
+                                'path' => '/jihans/transfer-requests',
+                                'icon' => 'local_shipping',
+                                'type' => 'info',
+                                'time' => 'Baru saja'
+                            ];
+                        }
+
+                        // 2. Low stock in Jihans
+                        $lowStockCount = \App\Models\JihansStock::join('master_products', 'jihans_stock.product_id', '=', 'master_products.id')
+                            ->where('master_products.status', 'active')
+                            ->whereRaw('jihans_stock.quantity <= master_products.stock_min')
+                            ->count();
+                        if ($lowStockCount > 0) {
+                            $items[] = [
+                                'id' => 'jihans_low_stock',
+                                'title' => 'Stok Outlet Menipis',
+                                'message' => "Ada {$lowStockCount} produk di outlet Jihans di bawah safety stock.",
+                                'path' => '/jihans/stock',
+                                'icon' => 'warning',
+                                'type' => 'danger',
+                                'time' => 'Hari ini'
+                            ];
+                        }
+                    }
+
+                    if ($isAdminHendhys || $isOwner) {
+                        // 1. Incoming transfers in transit
+                        $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')->where('status', 'sent')->count();
+                        if ($transitCount > 0) {
+                            $items[] = [
+                                'id' => 'hendhys_transit',
+                                'title' => 'Pengiriman Gudang Tiba',
+                                'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
+                                'path' => '/hendhys/transfer-requests',
+                                'icon' => 'local_shipping',
+                                'type' => 'info',
+                                'time' => 'Baru saja'
+                            ];
+                        }
+
+                        // 2. Low stock in Hendhys
+                        $lowStockCount = \App\Models\HendhysStockPusat::join('master_products', 'hendhys_stock_pusat.product_id', '=', 'master_products.id')
+                            ->where('master_products.status', 'active')
+                            ->whereRaw('hendhys_stock_pusat.quantity <= master_products.stock_min')
+                            ->count();
+                        if ($lowStockCount > 0) {
+                            $items[] = [
+                                'id' => 'hendhys_low_stock',
+                                'title' => 'Stok Outlet Menipis',
+                                'message' => "Ada {$lowStockCount} produk di outlet Hendhys di bawah safety stock.",
+                                'path' => '/hendhys/stock',
+                                'icon' => 'warning',
+                                'type' => 'danger',
+                                'time' => 'Hari ini'
+                            ];
+                        }
+                    }
+
+                    return $items;
+                }
             ],
         ];
     }

@@ -17,7 +17,10 @@ class ReportController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->selectRaw("
                 p.transaction_id,
-                SUM(CASE WHEN pm.type = 'tunai'        THEN p.amount ELSE 0 END) as tunai,
+                SUM(CASE
+                    WHEN pm.type = 'tunai' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    ELSE 0 END) as tunai,
                 SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                 SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
             ")
@@ -143,7 +146,10 @@ class ReportController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->selectRaw("
                 p.transaction_id,
-                SUM(CASE WHEN pm.type = 'tunai'        THEN p.amount ELSE 0 END) as tunai,
+                SUM(CASE
+                    WHEN pm.type = 'tunai' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    ELSE 0 END) as tunai,
                 SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                 SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
             ")
@@ -280,7 +286,10 @@ class ReportController extends Controller
                 $title = "Laporan Statistik Pelanggan";
                 $payAgg = DB::table('jihans_transaction_payments as p')
                     ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
-                    ->selectRaw("p.transaction_id, SUM(CASE WHEN pm.type = 'tunai' THEN p.amount ELSE 0 END) as tunai, SUM(CASE WHEN pm.type = 'kartu_debit' THEN p.amount ELSE 0 END) as kartu_debit, SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit")
+                    ->selectRaw("p.transaction_id,
+                        SUM(CASE WHEN pm.type = 'tunai' THEN p.amount WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount ELSE 0 END) as tunai,
+                        SUM(CASE WHEN pm.type = 'kartu_debit' THEN p.amount ELSE 0 END) as kartu_debit,
+                        SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit")
                     ->groupBy('p.transaction_id');
                 $query = DB::table('jihans_transactions as t')
                     ->leftJoinSub($payAgg, 'pay_agg', 'pay_agg.transaction_id', '=', 't.id')

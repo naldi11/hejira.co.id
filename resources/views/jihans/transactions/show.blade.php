@@ -12,11 +12,12 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
+            /* Font sistem default, ukuran normal (bukan lagi Courier mesin tik) */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #fff;
             color: #000;
-            font-size: 13px;
-            line-height: 1.35;
+            font-size: 14px;
+            line-height: 1.4;
             padding: 0;
             margin: 0;
         }
@@ -191,9 +192,12 @@
         .btn-back:hover { background: #d1d5db; }
         .btn-print { background: #c2410c; color: white; }
         .btn-print:hover { background: #9a3412; }
+        .btn-pdf { background: #1d4ed8; color: white; }
+        .btn-pdf:hover { background: #1e40af; }
+        .preview-note { text-align: center; font-size: 11px; color: #6b7280; padding: 4px 0 0; }
 
         @media print {
-            .action-bar { display: none !important; }
+            .action-bar, .preview-note { display: none !important; }
             body { background: white; }
             .page-wrapper { margin: 0; box-shadow: none; width: 8.2in; }
         }
@@ -203,12 +207,16 @@
 
 <div class="action-bar print:hidden">
     <a href="{{ route('jihans.transactions.index') }}" class="btn btn-back">
-        Kembali ke Riwayat Transaksi
+        &larr; Kembali
     </a>
     <button onclick="window.print()" class="btn btn-print">
-        Cetak Faktur
+        🖨️ Cetak Faktur
     </button>
+    <a href="{{ route('jihans.transactions.pdf', $transaction->id) }}" target="_blank" class="btn btn-pdf">
+        📄 Unduh PDF
+    </a>
 </div>
+<p class="preview-note print:hidden">Preview faktur — periksa dulu, lalu klik <b>Cetak</b> (printer dot-matrix 9.5&quot; &times; 5.5&quot;) atau <b>Unduh PDF</b>.</p>
 
 <div class="page-wrapper">
     {{-- ===== HEADER ===== --}}
@@ -416,9 +424,7 @@
 
     document.getElementById('terbilang-text').innerText = terbilang({{ $transaction->grand_total }}) + " rupiah";
 
-    window.onload = function() {
-        setTimeout(function() { window.print(); }, 600);
-    }
+    // Preview-first: tidak auto-cetak. User klik "Cetak Faktur" sendiri.
 </script>
 </body>
 </html>

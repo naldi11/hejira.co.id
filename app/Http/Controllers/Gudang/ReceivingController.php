@@ -185,6 +185,30 @@ class ReceivingController extends Controller
                 }
             }
 
+            if ($request->filled('photo_urls')) {
+                foreach ($request->input('photo_urls') as $url) {
+                    try {
+                        $contents = file_get_contents($url);
+                        $name = basename(parse_url($url, PHP_URL_PATH));
+                        if (empty($name) || !str_contains($name, '.')) {
+                            $name = 'image_' . time() . '_' . rand(100, 999) . '.jpg';
+                        }
+                        $path = "receivings/{$receiving->grn_number}/" . time() . '_' . $name;
+                        Storage::disk('public')->put($path, $contents);
+
+                        ReceivingPhoto::create([
+                            'receiving_id' => $receiving->id,
+                            'path'         => $path,
+                            'uploaded_by'  => auth()->id(),
+                            'created_at'   => now(),
+                        ]);
+                        $receiptConfirmation->photos()->create(['photo_path' => $path]);
+                    } catch (\Exception $e) {
+                        // Skip download failure quietly or log
+                    }
+                }
+            }
+
             $this->logger->log('create', 'gudang.receiving', "Buat GRN & BAST: {$receiving->grn_number}", $receiving);
         });
 
@@ -273,12 +297,15 @@ class ReceivingController extends Controller
     {
         abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup.');
 
-        $newCount = count($request->file('photos'));
+        $photoFiles = $request->file('photos') ?? [];
+        $photoUrls = $request->input('photo_urls') ?? [];
+        $newCount = count($photoFiles) + count($photoUrls);
+
         if ($receiving->photos()->count() + $newCount > 10) {
             return back()->withErrors(['photos' => "Maksimal 10 foto per GRN. Sudah ada {$receiving->photos()->count()} foto."]);
         }
 
-        foreach ($request->file('photos') as $file) {
+        foreach ($photoFiles as $file) {
             $path = $file->store("receivings/{$receiving->grn_number}", 'public');
             ReceivingPhoto::create([
                 'receiving_id' => $receiving->id,
@@ -287,6 +314,28 @@ class ReceivingController extends Controller
                 'uploaded_by'  => auth()->id(),
                 'created_at'   => now(),
             ]);
+        }
+
+        foreach ($photoUrls as $url) {
+            try {
+                $contents = file_get_contents($url);
+                $name = basename(parse_url($url, PHP_URL_PATH));
+                if (empty($name) || !str_contains($name, '.')) {
+                    $name = 'image_' . time() . '_' . rand(100, 999) . '.jpg';
+                }
+                $path = "receivings/{$receiving->grn_number}/" . time() . '_' . $name;
+                Storage::disk('public')->put($path, $contents);
+
+                ReceivingPhoto::create([
+                    'receiving_id' => $receiving->id,
+                    'path'         => $path,
+                    'caption'      => $request->caption,
+                    'uploaded_by'  => auth()->id(),
+                    'created_at'   => now(),
+                ]);
+            } catch (\Exception $e) {
+                // Skip silently or handle
+            }
         }
 
         return back()->with('success', $newCount . ' foto berhasil diunggah.');
@@ -311,7 +360,9 @@ class ReceivingController extends Controller
         }
 
         foreach ($items as $item) {
-            $totalReceived = (float) ($item['quantity_bagus'] ?? 0) + (float) ($item['quantity_rusak'] ?? 0);
+            // Hanya barang BAGUS yang dihitung sebagai diterima ke stok.
+            // Barang rusak tidak masuk stok, sehingga tidak dihitung ke quantity_received PO.
+            $totalReceived = (float) ($item['quantity_bagus'] ?? 0);
             if ($totalReceived <= 0) {
                 continue;
             }

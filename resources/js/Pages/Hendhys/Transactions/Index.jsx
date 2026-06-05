@@ -23,22 +23,32 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
         <HendhysLayout pageTitle="Riwayat Transaksi">
             <Head title="Riwayat Transaksi" />
             <div className="space-y-6">
-                <h2 className="text-2xl font-bold tracking-tight text-gray-800">Riwayat Transaksi</h2>
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 bg-gray-50/50 p-4">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Riwayat Transaksi</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Daftar semua transaksi penjualan di kasir Hendhys</p>
+                    </div>
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                        <Link href={route('hendhys.pos.index')} className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300">
+                            <Icon name="arrow_back" className="text-[18px]" /> Kembali ke Kasir
+                        </Link>
+                    </div>
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.01]">
                         <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
                             <div className="relative min-w-[260px] flex-1">
-                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400" />
+                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400 dark:text-gray-500" />
                                 <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari no transaksi atau pelanggan..."
-                                    className="w-full rounded-lg border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500" />
+                                    className="w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white" />
                             </div>
                             <button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Cari</button>
-                            {search && <Link href={route('hendhys.transactions.index')} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-200">Reset</Link>}
+                            {search && <Link href={route('hendhys.transactions.index')} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-200 dark:text-red-400">Reset</Link>}
                         </form>
                     </div>
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
+                            <thead className="border-b border-gray-200 bg-gray-50 text-gray-500 dark:text-gray-400 dark:border-gray-800 dark:bg-white/[0.02]">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">No. Transaksi</th>
                                     <th className="px-6 py-4 font-medium">Tanggal</th>
@@ -46,25 +56,31 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                                     <th className="px-6 py-4 text-right font-medium">Total</th>
                                     <th className="px-6 py-4 text-center font-medium">Status</th>
                                     <th className="px-6 py-4 font-medium">Kasir</th>
+                                    <th className="px-6 py-4 text-right font-medium">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {loading ? <SkeletonTableRows rows={8} columns={6} />
-                                    : transactions.data.length === 0 ? <EmptyState colSpan={6} icon="receipt_long" message="Belum ada transaksi." />
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {loading ? <SkeletonTableRows rows={8} columns={7} />
+                                    : transactions.data.length === 0 ? <EmptyState colSpan={7} icon="receipt_long" message="Belum ada transaksi." />
                                     : transactions.data.map((t) => (
-                                        <tr key={t.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 font-bold text-gray-800">{t.transaction_number}</td>
-                                            <td className="px-6 py-4 text-gray-600">{t.date}</td>
-                                            <td className="px-6 py-4 text-gray-600">{t.customer_name}</td>
-                                            <td className="px-6 py-4 text-right font-bold text-gray-800">{formatRupiah(t.grand_total)}</td>
-                                            <td className="px-6 py-4 text-center"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{t.status}</span></td>
-                                            <td className="px-6 py-4 text-gray-500">{t.creator}</td>
+                                        <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{t.transaction_number}</td>
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.date}</td>
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.customer_name}</td>
+                                            <td className="px-6 py-4 text-right font-bold text-gray-800 dark:text-white/90">{formatRupiah(t.grand_total)}</td>
+                                            <td className="px-6 py-4 text-center"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'}`}>{t.status}</span></td>
+                                            <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{t.creator}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <a href={route('hendhys.transactions.show', t.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
+                                                    <Icon name="receipt" className="text-[16px]" /> Struk
+                                                </a>
+                                            </td>
                                         </tr>
                                     ))}
                             </tbody>
                         </table>
                     </div>
-                    {transactions.meta?.links && <div className="border-t border-gray-100 p-4"><Pagination links={transactions.meta.links} /></div>}
+                    {transactions.meta?.links && <div className="border-t border-gray-100 p-4 dark:border-gray-800"><Pagination links={transactions.meta.links} /></div>}
                 </div>
             </div>
         </HendhysLayout>

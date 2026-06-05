@@ -13,7 +13,7 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 
 function tieredPrice(product, qty) {
     let price = product.selling_price || 0;
-    for (const tier of product.tiered_prices ?? []) { // sudah DESC
+    for (const tier of product.tiered_prices ?? []) {
         if (qty >= tier.min_qty) { price = tier.price; break; }
     }
     return price;
@@ -33,7 +33,6 @@ export default function PosIndex({ products, customers }) {
     const [amountPaid, setAmountPaid] = useState(0);
     const [processing, setProcessing] = useState(false);
 
-    // Resume a held transaction (set in localStorage by the Pending list page).
     useEffect(() => {
         const raw = localStorage.getItem('jihans_resume_cart');
         if (!raw) return;
@@ -124,7 +123,6 @@ export default function PosIndex({ products, customers }) {
                 grand_total: totals.grand, amount_paid: amountPaid, reference_number: null, notes,
                 items: buildItems(),
             }, { headers: { 'X-CSRF-TOKEN': csrf() } });
-
             if (data.success) { window.location.href = data.redirect; }
         } catch (err) {
             const r = err.response?.data;
@@ -153,7 +151,6 @@ export default function PosIndex({ products, customers }) {
         }
     };
 
-    // Keyboard shortcuts (Ins = cari, End = bayar, F5 = pending).
     useEffect(() => {
         const onKey = (e) => {
             if (showSearch || showPayment) return;
@@ -165,92 +162,204 @@ export default function PosIndex({ products, customers }) {
         return () => window.removeEventListener('keydown', onKey);
     });
 
-    const cellInput = 'w-full bg-transparent text-right outline-none focus:bg-orange-50';
+    const inputCls = 'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-orange-500';
+    const cellInput = 'w-full bg-transparent text-right outline-none tabular-nums transition focus:rounded focus:bg-orange-50 dark:focus:bg-orange-900/20';
 
     return (
         <JihansLayout pageTitle="Point of Sales — Kasir">
             <Head title="POS Kasir" />
 
-            <div className="flex flex-col gap-3">
-                {/* Top: form + total display */}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    <div className="grid grid-cols-[110px_1fr] items-center gap-y-2 rounded-xl border border-gray-200 bg-white p-4">
-                        <label className="text-xs font-semibold text-gray-600">Tanggal</label>
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-lg border-gray-300 text-sm focus:border-orange-500 focus:ring-orange-500" />
-                        <label className="text-xs font-semibold text-gray-600">Pelanggan</label>
-                        <select value={customerId} onChange={(e) => onCustomerChange(e.target.value)} className="rounded-lg border-gray-300 text-sm focus:border-orange-500 focus:ring-orange-500">
-                            <option value="">-- Pelanggan Umum / Manual --</option>
-                            {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` | ${c.phone}` : ''}</option>)}
-                        </select>
-                        {!customerId && <>
-                            <label className="text-xs font-semibold text-gray-600">Nama Manual</label>
-                            <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Ketik nama pelanggan..." className="rounded-lg border-gray-300 text-sm focus:border-orange-500 focus:ring-orange-500" />
-                        </>}
-                        <label className="text-xs font-semibold text-gray-600">Keterangan</label>
-                        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-lg border-gray-300 text-sm focus:border-orange-500 focus:ring-orange-500" />
+            <div className="flex flex-col gap-4">
+
+                {/* ── Top row: info form + total display ── */}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+
+                    {/* Form info */}
+                    <div className="lg:col-span-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Informasi Transaksi</p>
+                        <div className="grid grid-cols-[120px_1fr] items-center gap-x-4 gap-y-3">
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Tanggal</label>
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Pelanggan</label>
+                            <select value={customerId} onChange={(e) => onCustomerChange(e.target.value)} className={inputCls}>
+                                <option value="">— Pelanggan Umum —</option>
+                                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` | ${c.phone}` : ''}</option>)}
+                            </select>
+
+                            {!customerId && <>
+                                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Nama Manual</label>
+                                <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                                    placeholder="Ketik nama pelanggan..." className={inputCls} />
+                            </>}
+
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Keterangan</label>
+                            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Catatan opsional..." className={inputCls} />
+                        </div>
                     </div>
-                    <div className="flex flex-col items-end justify-center rounded-xl border-4 border-gray-700 bg-black p-5">
-                        <span className="mb-1 text-lg font-bold text-green-500">TOTAL</span>
-                        <span className="font-mono text-5xl font-bold leading-none tracking-wider text-green-500">{formatRupiah(totals.grand)}</span>
+
+                    {/* Total display */}
+                    <div className="lg:col-span-2 flex flex-col items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 shadow-lg">
+                        <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Total Tagihan</span>
+                        </div>
+                        <span className="font-mono text-5xl font-black leading-none tracking-tight text-white">
+                            {formatRupiah(totals.grand)}
+                        </span>
+                        <div className="mt-1 flex gap-4 text-xs text-gray-400">
+                            <span>{cart.length} item</span>
+                            {totals.itemDiscount > 0 && <span className="text-rose-400">Disc {formatRupiah(totals.itemDiscount)}</span>}
+                        </div>
                     </div>
                 </div>
 
-                {/* Cart table */}
-                <div className="overflow-auto rounded-xl border border-gray-200 bg-white" style={{ maxHeight: '46vh' }}>
-                    <table className="w-full whitespace-nowrap text-sm">
-                        <thead className="sticky top-0 bg-gray-100 text-xs text-gray-600">
-                            <tr>
-                                <th className="w-10 px-2 py-2 text-center">No</th>
-                                <th className="px-3 py-2 text-left">Item</th>
-                                <th className="w-24 px-2 py-2 text-center">Jml</th>
-                                <th className="w-16 px-2 py-2 text-center">Satuan</th>
-                                <th className="w-28 px-2 py-2 text-right">Harga</th>
-                                <th className="w-24 px-2 py-2 text-right">Potongan</th>
-                                <th className="w-32 px-2 py-2 text-right">Total</th>
-                                <th className="w-10 px-2 py-2" />
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {cart.length === 0 ? (
-                                <tr><td colSpan={8} className="py-10 text-center text-gray-400">Tekan <b>[Ins]</b> atau tombol <b>Tambah</b> untuk mencari item</td></tr>
-                            ) : cart.map((it, i) => (
-                                <tr key={i} className="hover:bg-gray-50">
-                                    <td className="px-2 py-1 text-center text-gray-500">{i + 1}</td>
-                                    <td className="px-3 py-1"><span className="font-medium text-gray-800">{it.product_name}</span> <span className="font-mono text-xs text-gray-400">{it.product_code}</span></td>
-                                    <td className="px-2 py-1"><input type="number" min="1" value={it.quantity} onChange={(e) => updateItem(i, { quantity: e.target.value })} className={`${cellInput} text-center`} /></td>
-                                    <td className="px-2 py-1 text-center text-gray-500">{it.unit_name}</td>
-                                    <td className="px-2 py-1"><input type="number" min="0" value={it.price} onChange={(e) => updateItem(i, { price: Number(e.target.value) || 0 })} className={cellInput} /></td>
-                                    <td className="px-2 py-1"><input type="number" min="0" value={it.discount} onChange={(e) => updateItem(i, { discount: Number(e.target.value) || 0 })} className={cellInput} /></td>
-                                    <td className="px-2 py-1 text-right font-bold text-gray-800">{formatRupiah(lineTotal(it))}</td>
-                                    <td className="px-2 py-1 text-center"><button onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600"><Icon name="close" className="text-[18px]" /></button></td>
+                {/* ── Cart table ── */}
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-5 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Keranjang Belanja</span>
+                        <button onClick={() => setShowSearch(true)}
+                            className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600">
+                            <Icon name="add" className="text-[16px]" /> Tambah Item
+                            <span className="ml-1 rounded bg-orange-400/40 px-1 text-[9px]">Ins</span>
+                        </button>
+                    </div>
+                    <div className="custom-scrollbar overflow-x-auto" style={{ maxHeight: '38vh' }}>
+                        <table className="w-full whitespace-nowrap text-sm">
+                            <thead className="sticky top-0 z-10 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+                                <tr>
+                                    <th className="w-10 px-3 py-3 text-center">#</th>
+                                    <th className="px-3 py-3 text-left">Produk</th>
+                                    <th className="w-24 px-3 py-3 text-center">Jumlah</th>
+                                    <th className="w-16 px-3 py-3 text-center">Satuan</th>
+                                    <th className="w-32 px-3 py-3 text-right">Harga</th>
+                                    <th className="w-28 px-3 py-3 text-right">Diskon</th>
+                                    <th className="w-36 px-3 py-3 text-right">Subtotal</th>
+                                    <th className="w-10 px-3 py-3" />
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {cart.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="py-16 text-center">
+                                            <div className="flex flex-col items-center gap-2 text-gray-400">
+                                                <Icon name="shopping_cart" className="text-[40px] text-gray-300 dark:text-gray-700" />
+                                                <p className="text-sm">Keranjang masih kosong</p>
+                                                <p className="text-xs">Tekan <kbd className="rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-[10px] font-mono">Ins</kbd> atau klik <strong>Tambah Item</strong></p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : cart.map((it, i) => (
+                                    <tr key={i} className="group hover:bg-orange-50/40 dark:hover:bg-orange-900/10 transition-colors">
+                                        <td className="px-3 py-2.5 text-center text-xs font-bold text-gray-400">{i + 1}</td>
+                                        <td className="px-3 py-2.5">
+                                            <p className="font-semibold text-gray-800 dark:text-white">{it.product_name}</p>
+                                            <p className="font-mono text-[10px] text-gray-400">{it.product_code}</p>
+                                        </td>
+                                        <td className="px-3 py-2.5">
+                                            <input type="number" min="1" value={it.quantity}
+                                                onChange={(e) => updateItem(i, { quantity: e.target.value })}
+                                                className="w-full rounded border-0 bg-gray-100 py-1 text-center text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 dark:bg-gray-700 dark:text-white" />
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500">{it.unit_name}</td>
+                                        <td className="px-3 py-2.5">
+                                            <input type="number" min="0" value={it.price}
+                                                onChange={(e) => updateItem(i, { price: Number(e.target.value) || 0 })}
+                                                className={`${cellInput} rounded px-1`} />
+                                        </td>
+                                        <td className="px-3 py-2.5">
+                                            <input type="number" min="0" value={it.discount}
+                                                onChange={(e) => updateItem(i, { discount: Number(e.target.value) || 0 })}
+                                                className={`${cellInput} rounded px-1 text-rose-500`} />
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right font-bold text-gray-800 tabular-nums dark:text-white">{formatRupiah(lineTotal(it))}</td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <button onClick={() => removeItem(i)}
+                                                className="rounded p-1 text-gray-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 dark:hover:bg-rose-900/20">
+                                                <Icon name="close" className="text-[16px]" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* Bottom: summary + actions */}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                    <div className="grid grid-cols-[110px_1fr] items-center gap-y-1.5 rounded-xl border border-gray-200 bg-white p-3 text-sm">
-                        <span className="text-xs font-semibold text-gray-600">Sub Total</span>
-                        <span className="text-right font-bold">{formatRupiah(totals.subtotal)}</span>
-                        <span className="text-xs font-semibold text-gray-600">Diskon Item</span>
-                        <span className="text-right text-red-600">{formatRupiah(totals.itemDiscount)}</span>
-                        <span className="text-xs font-semibold text-gray-600">Pot. Tambahan</span>
-                        <input type="number" min="0" value={extraDiscount} onChange={(e) => setExtraDiscount(Number(e.target.value) || 0)} className="rounded border-gray-300 py-1 text-right text-sm text-red-600 focus:border-orange-500 focus:ring-orange-500" />
-                        <span className="text-xs font-semibold text-gray-600">PPN</span>
-                        <select value={ppnType} onChange={(e) => setPpnType(e.target.value)} className="rounded border-gray-300 py-1 text-sm focus:border-orange-500 focus:ring-orange-500">
-                            <option value="none">Tanpa PPN</option><option value="include">Include</option><option value="exclude">Exclude (+11%)</option>
-                        </select>
-                        {ppnType === 'exclude' && <><span className="text-xs font-semibold text-gray-600">Nilai PPN</span><span className="text-right">{formatRupiah(totals.tax)}</span></>}
-                        <span className="text-sm font-bold text-gray-700">Total Akhir</span>
-                        <span className="rounded bg-yellow-100 px-2 py-1 text-right text-lg font-bold">{formatRupiah(totals.grand)}</span>
+                {/* ── Bottom: summary + actions ── */}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+                    {/* Summary */}
+                    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Rincian Pembayaran</p>
+                        <div className="space-y-2.5 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Sub Total</span>
+                                <span className="font-semibold tabular-nums">{formatRupiah(totals.subtotal)}</span>
+                            </div>
+                            {totals.itemDiscount > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Diskon Item</span>
+                                    <span className="font-semibold text-rose-500 tabular-nums">-{formatRupiah(totals.itemDiscount)}</span>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Pot. Tambahan</span>
+                                <input type="number" min="0" value={extraDiscount}
+                                    onChange={(e) => setExtraDiscount(Number(e.target.value) || 0)}
+                                    className="w-32 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-right text-sm font-semibold text-rose-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800" />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">PPN</span>
+                                <select value={ppnType} onChange={(e) => setPpnType(e.target.value)}
+                                    className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-sm outline-none focus:border-orange-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                                    <option value="none">Tanpa PPN</option>
+                                    <option value="include">Include</option>
+                                    <option value="exclude">Exclude (+11%)</option>
+                                </select>
+                            </div>
+                            {ppnType === 'exclude' && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Nilai PPN</span>
+                                    <span className="tabular-nums">{formatRupiah(totals.tax)}</span>
+                                </div>
+                            )}
+                            <div className="mt-1 flex justify-between rounded-xl bg-orange-50 px-3 py-2.5 dark:bg-orange-900/20">
+                                <span className="font-bold text-gray-700 dark:text-gray-200">Total Akhir</span>
+                                <span className="text-lg font-black text-orange-600 tabular-nums dark:text-orange-400">{formatRupiah(totals.grand)}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="col-span-2 flex flex-wrap items-end justify-end gap-2">
-                        <button onClick={() => setShowSearch(true)} className="flex h-14 min-w-[110px] flex-col items-center justify-center rounded-lg border border-gray-300 bg-white font-bold text-gray-700 shadow-sm hover:bg-gray-50">Tambah <span className="text-[10px] text-gray-400">[Ins]</span></button>
-                        <button onClick={holdTransaction} disabled={cart.length === 0} className="flex h-14 min-w-[110px] flex-col items-center justify-center rounded-lg border border-gray-300 bg-white font-bold text-blue-600 shadow-sm hover:bg-gray-50 disabled:opacity-40">Pending <span className="text-[10px] text-gray-400">[F5]</span></button>
-                        <Link href={route('jihans.pending.index')} className="flex h-14 min-w-[110px] flex-col items-center justify-center rounded-lg border border-gray-300 bg-white text-center font-bold text-orange-600 shadow-sm hover:bg-gray-50">Daftar Pending</Link>
-                        <button onClick={openPayment} disabled={cart.length === 0} className="flex h-14 min-w-[140px] flex-col items-center justify-center rounded-lg bg-green-600 text-lg font-bold text-white shadow-lg hover:bg-green-700 disabled:opacity-40">BAYAR <span className="text-[10px] text-green-200">[End]</span></button>
+
+                    {/* Action buttons */}
+                    <div className="col-span-2 flex flex-wrap items-stretch justify-end gap-3">
+                        <button onClick={() => setShowSearch(true)}
+                            className="flex flex-1 min-w-[120px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-gray-200 bg-white py-4 font-bold text-gray-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-orange-600 dark:hover:text-orange-400">
+                            <Icon name="add_shopping_cart" className="text-[28px]" />
+                            <span className="text-sm">Tambah</span>
+                            <kbd className="rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-mono text-gray-400 dark:bg-gray-800">Ins</kbd>
+                        </button>
+
+                        <button onClick={holdTransaction} disabled={cart.length === 0}
+                            className="flex flex-1 min-w-[120px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-blue-200 bg-blue-50 py-4 font-bold text-blue-600 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                            <Icon name="pause_circle" className="text-[28px]" />
+                            <span className="text-sm">Pending</span>
+                            <kbd className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] font-mono text-blue-400 dark:bg-blue-900">F5</kbd>
+                        </button>
+
+                        <Link href={route('jihans.pending.index')}
+                            className="flex flex-1 min-w-[120px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-orange-200 bg-orange-50 py-4 text-center font-bold text-orange-600 shadow-sm transition hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-400">
+                            <Icon name="list_alt" className="text-[28px]" />
+                            <span className="text-sm">Daftar Pending</span>
+                        </Link>
+
+                        <button onClick={openPayment} disabled={cart.length === 0}
+                            className="flex flex-1 min-w-[160px] flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 py-4 font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:from-emerald-600 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                            <Icon name="payments" className="text-[32px]" />
+                            <span className="text-lg font-black">BAYAR</span>
+                            <kbd className="rounded bg-emerald-400/30 px-1.5 py-0.5 text-[9px] font-mono text-emerald-100">End</kbd>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -30,10 +30,14 @@ class TransactionController extends Controller
         ]);
     }
 
+    /**
+     * Reprint a sale from history → the SAME 80mm thermal receipt used after a sale
+     * (one template, consistent output). Kept as a Blade print document.
+     */
     public function show($id)
     {
-        // ⏭️ Show tetap Blade (faktur/print)
-        $transaction = HendhysTransaction::with(['details.product', 'creator', 'customer', 'branch'])->findOrFail($id);
-        return view('hendhys.transactions.show', compact('transaction'));
+        $transaction = HendhysTransaction::with(['details.product', 'details.unit', 'creator', 'customer', 'branch', 'payments'])->findOrFail($id);
+
+        return view('hendhys.pos.receipt', compact('transaction'));
     }
 }

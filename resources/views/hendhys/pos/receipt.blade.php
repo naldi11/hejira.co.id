@@ -106,6 +106,7 @@
             border: 1px solid #000;
         }
         .btn-print { background: #000; color: #fff; }
+        .btn-pdf { background: #1d4ed8; color: #fff; }
         .btn-back { background: #fff; color: #000; }
 
         @media print {
@@ -116,14 +117,14 @@
             }
             .receipt-container {
                 box-shadow: none;
-                max-width: 100%;
-                width: 100%;
-                padding: 5px;
+                max-width: 80mm;
+                width: 80mm;          /* lebar struk thermal 80mm (cocok juga utk rol 75mm) */
+                padding: 2mm 3mm;
             }
             .action-bar { display: none !important; }
             @page {
                 margin: 0;
-                size: auto;
+                size: 80mm auto;      /* lebar 80mm, tinggi mengalir sesuai isi */
             }
         }
     </style>
@@ -238,15 +239,14 @@
 
         {{-- Actions Bar --}}
         <div class="action-bar no-print">
-            <button onclick="window.print()" class="btn btn-print">Cetak</button>
+            <button onclick="window.print()" class="btn btn-print">🖨️ Cetak</button>
+            <a href="{{ route('hendhys.pos.invoice', $transaction->id) }}" target="_blank" class="btn btn-pdf">PDF</a>
             <a href="{{ route('hendhys.pos.index') }}" class="btn btn-back">POS Baru</a>
         </div>
     </div>
 
     <script>
-        window.onload = function() {
-            setTimeout(function() { window.print(); }, 600);
-        }
+        // Preview-first: struk tidak auto-cetak; kasir klik "Cetak" sendiri.
     </script>
 </body>
 </html>

@@ -17,9 +17,11 @@ class UploadReceivingPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photos'   => ['required', 'array'],
-            'photos.*' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
-            'caption'  => ['nullable', 'string', 'max:200'],
+            'photos'       => ['required_without:photo_urls', 'array'],
+            'photos.*'     => ['image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'photo_urls'   => ['required_without:photos', 'array'],
+            'photo_urls.*' => ['string'],
+            'caption'      => ['nullable', 'string', 'max:200'],
         ];
     }
 }

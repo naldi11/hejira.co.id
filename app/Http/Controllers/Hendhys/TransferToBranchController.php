@@ -339,6 +339,63 @@ class TransferToBranchController extends Controller
         }
     }
 
+    /**
+     * Pusat mengkonfirmasi penerimaan atas nama cabang
+     * (digunakan ketika cabang belum bisa konfirmasi sendiri)
+     */
+    public function forceReceive(Request $request, HendhysTransferToBranch $transferToBranch)
+    {
+        $user = auth()->user();
+
+        if ($user->branch->type !== 'pusat') {
+            abort(403, 'Hanya Pusat yang dapat melakukan konfirmasi paksa.');
+        }
+
+        if ($transferToBranch->status !== 'sent') {
+            return back()->with('error', 'Transfer ini sudah diproses sebelumnya.');
+        }
+
+        try {
+            DB::transaction(function () use ($transferToBranch, $user) {
+                $transferToBranch->load('details');
+
+                foreach ($transferToBranch->details as $detail) {
+                    $qty = (float) $detail->quantity;
+
+                    $detail->update([
+                        'received_quantity' => $qty,
+                        'kondisi'           => 'baik',
+                    ]);
+
+                    if ($qty > 0) {
+                        $this->stockService->creditHendhys(
+                            $detail->product_id,
+                            $detail->unit_id,
+                            $qty,
+                            $transferToBranch->branch_id,
+                            'receive_from_pusat',
+                            $transferToBranch->id,
+                            $user->id
+                        );
+                    }
+                }
+
+                $transferToBranch->update([
+                    'status'       => 'received',
+                    'received_by'  => $user->id,
+                    'receive_notes' => 'Dikonfirmasi oleh Pusat atas nama Cabang.',
+                    'receive_received_by_name' => $user->name,
+                ]);
+            });
+
+            return redirect()->route('hendhys.transfer-to-branch.show', $transferToBranch->id)
+                ->with('success', 'Penerimaan dikonfirmasi. Stok cabang berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal: ' . $e->getMessage());
+        }
+    }
+
     public function printBast(HendhysTransferToBranch $transferToBranch)
     {
         // ⏭️ Print tetap Blade

@@ -53,7 +53,9 @@ class ReceivingResource extends JsonResource
                 'caption' => $p->caption,
             ])),
 
-            'grand_total'       => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')),
+            // Hanya nilai barang BAIK yang masuk ke stok yang dihitung sebagai total nilai penerimaan.
+            // Barang rusak ditampilkan di tabel detail namun tidak masuk ke total nilai.
+            'grand_total'       => $this->whenLoaded('details', fn () => (float) $this->details->where('kondisi', 'baik')->sum('total')),
         ];
     }
 }

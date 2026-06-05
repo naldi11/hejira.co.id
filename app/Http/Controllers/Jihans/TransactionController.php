@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Jihans\TransactionResource;
 use App\Models\JihansTransaction;
+use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,11 +26,20 @@ class TransactionController extends Controller
         ]);
     }
 
-    /** The receipt/faktur is a standalone print document — kept as a Blade view. */
+    /**
+     * The faktur is a standalone HTML print document (preview-first; the user prints
+     * it to a dot-matrix LX-310, 9.5"×5.5" 3-ply form). Kept as a Blade view.
+     */
     public function show($id)
     {
         $transaction = JihansTransaction::with(['details.product', 'details.unit', 'creator', 'customer', 'payments'])->findOrFail($id);
 
         return view('jihans.transactions.show', compact('transaction'));
+    }
+
+    /** Same faktur as a downloadable PDF (for archive / sending). */
+    public function pdf($id, InvoiceService $invoiceService)
+    {
+        return $invoiceService->generateJihansInvoice(JihansTransaction::findOrFail($id));
     }
 }

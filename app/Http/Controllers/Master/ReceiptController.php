@@ -10,6 +10,7 @@ use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ReceiptController extends Controller
 {
@@ -32,9 +33,8 @@ class ReceiptController extends Controller
                 ->with('info', 'Transfer ini sudah dikonfirmasi sebelumnya.');
         }
 
-        return view('master.receipt.receive', [
+        return Inertia::render('Master/Receipt/Receive', [
             'transferOut'   => $transferOut,
-            'layout'        => $info['layout'],
             'routePrefix'   => $info['route'],
             'currentScope'  => $info['scope'],
             'info'          => $info,

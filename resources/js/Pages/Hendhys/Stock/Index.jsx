@@ -4,10 +4,128 @@ import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
-import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatQty } from '@/lib/format';
 
 const route = window.route;
+
+function SkeletonCards() {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
+            {[...Array(6)].map((_, i) => (
+                <div key={i} className="rounded-2xl border border-gray-150 bg-gray-50/20 p-5 dark:border-gray-800 dark:bg-white/[0.01]">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="w-2/3">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full mb-2" />
+                            <div className="h-3 bg-gray-100 dark:bg-gray-850 rounded w-1/3" />
+                        </div>
+                        <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded-full w-14" />
+                    </div>
+                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-4" />
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <div className="h-16 bg-gray-150 dark:bg-gray-800 rounded-xl" />
+                        <div className="h-16 bg-gray-150 dark:bg-gray-800 rounded-xl" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function StockCard({ item }) {
+    return (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between hover:border-amber-300 dark:hover:border-amber-800 hover:shadow-md transition-all">
+            <div>
+                {/* Header: Name & Code */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-800 dark:text-white/90 truncate" title={item.name}>
+                            {item.name}
+                        </h3>
+                        <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-550">
+                            {item.code}
+                        </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        {item.category ?? 'Brownies'}
+                    </span>
+                </div>
+
+                <p className="mt-2 text-xs font-semibold text-gray-450 dark:text-gray-500 uppercase tracking-wider">
+                    Tipe: {(item.jenis ?? '').replace('_', ' ')}
+                </p>
+
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-100 dark:border-gray-800" />
+
+                {/* Stock Metrics Split Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                    {/* Stok Bagus / Siap Jual */}
+                    <div className={`rounded-xl border p-2.5 text-center ${item.is_low ? 'border-rose-100 bg-rose-50/50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-500/10 dark:text-rose-400' : 'border-emerald-100 bg-emerald-50/50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Siap Jual</span>
+                        <span className="block text-lg font-bold tabular-nums leading-none mb-1">{formatQty(item.current_stock)}</span>
+                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500">{item.unit ?? 'PCS'}</span>
+                    </div>
+
+                    {/* Stok Retur */}
+                    <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550 mb-1">Stok Retur</span>
+                        <span className={`block text-lg font-bold tabular-nums leading-none mb-1 ${item.return_stock > 0 ? 'text-amber-600 dark:text-amber-455' : 'text-gray-400 dark:text-gray-650'}`}>{formatQty(item.return_stock)}</span>
+                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
+                    </div>
+                </div>
+
+                {/* Safety Stock / Minimum */}
+                <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Safety Stock (Minimum):</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.stock_min)} {item.unit}</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function BranchStockCard({ item }) {
+    return (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between hover:border-amber-300 dark:hover:border-amber-800 hover:shadow-md transition-all">
+            <div>
+                {/* Header: Name & Code */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-800 dark:text-white/90 truncate" title={item.name}>
+                            {item.name}
+                        </h3>
+                        <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-550">
+                            {item.code}
+                        </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        {item.category ?? 'Brownies'}
+                    </span>
+                </div>
+
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-100 dark:border-gray-800" />
+
+                {/* Stock Metrics Split Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                    {/* Stok Cabang */}
+                    <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-550 dark:text-gray-450 mb-1">Stok Cabang</span>
+                        <span className="block text-lg font-bold tabular-nums leading-none mb-1 text-gray-850 dark:text-white/90">{formatQty(item.current_stock)}</span>
+                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500">{item.unit ?? 'PCS'}</span>
+                    </div>
+
+                    {/* Retur Cabang */}
+                    <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550 mb-1">Retur Cabang</span>
+                        <span className={`block text-lg font-bold tabular-nums leading-none mb-1 ${item.return_stock > 0 ? 'text-amber-600 dark:text-amber-455' : 'text-gray-400 dark:text-gray-650'}`}>{formatQty(item.return_stock)}</span>
+                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function HendhysStockIndex({ stocks, branches, branchStocks, selectedBranchId, isPusat, filters }) {
     const [loading, setLoading] = useState(false);
@@ -17,7 +135,15 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
         e?.preventDefault();
         router.get(route('hendhys.stock.index'),
             { search: form.search || undefined, branch_id: form.branch_id || undefined },
-            { preserveState: true, preserveScroll: true, replace: true, only: ['stocks', 'branchStocks', 'filters', 'selectedBranchId'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+            { 
+                preserveState: true, 
+                preserveScroll: true, 
+                replace: true, 
+                only: ['stocks', 'branchStocks', 'filters', 'selectedBranchId'], 
+                onStart: () => setLoading(true), 
+                onFinish: () => setLoading(false) 
+            }
+        );
     };
 
     return (
@@ -27,110 +153,98 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-800">Stok {isPusat ? 'Pusat' : 'Cabang'}</h2>
-                        <p className="text-sm text-gray-500">Saldo inventori produk Hendhys Brownies</p>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok {isPusat ? 'Pusat' : 'Cabang'}</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Saldo inventori produk Hendhys Brownies</p>
                     </div>
-                    <Link href={route('hendhys.stock.movements')} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50">
+                    <Link href={route('hendhys.stock.movements')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.01] dark:border-gray-800 dark:bg-white/[0.03]">
                         <Icon name="history" className="text-[20px]" /> Kartu Stok
                     </Link>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 bg-gray-50/50 p-4">
-                        <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
-                            <div className="relative min-w-[260px] flex-1">
-                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400" />
-                                <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari nama produk atau kode..."
-                                    className="w-full rounded-lg border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500" />
-                            </div>
-                            <button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Filter</button>
-                            {form.search && <Link href={route('hendhys.stock.index')} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-200">Reset</Link>}
-                        </form>
-                    </div>
-
-                    <div className="custom-scrollbar overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th className="px-6 py-4 font-medium">Info Produk</th>
-                                    <th className="px-6 py-4 font-medium">Kategori</th>
-                                    <th className="px-6 py-4 text-center font-medium">Safety Stock</th>
-                                    <th className="px-6 py-4 text-center font-medium">Stok Tersedia</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {loading ? <SkeletonTableRows rows={8} columns={4} />
-                                    : stocks.data.length === 0 ? <EmptyState colSpan={4} icon="inventory_2" message="Tidak ada data stok." />
-                                    : stocks.data.map((item) => (
-                                        <tr key={item.id} className="transition-colors hover:bg-gray-50">
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-800">{item.name}</span>
-                                                    <span className="font-mono text-xs text-gray-400">{item.code}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-gray-600">{item.category ?? '-'}</span>
-                                                    <span className="text-[10px] capitalize text-gray-400">{(item.jenis ?? '').replace('_', ' ')}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center"><span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-bold text-gray-500">{formatQty(item.stock_min)}</span></td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600' : 'border-green-100 bg-green-50 text-green-600'}`}>
-                                                    <span className="text-sm font-black tabular-nums">{formatQty(item.current_stock)}</span>
-                                                    <span className="text-[10px] font-bold uppercase">{item.unit ?? 'PCS'}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {stocks.meta?.links && <div className="border-t border-gray-100 p-4"><Pagination links={stocks.meta.links} /></div>}
+                {/* Filter Card */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                    <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[260px] flex-1">
+                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400 dark:text-gray-500" />
+                            <input 
+                                type="text" 
+                                value={form.search} 
+                                onChange={(e) => setForm({ ...form, search: e.target.value })} 
+                                placeholder="Cari nama produk atau kode..."
+                                className="w-full h-11 rounded-lg border border-gray-300 bg-transparent pl-10 pr-4 text-sm text-gray-800 outline-hidden transition focus:border-amber-350 focus:ring-3 focus:ring-amber-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-amber-800" 
+                            />
+                        </div>
+                        <button type="submit" className="h-11 rounded-xl bg-amber-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-700 transition-all">Filter</button>
+                        {form.search && (
+                            <Link href={route('hendhys.stock.index')} className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-5 text-sm font-bold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                                Reset
+                            </Link>
+                        )}
+                    </form>
                 </div>
+
+                {/* Grid Content */}
+                {loading ? (
+                    <SkeletonCards />
+                ) : stocks.data.length === 0 ? (
+                    <div className="rounded-2xl border border-gray-200 bg-white p-16 text-center dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                        <EmptyState colSpan={1} icon="inventory_2" message="Tidak ada data stok." />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {stocks.data.map((item) => (
+                            <StockCard key={item.id} item={item} />
+                        ))}
+                    </div>
+                )}
+
+                {stocks.meta?.links && (
+                    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                        <Pagination links={stocks.meta.links} />
+                    </div>
+                )}
 
                 {/* Branch stock section for pusat */}
                 {isPusat && branches && (
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <div className="border-b border-gray-100 bg-amber-50/40 p-5">
-                            <h3 className="font-semibold text-gray-800">Stok per Cabang</h3>
+                    <div className="space-y-6 mt-8">
+                        <div>
+                            <h3 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok per Cabang</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Monitoring saldo inventori produk Brownies di setiap cabang aktif</p>
                         </div>
-                        <div className="border-b border-gray-100 bg-gray-50/50 p-4">
+
+                        {/* Branch Filter Card */}
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
                             <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
-                                <select value={form.branch_id} onChange={(e) => { setForm({ ...form, branch_id: e.target.value }); }} className="rounded-lg border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500">
+                                <select 
+                                    value={form.branch_id} 
+                                    onChange={(e) => setForm({ ...form, branch_id: e.target.value })} 
+                                    className="h-11 rounded-lg border border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white"
+                                >
                                     <option value="">Semua Cabang</option>
                                     {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                                 </select>
-                                <button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Filter Cabang</button>
+                                <button type="submit" className="h-11 rounded-xl bg-amber-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-700 transition-all">Filter Cabang</button>
                             </form>
                         </div>
-                        <div className="custom-scrollbar overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
-                                    <tr>
-                                        <th className="px-6 py-4 font-medium">Produk</th>
-                                        <th className="px-6 py-4 text-center font-medium">Stok</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {branchStocks?.data?.length === 0 ? <EmptyState colSpan={2} icon="store" message="Tidak ada stok cabang." />
-                                        : branchStocks?.data?.map((item, idx) => (
-                                            <tr key={`branch-${item.id}-${idx}`} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
-                                                    <span className="font-bold text-gray-800">{item.name}</span>
-                                                    <span className="ml-2 font-mono text-xs text-gray-400">{item.code}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="font-black tabular-nums text-gray-800">{formatQty(item.current_stock)}</span>
-                                                    <span className="ml-1 text-[10px] font-bold uppercase text-gray-400">{item.unit ?? 'PCS'}</span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        {branchStocks?.meta?.links && <div className="border-t border-gray-100 p-4"><Pagination links={branchStocks.meta.links} /></div>}
+
+                        {/* Branch Grid Content */}
+                        {branchStocks?.data?.length === 0 ? (
+                            <div className="rounded-2xl border border-gray-200 bg-white p-16 text-center dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                                <EmptyState colSpan={1} icon="store" message="Tidak ada stok cabang." />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {branchStocks?.data?.map((item, idx) => (
+                                    <BranchStockCard key={`branch-${item.id}-${idx}`} item={item} />
+                                ))}
+                            </div>
+                        )}
+
+                        {branchStocks?.meta?.links && (
+                            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                                <Pagination links={branchStocks.meta.links} />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

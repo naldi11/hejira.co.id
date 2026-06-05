@@ -30,61 +30,84 @@ export default function JihansStockIndex({ stocks, filters }) {
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-800">Stok Tersedia</h2>
-                        <p className="text-sm text-gray-500">Saldo inventori produk siap jual di Jihan's Food</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok Tersedia</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Saldo inventori produk siap jual di Jihan's Food</p>
                     </div>
-                    <Link href={route('jihans.stock.movements')} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50">
-                        <Icon name="history" className="text-[20px]" /> Kartu Stok
+                    <Link href={route('jihans.stock.movements')} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                        <Icon name="history" className="text-[18px]" /> Kartu Stok
                     </Link>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="border-b border-gray-100 bg-gray-50/50 p-4">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div className="border-b border-gray-200 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.01]">
                         <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
                             <div className="relative min-w-[260px] flex-1">
-                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400" />
-                                <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari nama produk atau kode..."
-                                    className="w-full rounded-lg border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-orange-500 focus:ring-orange-500" />
+                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-gray-400 dark:text-gray-500" />
+                                <input
+                                    type="text"
+                                    value={form.search}
+                                    onChange={(e) => setForm({ ...form, search: e.target.value })}
+                                    placeholder="Cari nama produk atau kode..."
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 py-2 pl-9 pr-4 text-sm text-gray-850 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                                />
                             </div>
-                            <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} className="rounded-lg border-gray-300 py-2 text-sm capitalize focus:border-orange-500 focus:ring-orange-500">
-                                <option value="">Semua Jenis</option>
-                                {JENIS.map((j) => <option key={j} value={j}>{j.replace('_', ' ')}</option>)}
+                            <select
+                                value={form.jenis}
+                                onChange={(e) => setForm({ ...form, jenis: e.target.value })}
+                                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 py-2 px-3 text-sm text-gray-850 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 capitalize"
+                            >
+                                <option value="" className="dark:bg-gray-800">Semua Jenis</option>
+                                {JENIS.map((j) => (
+                                    <option key={j} value={j} className="dark:bg-gray-800">
+                                        {j.replace('_', ' ')}
+                                    </option>
+                                ))}
                             </select>
-                            <button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Filter</button>
-                            {hasFilter && <Link href={route('jihans.stock.index')} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-200">Reset</Link>}
+                            <button type="submit" className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors">
+                                Filter
+                            </button>
+                            {hasFilter && (
+                                <Link href={route('jihans.stock.index')} className="rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 transition-colors">
+                                    Reset
+                                </Link>
+                            )}
                         </form>
                     </div>
 
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="border-b border-gray-200 bg-gray-50 text-gray-500">
+                            <thead className="border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
                                 <tr>
-                                    <th className="px-6 py-4 font-medium">Info Produk</th>
-                                    <th className="px-6 py-4 font-medium">Kategori</th>
-                                    <th className="px-6 py-4 text-center font-medium">Safety Stock</th>
-                                    <th className="px-6 py-4 text-center font-medium">Stok Tersedia</th>
+                                    <th className="px-6 py-4 font-semibold">Info Produk</th>
+                                    <th className="px-6 py-4 font-semibold">Kategori</th>
+                                    <th className="px-6 py-4 text-center font-semibold">Safety Stock</th>
+                                    <th className="px-6 py-4 text-center font-semibold">Stok Tersedia</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {loading ? <SkeletonTableRows rows={8} columns={4} />
                                     : stocks.data.length === 0 ? <EmptyState colSpan={4} icon="inventory_2" message="Tidak ada data stok." />
                                     : stocks.data.map((item) => (
-                                        <tr key={item.id} className="transition-colors hover:bg-gray-50">
+                                        <tr key={item.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-800">{item.name}</span>
-                                                    <span className="font-mono text-xs text-gray-400">{item.code}</span>
+                                                    <span className="font-bold text-gray-800 dark:text-white/90">{item.name}</span>
+                                                    <span className="font-mono text-xs text-gray-400 dark:text-gray-500 mt-0.5">{item.code}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-gray-600">{item.category ?? '-'}</span>
-                                                    <span className="text-[10px] capitalize text-gray-400">{(item.jenis ?? '').replace('_', ' ')}</span>
+                                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{item.category ?? '-'}</span>
+                                                    <span className="text-[10px] capitalize text-gray-400 dark:text-gray-500 mt-0.5">{(item.jenis ?? '').replace('_', ' ')}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-center"><span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-bold text-gray-500">{formatQty(item.stock_min)}</span></td>
                                             <td className="px-6 py-4 text-center">
-                                                <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600' : 'border-green-100 bg-green-50 text-green-600'}`}>
+                                                <span className="rounded-full bg-gray-100 dark:bg-gray-850 px-2.5 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                                    {formatQty(item.stock_min)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400' : 'border-green-100 bg-green-50 text-green-600 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400'}`}>
                                                     <span className="text-sm font-black tabular-nums">{formatQty(item.current_stock)}</span>
                                                     <span className="text-[10px] font-bold uppercase">{item.unit ?? 'PCS'}</span>
                                                 </div>
@@ -94,7 +117,7 @@ export default function JihansStockIndex({ stocks, filters }) {
                             </tbody>
                         </table>
                     </div>
-                    {stocks.meta?.links && <div className="border-t border-gray-100 p-4"><Pagination links={stocks.meta.links} /></div>}
+                    {stocks.meta?.links && <div className="border-t border-gray-100 p-4 dark:border-gray-800"><Pagination links={stocks.meta.links} /></div>}
                 </div>
             </div>
         </JihansLayout>

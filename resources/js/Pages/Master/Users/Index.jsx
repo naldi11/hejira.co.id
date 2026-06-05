@@ -1,94 +1,128 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
+import JihansLayout from '@/Layouts/JihansLayout';
+import HendhysLayout from '@/Layouts/HendhysLayout';
+
+const Layouts = { GudangLayout, JihansLayout, HendhysLayout };
 import Icon from '@/Components/Icon';
 import EmptyState from '@/Components/EmptyState';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
 const ENTITY_CLASS = {
-    gudang: 'bg-blue-50 text-blue-700 border-blue-100',
-    jihans: 'bg-orange-50 text-orange-700 border-orange-100',
-    hendhys: 'bg-amber-50 text-amber-700 border-amber-100',
-    owner: 'bg-violet-50 text-violet-700 border-violet-100',
+    gudang: 'bg-blue-50 text-blue-705 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/30',
+    jihans: 'bg-orange-50 text-orange-705 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-900/30',
+    hendhys: 'bg-amber-50 text-amber-705 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/30',
+    owner: 'bg-purple-50 text-purple-705 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-900/30',
 };
 
-export default function UsersIndex({ users }) {
+export default function UsersIndex({ users, layout = 'GudangLayout', routePrefix = 'master.' }) {
+    const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const destroy = (user) => {
         if (window.confirm(`Hapus pengguna ${user.name}?`)) {
-            router.delete(route('master.users.destroy', user.id), { preserveScroll: true });
+            router.delete(route(routePrefix + 'users.destroy', user.id), { preserveScroll: true });
         }
     };
 
     return (
-        <GudangLayout title="Manajemen User" pageTitle="Keamanan & Akses">
+        <Layout title="Manajemen User" pageTitle="Keamanan & Akses">
             <Head title="Manajemen User" />
 
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <h2 className="font-headline text-2xl font-black tracking-tight text-slate-800">Manajemen Pengguna</h2>
-                        <p className="text-sm font-medium text-slate-500">Kelola hak akses, entitas bisnis, dan kredensial pengguna sistem.</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Manajemen Pengguna</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Kelola hak akses, entitas bisnis, dan kredensial pengguna sistem.</p>
                     </div>
-                    <Link href={route('master.users.create')} className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-indigo-600/20 transition-all hover:bg-indigo-700">
-                        <Icon name="person_add" className="text-[20px]" /> Tambah Pengguna
+                    <Link href={route(routePrefix + 'users.create')}>
+                        <Button size="sm" startIcon={<Icon name="person_add" className="text-[18px]" />}>
+                            TAMBAH PENGGUNA
+                        </Button>
                     </Link>
                 </div>
 
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 bg-slate-50/50 p-6">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total: <strong className="tabular-nums text-slate-900">{users.data.length}</strong> Pengguna Terdaftar</span>
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                    <div className="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            Total: <strong className="font-mono text-gray-850 dark:text-white">{(users ?? []).length}</strong> Pengguna Terdaftar
+                        </span>
                     </div>
+
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                    <th className="px-6 py-4">Profil Pengguna</th>
-                                    <th className="px-6 py-4">Penempatan</th>
-                                    <th className="px-6 py-4">Level Akses</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Aksi</th>
+                                <tr className="border-b border-gray-150 bg-gray-50/50 text-xs font-bold text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400 tracking-wider">
+                                    <th className="px-6 py-4.5">Profil Pengguna</th>
+                                    <th className="px-6 py-4.5">Penempatan</th>
+                                    <th className="px-6 py-4.5">Level Akses</th>
+                                    <th className="px-6 py-4.5 text-center">Status</th>
+                                    <th className="px-6 py-4.5 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {users.data.length === 0 ? <EmptyState colSpan={5} icon="group" message="Belum ada pengguna." />
-                                    : users.data.map((user) => (
-                                        <tr key={user.id} className="group transition-colors hover:bg-slate-50/50">
-                                            <td className="px-6 py-4">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {(users ?? []).length === 0 ? (
+                                    <EmptyState colSpan={5} icon="group" message="Belum ada pengguna." />
+                                ) : (
+                                    (users ?? []).map((user) => (
+                                        <tr key={user.id} className="group transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-6 py-4.5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 font-black text-indigo-600 shadow-inner transition-all group-hover:bg-indigo-600 group-hover:text-white">{user.name.charAt(0).toUpperCase()}</div>
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 font-bold text-brand-650 dark:text-brand-400">
+                                                        {user.name.charAt(0).toUpperCase()}
+                                                    </div>
                                                     <div className="flex flex-col">
-                                                        <span className="text-sm font-black tracking-tight text-slate-800">{user.name}</span>
-                                                        <span className="max-w-[150px] truncate text-[10px] font-bold text-slate-400">{user.email}</span>
+                                                        <span className="text-sm font-bold text-gray-800 dark:text-white/90">{user.name}</span>
+                                                        <span className="max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400">{user.email}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className={`w-fit rounded-lg border px-2 py-0.5 text-[9px] font-black uppercase ${ENTITY_CLASS[user.entity] ?? 'bg-slate-50 text-slate-700 border-slate-100'}`}>{user.entity}</span>
-                                                    {user.branch && <span className="text-[10px] font-bold italic text-slate-400">@ {user.branch}</span>}
+                                            <td className="px-6 py-4.5">
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span className={`rounded-lg border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${ENTITY_CLASS[user.entity] ?? 'bg-gray-55 text-gray-700 border-gray-200'}`}>
+                                                        {user.entity}
+                                                    </span>
+                                                    {user.branch && (
+                                                        <span className="text-[10px] font-semibold italic text-gray-400 dark:text-gray-550">
+                                                            @ {user.branch}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4.5">
                                                 <div className="flex flex-wrap gap-1">
-                                                    {user.roles.map((r) => <span key={r} className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-500">{r}</span>)}
+                                                    {user.roles.map((r) => (
+                                                        <span key={r} className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                                                            {r}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-flex rounded-xl border px-3 py-1 text-[9px] font-black uppercase tracking-widest ${user.is_active ? 'border-emerald-100 bg-emerald-50 text-emerald-600' : 'border-rose-100 bg-rose-50 text-rose-600'}`}>{user.is_active ? 'Aktif' : 'Off'}</span>
+                                            <td className="px-6 py-4.5 text-center">
+                                                <span className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${user.is_active ? 'border-emerald-250 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/30' : 'border-gray-200 bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'}`}>
+                                                    <span className={`h-1.5 w-1.5 rounded-full ${user.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                                                    {user.is_active ? 'Aktif' : 'Nonaktif'}
+                                                </span>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-end gap-2 opacity-40 transition-opacity group-hover:opacity-100">
-                                                    <Link href={route('master.users.edit', user.id)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"><Icon name="edit" className="text-[18px]" /></Link>
-                                                    <button onClick={() => destroy(user)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 transition-all hover:bg-rose-50 hover:text-rose-600"><Icon name="delete" className="text-[18px]" /></button>
+                                            <td className="px-6 py-4.5">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link href={route(routePrefix + 'users.edit', user.id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-450 transition hover:bg-white hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-750 dark:hover:text-brand-400">
+                                                        <Icon name="edit" className="text-[18px]" />
+                                                    </Link>
+                                                    <button onClick={() => destroy(user)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-450 transition hover:bg-white hover:text-rose-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-750 dark:hover:text-rose-455">
+                                                        <Icon name="delete" className="text-[18px]" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </GudangLayout>
+        </Layout>
     );
 }

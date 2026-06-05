@@ -1,92 +1,117 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import GudangLayout from '@/Layouts/GudangLayout';
+import JihansLayout from '@/Layouts/JihansLayout';
+import HendhysLayout from '@/Layouts/HendhysLayout';
+
+const Layouts = { GudangLayout, JihansLayout, HendhysLayout };
 import Icon from '@/Components/Icon';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
-export default function BranchForm({ branch = null }) {
-    const isEdit = !!branch;
+export default function BranchForm({ branch = null, layout = 'GudangLayout', routePrefix = 'master.' }) {
+    const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
+    const b = branch?.data ?? branch;
+    const isEdit = !!(b && b.id);
 
     const { data, setData, post, put, processing, errors } = useForm({
-        code: branch?.code ?? '',
-        type: branch?.type ?? 'cabang',
-        name: branch?.name ?? '',
-        phone: branch?.phone ?? '',
-        address: branch?.address ?? '',
-        is_active: branch ? branch.is_active : true,
+        code: b?.code ?? '',
+        type: b?.type ?? 'cabang',
+        name: b?.name ?? '',
+        phone: b?.phone ?? '',
+        address: b?.address ?? '',
+        is_active: b ? b.is_active : true,
     });
 
     const submit = (e) => {
         e.preventDefault();
-        isEdit ? put(route('master.branches.update', branch.id)) : post(route('master.branches.store'));
+        isEdit ? put(route(routePrefix + 'branches.update', b.id)) : post(route(routePrefix + 'branches.store'));
     };
 
-    const field = 'w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none transition-all focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10';
-    const label = 'mb-2 ml-1 block text-xs font-black uppercase tracking-widest text-slate-500';
+    const inputClass = 'w-full h-11 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
+    const areaClass = 'w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-855 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800 resize-none';
+    const labelClass = 'mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400';
+    const err = (k) => errors[k] && <p className="mt-1 text-xs font-semibold text-rose-500">{errors[k]}</p>;
 
     return (
-        <GudangLayout title={isEdit ? 'Edit Cabang' : 'Tambah Cabang'} pageTitle="Konfigurasi Cabang">
+        <Layout title={isEdit ? 'Edit Cabang' : 'Tambah Cabang'} pageTitle="Konfigurasi Cabang">
             <Head title={isEdit ? 'Edit Cabang' : 'Tambah Cabang'} />
 
-            <div className="mx-auto max-w-4xl space-y-8 pb-20">
-                <div className="flex items-center justify-between">
-                    <Link href={route('master.branches.index')} className="group inline-flex items-center gap-2 font-bold text-slate-500 transition-colors hover:text-slate-900">
-                        <Icon name="arrow_back" className="text-[20px] transition-transform group-hover:-translate-x-1" /> Batal &amp; Kembali
-                    </Link>
-                    <h2 className="font-headline text-xl font-black tracking-tight text-slate-800">{isEdit ? 'Edit Data Cabang' : 'Pendaftaran Cabang Baru'}</h2>
-                </div>
+            <div className="w-full space-y-6 pb-20">
 
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                    <form onSubmit={submit} className="space-y-8 rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10 lg:col-span-2">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <label className={label}>Kode Cabang <span className="text-rose-500">*</span></label>
-                                <input type="text" required value={data.code} onChange={(e) => setData('code', e.target.value)} placeholder="cth: HND-CB3" className={field} />
-                                {errors.code && <p className="ml-2 mt-1 text-[10px] font-bold uppercase text-rose-500">{errors.code}</p>}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <form onSubmit={submit} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] lg:col-span-2">
+
+                        <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
+                            <div>
+                                <label className={labelClass}>Kode Cabang <span className="text-rose-500">*</span></label>
+                                <input type="text" required value={data.code} onChange={(e) => setData('code', e.target.value)} placeholder="cth: HND-CB3" className={inputClass} />
+                                {err('code')}
                             </div>
-                            <div className="space-y-2">
-                                <label className={label}>Tipe Unit <span className="text-rose-500">*</span></label>
-                                <select required value={data.type} onChange={(e) => setData('type', e.target.value)} className={field}>
+                            <div>
+                                <label className={labelClass}>Tipe Unit / Cabang <span className="text-rose-500">*</span></label>
+                                <select required value={data.type} onChange={(e) => setData('type', e.target.value)} className={inputClass}>
                                     <option value="cabang">Outlet / Cabang</option>
                                     <option value="pusat">Kantor Pusat / Gudang</option>
                                 </select>
+                                {err('type')}
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <label className={label}>Nama Cabang <span className="text-rose-500">*</span></label>
-                                <input type="text" required value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="cth: Hendhys Brownies SM Raja" className={field} />
-                                {errors.name && <p className="ml-2 mt-1 text-[10px] font-bold uppercase text-rose-500">{errors.name}</p>}
+                            <div className="md:col-span-2">
+                                <label className={labelClass}>Nama Cabang <span className="text-rose-500">*</span></label>
+                                <input type="text" required value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="cth: Hendhys Brownies SM Raja" className={inputClass} />
+                                {err('name')}
                             </div>
-                            <div className="space-y-2">
-                                <label className={label}>Nomor Telepon</label>
-                                <input type="text" value={data.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="0812xxxx" className={field} />
+                            <div>
+                                <label className={labelClass}>Nomor Telepon</label>
+                                <input type="text" value={data.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="0812xxxx" className={inputClass} />
+                                {err('phone')}
                             </div>
-                            <div className="flex items-center px-2 pt-8">
-                                <label className="group inline-flex cursor-pointer items-center gap-3">
-                                    <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Status Aktif</span>
+                            <div className="flex items-center pt-5">
+                                <label className="inline-flex cursor-pointer items-center gap-3">
+                                    <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-5 w-5 rounded-md border-gray-300 text-brand-600 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900/50" />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cabang Aktif</span>
                                 </label>
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <label className={label}>Alamat Lengkap</label>
-                                <textarea rows={3} value={data.address} onChange={(e) => setData('address', e.target.value)} placeholder="Jl. Raya No. 123..." className={`${field} resize-none font-medium`} />
+                            <div className="md:col-span-2">
+                                <label className={labelClass}>Alamat Lengkap</label>
+                                <textarea rows={3} value={data.address} onChange={(e) => setData('address', e.target.value)} placeholder="Jl. Raya No. 123..." className={areaClass} />
+                                {err('address')}
                             </div>
                         </div>
 
-                        <button type="submit" disabled={processing} className="w-full rounded-2xl bg-slate-900 px-8 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-slate-900/10 transition-all hover:bg-indigo-600 disabled:opacity-50">
-                            {processing ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Daftarkan Cabang'}
-                        </button>
+                        <div className="flex items-center justify-end gap-3 border-t border-gray-150 bg-gray-50/50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
+                            <Link href={route(routePrefix + 'branches.index')}>
+                                <Button type="button" variant="outline" startIcon={<Icon name="arrow_back" className="text-[16px]" />}>
+                                    Kembali ke Daftar
+                                </Button>
+                            </Link>
+                            <Button type="submit" disabled={processing}>
+                                {processing ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Daftarkan Cabang'}
+                            </Button>
+                        </div>
                     </form>
 
-                    <div className="rounded-[2rem] bg-indigo-600 p-8 text-white shadow-xl shadow-indigo-600/20">
-                        <Icon name="info" className="mb-4 text-[32px] text-indigo-300" />
-                        <h3 className="mb-4 text-sm font-black uppercase tracking-[0.2em]">Informasi Tipe</h3>
+                    <div className="rounded-2xl border border-transparent bg-brand-500 p-6 text-white shadow-theme-xs dark:bg-brand-500/10 dark:border-brand-500/20">
+                        <Icon name="info" className="mb-4 text-[32px] text-brand-200 dark:text-brand-400" />
+                        <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-white dark:text-brand-300">Informasi Tipe Cabang</h3>
                         <ul className="space-y-4">
-                            <li className="flex gap-3"><span className="text-xs text-indigo-300">●</span><p className="text-xs font-medium leading-relaxed"><strong className="text-white">Pusat:</strong> Gudang Utama dan Kantor Administrasi.</p></li>
-                            <li className="flex gap-3"><span className="text-xs text-indigo-300">●</span><p className="text-xs font-medium leading-relaxed"><strong className="text-white">Cabang:</strong> Outlet penjualan retail.</p></li>
+                            <li className="flex gap-3">
+                                <span className="text-xs text-brand-200 dark:text-brand-400">●</span>
+                                <p className="text-xs font-medium leading-relaxed dark:text-gray-300">
+                                    <strong className="text-white">Pusat/Gudang:</strong> Berfungsi sebagai gudang utama penyimpanan stok barang dan kantor administrasi operasional.
+                                </p>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-xs text-brand-200 dark:text-brand-400">●</span>
+                                <p className="text-xs font-medium leading-relaxed dark:text-gray-300">
+                                    <strong className="text-white">Outlet/Cabang:</strong> Unit bisnis retail tempat penjualan barang langsung ke pelanggan.
+                                </p>
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
-        </GudangLayout>
+        </Layout>
     );
 }
+

@@ -47,6 +47,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
 
         // Riwayat Transaksi
         Route::resource('transactions', \App\Http\Controllers\Jihans\TransactionController::class)->only(['index', 'show']);
+        Route::get('transactions/{transaction}/pdf', [\App\Http\Controllers\Jihans\TransactionController::class, 'pdf'])->name('transactions.pdf');
 
         // Transaksi Pending
         Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');

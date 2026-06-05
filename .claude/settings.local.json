@@ -47,7 +47,8 @@
       "Bash(sed -n '/function up/,/}/p' database/migrations/2026_05_23_062305_add_source_type_to_master_products.php)",
       "Bash(echo \"=== transfer_request migrations ===\"; ls database/migrations/ | grep -iE \"transfer_request\"; echo \"=== TR table ===\"; sed -n '/Schema::create/,/}\\);/p' database/migrations/*create*transfer_request*table.php 2>/dev/null | head -40)",
       "Bash(echo \"=== jihans_stock_movements schema ===\" && sed -n '/Schema::create/,/}\\);/p' database/migrations/*create_jihans_stock_movements_table.php; echo \"=== JihansStock fillable ===\"; grep -n \"fillable\\\\|guarded\\\\|protected \\\\$table\" app/Models/JihansStock.php)",
-      "Bash(mkdir -p prompts && echo \"=== cek struktur Hendhys utk akurasi prompt ===\" && wc -l app/Http/Controllers/Hendhys/*.php 2>/dev/null && echo \"--- layout hendhys ada? ---\" && ls resources/views/layouts/hendhys.blade.php 2>/dev/null && echo \"--- hendhys_stock_movements source enum ---\" && sed -n '/create.*hendhys_stock_movements/,/source/p' database/migrations/*create_hendhys_stock_movements_table.php 2>/dev/null | grep -i \"enum\\('source\")"
+      "Bash(mkdir -p prompts && echo \"=== cek struktur Hendhys utk akurasi prompt ===\" && wc -l app/Http/Controllers/Hendhys/*.php 2>/dev/null && echo \"--- layout hendhys ada? ---\" && ls resources/views/layouts/hendhys.blade.php 2>/dev/null && echo \"--- hendhys_stock_movements source enum ---\" && sed -n '/create.*hendhys_stock_movements/,/source/p' database/migrations/*create_hendhys_stock_movements_table.php 2>/dev/null | grep -i \"enum\\('source\")",
+      "Bash(cd /Applications/MAMP/htdocs/hejira.co.id *)"
     ]
   }
 }

@@ -64,6 +64,8 @@ class StoreReceivingRequest extends FormRequest
             'items.*.notes'          => ['nullable', 'string'],
             'photos'                 => ['nullable', 'array', 'max:10'],
             'photos.*'               => ['image', 'max:5120'],
+            'photo_urls'             => ['nullable', 'array'],
+            'photo_urls.*'           => ['string'],
         ];
     }
 }

@@ -29,6 +29,8 @@ class ProductStockResource extends JsonResource
             'stock_min'     => (float) $this->stock_min,
             'current_stock' => $qty,
             'is_low'        => $qty <= (float) $this->stock_min,
+            'returned_defect_stock' => (float) ($this->returned_defect_stock ?? 0),
+            'returned_expired_stock' => (float) ($this->returned_expired_stock ?? 0),
         ];
     }
 }

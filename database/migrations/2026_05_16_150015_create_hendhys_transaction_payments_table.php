@@ -11,7 +11,10 @@ return new class extends Migration
         Schema::create('hendhys_transaction_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('transaction_id')->constrained('hendhys_transactions')->cascadeOnDelete();
-            $table->enum('payment_method', ['cash', 'transfer']);
+            // Nullable: superseded by payment_method_id (FK). A later migration makes
+            // this nullable on MySQL, but that widener is sqlite-guarded — so the base
+            // must already allow null for the sqlite test DB.
+            $table->enum('payment_method', ['cash', 'transfer'])->nullable();
             $table->decimal('amount', 15, 2);
             $table->string('reference_number', 100)->nullable();
             $table->string('bank_name', 100)->nullable();

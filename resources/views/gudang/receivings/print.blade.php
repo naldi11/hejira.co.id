@@ -260,7 +260,7 @@
         </thead>
         <tbody>
             @foreach($receiving->details as $i => $item)
-            @php $grandTotal += $item->total; @endphp
+            @php if($item->kondisi === 'baik') { $grandTotal += $item->total; } @endphp
             <tr>
                 <td class="text-center" style="color:#9ca3af">{{ $i + 1 }}</td>
                 <td style="font-weight:600">{{ $item->product->name }}</td>
@@ -282,7 +282,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="{{ $receiving->details->whereNotNull('quantity_ordered')->isNotEmpty() ? 7 : 6 }}" style="text-align:right">TOTAL NILAI PENERIMAAN</td>
+                <td colspan="{{ $receiving->details->whereNotNull('quantity_ordered')->isNotEmpty() ? 7 : 6 }}" style="text-align:right">TOTAL NILAI PENERIMAAN <span style="font-size:9px;color:#9ca3af">(Barang Baik)</span></td>
                 <td class="text-right" style="color:#2d3748;font-size:13px">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                 <td></td>
             </tr>

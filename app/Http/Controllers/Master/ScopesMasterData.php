@@ -8,13 +8,16 @@ trait ScopesMasterData
 {
     protected function getScopeInfo(Request $request)
     {
+        // `layout` is the React layout COMPONENT name consumed by the shared master
+        // pages (resources/js/Pages/Master/*), keyed in their `Layouts` map — not a
+        // Blade view name. `route` is the named-route prefix for that scope.
         $prefix = $request->route()->getPrefix() ?? '';
         if (str_contains($prefix, 'hendhys')) {
-            return ['scope' => 'hendhys', 'layout' => 'layouts.hendhys', 'route' => 'hendhys.master.'];
+            return ['scope' => 'hendhys', 'layout' => 'HendhysLayout', 'route' => 'hendhys.master.'];
         } elseif (str_contains($prefix, 'jihans')) {
-            return ['scope' => 'jihans', 'layout' => 'layouts.jihans', 'route' => 'jihans.master.'];
+            return ['scope' => 'jihans', 'layout' => 'JihansLayout', 'route' => 'jihans.master.'];
         }
-        return ['scope' => 'gudang', 'layout' => 'layouts.gudang', 'route' => 'master.'];
+        return ['scope' => 'gudang', 'layout' => 'GudangLayout', 'route' => 'master.'];
     }
 
     protected function getModelClass(string $modelName, string $scope)

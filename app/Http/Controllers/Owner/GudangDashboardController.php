@@ -8,45 +8,24 @@ use App\Models\PurchaseOrder;
 use App\Models\Receiving;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
-use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class GudangDashboardController extends Controller
 {
     public function index()
     {
-        // Statistik Purchase Order
-        $poPending = PurchaseOrder::where('status', 'draft')->orWhere('status', 'sent')->count();
-        $poReceived = PurchaseOrder::where('status', 'received')->count();
+        $mapStock = fn ($s) => ['product' => $s->product?->name ?? '-', 'quantity' => (float) $s->quantity];
 
-        // Total Penerimaan Barang Bulan Ini
-        $receiveThisMonth = Receiving::whereMonth('date', today()->month)->count();
-
-        // Total Distribusi / Transfer Keluar Bulan Ini
-        $transferOutThisMonth = TransferOut::whereMonth('date', today()->month)->count();
-
-        // Transfer Request yang butuh Approval
-        $pendingRequests = TransferRequest::where('status', 'pending')->count();
-
-        // Top 5 Stok Terbanyak
-        $topStocks = GudangStock::with('product')
-            ->orderByDesc('quantity')
-            ->take(5)
-            ->get();
-
-        // 5 Stok Terendah
-        $lowStocks = GudangStock::with('product')
-            ->orderBy('quantity')
-            ->take(5)
-            ->get();
-
-        return view('owner.gudang', compact(
-            'poPending',
-            'poReceived',
-            'receiveThisMonth',
-            'transferOutThisMonth',
-            'pendingRequests',
-            'topStocks',
-            'lowStocks'
-        ));
+        return Inertia::render('Owner/Gudang', [
+            'stats' => [
+                'po_pending'        => PurchaseOrder::whereIn('status', ['draft', 'sent'])->count(),
+                'po_received'       => PurchaseOrder::where('status', 'received')->count(),
+                'receive_month'     => Receiving::whereMonth('date', today()->month)->whereYear('date', today()->year)->count(),
+                'transfer_month'    => TransferOut::whereMonth('date', today()->month)->whereYear('date', today()->year)->count(),
+                'pending_requests'  => TransferRequest::where('status', 'pending')->count(),
+            ],
+            'topStocks' => GudangStock::with('product')->orderByDesc('quantity')->take(5)->get()->map($mapStock),
+            'lowStocks' => GudangStock::with('product')->orderBy('quantity')->take(5)->get()->map($mapStock),
+        ]);
     }
 }

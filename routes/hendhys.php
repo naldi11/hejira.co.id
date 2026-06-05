@@ -23,11 +23,12 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         // Master Data (Scoped to Hendhys)
         Route::prefix('master')->name('master.')->group(function () {
             Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
+            Route::get('customers/template', [\App\Http\Controllers\Master\CustomerController::class, 'downloadTemplate'])->name('customers.template');
+            Route::post('customers/import', [\App\Http\Controllers\Master\CustomerController::class, 'import'])->name('customers.import');
+            Route::resource('customers', \App\Http\Controllers\Master\CustomerController::class)->except(['show']);
             Route::get('products/template', [\App\Http\Controllers\Master\ProductController::class, 'downloadTemplate'])->name('products.template');
             Route::post('products/import', [\App\Http\Controllers\Master\ProductController::class, 'import'])->name('products.import');
             Route::resource('products', \App\Http\Controllers\Master\ProductController::class)->except(['show']);
-
-
         });
 
         // Produksi (khusus pusat)
@@ -66,6 +67,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy']);
         Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
         Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
+        Route::post('transfer-to-branch/{transfer_to_branch}/force-receive', [TransferToBranchController::class, 'forceReceive'])->name('transfer-to-branch.force-receive');
         Route::get('transfer-to-branch/{transfer_to_branch}/bast', [TransferToBranchController::class, 'printBast'])->name('transfer-to-branch.bast');
 
         // Retur dari Cabang

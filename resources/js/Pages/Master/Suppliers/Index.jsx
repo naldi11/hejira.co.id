@@ -9,6 +9,7 @@ import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
+import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
@@ -27,6 +28,8 @@ export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLa
 
     const destroy = (s) => { if (window.confirm(`Hapus supplier ${s.name}?`)) router.delete(route(routePrefix + 'suppliers.destroy', s.id), { preserveScroll: true }); };
 
+    const selectClass = 'h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-850 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
+
     return (
         <Layout title="Daftar Supplier" pageTitle="Master Data — Supplier">
             <Head title="Supplier" />
@@ -34,62 +37,72 @@ export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLa
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <h2 className="font-headline text-2xl font-black text-slate-900">Daftar Supplier</h2>
-                        <p className="mt-1 text-sm font-medium text-slate-500">{suppliers.meta?.total ?? suppliers.data.length} mitra supplier terdaftar</p>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Daftar Supplier</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{suppliers.meta?.total ?? suppliers.data.length} mitra supplier terdaftar</p>
                     </div>
-                    <Link href={route(routePrefix + 'suppliers.create')} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-indigo-600/20 transition-all hover:bg-indigo-700">
-                        <Icon name="add" className="text-[18px]" /> Tambah Supplier
+                    <Link href={route(routePrefix + 'suppliers.create')}>
+                        <Button size="sm" startIcon={<Icon name="add" className="text-[18px]" />}>
+                            TAMBAH SUPPLIER
+                        </Button>
                     </Link>
                 </div>
 
-                <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-                    <form onSubmit={reload} className="flex flex-wrap gap-4">
-                        <div className="relative min-w-[280px] flex-1">
-                            <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari nama, kode, atau telepon..."
-                                className="w-full rounded-2xl border-2 border-slate-50 bg-slate-50 py-3 pl-12 pr-4 text-sm outline-none transition-all focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10" />
-                        </div>
-                        <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="min-w-[180px] cursor-pointer rounded-2xl border-2 border-slate-50 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-indigo-500 focus:bg-white">
-                            <option value="">Semua Status</option>
-                            <option value="1">Aktif</option>
-                            <option value="0">Nonaktif</option>
-                        </select>
-                        <button type="submit" className="flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-slate-800"><Icon name="filter_list" className="text-[18px]" /> Cari</button>
-                        {hasFilter && <Link href={route(routePrefix + 'suppliers.index')} className="flex items-center gap-2 rounded-2xl bg-rose-50 px-6 py-3 text-xs font-bold uppercase tracking-widest text-rose-600 transition-all hover:bg-rose-100"><Icon name="close" className="text-[18px]" /> Reset</Link>}
-                    </form>
-                </div>
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                    <div className="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <form onSubmit={reload} className="flex flex-wrap items-center gap-4">
+                            <div className="relative min-w-[280px] flex-1">
+                                <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-gray-400" />
+                                <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari nama, kode, atau telepon..."
+                                    className="w-full h-11 rounded-lg border border-gray-300 bg-transparent pl-11 pr-4 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800" />
+                            </div>
+                            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={selectClass}>
+                                <option value="">Semua Status</option>
+                                <option value="1">Aktif</option>
+                                <option value="0">Nonaktif</option>
+                            </select>
+                            <Button type="submit" size="sm">Cari</Button>
+                            {hasFilter && <Link href={route(routePrefix + 'suppliers.index')} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"><Icon name="refresh" /></Link>}
+                        </form>
+                    </div>
 
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                    <th className="px-6 py-4">Kode</th>
-                                    <th className="px-6 py-4">Nama Supplier</th>
-                                    <th className="px-6 py-4">Kontak Personal</th>
-                                    <th className="px-6 py-4">Telepon</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Aksi</th>
+                                <tr className="border-b border-gray-150 bg-gray-50/50 text-xs font-bold text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400 tracking-wider">
+                                    <th className="px-6 py-4.5">Kode</th>
+                                    <th className="px-6 py-4.5">Nama Supplier</th>
+                                    <th className="px-6 py-4.5">Kontak Personal</th>
+                                    <th className="px-6 py-4.5">Telepon</th>
+                                    <th className="px-6 py-4.5 text-center">Status</th>
+                                    <th className="px-6 py-4.5 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {loading ? <SkeletonTableRows rows={6} columns={6} />
                                     : suppliers.data.length === 0 ? <EmptyState colSpan={6} icon="local_shipping" message="Tidak ada data supplier." />
                                     : suppliers.data.map((s) => (
-                                        <tr key={s.id} className="group transition-colors hover:bg-slate-50/50">
-                                            <td className="px-6 py-4"><span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-400">{s.code}</span></td>
-                                            <td className="px-6 py-4 text-sm font-black text-slate-900">{s.name}</td>
-                                            <td className="px-6 py-4 text-sm font-bold text-slate-500">{s.contact_person ?? '-'}</td>
-                                            <td className="px-6 py-4 text-sm font-bold text-slate-500">{s.phone ?? '-'}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest ${s.is_active ? 'border-emerald-100 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-slate-100 text-slate-500'}`}>
-                                                    <span className={`h-1.5 w-1.5 rounded-full ${s.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`} />{s.is_active ? 'Aktif' : 'Nonaktif'}
+                                        <tr key={s.id} className="group transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-6 py-4.5">
+                                                <span className="rounded-md bg-gray-100 dark:bg-gray-850 px-2.5 py-1 font-mono text-xs font-bold text-gray-500 dark:text-gray-400">
+                                                    {s.code}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4.5 font-bold text-gray-800 dark:text-white/90 group-hover:underline">{s.name}</td>
+                                            <td className="px-6 py-4.5 text-xs font-semibold text-gray-600 dark:text-gray-400">{s.contact_person ?? '—'}</td>
+                                            <td className="px-6 py-4.5 text-xs font-semibold text-gray-600 dark:text-gray-400">{s.phone ?? '—'}</td>
+                                            <td className="px-6 py-4.5 text-center">
+                                                <span className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${s.is_active ? 'border-emerald-250 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-900/30' : 'border-gray-200 bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'}`}>
+                                                    <span className={`h-1.5 w-1.5 rounded-full ${s.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />{s.is_active ? 'Aktif' : 'Nonaktif'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4.5">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Link href={route(routePrefix + 'suppliers.edit', s.id)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"><Icon name="edit" className="text-[18px]" /></Link>
-                                                    <button onClick={() => destroy(s)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 transition-all hover:bg-rose-50 hover:text-rose-600"><Icon name="delete" className="text-[18px]" /></button>
+                                                    <Link href={route(routePrefix + 'suppliers.edit', s.id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-450 transition hover:bg-white hover:text-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-750 dark:hover:text-brand-400">
+                                                        <Icon name="edit" className="text-[18px]" />
+                                                    </Link>
+                                                    <button onClick={() => destroy(s)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-450 transition hover:bg-white hover:text-rose-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-750 dark:hover:text-rose-455">
+                                                        <Icon name="delete" className="text-[18px]" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -97,7 +110,7 @@ export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLa
                             </tbody>
                         </table>
                     </div>
-                    {suppliers.meta?.links && <div className="border-t border-slate-100 px-6 py-4"><Pagination links={suppliers.meta.links} /></div>}
+                    {suppliers.meta?.links && <div className="border-t border-gray-150 p-5 dark:border-gray-800"><Pagination links={suppliers.meta.links} /></div>}
                 </div>
             </div>
         </Layout>
