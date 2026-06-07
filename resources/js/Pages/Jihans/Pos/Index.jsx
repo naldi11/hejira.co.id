@@ -31,7 +31,10 @@ export default function PosIndex({ products, customers }) {
             const product = products.find(p => p.id === item.product_id);
             if (product) {
                 const catName = (product.category_name || '').toLowerCase();
-                if (catName === 'daging' || catName === 'tortilla') {
+                const prodName = (product.name || '').toLowerCase();
+                const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
+                                         prodName.includes('daging') || prodName.includes('tortilla');
+                if (isMeatOrTortilla) {
                     return sum + item.quantity;
                 }
             }
@@ -52,7 +55,11 @@ export default function PosIndex({ products, customers }) {
             }
 
             const catName = (product.category_name || '').toLowerCase();
-            if ((catName === 'daging' || catName === 'tortilla') && combinedQty >= 50) {
+            const prodName = (product.name || '').toLowerCase();
+            const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
+                                     prodName.includes('daging') || prodName.includes('tortilla');
+            
+            if (isMeatOrTortilla && combinedQty >= 50) {
                 effectiveQty = Math.max(effectiveQty, combinedQty);
             }
 
