@@ -100,20 +100,30 @@ export default function PosIndex({ products, customers }) {
 
     const lineTotal = (it) => it.quantity * it.price - (Number(it.discount) || 0);
 
-    const addItem = (product) => {
-        if (product.current_stock <= 0) { alert('Stok produk ini masih kosong!'); return; }
+    const addItem = (input) => {
+        const itemsToAdd = Array.isArray(input) ? input : [input];
+        const validItems = itemsToAdd.filter(p => p.current_stock > 0);
+        if (validItems.length === 0) return;
+
         setCart((prev) => {
-            const idx = prev.findIndex((i) => i.product_id === product.id);
-            let next;
-            if (idx > -1) {
-                next = [...prev];
-                next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
-            } else {
-                next = [...prev, {
-                    product_id: product.id, product_name: product.name, product_code: product.code, barcode: product.barcode,
-                    price: product.selling_price || 0, quantity: 1, discount: 0,
-                    unit_name: product.unit, max_stock: product.current_stock,
-                }];
+            let next = [...prev];
+            for (const product of validItems) {
+                const idx = next.findIndex((i) => i.product_id === product.id);
+                if (idx > -1) {
+                    next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+                } else {
+                    next.push({
+                        product_id: product.id,
+                        product_name: product.name,
+                        product_code: product.code,
+                        barcode: product.barcode,
+                        price: product.selling_price || 0,
+                        quantity: 1,
+                        discount: 0,
+                        unit_name: product.unit,
+                        max_stock: product.current_stock,
+                    });
+                }
             }
             return recalculateCart(next);
         });

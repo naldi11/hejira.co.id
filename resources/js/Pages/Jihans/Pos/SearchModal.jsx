@@ -6,6 +6,7 @@ import { formatQty, formatRupiah } from '@/lib/format';
 export default function SearchModal({ products, onAdd, onClose }) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
+    const [selected, setSelected] = useState({}); // Stores selected product objects: { [id]: product }
     const inputRef = useRef(null);
     const listRef = useRef(null);
 
@@ -36,6 +37,29 @@ export default function SearchModal({ products, onAdd, onClose }) {
         el?.scrollIntoView({ block: 'nearest' });
     }, [active]);
 
+    const toggleSelect = (p) => {
+        if (p.current_stock <= 0) return;
+        setSelected((prev) => {
+            const next = { ...prev };
+            if (next[p.id]) {
+                delete next[p.id];
+            } else {
+                next[p.id] = p;
+            }
+            return next;
+        });
+    };
+
+    const handleRowClick = (p) => {
+        if (p.current_stock <= 0) return;
+        const selectedList = Object.values(selected);
+        if (selectedList.length > 0) {
+            toggleSelect(p);
+        } else {
+            onAdd([p]);
+        }
+    };
+
     const onKeyDown = (e) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -43,14 +67,26 @@ export default function SearchModal({ products, onAdd, onClose }) {
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             setActive((i) => Math.max(i - 1, 0));
-        } else if (e.key === 'Enter') {
+        } else if (e.key === ' ') {
+            // Space key toggles selection in search list
             e.preventDefault();
             const p = filtered[active];
-            if (p && p.current_stock > 0) onAdd(p);
+            if (p) toggleSelect(p);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const selectedList = Object.values(selected);
+            if (selectedList.length > 0) {
+                onAdd(selectedList);
+            } else {
+                const p = filtered[active];
+                if (p && p.current_stock > 0) onAdd([p]);
+            }
         } else if (e.key === 'Escape') {
             onClose();
         }
     };
+
+    const hasSelected = Object.keys(selected).length > 0;
 
     return (
         <div
@@ -98,12 +134,11 @@ export default function SearchModal({ products, onAdd, onClose }) {
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 font-medium">
                         <span>{filtered.length} produk ditemukan</span>
-                        {filtered.length > 0 && (
-                            <span className="flex items-center gap-1.5">
-                                Gunakan <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">↑↓</kbd> navigasi, 
-                                <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">Enter</kbd> pilih
-                            </span>
-                        )}
+                        <span className="flex items-center gap-1.5">
+                            Gunakan <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">↑↓</kbd> navigasi, 
+                            <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">Spasi</kbd> centang, 
+                            <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">Enter</kbd> pilih
+                        </span>
                     </div>
                 </div>
 
@@ -119,6 +154,7 @@ export default function SearchModal({ products, onAdd, onClose }) {
                         <table className="w-full text-left text-sm">
                             <thead className="sticky top-0 z-10 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:bg-gray-900 dark:text-gray-500">
                                 <tr>
+                                    <th className="w-10 px-4 py-2.5 text-center border-b border-gray-100 dark:border-gray-800/50"></th>
                                     <th className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800/50">Kode</th>
                                     <th className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800/50">Nama Produk</th>
                                     <th className="px-4 py-2.5 text-center border-b border-gray-100 dark:border-gray-800/50">Stok</th>
@@ -130,11 +166,12 @@ export default function SearchModal({ products, onAdd, onClose }) {
                                 {filtered.map((p, i) => {
                                     const isEmpty = p.current_stock <= 0;
                                     const isActive = i === active;
+                                    const isChecked = !!selected[p.id];
                                     return (
                                         <tr
                                             key={p.id}
                                             data-idx={i}
-                                            onClick={() => !isEmpty && onAdd(p)}
+                                            onClick={() => handleRowClick(p)}
                                             onMouseEnter={() => setActive(i)}
                                             className={[
                                                 'transition-colors duration-150',
@@ -146,6 +183,16 @@ export default function SearchModal({ products, onAdd, onClose }) {
                                                     : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.01]',
                                             ].join(' ')}
                                         >
+                                            {/* Checkbox column */}
+                                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isChecked}
+                                                    disabled={isEmpty}
+                                                    onChange={() => toggleSelect(p)}
+                                                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-400 dark:border-gray-750 dark:bg-gray-800"
+                                                />
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                                                     {p.code}
@@ -156,7 +203,15 @@ export default function SearchModal({ products, onAdd, onClose }) {
                                                     <span>{p.name}</span>
                                                     {isActive && !isEmpty && (
                                                         <span className="inline-flex items-center gap-0.5 rounded bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-700 dark:bg-orange-950 dark:text-orange-400">
-                                                            <Icon name="keyboard_return" className="text-[11px]" /> Enter
+                                                            {hasSelected ? (
+                                                                <>
+                                                                    <Icon name="space_bar" className="text-[11px]" /> Spasi
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Icon name="keyboard_return" className="text-[11px]" /> Enter
+                                                                </>
+                                                            )}
                                                         </span>
                                                     )}
                                                 </div>
@@ -188,15 +243,26 @@ export default function SearchModal({ products, onAdd, onClose }) {
                 <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/80 px-5 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
                     <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                         <Icon name="touch_app" className="text-[16px]" />
-                        <span>Klik baris atau tekan Enter untuk memilih</span>
+                        <span>Klik checkbox / tekan Spasi untuk multi-select</span>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-                    >
-                        Tutup
-                        <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[9px] text-gray-400 dark:bg-gray-800 dark:text-gray-500">Esc</kbd>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {hasSelected && (
+                            <button
+                                onClick={() => onAdd(Object.values(selected))}
+                                className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
+                            >
+                                <Icon name="check" className="text-[16px]" />
+                                Tambahkan Terpilih ({Object.keys(selected).length})
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                        >
+                            Batal
+                            <kbd className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[9px] text-gray-400 dark:bg-gray-800 dark:text-gray-500">Esc</kbd>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
