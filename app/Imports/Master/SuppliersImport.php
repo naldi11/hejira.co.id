@@ -158,9 +158,25 @@ class SuppliersImport implements ToCollection
     // ── SHARED UPSERT ────────────────────────────────────────────────────────
     private function upsertSupplier(array $attrs): void
     {
-        $name  = $attrs['name'];
-        $phone = $attrs['phone'] ?? null;
-        $code  = $attrs['code'] ?? null;
+        $name  = isset($attrs['name']) ? substr(trim((string)$attrs['name']), 0, 150) : '';
+        $phone = isset($attrs['phone']) ? substr(trim((string)$attrs['phone']), 0, 20) : null;
+        $code  = isset($attrs['code']) ? trim((string)$attrs['code']) : null;
+
+        if ($code && strlen($code) > 20) {
+            $code = null;
+        }
+
+        // Apply sanitized values to attrs
+        $attrs['name']  = $name;
+        $attrs['phone'] = $phone;
+        $attrs['code']  = $code;
+
+        if (isset($attrs['contact_person'])) {
+            $attrs['contact_person'] = substr(trim((string)$attrs['contact_person']), 0, 100);
+        }
+        if (isset($attrs['email'])) {
+            $attrs['email'] = substr(trim((string)$attrs['email']), 0, 100);
+        }
 
         // Find existing supplier by code OR phone OR name
         $supplier = null;
