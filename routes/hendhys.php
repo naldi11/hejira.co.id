@@ -22,6 +22,8 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
         // Master Data (Scoped to Hendhys)
         Route::prefix('master')->name('master.')->group(function () {
+            Route::get('suppliers/template', [\App\Http\Controllers\Master\SupplierController::class, 'downloadTemplate'])->name('suppliers.template');
+            Route::post('suppliers/import', [\App\Http\Controllers\Master\SupplierController::class, 'import'])->name('suppliers.import');
             Route::resource('suppliers', \App\Http\Controllers\Master\SupplierController::class)->except(['show']);
             Route::get('customers/template', [\App\Http\Controllers\Master\CustomerController::class, 'downloadTemplate'])->name('customers.template');
             Route::post('customers/import', [\App\Http\Controllers\Master\CustomerController::class, 'import'])->name('customers.import');

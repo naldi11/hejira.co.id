@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -6,16 +6,43 @@ import HendhysLayout from '@/Layouts/HendhysLayout';
 
 const Layouts = { GudangLayout, JihansLayout, HendhysLayout };
 import Icon from '@/Components/Icon';
+import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import Button from '@/Components/ui/button/Button';
+
+function ImportModal({ show, onClose, routePrefix = 'master.' }) {
+    const { setData, post, processing, errors, reset } = useForm({ file: null });
+    const submit = (e) => {
+        e.preventDefault();
+        post(route(routePrefix + 'suppliers.import'), { forceFormData: true, onSuccess: () => { reset(); onClose(); } });
+    };
+    return (
+        <Modal show={show} onClose={onClose} title="Import Supplier" subtitle="Unggah file Excel/CSV" icon="upload_file">
+            <form onSubmit={submit} className="space-y-6">
+                <a href={route(routePrefix + 'suppliers.template')} className="inline-flex items-center gap-2 text-sm font-bold text-brand-500 hover:underline">
+                    <Icon name="download" className="text-[18px]" /> Unduh template terlebih dahulu
+                </a>
+                <div>
+                    <input type="file" required accept=".xlsx,.xls,.csv" onChange={(e) => setData('file', e.target.files[0])}
+                        className="w-full h-11 rounded-lg border border-dashed border-gray-300 bg-gray-50/50 px-4 py-2.5 text-xs text-gray-500 hover:border-brand-500 cursor-pointer dark:bg-gray-900/50 dark:border-gray-700" />
+                    {errors.file && <p className="mt-1 text-xs font-bold text-rose-600 dark:text-rose-455">{errors.file}</p>}
+                </div>
+                <Button type="submit" disabled={processing} className="w-full">
+                    {processing ? 'Mengunggah...' : 'Import Sekarang'}
+                </Button>
+            </form>
+        </Modal>
+    );
+}
 
 const route = window.route;
 
 export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLayout', routePrefix = 'master.'}) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const [loading, setLoading] = useState(false);
+    const [importing, setImporting] = useState(false);
     const [form, setForm] = useState({ search: filters.search ?? '', status: filters.status ?? '' });
     const hasFilter = form.search || form.status !== '';
 
@@ -40,11 +67,16 @@ export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLa
                         <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Daftar Supplier</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{suppliers.meta?.total ?? suppliers.data.length} mitra supplier terdaftar</p>
                     </div>
-                    <Link href={route(routePrefix + 'suppliers.create')}>
-                        <Button size="sm" startIcon={<Icon name="add" className="text-[18px]" />}>
-                            TAMBAH SUPPLIER
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setImporting(true)} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02] shadow-sm">
+                            <Icon name="upload_file" className="text-[18px]" /> Import
+                        </button>
+                        <Link href={route(routePrefix + 'suppliers.create')}>
+                            <Button size="sm" startIcon={<Icon name="add" className="text-[18px]" />}>
+                                TAMBAH SUPPLIER
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
@@ -112,6 +144,7 @@ export default function SuppliersIndex({ suppliers, filters , layout = 'GudangLa
                     </div>
                     {suppliers.meta?.links && <div className="border-t border-gray-150 p-5 dark:border-gray-800"><Pagination links={suppliers.meta.links} /></div>}
                 </div>
+                <ImportModal show={importing} onClose={() => setImporting(false)} routePrefix={routePrefix} />
             </div>
         </Layout>
     );
