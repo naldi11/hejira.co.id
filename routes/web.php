@@ -16,7 +16,11 @@ Route::get('/dashboard', function () {
     if ($user->hasRole('admin_gudang'))                   return redirect()->route('gudang.dashboard');
     if ($user->hasRole(['kasir_jihans', 'admin_jihans'])) return redirect()->route('jihans.dashboard');
     if ($user->hasRole(['kasir_hendhys', 'admin_hendhys'])) return redirect()->route('hendhys.dashboard');
-    return redirect()->route('login');
+    
+    auth()->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect()->route('login')->withErrors(['email' => 'Akun Anda tidak memiliki role yang valid. Silakan hubungi administrator.']);
 })->middleware('auth')->name('dashboard');
 
 

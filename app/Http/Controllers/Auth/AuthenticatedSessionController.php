@@ -60,7 +60,7 @@ class AuthenticatedSessionController extends Controller
         if ($user->hasRole('kasir_hendhys'))
             return route('hendhys.pos.index');
 
-        return route('login');
+        return route('dashboard');
     }
 }
 
