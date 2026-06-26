@@ -31,7 +31,7 @@ class PosController extends Controller
             ->visibleInJihans()
             ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
             ->select('master_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
-            ->with(['unit', 'tieredPrices'])
+            ->with(['unit', 'tieredPrices', 'category'])
             ->orderBy('master_products.name')
             ->get();
 

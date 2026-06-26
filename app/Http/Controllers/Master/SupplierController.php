@@ -9,6 +9,9 @@ use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Exports\Master\SuppliersTemplateExport;
+use App\Imports\Master\SuppliersImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SupplierController extends Controller
 {
@@ -109,5 +112,27 @@ class SupplierController extends Controller
         $this->logger->log('delete', 'master.supplier', "Hapus supplier: $name");
 
         return redirect()->route($info['route'].'suppliers.index')->with('success', "Supplier $name berhasil dihapus.");
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new SuppliersTemplateExport(), 'Template_Import_Supplier.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        $info = $this->getScopeInfo($request);
+
+        try {
+            Excel::import(new SuppliersImport(), $request->file('file'));
+            $this->logger->log('import', 'master.supplier', "Import supplier via Excel");
+            return redirect()->route($info['route'] . 'suppliers.index')->with('success', 'Supplier berhasil di-import dan diperbarui dari file Excel.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
     }
 }

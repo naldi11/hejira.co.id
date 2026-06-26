@@ -11,14 +11,6 @@ const axios = window.axios;
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-function tieredPrice(product, qty) {
-    let price = product.selling_price || 0;
-    for (const tier of product.tiered_prices ?? []) {
-        if (qty >= tier.min_qty) { price = tier.price; break; }
-    }
-    return price;
-}
-
 export default function PosIndex({ products, customers }) {
     const [cart, setCart] = useState([]);
     const [customerId, setCustomerId] = useState('');
@@ -33,16 +25,69 @@ export default function PosIndex({ products, customers }) {
     const [amountPaid, setAmountPaid] = useState(0);
     const [processing, setProcessing] = useState(false);
 
+    const recalculateCart = (currentCart, type = customerType) => {
+        // 1. Calculate combined meat & tortilla quantity first
+        const combinedQty = currentCart.reduce((sum, item) => {
+            const product = products.find(p => p.id === item.product_id);
+            if (product) {
+                const catName = (product.category_name || '').toLowerCase();
+                const prodName = (product.name || '').toLowerCase();
+                const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
+                                         prodName.includes('daging') || prodName.includes('tortilla');
+                if (isMeatOrTortilla) {
+                    return sum + item.quantity;
+                }
+            }
+            return sum;
+        }, 0);
+
+        // 2. Map items with recalculated prices
+        return currentCart.map(item => {
+            const product = products.find(p => p.id === item.product_id);
+            if (!product) return item;
+
+            // Determine effective quantity for pricing
+            let effectiveQty = item.quantity;
+            if (type === 'Reseller') {
+                effectiveQty = Math.max(effectiveQty, 50);
+            } else if (type === 'Agen') {
+                effectiveQty = Math.max(effectiveQty, 300);
+            }
+
+            const catName = (product.category_name || '').toLowerCase();
+            const prodName = (product.name || '').toLowerCase();
+            const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
+                                     prodName.includes('daging') || prodName.includes('tortilla');
+            
+            if (isMeatOrTortilla && combinedQty >= 50) {
+                effectiveQty = Math.max(effectiveQty, combinedQty);
+            }
+
+            // Calculate tiered price for this effective quantity
+            let price = product.selling_price || 0;
+            const sortedTiers = [...(product.tiered_prices ?? [])].sort((a, b) => b.min_qty - a.min_qty);
+            for (const tier of sortedTiers) {
+                if (effectiveQty >= tier.min_qty) {
+                    price = tier.price;
+                    break;
+                }
+            }
+
+            return { ...item, price };
+        });
+    };
+
     useEffect(() => {
         const raw = localStorage.getItem('jihans_resume_cart');
         if (!raw) return;
         try {
             const d = JSON.parse(raw);
-            setCart(d.items ?? []);
-            setCustomerType(d.customerType ?? 'Pelanggan Retail');
+            const type = d.customerType ?? 'Pelanggan Retail';
+            setCustomerType(type);
             setCustomerId(d.customerId ?? '');
             setCustomerName(d.customerName ?? '');
             setNotes(d.notes ?? '');
+            setCart(recalculateCart(d.items ?? [], type));
         } catch { /* ignore */ }
         localStorage.removeItem('jihans_resume_cart');
     }, []);
@@ -62,46 +107,63 @@ export default function PosIndex({ products, customers }) {
 
     const lineTotal = (it) => it.quantity * it.price - (Number(it.discount) || 0);
 
-    const addItem = (product) => {
-        if (product.current_stock <= 0) { alert('Stok produk ini masih kosong!'); return; }
+    const addItem = (input) => {
+        const itemsToAdd = Array.isArray(input) ? input : [input];
+        const validItems = itemsToAdd.filter(p => p.current_stock > 0);
+        if (validItems.length === 0) return;
+
         setCart((prev) => {
-            const idx = prev.findIndex((i) => i.product_id === product.id);
-            if (idx > -1) {
-                const next = [...prev];
-                const qty = next[idx].quantity + 1;
-                next[idx] = { ...next[idx], quantity: qty, price: tieredPrice(product, qty) };
-                return next;
+            let next = [...prev];
+            for (const product of validItems) {
+                const idx = next.findIndex((i) => i.product_id === product.id);
+                if (idx > -1) {
+                    next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+                } else {
+                    next.push({
+                        product_id: product.id,
+                        product_name: product.name,
+                        product_code: product.code,
+                        barcode: product.barcode,
+                        price: product.selling_price || 0,
+                        quantity: 1,
+                        discount: 0,
+                        unit_name: product.unit,
+                        max_stock: product.current_stock,
+                    });
+                }
             }
-            return [...prev, {
-                product_id: product.id, product_name: product.name, product_code: product.code, barcode: product.barcode,
-                price: product.selling_price || 0, quantity: 1, discount: 0,
-                unit_name: product.unit, max_stock: product.current_stock,
-            }];
+            return recalculateCart(next);
         });
         setShowSearch(false);
     };
 
     const updateItem = (index, patch) => {
-        setCart((prev) => prev.map((it, i) => {
-            if (i !== index) return it;
-            let next = { ...it, ...patch };
-            if (patch.quantity !== undefined) {
-                next.quantity = Math.max(1, Math.round(Number(patch.quantity) || 1));
-                const product = products.find((p) => p.id === it.product_id);
-                if (product) next.price = tieredPrice(product, next.quantity);
-            }
-            if ((Number(next.discount) || 0) > next.price * next.quantity) next.discount = 0;
-            return next;
-        }));
+        setCart((prev) => {
+            const updated = prev.map((it, i) => {
+                if (i !== index) return it;
+                let next = { ...it, ...patch };
+                if (patch.quantity !== undefined) {
+                    next.quantity = Math.max(1, Math.round(Number(patch.quantity) || 1));
+                }
+                if ((Number(next.discount) || 0) > next.price * next.quantity) next.discount = 0;
+                return next;
+            });
+            return recalculateCart(updated);
+        });
     };
 
-    const removeItem = (index) => setCart((prev) => prev.filter((_, i) => i !== index));
+    const removeItem = (index) => setCart((prev) => {
+        const next = prev.filter((_, i) => i !== index);
+        return recalculateCart(next);
+    });
 
     const onCustomerChange = (id) => {
         setCustomerId(id);
         const c = customers.find((x) => String(x.id) === String(id));
+        const type = c ? c.type : 'Pelanggan Retail';
+        setCustomerType(type);
         setCustomerName(c ? c.name : '');
-        setCustomerType(c ? c.type : 'Pelanggan Retail');
+        setCart((prev) => recalculateCart(prev, type));
     };
 
     const openPayment = () => {

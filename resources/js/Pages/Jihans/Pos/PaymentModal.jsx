@@ -1,50 +1,105 @@
 import { useEffect, useRef } from 'react';
 import { formatRupiah } from '@/lib/format';
+import Icon from '@/Components/Icon';
 
 const QUICK = [10000, 20000, 50000, 100000, 200000];
 
 /** Cash-payment modal: quick-cash buttons, amount received, change, and confirm. */
 export default function PaymentModal({ grandTotal, amountPaid, setAmountPaid, onClose, onProcess, processing }) {
     const inputRef = useRef(null);
-    useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+    useEffect(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+    }, []);
 
     const change = amountPaid > grandTotal ? amountPaid - grandTotal : 0;
-    const onKeyDown = (e) => { if (e.key === 'Enter') onProcess(); else if (e.key === 'Escape') onClose(); };
+    const onKeyDown = (e) => {
+        if (e.key === 'Enter') onProcess();
+        else if (e.key === 'Escape') onClose();
+    };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-            <div className="flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-gray-400 bg-white shadow-2xl">
-                <div className="flex items-center justify-between bg-green-700 px-4 py-2 text-white">
-                    <span className="text-sm font-bold">Pembayaran Tunai</span>
-                    <button onClick={onClose} className="font-bold hover:text-red-300">✕</button>
-                </div>
-                <div className="flex flex-col gap-4 p-5">
-                    <div>
-                        <label className="mb-1 block text-xs font-semibold text-gray-600">Total Tagihan</label>
-                        <div className="rounded-lg bg-gray-100 px-4 py-2 text-right text-2xl font-bold text-red-600">{formatRupiah(grandTotal)}</div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-md">
+            <div className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
+                {/* Header */}
+                <div className="flex items-center justify-between bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-4 text-white">
+                    <div className="flex items-center gap-2">
+                        <Icon name="payments" className="text-[20px]" />
+                        <span className="text-sm font-bold uppercase tracking-wider">Pembayaran Tunai</span>
                     </div>
+                    <button onClick={onClose} className="rounded-full p-1 text-emerald-100 hover:bg-white/10 hover:text-white transition">
+                        <Icon name="close" className="text-[18px]" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex flex-col gap-4 p-5">
+                    {/* Grand Total Display */}
                     <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-gray-600">Nominal Cepat</label>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            <button type="button" onClick={() => setAmountPaid(grandTotal)} className="rounded border border-gray-400 bg-orange-100 py-2 text-xs font-bold text-orange-800 hover:bg-orange-200">Uang Pas</button>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Tagihan</label>
+                        <div className="rounded-xl border border-rose-100 bg-rose-50/50 px-4 py-2.5 text-right font-mono text-3xl font-black text-rose-600 dark:border-rose-900/20 dark:bg-rose-950/20 dark:text-rose-400">
+                            {formatRupiah(grandTotal)}
+                        </div>
+                    </div>
+
+                    {/* Quick Cash Suggestions */}
+                    <div>
+                        <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nominal Cepat</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setAmountPaid(grandTotal)}
+                                className="rounded-lg border border-orange-200 bg-orange-50/50 py-2 text-xs font-bold text-orange-700 hover:bg-orange-100 dark:border-orange-900/30 dark:bg-orange-950/10 dark:text-orange-400 dark:hover:bg-orange-950/20 transition"
+                            >
+                                Uang Pas
+                            </button>
                             {QUICK.map((v) => (
-                                <button key={v} type="button" onClick={() => setAmountPaid(v)} className="rounded border border-gray-400 bg-gray-100 py-2 text-xs font-bold hover:bg-gray-200">{v.toLocaleString('id-ID')}</button>
+                                <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setAmountPaid(v)}
+                                    className="rounded-lg border border-gray-200 bg-gray-50 py-2 text-xs font-bold text-gray-700 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/80 transition"
+                                >
+                                    {v.toLocaleString('id-ID')}
+                                </button>
                             ))}
                         </div>
                     </div>
+
+                    {/* Amount Paid Input */}
                     <div>
-                        <label className="mb-1 block text-xs font-semibold text-gray-600">Nominal Diterima</label>
-                        <input ref={inputRef} type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value) || 0)} onKeyDown={onKeyDown}
-                            className="w-full rounded-lg border-gray-300 py-2 text-right text-2xl font-bold text-blue-600 focus:border-orange-500 focus:ring-orange-500" />
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Nominal Diterima</label>
+                        <input
+                            ref={inputRef}
+                            type="number"
+                            value={amountPaid || ''}
+                            onChange={(e) => setAmountPaid(Number(e.target.value) || 0)}
+                            onKeyDown={onKeyDown}
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 px-4 text-right font-mono text-3xl font-bold text-emerald-600 outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 dark:border-gray-800 dark:bg-gray-900 dark:text-emerald-400 dark:focus:border-emerald-500 dark:focus:bg-gray-950"
+                        />
                     </div>
-                    <div className="text-right">
-                        <span className="text-xs font-bold text-gray-600">Kembali: </span>
-                        <span className="text-2xl font-bold text-green-600">{formatRupiah(change)}</span>
+
+                    {/* Change Display */}
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 dark:border-emerald-900/20 dark:bg-emerald-950/20">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Kembalian:</span>
+                        <span className="font-mono text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatRupiah(change)}</span>
                     </div>
                 </div>
-                <div className="flex justify-end gap-2 border-t border-gray-200 bg-gray-100 p-3">
-                    <button onClick={onClose} className="rounded border border-gray-400 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50">Batal</button>
-                    <button onClick={onProcess} disabled={processing} className="rounded bg-green-600 px-5 py-2 font-bold text-white hover:bg-green-700 disabled:opacity-50">
+
+                {/* Footer */}
+                <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/50 px-5 py-4 dark:border-gray-800 dark:bg-white/[0.01]">
+                    <button
+                        onClick={onClose}
+                        className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 transition"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={onProcess}
+                        disabled={processing || amountPaid < grandTotal}
+                        className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 transition"
+                    >
+                        <Icon name="check_circle" className="text-[16px]" />
                         {processing ? 'Memproses...' : 'Simpan & Cetak'}
                     </button>
                 </div>

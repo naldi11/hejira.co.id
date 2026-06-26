@@ -68,6 +68,8 @@ Route::middleware(['auth', 'role:admin_gudang'])
     ->name('master.')
     ->group(function () {
 
+        Route::get('suppliers/template', [SupplierController::class, 'downloadTemplate'])->name('suppliers.template');
+        Route::post('suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
         Route::resource('suppliers', SupplierController::class)->except(['show']);
         Route::get('customers/template', [CustomerController::class, 'downloadTemplate'])->name('customers.template');
         Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
