@@ -12,17 +12,17 @@ class JihansReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function kasirJihans(): User
+    private function adminJihans(): User
     {
-        Role::findOrCreate('kasir_jihans', 'web');
+        Role::findOrCreate('admin_jihans', 'web');
         $user = User::factory()->create(['entity' => 'jihans']);
-        $user->assignRole('kasir_jihans');
+        $user->assignRole('admin_jihans');
         return $user;
     }
 
     public function test_reports_index_renders_inertia(): void
     {
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->get(route('jihans.reports.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Jihans/Reports/Index'));

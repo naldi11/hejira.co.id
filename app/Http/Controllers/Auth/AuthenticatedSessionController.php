@@ -55,9 +55,12 @@ class AuthenticatedSessionController extends Controller
             return route('gudang.dashboard');
         if ($user->hasRole(['kasir_jihans', 'admin_jihans']))
             return route('jihans.dashboard');
+        if ($user->hasRole('admin_hendhys'))
+            return route('hendhys.dashboard');
         if ($user->hasRole('kasir_hendhys'))
             return route('hendhys.pos.index');
 
         return route('login');
     }
 }
+

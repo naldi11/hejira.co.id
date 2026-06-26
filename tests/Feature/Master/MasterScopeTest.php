@@ -41,7 +41,7 @@ class MasterScopeTest extends TestCase
 
     public function test_jihans_scope_passes_jihans_layout_and_route_prefix(): void
     {
-        $this->actingAs($this->user('kasir_jihans', 'jihans'))
+        $this->actingAs($this->user('admin_jihans', 'jihans'))
             ->get(route('jihans.master.suppliers.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page

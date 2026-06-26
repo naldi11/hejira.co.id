@@ -25,6 +25,15 @@ class JihansTransferRequestTest extends TestCase
         return $user;
     }
 
+    private function adminJihans(): User
+    {
+        Role::findOrCreate('admin_jihans', 'web');
+        $user = User::factory()->create(['entity' => 'jihans']);
+        $user->assignRole('admin_jihans');
+
+        return $user;
+    }
+
     private function product(string $source = 'purchased'): Product
     {
         $category = ProductCategory::create(['name' => 'Bahan', 'entity_scope' => 'all']);
@@ -39,7 +48,7 @@ class JihansTransferRequestTest extends TestCase
 
     public function test_index_renders_inertia_with_incoming_transfers_prop(): void
     {
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->get(route('jihans.transfer-requests.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -52,7 +61,7 @@ class JihansTransferRequestTest extends TestCase
     {
         $product = $this->product();
 
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->post(route('jihans.transfer-requests.store'), [
                 'date'  => now()->toDateString(),
                 'items' => [['product_id' => $product->id, 'quantity' => 4, 'unit_id' => $product->unit_id]],
@@ -71,7 +80,7 @@ class JihansTransferRequestTest extends TestCase
     {
         $produced = $this->product('produced');
 
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->from(route('jihans.transfer-requests.create'))
             ->post(route('jihans.transfer-requests.store'), [
                 'date'  => now()->toDateString(),

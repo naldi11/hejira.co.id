@@ -22,6 +22,15 @@ class HendhysProductionTest extends TestCase
         return $user;
     }
 
+    private function hendhysAdmin(): User
+    {
+        $branch = Branch::create(['code' => 'HND-PST-ADM', 'name' => 'Hendhys Pusat Admin', 'type' => 'pusat', 'is_active' => true]);
+        Role::findOrCreate('admin_hendhys', 'web');
+        $user = User::factory()->create(['entity' => 'hendhys', 'branch_id' => $branch->id]);
+        $user->assignRole('admin_hendhys');
+        return $user;
+    }
+
     private function hendhysCabang(): User
     {
         $branch = Branch::create(['code' => 'HND-CB1', 'name' => 'Hendhys Cabang 1', 'type' => 'cabang', 'is_active' => true]);
@@ -33,7 +42,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_productions_index_renders_for_pusat(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.productions.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Productions/Index')->has('productions'));
@@ -48,7 +57,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_productions_create_renders_for_pusat(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.productions.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Productions/Create')->has('products')->has('units'));
@@ -56,7 +65,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_transfer_requests_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.transfer-requests.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/TransferRequests/Index')->has('requests'));
@@ -64,7 +73,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_branch_requests_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.branch-requests.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/BranchRequests/Index')->has('requests'));
@@ -72,7 +81,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_transfer_to_branch_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.transfer-to-branch.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/TransferToBranch/Index')->has('transfers'));
@@ -80,7 +89,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_returns_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.returns.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Returns/Index')->has('returns'));
@@ -88,7 +97,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_returns_to_gudang_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.returns-to-gudang.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/ReturnsToGudang/Index')->has('returns'));
@@ -104,7 +113,7 @@ class HendhysProductionTest extends TestCase
 
     public function test_reports_index_renders(): void
     {
-        $this->actingAs($this->hendhysPusat())
+        $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.reports.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Reports/Index'));

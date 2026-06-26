@@ -29,6 +29,16 @@ class HendhysScreensTest extends TestCase
         return $user;
     }
 
+    private function admin(string $branchType = 'pusat'): User
+    {
+        $branch = Branch::create(['code' => 'HND-'.strtoupper($branchType).rand(1, 99), 'name' => "Hendhys $branchType", 'type' => $branchType, 'is_active' => true]);
+        Role::findOrCreate('admin_hendhys', 'web');
+        $user = User::factory()->create(['entity' => 'hendhys', 'branch_id' => $branch->id]);
+        $user->assignRole('admin_hendhys');
+
+        return $user;
+    }
+
     /** @return array<string, array{0:string,1:string,2:string}> route, component, branchType */
     public static function createForms(): array
     {
@@ -44,7 +54,7 @@ class HendhysScreensTest extends TestCase
     #[DataProvider('createForms')]
     public function test_create_forms_render(string $routeName, string $component, string $branchType): void
     {
-        $this->actingAs($this->user($branchType))
+        $this->actingAs($this->admin($branchType))
             ->get(route($routeName))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component($component));
@@ -69,7 +79,8 @@ class HendhysScreensTest extends TestCase
     #[DataProvider('reportPages')]
     public function test_report_pages_render(string $routeName, string $component): void
     {
-        $this->actingAs($this->user('pusat'))
+        $user = $routeName === 'hendhys.reports.laci' ? $this->user('pusat') : $this->admin('pusat');
+        $this->actingAs($user)
             ->get(route($routeName))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component($component));

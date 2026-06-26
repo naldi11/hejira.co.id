@@ -26,6 +26,15 @@ class JihansMiscTest extends TestCase
         return $user;
     }
 
+    private function adminJihans(): User
+    {
+        Role::findOrCreate('admin_jihans', 'web');
+        $user = User::factory()->create(['entity' => 'jihans']);
+        $user->assignRole('admin_jihans');
+
+        return $user;
+    }
+
     public function test_dashboard_renders_inertia_with_stats(): void
     {
         $this->actingAs($this->kasirJihans())
@@ -40,7 +49,7 @@ class JihansMiscTest extends TestCase
 
     public function test_production_config_edit_renders_inertia(): void
     {
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->get(route('jihans.master.production-config.edit'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Jihans/ProductionConfig')->has('config')->has('products'));
@@ -48,7 +57,7 @@ class JihansMiscTest extends TestCase
 
     public function test_returns_index_renders_inertia(): void
     {
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->get(route('jihans.returns-to-gudang.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Jihans/Returns/Index')->has('returns'));
@@ -65,7 +74,7 @@ class JihansMiscTest extends TestCase
         ]);
         JihansStock::create(['product_id' => $product->id, 'quantity' => 20, 'unit_id' => $unit->id]);
 
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
                 'date'  => now()->toDateString(),
                 'items' => [['product_id' => $product->id, 'quantity' => 5, 'unit_id' => $unit->id, 'condition' => 'Rusak']],
@@ -87,7 +96,7 @@ class JihansMiscTest extends TestCase
         ]);
         JihansStock::create(['product_id' => $product->id, 'quantity' => 3, 'unit_id' => $unit->id]);
 
-        $this->actingAs($this->kasirJihans())
+        $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
                 'date'  => now()->toDateString(),
                 'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_id' => $unit->id, 'condition' => 'Rusak']],

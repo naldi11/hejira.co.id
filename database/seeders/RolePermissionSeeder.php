@@ -87,23 +87,36 @@ class RolePermissionSeeder extends Seeder
         // --- KASIR JIHAN'S ---
         $kasirJihans = Role::firstOrCreate(['name' => 'kasir_jihans', 'guard_name' => 'web']);
         $kasirJihans->syncPermissions([
-            'jihans.production.view', 'jihans.production.create', 'jihans.production.edit', 'jihans.production.delete',
             'jihans.pos.view', 'jihans.pos.create',
+            'jihans.stock.view',
+            'master.product.view', 'master.customer.view', 'master.customer.manage',
+            'global.notification.view',
+        ]);
+
+        // --- ADMIN JIHAN'S ---
+        $adminJihans = Role::firstOrCreate(['name' => 'admin_jihans', 'guard_name' => 'web']);
+        $adminJihans->syncPermissions([
+            'jihans.production.view', 'jihans.production.create', 'jihans.production.edit', 'jihans.production.delete',
             'jihans.stock.view',
             'jihans.transfer_request.view', 'jihans.transfer_request.create',
             'master.product.view', 'master.customer.view', 'master.customer.manage', 'master.supplier.view',
             'global.notification.view',
         ]);
 
-        // --- ADMIN JIHAN'S (dormant, same as kasir) ---
-        $adminJihans = Role::firstOrCreate(['name' => 'admin_jihans', 'guard_name' => 'web']);
-        $adminJihans->syncPermissions($kasirJihans->permissions->pluck('name')->toArray());
-
         // --- KASIR HENDHYS ---
         $kasirHendhys = Role::firstOrCreate(['name' => 'kasir_hendhys', 'guard_name' => 'web']);
         $kasirHendhys->syncPermissions([
-            'hendhys.production.view', 'hendhys.production.create', 'hendhys.production.edit',
             'hendhys.pos.view', 'hendhys.pos.create',
+            'hendhys.stock.view',
+            'hendhys.transfer_to_branch.view', // to view & receive incoming transfers
+            'master.customer.view', 'master.customer.manage',
+            'global.notification.view',
+        ]);
+
+        // --- ADMIN HENDHYS (New) ---
+        $adminHendhys = Role::firstOrCreate(['name' => 'admin_hendhys', 'guard_name' => 'web']);
+        $adminHendhys->syncPermissions([
+            'hendhys.production.view', 'hendhys.production.create', 'hendhys.production.edit',
             'hendhys.stock.view',
             'hendhys.transfer_request.view', 'hendhys.transfer_request.create',
             'hendhys.branch_request.view', 'hendhys.branch_request.create', 'hendhys.branch_request.approve',
@@ -114,3 +127,4 @@ class RolePermissionSeeder extends Seeder
         ]);
     }
 }
+

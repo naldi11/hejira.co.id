@@ -12,10 +12,11 @@ class CheckBranch
     {
         $user = $request->user();
 
-        if ($user && $user->hasRole('kasir_hendhys') && !$user->branch_id) {
+        if ($user && $user->hasAnyRole(['kasir_hendhys', 'admin_hendhys']) && !$user->branch_id) {
             abort(403, 'Akun Anda belum memiliki cabang yang ditetapkan. Hubungi Admin Gudang.');
         }
 
         return $next($request);
     }
+
 }

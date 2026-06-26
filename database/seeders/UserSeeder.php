@@ -57,6 +57,14 @@ class UserSeeder extends Seeder
                 'role'     => 'kasir_hendhys',
             ],
             [
+                'name'     => 'Admin Hendhys',
+                'email'    => 'admin.hendhys@gmail.com',
+                'password' => Hash::make('password'),
+                'entity'   => 'hendhys',
+                'branch_id'=> $pusat,
+                'role'     => 'admin_hendhys',
+            ],
+            [
                 'name'     => 'Kasir Hendhys Cabang 1',
                 'email'    => 'kasir.hendhys.cb1@gmail.com',
                 'password' => Hash::make('password'),

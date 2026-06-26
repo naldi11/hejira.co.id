@@ -8,46 +8,72 @@ const route = window.route;
 export default function HendhysLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const isPusat = auth?.user?.branch?.type === 'pusat';
+    const roles = auth?.user?.roles || [];
+    const isKasir = roles.includes('kasir_hendhys');
+    const isAdmin = roles.includes('admin_hendhys') || roles.includes('owner') || roles.includes('admin_gudang');
 
     const navItems = [
         {
             name: "Dashboard",
             icon: <Icon name="dashboard" className="text-[22px]" />,
             path: route('hendhys.dashboard')
-        },
-        {
+        }
+    ];
+
+    if (isKasir) {
+        navItems.push({
             name: 'Kasir & Penjualan',
             icon: <Icon name="point_of_sale" className="text-[22px]" />,
             subItems: [
                 { name: 'POS Kasir', path: route('hendhys.pos.index') },
                 { name: 'Transaksi Pending', path: route('hendhys.pending.index') },
                 { name: 'Riwayat Transaksi', path: route('hendhys.transactions.index') },
-                { name: 'Laporan', path: route('hendhys.reports.index') },
+                { name: 'Laporan Laci', path: route('hendhys.reports.laci') },
             ],
-        },
-        ...(isPusat ? [{
+        });
+    } else {
+        navItems.push({
+            name: 'Penjualan & Laporan',
+            icon: <Icon name="point_of_sale" className="text-[22px]" />,
+            subItems: [
+                { name: 'Riwayat Transaksi', path: route('hendhys.transactions.index') },
+                { name: 'Laporan Bisnis', path: route('hendhys.reports.index') },
+            ],
+        });
+    }
+
+    if (isAdmin && isPusat) {
+        navItems.push({
             name: 'Produksi',
             icon: <Icon name="factory" className="text-[22px]" />,
             subItems: [
                 { name: 'Produksi Hendhys', path: route('hendhys.productions.index') },
             ],
-        }] : []),
-        {
-            name: 'Inventori',
-            icon: <Icon name="inventory" className="text-[22px]" />,
-            subItems: [
-                { name: 'Stok Tersedia', path: route('hendhys.stock.index') },
-                ...(isPusat ? [
-                    { name: 'Request ke Gudang', path: route('hendhys.transfer-requests.index') },
-                    { name: 'Return ke Gudang', path: route('hendhys.returns-to-gudang.index') },
-                ] : [
-                    { name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') },
-                    { name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') },
-                ]),
-            ],
-        },
+        });
+    }
 
-        ...(isPusat ? [{
+    const inventorySubItems = [
+        { name: 'Stok Tersedia', path: route('hendhys.stock.index') }
+    ];
+
+    if (isAdmin) {
+        if (isPusat) {
+            inventorySubItems.push({ name: 'Request ke Gudang', path: route('hendhys.transfer-requests.index') });
+            inventorySubItems.push({ name: 'Return ke Gudang', path: route('hendhys.returns-to-gudang.index') });
+        } else {
+            inventorySubItems.push({ name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') });
+            inventorySubItems.push({ name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') });
+        }
+    }
+
+    navItems.push({
+        name: 'Inventori',
+        icon: <Icon name="inventory" className="text-[22px]" />,
+        subItems: inventorySubItems,
+    });
+
+    if (isAdmin && isPusat) {
+        navItems.push({
             name: 'Distribusi Cabang',
             icon: <Icon name="local_shipping" className="text-[22px]" />,
             subItems: [
@@ -55,16 +81,17 @@ export default function HendhysLayout({ pageTitle, children }) {
                 { name: 'Distribusi ke Cabang', path: route('hendhys.transfer-to-branch.index') },
                 { name: 'Return dari Cabang', path: route('hendhys.returns.index') },
             ],
-        }] : []),
-        ...(isPusat ? [{
+        });
+        navItems.push({
             name: 'Master Data',
             icon: <Icon name="database" className="text-[22px]" />,
             subItems: [
                 { name: 'Daftar Produk', path: route('hendhys.master.products.index') },
                 { name: 'Pelanggan', path: route('hendhys.master.customers.index') },
             ],
-        }] : [])
-    ];
+        });
+    }
+
 
     return (
         <AppLayout navItems={navItems} pageTitle={pageTitle ?? 'Dashboard Hendhys'}>
