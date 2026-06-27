@@ -145,36 +145,71 @@ class HandleInertiaRequests extends Middleware
                         }
                     }
 
-                    if ($isAdminHendhys || $isOwner) {
-                        // 1. Incoming transfers in transit
-                        $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')->where('status', 'sent')->count();
-                        if ($transitCount > 0) {
-                            $items[] = [
-                                'id' => 'hendhys_transit',
-                                'title' => 'Pengiriman Gudang Tiba',
-                                'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
-                                'path' => '/hendhys/transfer-requests',
-                                'icon' => 'local_shipping',
-                                'type' => 'info',
-                                'time' => 'Baru saja'
-                            ];
+                    if ($user->entity === 'hendhys' || $isOwner) {
+                        $isPusat = $user->branch && $user->branch->type === 'pusat';
+
+                        if ($isPusat) {
+                            // --- PUSAT NOTIFICATIONS: Gudang to Hendhys Pusat ---
+                            if ($user->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                                $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')->where('status', 'sent')->count();
+                                if ($transitCount > 0) {
+                                    $items[] = [
+                                        'id' => 'hendhys_transit',
+                                        'title' => 'Pengiriman Gudang Tiba',
+                                        'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
+                                        'path' => '/hendhys/transfer-requests',
+                                        'icon' => 'local_shipping',
+                                        'type' => 'info',
+                                        'time' => 'Baru saja'
+                                    ];
+                                }
+                            }
+                        } else {
+                            // --- CABANG NOTIFICATIONS: Hendhys Pusat to Hendhys Cabang ---
+                            if ($user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                                $transitCount = \App\Models\HendhysTransferToBranch::where('branch_id', $user->branch_id)
+                                    ->where('status', 'sent')
+                                    ->count();
+                                if ($transitCount > 0) {
+                                    $items[] = [
+                                        'id' => 'hendhys_cabang_transit',
+                                        'title' => 'Pengiriman Pusat Tiba',
+                                        'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Hendhys Pusat. Segera konfirmasi.",
+                                        'path' => '/hendhys/transfer-to-branch',
+                                        'icon' => 'local_shipping',
+                                        'type' => 'info',
+                                        'time' => 'Baru saja'
+                                    ];
+                                }
+                            }
                         }
 
                         // 2. Low stock in Hendhys
-                        $lowStockCount = \App\Models\HendhysStockPusat::join('master_products', 'hendhys_stock_pusat.product_id', '=', 'master_products.id')
-                            ->where('master_products.status', 'active')
-                            ->whereRaw('hendhys_stock_pusat.quantity <= master_products.stock_min')
-                            ->count();
-                        if ($lowStockCount > 0) {
-                            $items[] = [
-                                'id' => 'hendhys_low_stock',
-                                'title' => 'Stok Outlet Menipis',
-                                'message' => "Ada {$lowStockCount} produk di outlet Hendhys di bawah safety stock.",
-                                'path' => '/hendhys/stock',
-                                'icon' => 'warning',
-                                'type' => 'danger',
-                                'time' => 'Hari ini'
-                            ];
+                        if ($user->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                            if ($isPusat) {
+                                $lowStockCount = \App\Models\HendhysStockPusat::join('master_products', 'hendhys_stock_pusat.product_id', '=', 'master_products.id')
+                                    ->where('master_products.status', 'active')
+                                    ->whereRaw('hendhys_stock_pusat.quantity <= master_products.stock_min')
+                                    ->count();
+                            } else {
+                                $lowStockCount = \App\Models\HendhysStockBranch::join('master_products', 'hendhys_stock_branch.product_id', '=', 'master_products.id')
+                                    ->where('hendhys_stock_branch.branch_id', $user->branch_id)
+                                    ->where('master_products.status', 'active')
+                                    ->whereRaw('hendhys_stock_branch.quantity <= master_products.stock_min')
+                                    ->count();
+                            }
+
+                            if ($lowStockCount > 0) {
+                                $items[] = [
+                                    'id' => 'hendhys_low_stock',
+                                    'title' => 'Stok Outlet Menipis',
+                                    'message' => "Ada {$lowStockCount} produk di outlet Hendhys di bawah safety stock.",
+                                    'path' => '/hendhys/stock',
+                                    'icon' => 'warning',
+                                    'type' => 'danger',
+                                    'time' => 'Hari ini'
+                                ];
+                            }
                         }
                     }
 
