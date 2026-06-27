@@ -151,7 +151,10 @@ class HandleInertiaRequests extends Middleware
                         if ($isPusat) {
                             // --- PUSAT NOTIFICATIONS: Gudang to Hendhys Pusat ---
                             if ($user->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
-                                $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')->where('status', 'sent')->count();
+                                $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')
+                                    ->where('branch_id', $user->branch_id)
+                                    ->where('status', 'sent')
+                                    ->count();
                                 if ($transitCount > 0) {
                                     $items[] = [
                                         'id' => 'hendhys_transit',
