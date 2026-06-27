@@ -17,7 +17,22 @@ export default function TransferRequestsIndex({ requests, incomingTransfers, fil
                 {incomingTransfers?.length > 0 && (
                     <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900/30 dark:bg-green-950/10">
                         <h3 className="mb-2 font-semibold text-green-800 dark:text-green-400"><Icon name="local_shipping" className="mr-1 align-middle text-[20px]" /> Transfer Masuk dari Gudang</h3>
-                        <div className="space-y-1">{incomingTransfers.map((t) => (<div key={t.id} className="flex items-center justify-between rounded-lg bg-white p-3 text-sm dark:bg-white/[0.03]"><span className="font-medium text-gray-800 dark:text-white/90">{t.transfer_number} — dari {t.creator}</span><span className="text-gray-500 dark:text-gray-400">{t.date}</span></div>))}</div>
+                        <div className="space-y-1">
+                            {incomingTransfers.map((t) => (
+                                <div key={t.id} className="flex items-center justify-between rounded-lg bg-white p-3 text-sm dark:bg-white/[0.03]">
+                                    <span className="font-medium text-gray-800 dark:text-white/90">{t.transfer_number} — dari {t.creator}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-gray-500 dark:text-gray-400">{t.date}</span>
+                                        <Link 
+                                            href={route('hendhys.transfer-requests.receive-form-gudang', t.id)} 
+                                            className="rounded-lg bg-green-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-green-700 transition"
+                                        >
+                                            Terima Barang
+                                        </Link>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
