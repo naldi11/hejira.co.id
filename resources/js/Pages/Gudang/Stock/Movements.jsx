@@ -103,7 +103,11 @@ export default function StockMovements({ movements, filters }) {
                                                 <td className={`px-4 py-4 text-right font-bold tabular-nums ${isIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-605 dark:text-rose-400'}`}>{isIn ? '+' : '-'}{formatQty(m.quantity)}</td>
                                                 <td className="px-6 py-4">
                                                     <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300">{SOURCE_LABELS[m.source] ?? m.source}</span>
-                                                    {m.reference_id && <span className="text-[10px] font-bold text-brand-500 dark:text-brand-400">ID Ref: {m.reference_id}</span>}
+                                                    {m.doc_number ? (
+                                                        <span className="text-[10px] font-bold text-brand-500 dark:text-brand-400">Doc: {m.doc_number}</span>
+                                                    ) : m.reference_id ? (
+                                                        <span className="text-[10px] font-bold text-brand-500 dark:text-brand-400">ID Ref: {m.reference_id}</span>
+                                                    ) : null}
                                                 </td>
                                                 <td className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-400">{m.notes || '-'}</td>
                                                 <td className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-400">{m.operator}</td>

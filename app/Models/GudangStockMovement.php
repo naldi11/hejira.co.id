@@ -27,4 +27,18 @@ class GudangStockMovement extends Model
 
     public function product(): BelongsTo { return $this->belongsTo(Product::class); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+
+    public function getDocumentNumberAttribute(): ?string
+    {
+        if (!$this->reference_id) {
+            return null;
+        }
+
+        return match ($this->source) {
+            'transfer_out'       => \App\Models\TransferOut::where('id', $this->reference_id)->value('transfer_number'),
+            'purchase_receiving', 'receiving' => \App\Models\Receiving::where('id', $this->reference_id)->value('grn_number'),
+            'return_receiving', 'return_receive'  => \App\Models\GudangReturn::where('id', $this->reference_id)->value('return_number'),
+            default              => null,
+        };
+    }
 }
