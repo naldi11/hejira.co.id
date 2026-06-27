@@ -54,6 +54,9 @@ class TransferToBranchController extends Controller
         if (auth()->user()->branch->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat melakukan transfer barang ke cabang.');
         }
+        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+            abort(403, 'Akses ditolak.');
+        }
 
         if ($request->has('request_id')) {
             $branchRequest = HendhysBranchRequest::with(['branch', 'details.product', 'details.unit'])
@@ -109,6 +112,9 @@ class TransferToBranchController extends Controller
     public function store(Request $request)
     {
         if (auth()->user()->branch->type !== 'pusat') {
+            abort(403, 'Akses ditolak.');
+        }
+        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
             abort(403, 'Akses ditolak.');
         }
 

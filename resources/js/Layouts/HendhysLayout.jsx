@@ -61,6 +61,10 @@ export default function HendhysLayout({ pageTitle, children }) {
         { name: 'Stok Tersedia', path: route('hendhys.stock.index') }
     ];
 
+    if (!isPusat) {
+        inventorySubItems.push({ name: 'Penerimaan dari Pusat', path: route('hendhys.transfer-to-branch.index') });
+    }
+
     if (isAdmin) {
         if (isPusat) {
             inventorySubItems.push({ name: 'Request ke Gudang', path: route('hendhys.transfer-requests.index') });

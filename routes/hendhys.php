@@ -85,7 +85,6 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             Route::resource('branch-requests', BranchRequestController::class)->except(['edit', 'update', 'destroy']);
 
             // Distribusi ke Cabang
-            Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy', 'show']); // show and receive-form are different
             Route::post('transfer-to-branch/{transfer_to_branch}/force-receive', [TransferToBranchController::class, 'forceReceive'])->name('transfer-to-branch.force-receive');
 
             // Retur dari Cabang
@@ -106,7 +105,8 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             });
         });
 
-        // BAST Print & show of transfer-to-branch is shared
+        // BAST Print & show & index of transfer-to-branch is shared
+        Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy', 'show']);
         Route::get('transfer-to-branch/{transfer_to_branch}', [TransferToBranchController::class, 'show'])->name('transfer-to-branch.show');
         Route::get('transfer-to-branch/{transfer_to_branch}/bast', [TransferToBranchController::class, 'printBast'])->name('transfer-to-branch.bast');
 
