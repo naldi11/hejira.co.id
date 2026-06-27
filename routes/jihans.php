@@ -8,7 +8,7 @@ use App\Http\Controllers\Jihans\TransferRequestController;
 use App\Http\Controllers\Jihans\StockController;
 use App\Http\Controllers\Jihans\GudangReturnController;
 
-Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihans'])
+Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihans|super_admin_jihans'])
     ->prefix('jihans')
     ->name('jihans.')
     ->group(function () {
@@ -21,10 +21,15 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
 
+        // Laci Report (Accessible by both Kasir and Admin)
+        Route::get('/reports/laci', [\App\Http\Controllers\Jihans\ReportController::class, 'laci'])
+            ->middleware('role:kasir_jihans|admin_jihans|super_admin_jihans')
+            ->name('reports.laci');
+
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:kasir_jihans'])->group(function () {
+        Route::middleware(['role:kasir_jihans|super_admin_jihans'])->group(function () {
             // POS Kasir
             Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
             Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
@@ -35,15 +40,12 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::post('/pending', [PendingController::class, 'store'])->name('pending.store');
             Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
             Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
-
-            // Laci Report
-            Route::get('/reports/laci', [\App\Http\Controllers\Jihans\ReportController::class, 'laci'])->name('reports.laci');
         });
 
         // ==========================================
         // ADMIN ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:admin_jihans'])->group(function () {
+        Route::middleware(['role:admin_jihans|super_admin_jihans'])->group(function () {
             // Master Data (Scoped to Jihans)
             Route::prefix('master')->name('master.')->group(function () {
                 Route::get('suppliers/template', [\App\Http\Controllers\Master\SupplierController::class, 'downloadTemplate'])->name('suppliers.template');

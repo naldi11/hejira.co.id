@@ -14,8 +14,8 @@ Route::get('/dashboard', function () {
     $user = auth()->user();
     if ($user->hasRole('owner'))                          return redirect()->route('owner.dashboard');
     if ($user->hasRole('admin_gudang'))                   return redirect()->route('gudang.dashboard');
-    if ($user->hasRole(['kasir_jihans', 'admin_jihans'])) return redirect()->route('jihans.dashboard');
-    if ($user->hasRole(['kasir_hendhys', 'admin_hendhys'])) return redirect()->route('hendhys.dashboard');
+    if ($user->hasRole(['kasir_jihans', 'admin_jihans', 'super_admin_jihans'])) return redirect()->route('jihans.dashboard');
+    if ($user->hasRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'])) return redirect()->route('hendhys.dashboard');
     
     auth()->logout();
     request()->session()->invalidate();

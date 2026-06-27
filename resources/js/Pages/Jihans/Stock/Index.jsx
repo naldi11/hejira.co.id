@@ -82,23 +82,24 @@ export default function JihansStockIndex({ stocks, filters }) {
                                     <th className="px-6 py-4 font-semibold">Kategori</th>
                                     <th className="px-6 py-4 text-center font-semibold">Safety Stock</th>
                                     <th className="px-6 py-4 text-center font-semibold">Stok Tersedia</th>
+                                    <th className="px-6 py-4 text-center font-semibold">Stok Gudang</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                {loading ? <SkeletonTableRows rows={8} columns={4} />
-                                    : stocks.data.length === 0 ? <EmptyState colSpan={4} icon="inventory_2" message="Tidak ada data stok." />
+                                {loading ? <SkeletonTableRows rows={8} columns={5} />
+                                    : stocks.data.length === 0 ? <EmptyState colSpan={5} icon="inventory_2" message="Tidak ada data stok." />
                                     : stocks.data.map((item) => (
                                         <tr key={item.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-gray-800 dark:text-white/90">{item.name}</span>
-                                                    <span className="font-mono text-xs text-gray-400 dark:text-gray-500 mt-0.5">{item.code}</span>
+                                                    <span className="font-mono text-xs text-gray-400 dark:text-gray-550 mt-0.5">{item.code}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{item.category ?? '-'}</span>
-                                                    <span className="text-[10px] capitalize text-gray-400 dark:text-gray-500 mt-0.5">{(item.jenis ?? '').replace('_', ' ')}</span>
+                                                    <span className="text-[10px] capitalize text-gray-400 dark:text-gray-550 mt-0.5">{(item.jenis ?? '').replace('_', ' ')}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-center">
@@ -110,6 +111,12 @@ export default function JihansStockIndex({ stocks, filters }) {
                                                 <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400' : 'border-green-100 bg-green-50 text-green-600 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400'}`}>
                                                     <span className="text-sm font-black tabular-nums">{formatQty(item.current_stock)}</span>
                                                     <span className="text-[10px] font-bold uppercase">{item.unit ?? 'PCS'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="inline-flex items-center gap-2 rounded-xl border border-gray-150 bg-gray-50/30 px-3 py-1.5 dark:border-gray-800 dark:bg-white/[0.01]">
+                                                    <span className="text-sm font-black tabular-nums text-gray-800 dark:text-white/90">{formatQty(item.gudang_stock)}</span>
+                                                    <span className="text-[10px] font-bold uppercase text-gray-500">{item.unit ?? 'PCS'}</span>
                                                 </div>
                                             </td>
                                         </tr>

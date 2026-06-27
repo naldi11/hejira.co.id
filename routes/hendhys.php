@@ -13,7 +13,7 @@ use App\Http\Controllers\Hendhys\GudangReturnController;
 
 use App\Http\Controllers\Hendhys\DashboardController;
 
-Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_hendhys|admin_hendhys'])
+Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_hendhys|admin_hendhys|super_admin_hendhys'])
     ->prefix('hendhys')
     ->name('hendhys.')
     ->group(function () {
@@ -25,10 +25,15 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
 
+        // Laci Report (Accessible by both Kasir and Admin)
+        Route::get('/reports/laci', [\App\Http\Controllers\Hendhys\ReportController::class, 'laci'])
+            ->middleware('role:kasir_hendhys|admin_hendhys|super_admin_hendhys')
+            ->name('reports.laci');
+
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:kasir_hendhys'])->group(function () {
+        Route::middleware(['role:kasir_hendhys|super_admin_hendhys'])->group(function () {
             // POS (pusat & cabang)
             Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
             Route::get('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
@@ -47,15 +52,12 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             // Receive from Pusat (Cabang receiving)
             Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
             Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
-
-            // Laci Report
-            Route::get('/reports/laci', [\App\Http\Controllers\Hendhys\ReportController::class, 'laci'])->name('reports.laci');
         });
 
         // ==========================================
         // ADMIN ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:admin_hendhys'])->group(function () {
+        Route::middleware(['role:admin_hendhys|super_admin_hendhys'])->group(function () {
             // Master Data (Scoped to Hendhys)
             Route::prefix('master')->name('master.')->group(function () {
                 Route::get('suppliers/template', [\App\Http\Controllers\Master\SupplierController::class, 'downloadTemplate'])->name('suppliers.template');

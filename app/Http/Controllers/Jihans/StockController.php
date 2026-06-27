@@ -18,7 +18,8 @@ class StockController extends Controller
             ->where(fn ($w) => $w->visibleInJihans()->orWhereExists(fn ($sq) => $sq
                 ->from('jihans_stock')->whereColumn('jihans_stock.product_id', 'master_products.id')))
             ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
+            ->select('master_products.*', 'jihans_stock.quantity as current_stock', 'gudang_stock.quantity as gudang_stock')
             ->with(['unit', 'category'])
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('master_products.name', 'like', "%{$request->search}%")

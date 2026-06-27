@@ -31,7 +31,7 @@ function SkeletonCards() {
     );
 }
 
-function StockCard({ item }) {
+function StockCard({ item, isPusat }) {
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between hover:border-amber-300 dark:hover:border-amber-800 hover:shadow-md transition-all">
             <div>
@@ -50,7 +50,7 @@ function StockCard({ item }) {
                     </span>
                 </div>
 
-                <p className="mt-2 text-xs font-semibold text-gray-450 dark:text-gray-500 uppercase tracking-wider">
+                <p className="mt-2 text-xs font-semibold text-gray-455 dark:text-gray-500 uppercase tracking-wider">
                     Tipe: {(item.jenis ?? '').replace('_', ' ')}
                 </p>
 
@@ -63,7 +63,7 @@ function StockCard({ item }) {
                     <div className={`rounded-xl border p-2.5 text-center ${item.is_low ? 'border-rose-100 bg-rose-50/50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-500/10 dark:text-rose-400' : 'border-emerald-100 bg-emerald-50/50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
                         <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Siap Jual</span>
                         <span className="block text-lg font-bold tabular-nums leading-none mb-1">{formatQty(item.current_stock)}</span>
-                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500">{item.unit ?? 'PCS'}</span>
+                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
                     </div>
 
                     {/* Stok Retur */}
@@ -78,6 +78,12 @@ function StockCard({ item }) {
                 <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>Safety Stock (Minimum):</span>
                     <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.stock_min)} {item.unit}</span>
+                </div>
+
+                {/* Stok Pusat / Gudang */}
+                <div className="mt-2.5 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 border-t border-dashed border-gray-150 dark:border-gray-800 pt-2.5">
+                    <span>{isPusat ? 'Stok Gudang (Pusat):' : 'Stok Hendhys Pusat:'}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.parent_stock)} {item.unit}</span>
                 </div>
             </div>
         </div>
@@ -193,7 +199,7 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {stocks.data.map((item) => (
-                            <StockCard key={item.id} item={item} />
+                            <StockCard key={item.id} item={item} isPusat={isPusat} />
                         ))}
                     </div>
                 )}

@@ -29,6 +29,7 @@ class HendhysStockResource extends JsonResource
             'stock_min'     => (float) $this->stock_min,
             'current_stock' => $qty,
             'return_stock'  => (float) ($this->return_stock ?? 0),
+            'parent_stock'  => (float) ($this->parent_stock ?? 0),
             'is_low'        => $qty <= (float) $this->stock_min,
             'branch_id'     => $this->branch_id ?? null,
         ];

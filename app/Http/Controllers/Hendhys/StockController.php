@@ -29,7 +29,8 @@ class StockController extends Controller
                       });
                 })
                 ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock', 'hendhys_stock_pusat.quantity_return as return_stock')
+                ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
+                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock', 'hendhys_stock_pusat.quantity_return as return_stock', 'gudang_stock.quantity as parent_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {
@@ -86,7 +87,8 @@ class StockController extends Controller
                     $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
                         ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
                 })
-                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock')
+                ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock', 'hendhys_stock_pusat.quantity as parent_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {

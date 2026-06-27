@@ -72,4 +72,21 @@ class OwnerTest extends TestCase
             ->get(route('owner.dashboard'))
             ->assertForbidden();
     }
+
+    public function test_owner_reports_export_csv(): void
+    {
+        $this->actingAs($this->owner())
+            ->get(route('owner.reports.export', ['format' => 'csv', 'periode' => 'bulanan']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
+            ->assertHeader('Content-Disposition', 'attachment; filename=Laporan_Omset_bulanan_' . date('Ymd') . '.csv');
+    }
+
+    public function test_owner_reports_export_pdf(): void
+    {
+        // Assert it returns PDF stream
+        $this->actingAs($this->owner())
+            ->get(route('owner.reports.export', ['format' => 'pdf', 'periode' => 'bulanan']))
+            ->assertOk();
+    }
 }

@@ -9,8 +9,9 @@ export default function HendhysLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const isPusat = auth?.user?.branch?.type === 'pusat';
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_hendhys');
-    const isAdmin = roles.includes('admin_hendhys') || roles.includes('owner') || roles.includes('admin_gudang');
+    const isKasir = roles.includes('kasir_hendhys') || roles.includes('super_admin_hendhys');
+    const isAdmin = roles.includes('admin_hendhys') || roles.includes('super_admin_hendhys') || roles.includes('owner') || roles.includes('admin_gudang');
+    const isSuperAdmin = roles.includes('super_admin_hendhys');
 
     const navItems = [
         {
@@ -21,15 +22,19 @@ export default function HendhysLayout({ pageTitle, children }) {
     ];
 
     if (isKasir) {
+        const subItems = [
+            { name: 'POS Kasir', path: route('hendhys.pos.index') },
+            { name: 'Transaksi Pending', path: route('hendhys.pending.index') },
+            { name: 'Riwayat Transaksi', path: route('hendhys.transactions.index') },
+            { name: 'Laporan Laci', path: route('hendhys.reports.laci') },
+        ];
+        if (isSuperAdmin) {
+            subItems.push({ name: 'Laporan Bisnis', path: route('hendhys.reports.index') });
+        }
         navItems.push({
             name: 'Kasir & Penjualan',
             icon: <Icon name="point_of_sale" className="text-[22px]" />,
-            subItems: [
-                { name: 'POS Kasir', path: route('hendhys.pos.index') },
-                { name: 'Transaksi Pending', path: route('hendhys.pending.index') },
-                { name: 'Riwayat Transaksi', path: route('hendhys.transactions.index') },
-                { name: 'Laporan Laci', path: route('hendhys.reports.laci') },
-            ],
+            subItems: subItems,
         });
     } else {
         navItems.push({

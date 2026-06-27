@@ -125,6 +125,31 @@ class RolePermissionSeeder extends Seeder
             'master.product.view', 'master.customer.view', 'master.customer.manage', 'master.supplier.view',
             'global.notification.view',
         ]);
+
+        // --- SUPER ADMIN JIHAN'S ---
+        $superAdminJihans = Role::firstOrCreate(['name' => 'super_admin_jihans', 'guard_name' => 'web']);
+        $superAdminJihans->syncPermissions([
+            'jihans.production.view', 'jihans.production.create', 'jihans.production.edit', 'jihans.production.delete',
+            'jihans.pos.view', 'jihans.pos.create',
+            'jihans.stock.view',
+            'jihans.transfer_request.view', 'jihans.transfer_request.create',
+            'master.product.view', 'master.customer.view', 'master.customer.manage', 'master.supplier.view',
+            'global.notification.view',
+        ]);
+
+        // --- SUPER ADMIN HENDHYS ---
+        $superAdminHendhys = Role::firstOrCreate(['name' => 'super_admin_hendhys', 'guard_name' => 'web']);
+        $superAdminHendhys->syncPermissions([
+            'hendhys.production.view', 'hendhys.production.create', 'hendhys.production.edit',
+            'hendhys.pos.view', 'hendhys.pos.create',
+            'hendhys.stock.view',
+            'hendhys.transfer_request.view', 'hendhys.transfer_request.create',
+            'hendhys.branch_request.view', 'hendhys.branch_request.create', 'hendhys.branch_request.approve',
+            'hendhys.transfer_to_branch.view', 'hendhys.transfer_to_branch.create',
+            'hendhys.return.view', 'hendhys.return.create',
+            'master.customer.view', 'master.customer.manage', 'master.product.view', 'master.supplier.view',
+            'global.notification.view',
+        ]);
     }
 }
 

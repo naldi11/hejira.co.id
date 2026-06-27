@@ -23,6 +23,8 @@ class DashboardRedirectTest extends TestCase
         Role::findOrCreate('admin_jihans', 'web');
         Role::findOrCreate('kasir_hendhys', 'web');
         Role::findOrCreate('admin_hendhys', 'web');
+        Role::findOrCreate('super_admin_jihans', 'web');
+        Role::findOrCreate('super_admin_hendhys', 'web');
     }
 
     public function test_owner_redirected_to_owner_dashboard(): void
@@ -58,6 +60,12 @@ class DashboardRedirectTest extends TestCase
         $admin->assignRole('admin_jihans');
         $response2 = $this->actingAs($admin)->get('/dashboard');
         $response2->assertRedirect(route('jihans.dashboard'));
+
+        // Super Admin Jihan's
+        $super = User::factory()->create(['entity' => 'jihans']);
+        $super->assignRole('super_admin_jihans');
+        $response3 = $this->actingAs($super)->get('/dashboard');
+        $response3->assertRedirect(route('jihans.dashboard'));
     }
 
     public function test_hendhys_users_redirected_to_hendhys_dashboard(): void
@@ -75,6 +83,12 @@ class DashboardRedirectTest extends TestCase
         $admin->assignRole('admin_hendhys');
         $response2 = $this->actingAs($admin)->get('/dashboard');
         $response2->assertRedirect(route('hendhys.dashboard'));
+
+        // Super Admin Hendhys
+        $super = User::factory()->create(['entity' => 'hendhys', 'branch_id' => $branch->id]);
+        $super->assignRole('super_admin_hendhys');
+        $response3 = $this->actingAs($super)->get('/dashboard');
+        $response3->assertRedirect(route('hendhys.dashboard'));
     }
 
     public function test_user_without_valid_role_is_logged_out_and_redirected_to_login_with_error(): void

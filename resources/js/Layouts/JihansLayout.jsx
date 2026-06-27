@@ -8,8 +8,9 @@ const route = window.route;
 export default function JihansLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_jihans');
-    const isAdmin = roles.includes('admin_jihans') || roles.includes('owner') || roles.includes('admin_gudang');
+    const isKasir = roles.includes('kasir_jihans') || roles.includes('super_admin_jihans');
+    const isAdmin = roles.includes('admin_jihans') || roles.includes('super_admin_jihans') || roles.includes('owner') || roles.includes('admin_gudang');
+    const isSuperAdmin = roles.includes('super_admin_jihans');
 
     const navItems = [
         {
@@ -20,15 +21,19 @@ export default function JihansLayout({ pageTitle, children }) {
     ];
 
     if (isKasir) {
+        const subItems = [
+            { name: 'POS Kasir', path: route('jihans.pos.index') },
+            { name: 'Transaksi Pending', path: route('jihans.pending.index') },
+            { name: 'Riwayat Transaksi', path: route('jihans.transactions.index') },
+            { name: 'Laporan Laci', path: route('jihans.reports.laci') },
+        ];
+        if (isSuperAdmin) {
+            subItems.push({ name: 'Laporan Bisnis', path: route('jihans.reports.index') });
+        }
         navItems.push({
             name: 'Kasir & Penjualan',
             icon: <Icon name="point_of_sale" className="text-[22px]" />,
-            subItems: [
-                { name: 'POS Kasir', path: route('jihans.pos.index') },
-                { name: 'Transaksi Pending', path: route('jihans.pending.index') },
-                { name: 'Riwayat Transaksi', path: route('jihans.transactions.index') },
-                { name: 'Laporan Laci', path: route('jihans.reports.laci') },
-            ],
+            subItems: subItems,
         });
     } else {
         navItems.push({
