@@ -31,7 +31,10 @@ function SkeletonCards() {
     );
 }
 
-function StockCard({ item, isPusat }) {
+function StockCard({ item, isPusat, activeTab }) {
+    const isCabangTab = activeTab === 'cabang';
+    const mainStock = isCabangTab ? item.current_stock : item.parent_stock;
+
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between hover:border-amber-300 dark:hover:border-amber-800 hover:shadow-md transition-all">
             <div>
@@ -60,31 +63,36 @@ function StockCard({ item, isPusat }) {
                 {/* Stock Metrics Split Grid */}
                 <div className="grid grid-cols-2 gap-2.5">
                     {/* Stok Bagus / Siap Jual */}
-                    <div className={`rounded-xl border p-2.5 text-center ${item.is_low ? 'border-rose-100 bg-rose-50/50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-500/10 dark:text-rose-400' : 'border-emerald-100 bg-emerald-50/50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Siap Jual</span>
-                        <span className="block text-lg font-bold tabular-nums leading-none mb-1">{formatQty(item.current_stock)}</span>
+                    <div className={`rounded-xl border p-2.5 text-center ${item.is_low && isCabangTab ? 'border-rose-100 bg-rose-50/50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-500/10 dark:text-rose-400' : 'border-emerald-100 bg-emerald-50/50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                            {isCabangTab ? 'Siap Jual' : (isPusat ? 'Stok Gudang' : 'Stok Pusat')}
+                        </span>
+                        <span className="block text-lg font-bold tabular-nums leading-none mb-1">{formatQty(mainStock)}</span>
                         <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
                     </div>
 
-                    {/* Stok Retur */}
-                    <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550 mb-1">Stok Retur</span>
-                        <span className={`block text-lg font-bold tabular-nums leading-none mb-1 ${item.return_stock > 0 ? 'text-amber-600 dark:text-amber-455' : 'text-gray-400 dark:text-gray-650'}`}>{formatQty(item.return_stock)}</span>
-                        <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
+                    {/* Stok Retur / Safety Stock */}
+                    {isCabangTab ? (
+                        <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
+                            <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-455 dark:text-gray-550 mb-1">Stok Retur</span>
+                            <span className={`block text-lg font-bold tabular-nums leading-none mb-1 ${item.return_stock > 0 ? 'text-amber-600 dark:text-amber-455' : 'text-gray-400 dark:text-gray-650'}`}>{formatQty(item.return_stock)}</span>
+                            <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01] flex flex-col justify-center">
+                            <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-455 dark:text-gray-550 mb-1">Safety Stock</span>
+                            <span className="block text-sm font-bold text-gray-700 dark:text-gray-300">{formatQty(item.stock_min)} {item.unit}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Info Text */}
+                {isCabangTab && (
+                    <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>Safety Stock (Minimum):</span>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.stock_min)} {item.unit}</span>
                     </div>
-                </div>
-
-                {/* Safety Stock / Minimum */}
-                <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>Safety Stock (Minimum):</span>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.stock_min)} {item.unit}</span>
-                </div>
-
-                {/* Stok Pusat / Gudang */}
-                <div className="mt-2.5 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 border-t border-dashed border-gray-150 dark:border-gray-800 pt-2.5">
-                    <span>{isPusat ? 'Stok Gudang (Pusat):' : 'Stok Hendhys Pusat:'}</span>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">{formatQty(item.parent_stock)} {item.unit}</span>
-                </div>
+                )}
             </div>
         </div>
     );
@@ -116,14 +124,14 @@ function BranchStockCard({ item }) {
                 <div className="grid grid-cols-2 gap-2.5">
                     {/* Stok Cabang */}
                     <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-550 dark:text-gray-450 mb-1">Stok Cabang</span>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-550 dark:text-gray-455 mb-1">Stok Cabang</span>
                         <span className="block text-lg font-bold tabular-nums leading-none mb-1 text-gray-850 dark:text-white/90">{formatQty(item.current_stock)}</span>
                         <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-500">{item.unit ?? 'PCS'}</span>
                     </div>
 
                     {/* Retur Cabang */}
                     <div className="rounded-xl border border-gray-150 bg-gray-50/30 p-2.5 text-center dark:border-gray-800 dark:bg-white/[0.01]">
-                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550 mb-1">Retur Cabang</span>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-455 dark:text-gray-550 mb-1">Retur Cabang</span>
                         <span className={`block text-lg font-bold tabular-nums leading-none mb-1 ${item.return_stock > 0 ? 'text-amber-600 dark:text-amber-455' : 'text-gray-400 dark:text-gray-650'}`}>{formatQty(item.return_stock)}</span>
                         <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
                     </div>
@@ -136,6 +144,7 @@ function BranchStockCard({ item }) {
 export default function HendhysStockIndex({ stocks, branches, branchStocks, selectedBranchId, isPusat, filters }) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ search: filters.search ?? '', branch_id: filters.branch_id ?? '' });
+    const [activeTab, setActiveTab] = useState('cabang'); // cabang or gudang
 
     const reload = (e) => {
         e?.preventDefault();
@@ -167,11 +176,27 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                     </Link>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setActiveTab('cabang')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'cabang' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
+                    >
+                        <Icon name="storefront" className="text-[18px]" /> {isPusat ? 'Stok Hendhys Pusat' : 'Stok Cabang Sendiri'}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('gudang')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'gudang' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
+                    >
+                        <Icon name="warehouse" className="text-[18px]" /> {isPusat ? 'Stok Gudang Utama' : 'Stok Hendhys Pusat'}
+                    </button>
+                </div>
+
                 {/* Filter Card */}
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
                     <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
                         <div className="relative min-w-[260px] flex-1">
-                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400 dark:text-gray-500" />
+                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400 dark:text-gray-550" />
                             <input 
                                 type="text" 
                                 value={form.search} 
@@ -199,7 +224,7 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {stocks.data.map((item) => (
-                            <StockCard key={item.id} item={item} isPusat={isPusat} />
+                            <StockCard key={item.id} item={item} isPusat={isPusat} activeTab={activeTab} />
                         ))}
                     </div>
                 )}

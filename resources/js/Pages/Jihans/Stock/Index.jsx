@@ -14,6 +14,7 @@ const JENIS = ['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minum
 export default function JihansStockIndex({ stocks, filters }) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ search: filters.search ?? '', jenis: filters.jenis ?? '' });
+    const [activeTab, setActiveTab] = useState('cabang'); // cabang or gudang
     const hasFilter = form.search || form.jenis;
 
     const reload = (e) => {
@@ -36,6 +37,22 @@ export default function JihansStockIndex({ stocks, filters }) {
                     <Link href={route('jihans.stock.movements')} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <Icon name="history" className="text-[18px]" /> Kartu Stok
                     </Link>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setActiveTab('cabang')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'cabang' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
+                    >
+                        <Icon name="storefront" className="text-[18px]" /> Stok Cabang Jihan's
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('gudang')}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'gudang' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
+                    >
+                        <Icon name="warehouse" className="text-[18px]" /> Stok Gudang Utama
+                    </button>
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
@@ -81,13 +98,16 @@ export default function JihansStockIndex({ stocks, filters }) {
                                     <th className="px-6 py-4 font-semibold">Info Produk</th>
                                     <th className="px-6 py-4 font-semibold">Kategori</th>
                                     <th className="px-6 py-4 text-center font-semibold">Safety Stock</th>
-                                    <th className="px-6 py-4 text-center font-semibold">Stok Tersedia</th>
-                                    <th className="px-6 py-4 text-center font-semibold">Stok Gudang</th>
+                                    {activeTab === 'cabang' ? (
+                                        <th className="px-6 py-4 text-center font-semibold">Stok Tersedia</th>
+                                    ) : (
+                                        <th className="px-6 py-4 text-center font-semibold">Stok Gudang</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                {loading ? <SkeletonTableRows rows={8} columns={5} />
-                                    : stocks.data.length === 0 ? <EmptyState colSpan={5} icon="inventory_2" message="Tidak ada data stok." />
+                                {loading ? <SkeletonTableRows rows={8} columns={4} />
+                                    : stocks.data.length === 0 ? <EmptyState colSpan={4} icon="inventory_2" message="Tidak ada data stok." />
                                     : stocks.data.map((item) => (
                                         <tr key={item.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4">
@@ -107,18 +127,21 @@ export default function JihansStockIndex({ stocks, filters }) {
                                                     {formatQty(item.stock_min)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400' : 'border-green-100 bg-green-50 text-green-600 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400'}`}>
-                                                    <span className="text-sm font-black tabular-nums">{formatQty(item.current_stock)}</span>
-                                                    <span className="text-[10px] font-bold uppercase">{item.unit ?? 'PCS'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="inline-flex items-center gap-2 rounded-xl border border-gray-150 bg-gray-50/30 px-3 py-1.5 dark:border-gray-800 dark:bg-white/[0.01]">
-                                                    <span className="text-sm font-black tabular-nums text-gray-800 dark:text-white/90">{formatQty(item.gudang_stock)}</span>
-                                                    <span className="text-[10px] font-bold uppercase text-gray-500">{item.unit ?? 'PCS'}</span>
-                                                </div>
-                                            </td>
+                                            {activeTab === 'cabang' ? (
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 ${item.is_low ? 'border-red-100 bg-red-50 text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400' : 'border-green-100 bg-green-50 text-green-600 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400'}`}>
+                                                        <span className="text-sm font-black tabular-nums">{formatQty(item.current_stock)}</span>
+                                                        <span className="text-[10px] font-bold uppercase">{item.unit ?? 'PCS'}</span>
+                                                    </div>
+                                                </td>
+                                            ) : (
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="inline-flex items-center gap-2 rounded-xl border border-gray-150 bg-gray-50/30 px-3 py-1.5 dark:border-gray-800 dark:bg-white/[0.01]">
+                                                        <span className="text-sm font-black tabular-nums text-gray-800 dark:text-white/90">{formatQty(item.gudang_stock)}</span>
+                                                        <span className="text-[10px] font-bold uppercase text-gray-500">{item.unit ?? 'PCS'}</span>
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                             </tbody>
