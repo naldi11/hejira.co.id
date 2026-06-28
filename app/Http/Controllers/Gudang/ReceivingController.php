@@ -69,7 +69,7 @@ class ReceivingController extends Controller
                         'unit_id'           => $d->unit_id,
                         'unit_name'         => $d->unit?->abbreviation ?? 'PCS',
                         'price'             => (float) $d->price,
-                    ]),
+                    ])->values(),
                 ]),
             'selectedPoId'   => $request->filled('po_id') ? (int) $request->po_id : null,
         ]);
