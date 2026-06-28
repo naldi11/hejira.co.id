@@ -36,6 +36,14 @@ export default function TransferToBranchCreate({ branches, products, branchReque
         setData('items', items);
     };
 
+    const onProductChange = (i, productId) => {
+        const p = products?.find(x => String(x.id) === String(productId));
+        const items = [...data.items];
+        items[i].product_id = productId;
+        items[i].unit_id = p ? p.unit_id : '';
+        setData('items', items);
+    };
+
     const submit = (e) => { e.preventDefault(); post(route('hendhys.transfer-to-branch.store')); };
 
     const fieldClass = 'w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-800 dark:text-white/90 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-sm transition-all';
@@ -163,7 +171,7 @@ export default function TransferToBranchCreate({ branches, products, branchReque
                                                     <select
                                                         required
                                                         value={item.product_id}
-                                                        onChange={(e) => updateItem(i, 'product_id', e.target.value)}
+                                                        onChange={(e) => onProductChange(i, e.target.value)}
                                                         className={fieldClass}
                                                     >
                                                         <option value="" className="dark:bg-gray-800">-- Pilih Produk --</option>
