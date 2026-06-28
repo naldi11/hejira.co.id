@@ -19,8 +19,6 @@ class StoreReceivingRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        dd($this->all());
-
         if ($this->filled('po_id')) {
             $po = PurchaseOrder::find($this->input('po_id'));
             if ($po) {

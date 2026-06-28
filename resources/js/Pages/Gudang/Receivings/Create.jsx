@@ -21,7 +21,7 @@ function itemsFromPo(po) {
 export default function ReceivingCreate({ suppliers, products, purchaseOrders, selectedPoId }) {
     const initialPo = selectedPoId ? purchaseOrders.find((p) => p.id === selectedPoId) : null;
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         po_id: initialPo?.id ?? '',
         supplier_id: initialPo?.supplier_id ?? '',
         date: todayISO(),
@@ -153,6 +153,19 @@ export default function ReceivingCreate({ suppliers, products, purchaseOrders, s
 
     const submit = (e) => {
         e.preventDefault();
+        transform((d) => ({
+            ...d,
+            items: d.items.map(item => ({
+                product_id: item.product_id,
+                quantity_bagus: item.quantity_bagus,
+                quantity_rusak: item.quantity_rusak,
+                unit_id: item.unit_id,
+                hpp_price: item.hpp_price,
+                batch_number: item.batch_number,
+                expired_date: item.expired_date,
+                notes: item.notes,
+            }))
+        }));
         post(route('gudang.receiving.store'), { forceFormData: true });
     };
 
