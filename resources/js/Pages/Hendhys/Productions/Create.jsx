@@ -2,6 +2,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 const route = window.route;
 
@@ -20,24 +21,12 @@ export default function ProductionsCreate({ products, units }) {
         setData('items', items); 
     };
 
-    const onProductInputChange = (i, val) => {
-        const p = products.find(pr => `${pr.name} (${pr.code})` === val);
-        if (p) {
-            setData('items', data.items.map((it, idx) => (idx === i ? {
-                ...it,
-                search_text: val,
-                product_id: p.id,
-                unit_id: p.unit_id
-            } : it)));
-        } else {
-            setData('items', data.items.map((it, idx) => (idx === i ? {
-                ...it,
-                search_text: val,
-                product_id: '',
-                unit_id: ''
-            } : it)));
-        }
-    };
+    const productOptions = (products || []).map(p => ({
+        value: p.id,
+        label: p.name,
+        sublabel: p.code,
+        unit_id: p.unit_id
+    }));
     
     const submit = (e) => { 
         e.preventDefault(); 
@@ -49,12 +38,6 @@ export default function ProductionsCreate({ products, units }) {
     return (
         <HendhysLayout pageTitle="Catat Produksi">
             <Head title="Catat Produksi" />
-
-            <datalist id="products-list">
-                {products.map((p) => (
-                    <option key={p.id} value={`${p.name} (${p.code})`} />
-                ))}
-            </datalist>
 
             <form onSubmit={submit} className="mx-auto max-w-4xl space-y-6">
                 <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Catat Produksi Baru</h2>
@@ -68,6 +51,7 @@ export default function ProductionsCreate({ products, units }) {
                                 value={data.date} 
                                 onChange={(e) => setData('date', e.target.value)} 
                                 className={fieldClass} 
+                                required
                             />
                             {errors.date && <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">{errors.date}</p>}
                         </div>
@@ -91,15 +75,23 @@ export default function ProductionsCreate({ products, units }) {
                                 <div key={i} className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.01]">
                                     <div className="min-w-[200px] flex-1">
                                         <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Produk</label>
-                                        <input 
-                                            type="text" 
-                                            list="products-list"
-                                            value={item.search_text ?? ''} 
-                                            onChange={(e) => onProductInputChange(i, e.target.value)} 
-                                            placeholder="Cari & pilih produk..."
-                                            required 
-                                            className={fieldClass} 
-                                        />
+                                        <div className="mt-1.5">
+                                            <SearchableSelect
+                                                options={productOptions}
+                                                value={item.product_id}
+                                                onChange={(val) => {
+                                                    const p = productOptions.find(opt => String(opt.value) === String(val));
+                                                    const items = [...data.items];
+                                                    items[i].product_id = val;
+                                                    items[i].unit_id = p ? p.unit_id : '';
+                                                    setData('items', items);
+                                                }}
+                                                placeholder="Cari & pilih produk..."
+                                            />
+                                        </div>
+                                        {errors[`items.${i}.product_id`] && (
+                                            <p className="mt-1 text-xs text-red-500">{errors[`items.${i}.product_id`]}</p>
+                                        )}
                                     </div>
                                     <div className="w-32">
                                         <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Qty</label>
@@ -109,7 +101,11 @@ export default function ProductionsCreate({ products, units }) {
                                             value={item.quantity_produced} 
                                             onChange={(e) => updateItem(i, 'quantity_produced', e.target.value)} 
                                             className={fieldClass} 
+                                            required
                                         />
+                                        {errors[`items.${i}.quantity_produced`] && (
+                                            <p className="mt-1 text-xs text-red-500">{errors[`items.${i}.quantity_produced`]}</p>
+                                        )}
                                     </div>
                                     <div className="w-32">
                                         <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Satuan</label>
@@ -117,6 +113,7 @@ export default function ProductionsCreate({ products, units }) {
                                             value={item.unit_id} 
                                             onChange={(e) => updateItem(i, 'unit_id', e.target.value)} 
                                             className={fieldClass}
+                                            required
                                         >
                                             <option value="" className="dark:bg-gray-800">—</option>
                                             {units.map((u) => (
@@ -125,12 +122,15 @@ export default function ProductionsCreate({ products, units }) {
                                                 </option>
                                             ))}
                                         </select>
+                                        {errors[`items.${i}.unit_id`] && (
+                                            <p className="mt-1 text-xs text-red-500">{errors[`items.${i}.unit_id`]}</p>
+                                        )}
                                     </div>
                                     {data.items.length > 1 && (
                                         <button 
                                             type="button" 
                                             onClick={() => removeItem(i)} 
-                                            className="rounded-xl bg-red-50 p-2.5 text-red-500 hover:bg-red-100 transition-colors dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 h-[42px] w-[42px] flex items-center justify-center border border-transparent dark:border-red-500/10 shadow-sm"
+                                            className="mt-1.5 rounded-xl bg-red-50 p-2.5 text-red-500 hover:bg-red-100 transition-colors dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 h-[42px] w-[42px] flex items-center justify-center border border-transparent dark:border-red-500/10 shadow-sm"
                                         >
                                             <Icon name="delete" className="text-[20px]" />
                                         </button>
