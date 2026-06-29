@@ -20,6 +20,7 @@ export default function PosIndex({ products, customers }) {
     const [notes, setNotes] = useState('');
     const [extraDiscount, setExtraDiscount] = useState(0);
     const [ppnType, setPpnType] = useState('none');
+    const [shippingFee, setShippingFee] = useState(0);
     const [showSearch, setShowSearch] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
     const [amountPaid, setAmountPaid] = useState(0);
@@ -73,6 +74,10 @@ export default function PosIndex({ products, customers }) {
                 }
             }
 
+            if (item.is_custom_price) {
+                price = item.price;
+            }
+
             return { ...item, price };
         });
     };
@@ -101,9 +106,9 @@ export default function PosIndex({ products, customers }) {
         }
         const afterDiscount = subtotal - (Number(extraDiscount) || 0);
         const tax = ppnType === 'exclude' ? afterDiscount * 0.11 : 0;
-        const grand = Math.max(0, afterDiscount + tax);
+        const grand = Math.max(0, afterDiscount + tax) + (Number(shippingFee) || 0);
         return { subtotal, itemDiscount, tax, grand };
-    }, [cart, extraDiscount, ppnType]);
+    }, [cart, extraDiscount, ppnType, shippingFee]);
 
     const lineTotal = (it) => it.quantity * it.price - (Number(it.discount) || 0);
 
@@ -145,6 +150,9 @@ export default function PosIndex({ products, customers }) {
                 if (patch.quantity !== undefined) {
                     next.quantity = Math.max(1, Math.round(Number(patch.quantity) || 1));
                 }
+                if (patch.price !== undefined) {
+                    next.is_custom_price = true;
+                }
                 if ((Number(next.discount) || 0) > next.price * next.quantity) next.discount = 0;
                 return next;
             });
@@ -181,7 +189,7 @@ export default function PosIndex({ products, customers }) {
             const { data } = await axios.post(route('jihans.pos.store'), {
                 transaction_date: date, customer_id: customerId || null, customer_name: customerName, customer_type: customerType,
                 ppn_type: ppnType, ppn_rate: 11, subtotal: totals.subtotal, discount_amount: totals.itemDiscount,
-                extra_discount: Number(extraDiscount) || 0, tax_amount: totals.tax, other_costs: 0,
+                extra_discount: Number(extraDiscount) || 0, tax_amount: totals.tax, other_costs: Number(shippingFee) || 0,
                 grand_total: totals.grand, amount_paid: amountPaid, reference_number: null, notes,
                 items: buildItems(),
             }, { headers: { 'X-CSRF-TOKEN': csrf() } });
@@ -387,6 +395,12 @@ export default function PosIndex({ products, customers }) {
                                     <span className="tabular-nums">{formatRupiah(totals.tax)}</span>
                                 </div>
                             )}
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-500">Ongkir</span>
+                                <input type="number" min="0" value={shippingFee}
+                                    onChange={(e) => setShippingFee(Number(e.target.value) || 0)}
+                                    className="w-32 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-right text-sm font-semibold text-blue-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800" />
+                            </div>
                             <div className="mt-1 flex justify-between rounded-xl bg-orange-50 px-3 py-2.5 dark:bg-orange-900/20">
                                 <span className="font-bold text-gray-700 dark:text-gray-200">Total Akhir</span>
                                 <span className="text-lg font-black text-orange-600 tabular-nums dark:text-orange-400">{formatRupiah(totals.grand)}</span>
