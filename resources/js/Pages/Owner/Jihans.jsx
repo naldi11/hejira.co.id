@@ -118,9 +118,8 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                     {/* Navigation Tabs */}
                     <div className="flex flex-wrap gap-2 border-b border-slate-100 dark:border-gray-800 pb-4 mb-5">
                         {[
-                            { id: 'stocks', label: "Stok Jihan's Food", icon: 'cookie', color: 'bg-orange-500' },
+                            { id: 'stocks', label: "Stok Barang", icon: 'inventory', color: 'bg-orange-500' },
                             { id: 'transactions', label: "Transaksi Jihan's Food", icon: 'receipt_long', color: 'bg-orange-500' },
-                            { id: 'gudang_stocks', label: 'Stok Sisa Gudang', icon: 'inventory', color: 'bg-teal-600' },
                             { id: 'gudang_movements', label: 'Riwayat Mutasi Gudang', icon: 'swap_horiz', color: 'bg-teal-600' },
                             { id: 'gudang_po', label: 'PO Supplier Gudang', icon: 'shopping_bag', color: 'bg-teal-600' },
                         ].map(t => (
@@ -139,8 +138,8 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                         <div>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                                 <div>
-                                    <h4 className="font-bold text-slate-800 dark:text-white text-base">Stok Tersedia Jihan's Food</h4>
-                                    <p className="text-xs text-slate-400">Daftar sisa stok yang ada di unit Jihan's Food</p>
+                                    <h4 className="font-bold text-slate-800 dark:text-white text-base">Stok Jihan's Food & Gudang</h4>
+                                    <p className="text-xs text-slate-400">Daftar sisa stok produk jadi dan bahan baku</p>
                                 </div>
                                 <div className="relative min-w-[245px]">
                                     <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]" />
@@ -265,59 +264,7 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                         </div>
                     )}
 
-                    {/* ── Tab 3: Gudang Stocks ── */}
-                    {activeTab === 'gudang_stocks' && (
-                        <div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                                <div>
-                                    <h4 className="font-bold text-slate-800 dark:text-white text-base">Stok Bahan Baku Gudang</h4>
-                                    <p className="text-xs text-slate-400">Sisa stok bahan baku yang disimpan di Gudang Tempua</p>
-                                </div>
-                                <form onSubmit={(e) => handleGudangSearch(e, 'gudang_stocks')} className="relative min-w-[245px]">
-                                    <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]" />
-                                    <input
-                                        type="text"
-                                        placeholder="Cari sisa stok..."
-                                        value={gudangFilters.stock_search}
-                                        onChange={(e) => setGudangFilters({...gudangFilters, stock_search: e.target.value})}
-                                        className="w-full pl-9 pr-4 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-transparent dark:text-white"
-                                    />
-                                </form>
-                            </div>
-                            <div className="custom-scrollbar overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 dark:bg-white/[0.02] text-xs font-semibold text-slate-500 dark:text-gray-400">
-                                        <tr>
-                                            <th className="px-4 py-3">Kode</th>
-                                            <th className="px-4 py-3">Nama Produk</th>
-                                            <th className="px-4 py-3 text-right">Stok Gudang</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-                                        {gudangStocks.data.length === 0 ? <EmptyState colSpan={3} icon="inventory" message="Stok tidak ditemukan." />
-                                            : gudangStocks.data.map((s, idx) => (
-                                                <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01]">
-                                                    <td className="px-4 py-3 font-mono font-bold text-xs text-slate-500">{s.product?.code ?? '-'}</td>
-                                                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-white/90">{s.product?.name ?? '-'}</td>
-                                                    <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatQty(s.quantity)}</td>
-                                                </tr>
-                                            ))}
-                                    </tbody>
-                                    {gudangStocks.data.length > 0 && (
-                                        <tfoot>
-                                            <tr className="bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-200 dark:border-gray-800 font-bold">
-                                                <td colSpan={2} className="px-4 py-3 text-slate-700 dark:text-gray-300">Total</td>
-                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">
-                                                    {formatQty(gudangStocks.data.reduce((sum, s) => sum + Number(s.quantity), 0))}
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    )}
-                                </table>
-                            </div>
-                            {gudangStocks.meta?.links && <div className="mt-4"><Pagination links={gudangStocks.meta.links} /></div>}
-                        </div>
-                    )}
+
 
                     {/* ── Tab 4: Gudang Movements ── */}
                     {activeTab === 'gudang_movements' && (
