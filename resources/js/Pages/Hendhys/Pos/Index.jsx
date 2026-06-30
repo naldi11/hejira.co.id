@@ -38,6 +38,10 @@ export default function PosIndex({ products, paymentMethods }) {
     }, [search, products]);
 
     const addToCart = (product) => {
+        if (product.current_stock <= 0) {
+            alert(`Stok produk "${product.name}" habis. Tidak bisa ditambahkan ke keranjang.`);
+            return;
+        }
         const existing = cart.find(c => c.product_id === product.id);
         if (existing) {
             setCart(cart.map(c => c.product_id === product.id ? { ...c, qty: c.qty + 1 } : c));
@@ -221,12 +225,12 @@ export default function PosIndex({ products, paymentMethods }) {
                             {filtered.map(p => (
                                 <div 
                                     key={p.id} 
-                                    className="group flex flex-col rounded-2xl border border-gray-255 bg-white shadow-theme-xs transition-all hover:border-amber-250 hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden"
+                                    className={`group flex flex-col rounded-2xl border bg-white shadow-theme-xs transition-all dark:bg-white/[0.03] overflow-hidden ${p.current_stock <= 0 ? 'border-gray-200 dark:border-gray-800 opacity-55' : 'border-gray-255 dark:border-gray-800 hover:border-amber-250 hover:shadow-md'}`}
                                 >
                                     {/* Image and Stock Overlay */}
                                     <div 
                                         onClick={() => addToCart(p)}
-                                        className="relative h-44 w-full cursor-pointer overflow-hidden bg-gray-50 dark:bg-white/[0.01] flex items-center justify-center border-b border-gray-150 dark:border-gray-800"
+                                        className={`relative h-44 w-full overflow-hidden bg-gray-50 dark:bg-white/[0.01] flex items-center justify-center border-b border-gray-150 dark:border-gray-800 ${p.current_stock <= 0 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                     >
                                         {p.photo ? (
                                             <img src={p.photo} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -261,8 +265,9 @@ export default function PosIndex({ products, paymentMethods }) {
                                             {/* Dedicated Add Product Button */}
                                             <button 
                                                 onClick={() => addToCart(p)}
-                                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition-all shadow-md shadow-amber-600/10 hover:shadow-lg hover:shadow-amber-600/20"
-                                                title="Tambah ke Keranjang"
+                                                disabled={p.current_stock <= 0}
+                                                className={`flex h-9 w-9 items-center justify-center rounded-xl text-white transition-all shadow-md ${p.current_stock <= 0 ? 'bg-gray-400 cursor-not-allowed shadow-none' : 'bg-amber-600 hover:bg-amber-700 active:scale-95 shadow-amber-600/10 hover:shadow-lg hover:shadow-amber-600/20'}`}
+                                                title={p.current_stock <= 0 ? 'Stok habis' : 'Tambah ke Keranjang'}
                                             >
                                                 <Icon name="add" className="text-[22px] font-bold" />
                                             </button>
