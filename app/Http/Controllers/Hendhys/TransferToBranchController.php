@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
+use App\Models\TransferOut;
+use App\Http\Resources\Gudang\TransferOutResource;
+
 class TransferToBranchController extends Controller
 {
     public function __construct(
@@ -41,12 +44,178 @@ class TransferToBranchController extends Controller
             $q->where('transfer_number', 'like', "%$search%");
         }
 
-        $transfers = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+        $transfers = $q->orderBy('id', 'desc')->paginate(20)->withQueryString();
+
+        // Fetch direct Gudang transfers sent to this branch/entity
+        $gudangQuery = TransferOut::where('to_entity', 'hendhys')
+            ->with(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
+
+        if ($user->branch->type === 'cabang') {
+            $gudangQuery->where('branch_id', $user->branch_id);
+        }
+
+        if ($status = $request->status) {
+            $gudangQuery->where('status', $status);
+        }
+        if ($search = $request->search) {
+            $gudangQuery->where('transfer_number', 'like', "%$search%");
+        }
+
+        $gudangTransfers = $gudangQuery->orderBy('id', 'desc')->get();
 
         return Inertia::render('Hendhys/TransferToBranch/Index', [
-            'transfers' => HendhysTransferToBranchResource::collection($transfers),
-            'filters'   => $request->only('search', 'status'),
+            'transfers'       => HendhysTransferToBranchResource::collection($transfers),
+            'gudangTransfers' => TransferOutResource::collection($gudangTransfers),
+            'filters'         => $request->only('search', 'status'),
+            'isPusat'         => $user->branch->type === 'pusat',
         ]);
+    }
+
+    public function showGudangTransfer(Request $request, $id)
+    {
+        $user = auth()->user();
+        $transferOut = TransferOut::with(['branch', 'creator', 'receiver', 'details.product', 'details.unit'])
+            ->findOrFail($id);
+
+        if ($transferOut->to_entity !== 'hendhys') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->branch->type === 'cabang' && $transferOut->branch_id !== $user->branch_id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        return Inertia::render('Hendhys/TransferToBranch/ShowGudang', [
+            'transfer' => new TransferOutResource($transferOut),
+        ]);
+    }
+
+    public function showGudangReceiveForm(Request $request, $id)
+    {
+        $user = auth()->user();
+        $transferOut = TransferOut::with(['branch', 'creator', 'details.product', 'details.unit'])
+            ->findOrFail($id);
+
+        if ($transferOut->to_entity !== 'hendhys') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->branch->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
+            abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
+        }
+
+        if ($transferOut->status !== 'sent') {
+            return redirect()->route('hendhys.gudang-transfers.show', $transferOut->id)
+                ->with('error', 'Transfer ini sudah diproses sebelumnya.');
+        }
+
+        return Inertia::render('Hendhys/TransferToBranch/ReceiveGudang', [
+            'transfer' => new TransferOutResource($transferOut),
+        ]);
+    }
+
+    public function receiveGudangTransfer(Request $request, $id)
+    {
+        $user = auth()->user();
+        $transferOut = TransferOut::with(['branch', 'creator', 'details.product', 'details.unit'])
+            ->findOrFail($id);
+
+        if ($transferOut->to_entity !== 'hendhys') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($user->branch->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
+            abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
+        }
+
+        if ($transferOut->status !== 'sent') {
+            return back()->with('error', 'Transfer ini sudah diproses sebelumnya.');
+        }
+
+        $request->validate([
+            'received_quantities'      => 'required|array|min:1',
+            'received_quantities.*'    => 'required|numeric|min:0',
+            'kondisi'                  => 'nullable|array',
+            'kondisi.*'                => 'nullable|in:baik,rusak,kurang',
+            'receive_notes'            => 'nullable|string|max:2000',
+            'receive_kendala'          => 'nullable|string|max:2000',
+            'receive_received_by_name' => 'nullable|string|max:255',
+            'receive_pengirim_name'    => 'nullable|string|max:255',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $transferOut, $user) {
+                foreach ($transferOut->details as $detail) {
+                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $kondisi = $request->kondisi[$detail->id] ?? null;
+
+                    $detail->update([
+                        'received_quantity' => $receivedQty,
+                        'kondisi'           => $kondisi,
+                    ]);
+
+                    if ($receivedQty > 0) {
+                        $this->stockService->creditHendhys(
+                            $detail->product_id,
+                            $detail->unit_id,
+                            $receivedQty,
+                            $transferOut->branch_id,
+                            'transfer_gudang',
+                            $transferOut->id,
+                            $user->id
+                        );
+                    }
+                }
+
+                $transferOut->update([
+                    'status'                    => 'received',
+                    'received_by'               => $user->id,
+                    'receive_notes'             => $request->receive_notes,
+                    'receive_kendala'           => $request->receive_kendala,
+                    'receive_received_by_name'  => $request->receive_received_by_name,
+                    'receive_pengirim_name'     => $request->receive_pengirim_name,
+                    'received_at'               => now(),
+                ]);
+
+                // Create ReceiptConfirmation (Unified BAST) automatically
+                $receiptConfirmation = \App\Models\ReceiptConfirmation::create([
+                    'receiptable_type' => TransferOut::class,
+                    'receiptable_id'   => $transferOut->id,
+                    'received_by'      => $user->id,
+                    'received_at'      => now(),
+                    'status'           => 'completed',
+                    'general_notes'    => $request->receive_notes,
+                ]);
+
+                foreach ($transferOut->details as $detail) {
+                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $kondisi = $request->kondisi[$detail->id] ?? 'baik';
+
+                    $receiptConfirmation->details()->create([
+                        'product_id'   => $detail->product_id,
+                        'expected_qty' => $detail->quantity,
+                        'actual_qty'   => $receivedQty,
+                        'condition'    => $kondisi,
+                        'expired_date' => null,
+                        'batch_number' => null,
+                        'notes'        => null,
+                    ]);
+                }
+
+                // Mark Transfer Request as completed if exists
+                if ($transferOut->request) {
+                    $transferOut->request->update(['status' => 'completed']);
+                }
+            });
+
+            return redirect()->route('hendhys.gudang-transfers.show', $transferOut->id)
+                ->with('success', 'Penerimaan barang dikonfirmasi. BAST berhasil dibuat.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memproses penerimaan: ' . $e->getMessage());
+        }
     }
 
     public function create(Request $request)

@@ -149,7 +149,55 @@ class TransferOutController extends Controller
             $transfer->load('details');
             $this->stock->processTransferOut($transfer);
 
-            $this->logger->log('create', 'gudang.transfer_out', "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);
+            // AUTO-RECEIVE FOR HENDHYS BRANCHES (Pusat & Cabang)
+            if ($transfer->to_entity === 'hendhys') {
+                $transfer->update([
+                    'status'                    => 'received',
+                    'received_by'               => auth()->id(),
+                    'receive_notes'             => 'Diterima otomatis langsung ke cabang.',
+                    'receive_received_by_name'  => 'Sistem Gudang',
+                    'receive_pengirim_name'     => auth()->user()->name,
+                    'received_at'               => now(),
+                ]);
+
+                foreach ($transfer->details as $detail) {
+                    $detail->received_quantity = $detail->quantity;
+                    $detail->kondisi = 'baik';
+                    $detail->save();
+                }
+
+                // Process receipt (credits branch stock and creates HendhysStockIn)
+                $this->stock->processTransferReceive($transfer, auth()->id());
+
+                // Create ReceiptConfirmation (Unified BAST) automatically
+                $receiptConfirmation = \App\Models\ReceiptConfirmation::create([
+                    'receiptable_type' => TransferOut::class,
+                    'receiptable_id'   => $transfer->id,
+                    'received_by'      => auth()->id(),
+                    'received_at'      => now(),
+                    'status'           => 'completed',
+                    'general_notes'    => 'Diterima otomatis langsung ke cabang.',
+                ]);
+
+                foreach ($transfer->details as $detail) {
+                    $receiptConfirmation->details()->create([
+                        'product_id'   => $detail->product_id,
+                        'expected_qty' => $detail->quantity,
+                        'actual_qty'   => $detail->quantity,
+                        'condition'    => 'baik',
+                        'expired_date' => null,
+                        'batch_number' => null,
+                        'notes'        => null,
+                    ]);
+                }
+
+                // Mark Transfer Request as completed if exists
+                if ($transfer->request) {
+                    $transfer->request->update(['status' => 'completed']);
+                }
+            }
+
+            $this->logger->log('create', 'gudang.transfer_out', "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity} (Auto-Received)", $transfer);
         });
 
         return redirect()->route('gudang.transfer-out.index')->with('success', 'Transfer keluar berhasil diproses.');

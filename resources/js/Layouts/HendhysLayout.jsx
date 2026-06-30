@@ -63,6 +63,7 @@ export default function HendhysLayout({ pageTitle, children }) {
 
     if (!isPusat) {
         inventorySubItems.push({ name: 'Penerimaan dari Pusat', path: route('hendhys.transfer-to-branch.index') });
+        inventorySubItems.push({ name: 'Penerimaan dari Gudang', path: route('hendhys.transfer-to-branch.index', { tab: 'gudang' }) });
     }
 
     if (isAdmin) {

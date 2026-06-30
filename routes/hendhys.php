@@ -109,6 +109,9 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('transfer-to-branch', TransferToBranchController::class)->except(['edit', 'update', 'destroy', 'show']);
         Route::get('transfer-to-branch/{transfer_to_branch}', [TransferToBranchController::class, 'show'])->name('transfer-to-branch.show');
         Route::get('transfer-to-branch/{transfer_to_branch}/bast', [TransferToBranchController::class, 'printBast'])->name('transfer-to-branch.bast');
+        Route::get('gudang-transfers/{transfer_out}', [TransferToBranchController::class, 'showGudangTransfer'])->name('gudang-transfers.show');
+        Route::get('gudang-transfers/{transfer_out}/receive', [TransferToBranchController::class, 'showGudangReceiveForm'])->name('gudang-transfers.receive-form');
+        Route::post('gudang-transfers/{transfer_out}/receive', [TransferToBranchController::class, 'receiveGudangTransfer'])->name('gudang-transfers.receive');
 
     });
 

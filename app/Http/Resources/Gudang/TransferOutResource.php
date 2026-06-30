@@ -29,11 +29,13 @@ class TransferOutResource extends JsonResource
                 'request_number' => $this->request->request_number,
             ] : null),
             'details'         => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
-                'product'   => $d->product?->name ?? '(Produk Dihapus)',
-                'quantity'  => (float) $d->quantity,
-                'unit'      => $d->unit?->abbreviation ?? '-',
-                'hpp_price' => (float) $d->hpp_price,
-                'total'     => (float) $d->total,
+                'product'           => $d->product?->name ?? '(Produk Dihapus)',
+                'quantity'          => (float) $d->quantity,
+                'received_quantity' => $d->received_quantity !== null ? (float) $d->received_quantity : null,
+                'kondisi'           => $d->kondisi,
+                'unit'              => $d->unit?->abbreviation ?? '-',
+                'hpp_price'         => (float) $d->hpp_price,
+                'total'             => (float) $d->total,
             ])->values()->all()),
             'grand_total'     => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')) ?? 0,
         ];

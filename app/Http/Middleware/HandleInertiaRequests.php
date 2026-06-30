@@ -184,6 +184,24 @@ class HandleInertiaRequests extends Middleware
                                         'time' => 'Baru saja'
                                     ];
                                 }
+
+                                // Recent auto-received Gudang transfers (last 24 hours)
+                                $recentGudangReceivedCount = \App\Models\TransferOut::where('to_entity', 'hendhys')
+                                    ->where('branch_id', $user->branch_id)
+                                    ->where('status', 'received')
+                                    ->where('received_at', '>=', now()->subDay())
+                                    ->count();
+                                if ($recentGudangReceivedCount > 0) {
+                                    $items[] = [
+                                        'id' => 'hendhys_gudang_received',
+                                        'title' => 'Stok Gudang Diterima',
+                                        'message' => "Ada {$recentGudangReceivedCount} pengiriman dari Gudang Utama telah berhasil diterima otomatis ke stok.",
+                                        'path' => '/hendhys/transfer-to-branch?tab=gudang',
+                                        'icon' => 'check_circle',
+                                        'type' => 'success',
+                                        'time' => 'Hari ini'
+                                    ];
+                                }
                             }
                         }
 
