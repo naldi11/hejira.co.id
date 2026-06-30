@@ -241,7 +241,7 @@ export default function BranchRequestsShow({ branchRequest: r }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="rounded-lg bg-red-650 px-4 py-2 text-sm font-bold text-white hover:bg-red-750 disabled:opacity-50"
+                                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
                                 >
                                     {processing ? 'Memproses...' : 'Tolak Request'}
                                 </button>
