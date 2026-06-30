@@ -237,9 +237,9 @@ export default function PosIndex({ products, paymentMethods }) {
                                         )}
                                         
                                         {/* Stock Badge Overlay */}
-                                        <div className="absolute top-2.5 right-2.5 bg-black/60 dark:bg-black/80 backdrop-blur-xs text-[10px] font-bold text-white px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                            Stok: {formatQty(p.current_stock)}
+                                        <div className={`absolute top-2.5 right-2.5 backdrop-blur-xs text-[10px] font-bold text-white px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm ${p.current_stock > 0 ? 'bg-black/60 dark:bg-black/80' : 'bg-amber-600/90'}`}>
+                                            <span className={`h-1.5 w-1.5 rounded-full ${p.current_stock > 0 ? 'bg-green-400 animate-pulse' : 'bg-yellow-300'}`}></span>
+                                            {p.current_stock > 0 ? `Stok: ${formatQty(p.current_stock)}` : 'Stok Habis'}
                                         </div>
                                     </div>
 
