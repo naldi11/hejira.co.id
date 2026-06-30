@@ -185,21 +185,20 @@ class HandleInertiaRequests extends Middleware
                                     ];
                                 }
 
-                                // Recent auto-received Gudang transfers (last 24 hours)
-                                $recentGudangReceivedCount = \App\Models\TransferOut::where('to_entity', 'hendhys')
+                                // Transit direct Gudang transfers (Gudang to Hendhys Cabang)
+                                $gudangTransitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')
                                     ->where('branch_id', $user->branch_id)
-                                    ->where('status', 'received')
-                                    ->where('received_at', '>=', now()->subDay())
+                                    ->where('status', 'sent')
                                     ->count();
-                                if ($recentGudangReceivedCount > 0) {
+                                if ($gudangTransitCount > 0) {
                                     $items[] = [
-                                        'id' => 'hendhys_gudang_received',
-                                        'title' => 'Stok Gudang Diterima',
-                                        'message' => "Ada {$recentGudangReceivedCount} pengiriman dari Gudang Utama telah berhasil diterima otomatis ke stok.",
+                                        'id' => 'hendhys_gudang_transit',
+                                        'title' => 'Pengiriman Gudang Tiba',
+                                        'message' => "Ada {$gudangTransitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
                                         'path' => '/hendhys/transfer-to-branch?tab=gudang',
-                                        'icon' => 'check_circle',
-                                        'type' => 'success',
-                                        'time' => 'Hari ini'
+                                        'icon' => 'local_shipping',
+                                        'type' => 'info',
+                                        'time' => 'Baru saja'
                                     ];
                                 }
                             }
