@@ -101,4 +101,34 @@ class BranchUserTest extends TestCase
 
         $this->assertDatabaseHas('master_users', ['id' => $admin->id]);
     }
+
+    public function test_user_store_validates_entity_role_alignment(): void
+    {
+        Role::findOrCreate('kasir_hendhys', 'web');
+
+        // Budi has 'jihans' entity but is assigned 'kasir_hendhys' role -> should fail
+        $this->actingAs($this->adminGudang())->from(route('master.users.create'))
+            ->post(route('master.users.store'), [
+                'name' => 'Budi', 'email' => 'budi@hejira.test',
+                'password' => 'secret123', 'password_confirmation' => 'secret123',
+                'entity' => 'jihans', 'role' => 'kasir_hendhys', 'is_active' => true,
+            ])
+            ->assertSessionHasErrors('role');
+    }
+
+    public function test_user_store_validates_branch_entity_match(): void
+    {
+        Role::findOrCreate('kasir_hendhys', 'web');
+        // Create branch belonging to 'jihans' entity
+        $branch = Branch::create(['code' => 'JF-T1', 'name' => 'Jihaan Branch', 'type' => 'cabang', 'entity' => 'jihans', 'is_active' => true]);
+
+        // Trying to save user in 'hendhys' entity but placed in 'jihans' branch -> should fail
+        $this->actingAs($this->adminGudang())->from(route('master.users.create'))
+            ->post(route('master.users.store'), [
+                'name' => 'Budi', 'email' => 'budi@hejira.test',
+                'password' => 'secret123', 'password_confirmation' => 'secret123',
+                'entity' => 'hendhys', 'role' => 'kasir_hendhys', 'branch_id' => $branch->id, 'is_active' => true,
+            ])
+            ->assertSessionHasErrors('branch_id');
+    }
 }

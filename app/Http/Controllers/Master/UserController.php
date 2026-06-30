@@ -101,9 +101,23 @@ class UserController extends Controller
     /** Shared option payload for the create/edit form. */
     private function formOptions(): array
     {
+        // Peta role per entitas — digunakan frontend untuk filter role berdasarkan penempatan
+        $entityRoles = [
+            'gudang'  => ['admin_gudang'],
+            'hendhys' => ['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'],
+            'jihans'  => ['kasir_jihans', 'admin_jihans', 'super_admin_jihans'],
+            'owner'   => ['owner'],
+        ];
+
         return [
-            'branches' => Branch::where('is_active', true)->orderBy('name')->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
-            'roles'    => Role::orderBy('name')->pluck('name'),
+            'branches'     => Branch::where('is_active', true)->orderBy('name')->get()
+                ->map(fn ($b) => [
+                    'id'     => $b->id,
+                    'name'   => $b->name,
+                    'entity' => $b->entity,
+                ]),
+            'roles'        => Role::orderBy('name')->pluck('name'),
+            'entity_roles' => $entityRoles,
         ];
     }
 }

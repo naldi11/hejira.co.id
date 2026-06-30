@@ -16,7 +16,7 @@ const ENTITIES = [
     { value: 'owner', label: 'Pemilik / Owner' },
 ];
 
-export default function UserForm({ branches, roles, user = null, layout = 'GudangLayout', routePrefix = 'master.' }) {
+export default function UserForm({ branches, roles, entity_roles = {}, user = null, layout = 'GudangLayout', routePrefix = 'master.' }) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const u = user?.data ?? user;
     const isEdit = !!(u && u.id);
@@ -35,6 +35,22 @@ export default function UserForm({ branches, roles, user = null, layout = 'Gudan
     const submit = (e) => {
         e.preventDefault();
         isEdit ? put(route(routePrefix + 'users.update', u.id)) : post(route(routePrefix + 'users.store'));
+    };
+
+    // Filter branches & roles based on selected entity
+    const filteredBranches = branches.filter((b) => b.entity === data.entity);
+    const allowedRoleNames = entity_roles[data.entity] || [];
+    const filteredRoles = roles.filter((r) => allowedRoleNames.includes(r));
+
+    const handleEntityChange = (newEntity) => {
+        const newAllowed = entity_roles[newEntity] || [];
+        const defaultRole = newAllowed[0] || '';
+        setData({
+            ...data,
+            entity: newEntity,
+            branch_id: '',
+            role: defaultRole,
+        });
     };
 
     const inputClass = 'w-full h-11 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
@@ -100,7 +116,7 @@ export default function UserForm({ branches, roles, user = null, layout = 'Gudan
                             <div className="space-y-5 p-6">
                                 <div>
                                     <label className={labelClass}>Entitas Bisnis <span className="text-rose-500">*</span></label>
-                                    <select required value={data.entity} onChange={(e) => setData('entity', e.target.value)} className={inputClass}>
+                                    <select required value={data.entity} onChange={(e) => handleEntityChange(e.target.value)} className={inputClass}>
                                         {ENTITIES.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
                                     </select>
                                     {err('entity')}
@@ -110,7 +126,7 @@ export default function UserForm({ branches, roles, user = null, layout = 'Gudan
                                     <label className={labelClass}>Cabang Penempatan</label>
                                     <select value={data.branch_id ?? ''} onChange={(e) => setData('branch_id', e.target.value)} className={inputClass}>
                                         <option value="">Tidak Terikat Cabang</option>
-                                        {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                        {filteredBranches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                                     </select>
                                     {err('branch_id')}
                                 </div>
@@ -118,7 +134,7 @@ export default function UserForm({ branches, roles, user = null, layout = 'Gudan
                                 <div>
                                     <label className={labelClass}>Hak Akses (Role) <span className="text-rose-500">*</span></label>
                                     <div className="grid grid-cols-1 gap-2">
-                                        {roles.map((r) => (
+                                        {filteredRoles.map((r) => (
                                             <label key={r} className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-3 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900/30 dark:hover:bg-gray-800">
                                                 <input type="radio" name="role" value={r} checked={data.role === r} onChange={(e) => setData('role', e.target.value)} className="h-5 w-5 border-gray-300 text-brand-600 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900/50" />
                                                 <span className="text-xs font-bold uppercase tracking-wider text-gray-750 dark:text-gray-300">{r}</span>
