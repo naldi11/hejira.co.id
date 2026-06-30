@@ -237,9 +237,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
       >
         <Link href="/" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <span className="text-xl font-extrabold tracking-wide bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200 leading-tight">
-              {brand.full}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xl font-extrabold tracking-wide bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200 leading-tight">
+                {brand.full}
+              </span>
+              {props?.auth?.user?.branch?.name && (
+                <span className="text-[11px] font-semibold text-slate-450 dark:text-gray-400 mt-1 uppercase tracking-wider block">
+                  📍 {props.auth.user.branch.name}
+                </span>
+              )}
+            </div>
           ) : (
             <span className="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">
               {brand.short}
