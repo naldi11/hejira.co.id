@@ -81,14 +81,13 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive-gudang');
             Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print-gudang');
 
-            // Request Cabang ke Pusat
-            Route::resource('branch-requests', BranchRequestController::class)->except(['edit', 'update', 'destroy']);
+            // Request Cabang ke Pusat — Approval & full access (admin)
+            // (index, create, store, show juga diakses kasir via kasir group)
 
             // Distribusi ke Cabang
             Route::post('transfer-to-branch/{transfer_to_branch}/force-receive', [TransferToBranchController::class, 'forceReceive'])->name('transfer-to-branch.force-receive');
 
-            // Retur dari Cabang
-            Route::resource('returns', ReturnController::class)->except(['edit', 'update', 'destroy']);
+            // Retur dari Cabang — receive (konfirmasi pusat) admin-only
             Route::post('returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
 
             // Retur ke Gudang
@@ -112,6 +111,11 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::get('gudang-transfers/{transfer_out}', [TransferToBranchController::class, 'showGudangTransfer'])->name('gudang-transfers.show');
         Route::get('gudang-transfers/{transfer_out}/receive', [TransferToBranchController::class, 'showGudangReceiveForm'])->name('gudang-transfers.receive-form');
         Route::post('gudang-transfers/{transfer_out}/receive', [TransferToBranchController::class, 'receiveGudangTransfer'])->name('gudang-transfers.receive');
+
+        // Shared: Request ke Pusat & Return ke Pusat (semua role hendhys)
+        Route::resource('branch-requests', BranchRequestController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('returns', ReturnController::class)->only(['index', 'create', 'store', 'show']);
+        // Receive retur (admin-only) di admin group sudah terdefinisi via POST returns/{return}/receive
 
     });
 

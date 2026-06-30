@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Hendhys;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Hendhys\HendhysTransferToBranchResource;
 use App\Models\HendhysBranchRequest;
+use App\Models\HendhysReturnFromBranch;
+use App\Models\HendhysReturnDetail;
 use App\Models\HendhysStockPusat;
 use App\Models\HendhysTransferToBranch;
 use App\Models\HendhysTransferToBranchDetail;
@@ -208,10 +210,39 @@ class TransferToBranchController extends Controller
                 if ($transferOut->request) {
                     $transferOut->request->update(['status' => 'completed']);
                 }
+
+                // AUTO-RETURN: Credit shortfall back to Gudang stock
+                $shortfallItems = [];
+                foreach ($transferOut->details as $detail) {
+                    $sentQty     = (float) $detail->quantity;
+                    $receivedQty = (float) $detail->received_quantity;
+                    $selisih     = round($sentQty - $receivedQty, 3);
+
+                    if ($selisih > 0.001) {
+                        $shortfallItems[] = [
+                            'product_id' => $detail->product_id,
+                            'unit_id'    => $detail->unit_id,
+                            'qty'        => $selisih,
+                            'product'    => $detail->product?->name ?? '?',
+                        ];
+                        // Credit selisih kembali ke stok Gudang
+                        $this->stockService->creditGudang(
+                            $detail->product_id,
+                            $detail->unit_id,
+                            $selisih,
+                            'return_discrepancy',
+                            $transferOut->id,
+                            $user->id,
+                            "Selisih penerimaan dari {$transferOut->transfer_number}"
+                        );
+                    }
+                }
             });
 
+            $successMsg = 'Penerimaan barang dikonfirmasi. BAST berhasil dibuat.';
+
             return redirect()->route('hendhys.gudang-transfers.show', $transferOut->id)
-                ->with('success', 'Penerimaan barang dikonfirmasi. BAST berhasil dibuat.');
+                ->with('success', $successMsg);
 
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal memproses penerimaan: ' . $e->getMessage());
@@ -491,6 +522,56 @@ class TransferToBranchController extends Controller
                     'receive_received_by_name'  => $request->receive_received_by_name,
                     'receive_pengirim_name'     => $request->receive_pengirim_name,
                 ]);
+
+                // AUTO-RETURN: Detect shortfall and create return document to Pusat
+                $shortfallDetails = [];
+                foreach ($transferToBranch->details as $detail) {
+                    $sentQty     = (float) $detail->quantity;
+                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, $sentQty);
+                    $selisih     = round($sentQty - $receivedQty, 3);
+
+                    if ($selisih > 0.001) {
+                        $shortfallDetails[] = [
+                            'product_id' => $detail->product_id,
+                            'unit_id'    => $detail->unit_id,
+                            'qty'        => $selisih,
+                        ];
+                        // Credit selisih kembali ke stok Pusat
+                        $this->stockService->creditHendhys(
+                            $detail->product_id,
+                            $detail->unit_id,
+                            $selisih,
+                            null, // null = Pusat
+                            'return_discrepancy',
+                            $transferToBranch->id,
+                            $user->id
+                        );
+                    }
+                }
+
+                if (!empty($shortfallDetails)) {
+                    $returnRecord = HendhysReturnFromBranch::create([
+                        'return_number' => $this->numbers->generateYearly('RET-HND', 'hendhys_returns_from_branch', 'return_number'),
+                        'branch_id'     => $transferToBranch->branch_id,
+                        'date'          => now()->toDateString(),
+                        'status'        => 'received',
+                        'notes'         => "Retur otomatis selisih penerimaan dari transfer {$transferToBranch->transfer_number}",
+                        'created_by'    => $user->id,
+                        'received_by'   => $user->id,
+                    ]);
+
+                    foreach ($shortfallDetails as $item) {
+                        HendhysReturnDetail::create([
+                            'return_id'  => $returnRecord->id,
+                            'product_id' => $item['product_id'],
+                            'unit_id'    => $item['unit_id'],
+                            'quantity'   => $item['qty'],
+                            'condition'  => 'kurang',
+                            'notes'      => 'Selisih otomatis dari penerimaan',
+                        ]);
+                    }
+                }
 
                 if ($request->hasFile('photos')) {
                     $dir = 'transfer-branch-receipts/' . $transferToBranch->transfer_number;

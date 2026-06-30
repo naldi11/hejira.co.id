@@ -74,6 +74,10 @@ export default function HendhysLayout({ pageTitle, children }) {
             inventorySubItems.push({ name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') });
             inventorySubItems.push({ name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') });
         }
+    } else if (isKasir && !isPusat) {
+        // Kasir cabang — akses Request & Return ke Pusat
+        inventorySubItems.push({ name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') });
+        inventorySubItems.push({ name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') });
     }
 
     navItems.push({
