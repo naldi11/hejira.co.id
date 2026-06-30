@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../Components/common/ThemeToggleButton";
 import NotificationDropdown from "../Components/header/NotificationDropdown";
 import UserDropdown from "../Components/header/UserDropdown";
 
+const ENTITY_BRAND: Record<string, string> = {
+  jihans:  "Jihan's Food",
+  hendhys: "Hendhy's Brownies",
+  gudang:  "HEJIRA",
+};
+
 const AppHeader: React.FC<{ pageTitle?: string }> = ({ pageTitle }) => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const { props } = usePage() as any;
+  const entity: string = props?.auth?.user?.entity ?? 'gudang';
+  const brandName = ENTITY_BRAND[entity] ?? 'HEJIRA';
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
@@ -68,8 +77,8 @@ const AppHeader: React.FC<{ pageTitle?: string }> = ({ pageTitle }) => {
           {pageTitle && <h1 className="hidden text-lg font-bold tracking-tight text-gray-800 dark:text-white lg:block lg:ml-4">{pageTitle}</h1>}
 
           <Link href="/" className="lg:hidden flex items-center">
-            <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">
-              HEJIRA
+            <span className="text-base font-extrabold tracking-wide bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">
+              {brandName}
             </span>
           </Link>
 

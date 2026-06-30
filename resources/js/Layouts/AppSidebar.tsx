@@ -17,9 +17,17 @@ interface AppSidebarProps {
   othersItems?: NavItem[];
 }
 
+const ENTITY_BRAND: Record<string, { full: string; short: string }> = {
+  jihans:  { full: "Jihan's Food",      short: "JF" },
+  hendhys: { full: "Hendhy's Brownies", short: "HB" },
+  gudang:  { full: "HEJIRA",            short: "H"  },
+};
+
 const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = [] }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const { url } = usePage();
+  const { url, props } = usePage() as any;
+  const entity: string = props?.auth?.user?.entity ?? 'gudang';
+  const brand = ENTITY_BRAND[entity] ?? ENTITY_BRAND['gudang'];
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -229,12 +237,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
       >
         <Link href="/" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <span className="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">
-              HEJIRA
+            <span className="text-xl font-extrabold tracking-wide bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200 leading-tight">
+              {brand.full}
             </span>
           ) : (
             <span className="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">
-              H
+              {brand.short}
             </span>
           )}
         </Link>
