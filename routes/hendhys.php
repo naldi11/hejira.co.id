@@ -108,6 +108,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::post('gudang-transfers/{transfer_out}/receive', [TransferToBranchController::class, 'receiveGudangTransfer'])->name('gudang-transfers.receive');
 
         // Shared: Request ke Pusat & Return ke Pusat (semua role hendhys)
+        Route::post('branch-requests/{branch_request}/reject', [BranchRequestController::class, 'reject'])->name('branch-requests.reject');
         Route::resource('branch-requests', BranchRequestController::class)->only(['index', 'create', 'store', 'show']);
         Route::resource('returns', ReturnController::class)->only(['index', 'create', 'store', 'show']);
         // Receive retur (admin-only) di admin group sudah terdefinisi via POST returns/{return}/receive

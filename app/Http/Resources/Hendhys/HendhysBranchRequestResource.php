@@ -19,6 +19,7 @@ class HendhysBranchRequestResource extends JsonResource
             'date'           => $this->date,
             'status'         => $this->status,
             'notes'          => $this->notes,
+            'rejection_reason' => $this->rejection_reason,
             'branch'         => $this->whenLoaded('branch', fn () => $this->branch?->name),
             'creator'        => $this->whenLoaded('creator', fn () => $this->creator?->name),
             'approver'       => $this->whenLoaded('approver', fn () => $this->approver?->name),

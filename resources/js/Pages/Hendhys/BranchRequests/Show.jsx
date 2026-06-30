@@ -1,4 +1,5 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import StatusBadge from '@/Components/StatusBadge';
@@ -11,6 +12,21 @@ export default function BranchRequestsShow({ branchRequest: r }) {
     const isPusat  = auth?.user?.branch?.type === 'pusat';
     const isCabang = auth?.user?.branch?.type === 'cabang';
 
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const { data, setData, post, processing, reset, errors } = useForm({
+        reason: '',
+    });
+
+    const handleReject = (e) => {
+        e.preventDefault();
+        post(route('hendhys.branch-requests.reject', r.id), {
+            onSuccess: () => {
+                setShowRejectModal(false);
+                reset();
+            }
+        });
+    };
+
     // Transfer yang statusnya 'sent' (belum dikonfirmasi cabang)
     const pendingTransfers = (r.transfer_outs ?? []).filter(t => t.status === 'sent');
 
@@ -19,6 +35,21 @@ export default function BranchRequestsShow({ branchRequest: r }) {
             <Head title={`Request ${r.request_number}`} />
 
             <div className="mx-auto max-w-4xl space-y-5">
+
+                {/* ── Banner: Request ditolak ── */}
+                {r.status === 'rejected' && (
+                    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 dark:border-red-500/20 dark:bg-red-500/10">
+                        <Icon name="block" className="mt-0.5 shrink-0 text-[22px] text-red-500" />
+                        <div className="flex-1">
+                            <p className="font-semibold text-red-800 dark:text-red-300">
+                                Request Ditolak
+                            </p>
+                            <p className="mt-0.5 text-sm text-red-700 dark:text-red-400">
+                                Alasan: {r.rejection_reason ?? 'Tidak ada alasan spesifik.'}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Banner: barang sudah dikirim, cabang perlu konfirmasi ── */}
                 {isCabang && pendingTransfers.length > 0 && (
@@ -151,15 +182,74 @@ export default function BranchRequestsShow({ branchRequest: r }) {
                     </Link>
 
                     {isPusat && r.status === 'pending' && (
-                        <Link
-                            href={route('hendhys.transfer-to-branch.create') + '?request_id=' + r.id}
-                            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 text-sm font-bold shadow-sm transition-colors"
-                        >
-                            <Icon name="local_shipping" className="text-[20px]" /> Proses Distribusi
-                        </Link>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowRejectModal(true)}
+                                className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 text-red-650 px-6 py-2.5 text-sm font-bold shadow-sm transition-colors"
+                            >
+                                <Icon name="block" className="text-[20px]" /> Tolak Request
+                            </button>
+                            <Link
+                                href={route('hendhys.transfer-to-branch.create') + '?request_id=' + r.id}
+                                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 text-sm font-bold shadow-sm transition-colors"
+                            >
+                                <Icon name="local_shipping" className="text-[20px]" /> Proses Distribusi
+                            </Link>
+                        </div>
                     )}
                 </div>
             </div>
+
+            {/* ── Reject Modal ── */}
+            {showRejectModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900 border dark:border-gray-800">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Icon name="block" className="text-red-500" /> Tolak Request Barang
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-550">
+                            Masukkan alasan penolakan request <strong>{r.request_number}</strong> ini. Cabang peminta akan dapat melihat alasan ini.
+                        </p>
+                        
+                        <form onSubmit={handleReject} className="mt-4 space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                                    Alasan Penolakan
+                                </label>
+                                <textarea
+                                    required
+                                    value={data.reason}
+                                    onChange={e => setData('reason', e.target.value)}
+                                    placeholder="Contoh: Stok produksi tidak mencukupi..."
+                                    rows="3"
+                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent p-3 text-sm outline-none dark:text-white focus:border-red-500"
+                                />
+                                {errors.reason && (
+                                    <p className="mt-1 text-xs text-red-500">{errors.reason}</p>
+                                )}
+                            </div>
+                            
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRejectModal(false)}
+                                    className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/[0.03]"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="rounded-lg bg-red-650 px-4 py-2 text-sm font-bold text-white hover:bg-red-750 disabled:opacity-50"
+                                >
+                                    {processing ? 'Memproses...' : 'Tolak Request'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </HendhysLayout>
     );
 }

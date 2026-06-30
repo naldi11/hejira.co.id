@@ -124,4 +124,26 @@ class BranchRequestController extends Controller
             'branchRequest' => new HendhysBranchRequestResource($branchRequest),
         ]);
     }
+
+    public function reject(Request $request, HendhysBranchRequest $branchRequest)
+    {
+        $user = auth()->user();
+        if ($user->branch->type !== 'pusat') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $branchRequest->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->reason,
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+        ]);
+
+        return redirect()->route('hendhys.branch-requests.show', $branchRequest->id)
+            ->with('success', 'Request dari cabang berhasil ditolak.');
+    }
 }
