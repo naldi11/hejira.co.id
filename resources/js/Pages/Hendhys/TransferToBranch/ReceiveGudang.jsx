@@ -78,10 +78,18 @@ export default function ReceiveGudang({ transfer: t }) {
                                                 min="0"
                                                 max={d.quantity}
                                                 value={data.received_quantities[d.id] ?? 0}
-                                                onChange={(e) => setData('received_quantities', {
-                                                    ...data.received_quantities,
-                                                    [d.id]: e.target.value,
-                                                })}
+                                                onChange={(e) => {
+                                                    const rawVal = e.target.value;
+                                                    let val = rawVal === '' ? '' : parseFloat(rawVal);
+                                                    if (val !== '') {
+                                                        if (isNaN(val) || val < 0) val = 0;
+                                                        if (val > d.quantity) val = d.quantity;
+                                                    }
+                                                    setData('received_quantities', {
+                                                        ...data.received_quantities,
+                                                        [d.id]: val,
+                                                    });
+                                                }}
                                                 className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/[0.03] px-3 py-2.5 text-center text-sm text-gray-800 dark:text-white/90 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-sm transition-all"
                                             />
                                         </td>
