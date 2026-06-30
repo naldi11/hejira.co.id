@@ -182,13 +182,13 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                         onClick={() => setActiveTab('cabang')}
                         className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'cabang' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
                     >
-                        <Icon name="storefront" className="text-[18px]" /> {isPusat ? 'Stok Hendhys Pusat' : 'Stok Cabang Sendiri'}
+                        <Icon name="storefront" className="text-[18px]" /> {isPusat ? 'Stok Hendhys Produksi' : 'Stok Cabang Sendiri'}
                     </button>
                     <button
                         onClick={() => setActiveTab('gudang')}
                         className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'gudang' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-650 dark:bg-gray-850 dark:text-gray-300'}`}
                     >
-                        <Icon name="warehouse" className="text-[18px]" /> {isPusat ? 'Stok Gudang Utama' : 'Stok Hendhys Pusat'}
+                        <Icon name="warehouse" className="text-[18px]" /> {isPusat ? 'Stok Gudang Utama' : 'Stok Hendhys Produksi'}
                     </button>
                 </div>
 

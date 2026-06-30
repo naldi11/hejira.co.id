@@ -64,7 +64,7 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
                                 : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-white'
                         }`}
                     >
-                        Dari Pusat (Hendhys Pusat)
+                        Dari Pusat (Hendhys Produksi)
                     </button>
                     <button
                         onClick={() => setActiveTab('gudang')}
@@ -124,7 +124,7 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
                                     loading ? (
                                         <SkeletonTableRows rows={6} columns={5} />
                                     ) : transfers.data.length === 0 ? (
-                                        <EmptyState colSpan={5} icon="local_shipping" message="Belum ada distribusi dari Pusat." />
+                                        <EmptyState colSpan={5} icon="local_shipping" message="Belum ada distribusi dari Produksi." />
                                     ) : (
                                         transfers.data.map((t) => (
                                             <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">

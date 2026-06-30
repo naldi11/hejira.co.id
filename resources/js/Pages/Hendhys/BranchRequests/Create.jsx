@@ -32,8 +32,8 @@ export default function BranchRequestsCreate({ products, units }) {
     const unitOptions = units.map(u => ({ value: u.id, label: u.abbreviation }));
 
     return (
-        <HendhysLayout pageTitle="Request Stok ke Pusat">
-            <Head title="Request ke Pusat" />
+        <HendhysLayout pageTitle="Request Stok ke Produksi">
+            <Head title="Request ke Produksi" />
 
             <form onSubmit={submit} className="mx-auto w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 {/* Header */}

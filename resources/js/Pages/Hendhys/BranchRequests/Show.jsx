@@ -26,7 +26,7 @@ export default function BranchRequestsShow({ branchRequest: r }) {
                         <Icon name="local_shipping" className="mt-0.5 shrink-0 text-[22px] text-green-500" />
                         <div className="flex-1">
                             <p className="font-semibold text-green-800 dark:text-green-300">
-                                Barang sudah dikirim dari Pusat!
+                                Barang sudah dikirim dari Produksi!
                             </p>
                             <p className="mt-0.5 text-sm text-green-700 dark:text-green-400">
                                 Segera konfirmasi penerimaan agar stok cabang diperbarui.
@@ -104,7 +104,7 @@ export default function BranchRequestsShow({ branchRequest: r }) {
                     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                         <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.01]">
                             <h3 className="font-bold text-gray-800 dark:text-white/90">Distribusi Terkait</h3>
-                            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Transfer barang dari Pusat untuk request ini</p>
+                            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Transfer barang dari Produksi untuk request ini</p>
                         </div>
                         <div className="divide-y divide-gray-100 dark:divide-gray-800">
                             {r.transfer_outs.map((t) => (

@@ -62,7 +62,7 @@ export default function HendhysLayout({ pageTitle, children }) {
     ];
 
     if (!isPusat) {
-        inventorySubItems.push({ name: 'Penerimaan dari Pusat', path: route('hendhys.transfer-to-branch.index') });
+        inventorySubItems.push({ name: 'Penerimaan dari Produksi', path: route('hendhys.transfer-to-branch.index') });
         inventorySubItems.push({ name: 'Penerimaan dari Gudang', path: route('hendhys.transfer-to-branch.index', { tab: 'gudang' }) });
     }
 
@@ -71,13 +71,13 @@ export default function HendhysLayout({ pageTitle, children }) {
             inventorySubItems.push({ name: 'Request ke Gudang', path: route('hendhys.transfer-requests.index') });
             inventorySubItems.push({ name: 'Return ke Gudang', path: route('hendhys.returns-to-gudang.index') });
         } else {
-            inventorySubItems.push({ name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') });
-            inventorySubItems.push({ name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') });
+            inventorySubItems.push({ name: 'Request ke Hendhys Produksi', path: route('hendhys.branch-requests.index') });
+            inventorySubItems.push({ name: 'Return ke Hendhys Produksi', path: route('hendhys.returns.index') });
         }
     } else if (isKasir && !isPusat) {
         // Kasir cabang — akses Request & Return ke Pusat
-        inventorySubItems.push({ name: 'Request ke Hendhys Pusat', path: route('hendhys.branch-requests.index') });
-        inventorySubItems.push({ name: 'Return ke Hendhys Pusat', path: route('hendhys.returns.index') });
+        inventorySubItems.push({ name: 'Request ke Hendhys Produksi', path: route('hendhys.branch-requests.index') });
+        inventorySubItems.push({ name: 'Return ke Hendhys Produksi', path: route('hendhys.returns.index') });
     }
 
     navItems.push({

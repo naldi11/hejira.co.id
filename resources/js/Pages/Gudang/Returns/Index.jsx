@@ -32,7 +32,7 @@ export default function ReturnsIndex({ returns, filters }) {
             <div className="space-y-6">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Penerimaan Retur Barang</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Penerimaan kembali barang retur dari Hendhys Pusat atau Jihan's Food ke Gudang Utama</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Penerimaan kembali barang retur dari Hendhys Produksi atau Jihan's Food ke Gudang Utama</p>
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">

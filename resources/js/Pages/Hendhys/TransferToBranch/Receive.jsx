@@ -37,7 +37,7 @@ export default function TransferToBranchReceive({ transfer: t }) {
                         Konfirmasi Penerimaan
                     </h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {t.transfer_number} — dari Pusat ke {t.branch}
+                        {t.transfer_number} — dari Produksi ke {t.branch}
                     </p>
                 </div>
 
@@ -168,7 +168,7 @@ export default function TransferToBranchReceive({ transfer: t }) {
                                 type="text"
                                 value={data.receive_pengirim_name}
                                 onChange={(e) => setData('receive_pengirim_name', e.target.value)}
-                                placeholder="Nama kurir/pengirim dari Pusat"
+                                placeholder="Nama kurir/pengirim dari Produksi"
                                 className={fieldClass}
                             />
                         </div>
