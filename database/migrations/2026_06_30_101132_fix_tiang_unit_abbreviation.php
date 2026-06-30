@@ -7,15 +7,31 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::table('master_units')
-            ->where('name', 'Tiang')
-            ->update(['abbreviation' => 'TIANG']);
+        $fixes = [
+            'Gram'  => 'GRAM',
+            'Pack'  => 'PACK',
+            'Tiang' => 'TIANG',
+        ];
+
+        foreach ($fixes as $name => $abbreviation) {
+            DB::table('master_units')
+                ->where('name', $name)
+                ->update(['abbreviation' => $abbreviation]);
+        }
     }
 
     public function down(): void
     {
-        DB::table('master_units')
-            ->where('name', 'Tiang')
-            ->update(['abbreviation' => 'TIA']);
+        $originals = [
+            'Gram'  => 'GRA',
+            'Pack'  => 'PAC',
+            'Tiang' => 'TIA',
+        ];
+
+        foreach ($originals as $name => $abbreviation) {
+            DB::table('master_units')
+                ->where('name', $name)
+                ->update(['abbreviation' => $abbreviation]);
+        }
     }
 };
