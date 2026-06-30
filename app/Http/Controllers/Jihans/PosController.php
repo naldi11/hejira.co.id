@@ -29,8 +29,8 @@ class PosController extends Controller
     {
         $products = Product::where('status', 'active')
             ->visibleInJihans()
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', DB::raw('COALESCE(gudang_stock.quantity, 0) as current_stock'))
+            ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
+            ->select('master_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
             ->with(['unit', 'tieredPrices', 'category'])
             ->orderBy('master_products.name')
             ->get();
@@ -52,7 +52,7 @@ class PosController extends Controller
         $data = $request->validated();
 
         foreach ($data['items'] as $item) {
-            $available = \App\Models\GudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
+            $available = JihansStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
             if ($item['quantity'] > $available) {
                 return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$item['product_id']}."], 422);
             }

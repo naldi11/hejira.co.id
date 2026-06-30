@@ -166,7 +166,7 @@ class StockService
 
     public function creditJihans(int $productId, int $unitId, float $qty, string $source, ?int $refId, ?int $userId): void
     {
-        $stock = GudangStock::firstOrCreate(
+        $stock = JihansStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
@@ -180,7 +180,7 @@ class StockService
 
     public function debitJihans(int $productId, float $qty, string $source, ?int $refId, ?int $userId): void
     {
-        $stock = GudangStock::firstOrCreate(
+        $stock = JihansStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
         );

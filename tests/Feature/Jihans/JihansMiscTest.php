@@ -3,7 +3,7 @@
 namespace Tests\Feature\Jihans;
 
 use App\Models\GudangReturn;
-use App\Models\GudangStock;
+use App\Models\JihansStock;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unit;
@@ -72,7 +72,7 @@ class JihansMiscTest extends TestCase
             'category_id' => $category->id, 'unit_id' => $unit->id,
             'product_type' => 'INV', 'source_type' => 'purchased', 'entity_scope' => 'all', 'status' => 'active', 'stock_min' => 0,
         ]);
-        GudangStock::create(['product_id' => $product->id, 'quantity' => 20, 'unit_id' => $unit->id]);
+        JihansStock::create(['product_id' => $product->id, 'quantity' => 20, 'unit_id' => $unit->id]);
 
         $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
@@ -82,7 +82,7 @@ class JihansMiscTest extends TestCase
             ->assertRedirect(route('jihans.returns-to-gudang.index'));
 
         $this->assertSame(1, GudangReturn::where('from_entity', 'jihans')->count());
-        $this->assertEquals(15.0, (float) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertEquals(15.0, (float) JihansStock::where('product_id', $product->id)->value('quantity'));
     }
 
     public function test_returns_store_rejects_quantity_above_stock(): void
@@ -94,7 +94,7 @@ class JihansMiscTest extends TestCase
             'category_id' => $category->id, 'unit_id' => $unit->id,
             'product_type' => 'INV', 'source_type' => 'purchased', 'entity_scope' => 'all', 'status' => 'active', 'stock_min' => 0,
         ]);
-        GudangStock::create(['product_id' => $product->id, 'quantity' => 3, 'unit_id' => $unit->id]);
+        JihansStock::create(['product_id' => $product->id, 'quantity' => 3, 'unit_id' => $unit->id]);
 
         $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
@@ -104,6 +104,6 @@ class JihansMiscTest extends TestCase
             ->assertSessionHas('error');
 
         // Stock unchanged — the transaction rolled back.
-        $this->assertEquals(3.0, (float) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertEquals(3.0, (float) JihansStock::where('product_id', $product->id)->value('quantity'));
     }
 }

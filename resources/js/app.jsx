@@ -21,28 +21,3 @@ createInertiaApp({
         showSpinner: false,
     },
 });
-
-// Force browser date picker instead of manual typing for all type="date" inputs
-if (typeof document !== 'undefined') {
-    document.addEventListener('keydown', function(e) {
-        if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'date') {
-            // Block all keys except Tab, Escape, Enter, Arrow keys
-            const allowedKeys = ['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape'];
-            if (!allowedKeys.includes(e.key)) {
-                e.preventDefault();
-            }
-        }
-    });
-
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'date') {
-            if (typeof e.target.showPicker === 'function') {
-                try {
-                    e.target.showPicker();
-                } catch (err) {
-                    // Ignore errors
-                }
-            }
-        }
-    });
-}

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Jihans;
 
 use App\Models\Customer;
-use App\Models\GudangStock;
+use App\Models\JihansStock;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unit;
@@ -42,7 +42,7 @@ class JihansPosTest extends TestCase
             'category_id' => $category->id, 'unit_id' => $unit->id,
             'product_type' => 'INV', 'source_type' => 'purchased', 'entity_scope' => 'all', 'status' => 'active', 'stock_min' => 0,
         ]);
-        GudangStock::create(['product_id' => $product->id, 'quantity' => 20, 'unit_id' => $unit->id]);
+        JihansStock::create(['product_id' => $product->id, 'quantity' => 20, 'unit_id' => $unit->id]);
 
         $response = $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
@@ -69,6 +69,6 @@ class JihansPosTest extends TestCase
 
         $response->assertOk()->assertJsonStructure(['success', 'transaction_id', 'redirect']);
         
-        $this->assertEquals(18.0, (float) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertEquals(18.0, (float) JihansStock::where('product_id', $product->id)->value('quantity'));
     }
 }

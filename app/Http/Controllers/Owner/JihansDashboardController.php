@@ -32,7 +32,7 @@ class JihansDashboardController extends Controller
 
         // ── Jihans Stocks ──
         $jihansStocks = DB::table('master_products as p')
-            ->leftJoin('gudang_stock as s', 'p.id', '=', 's.product_id')
+            ->leftJoin('jihans_stock as s', 'p.id', '=', 's.product_id')
             ->where('p.status', 'active')
             ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
             ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'))
