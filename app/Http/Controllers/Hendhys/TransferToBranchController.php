@@ -230,7 +230,7 @@ class TransferToBranchController extends Controller
                             $detail->product_id,
                             $detail->unit_id,
                             $selisih,
-                            'return_discrepancy',
+                            'return_receiving',
                             $transferOut->id,
                             $user->id,
                             "Selisih penerimaan dari {$transferOut->transfer_number}"
@@ -543,7 +543,7 @@ class TransferToBranchController extends Controller
                             $detail->unit_id,
                             $selisih,
                             null, // null = Pusat
-                            'return_discrepancy',
+                            'return_from_branch',
                             $transferToBranch->id,
                             $user->id
                         );
