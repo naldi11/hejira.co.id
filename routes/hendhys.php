@@ -75,11 +75,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             // Produksi (khusus pusat)
             Route::resource('productions', ProductionController::class)->except(['edit', 'update', 'destroy']);
 
-            // Request ke Gudang
-            Route::resource('transfer-requests', \App\Http\Controllers\Hendhys\TransferRequestController::class)->except(['edit', 'update', 'destroy']);
-            Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form-gudang');
-            Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive-gudang');
-            Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print-gudang');
+
 
             // Request Cabang ke Pusat — Approval & full access (admin)
             // (index, create, store, show juga diakses kasir via kasir group)
@@ -90,8 +86,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             // Retur dari Cabang — receive (konfirmasi pusat) admin-only
             Route::post('returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
 
-            // Retur ke Gudang
-            Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
+
 
             // Laporan Bisnis
             Route::prefix('reports')->name('reports.')->group(function () {
@@ -116,6 +111,13 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         Route::resource('branch-requests', BranchRequestController::class)->only(['index', 'create', 'store', 'show']);
         Route::resource('returns', ReturnController::class)->only(['index', 'create', 'store', 'show']);
         // Receive retur (admin-only) di admin group sudah terdefinisi via POST returns/{return}/receive
+
+        // Shared: Request ke Gudang & Return ke Gudang (semua role hendhys cabang & pusat)
+        Route::resource('transfer-requests', \App\Http\Controllers\Hendhys\TransferRequestController::class)->except(['edit', 'update', 'destroy']);
+        Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form-gudang');
+        Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive-gudang');
+        Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print-gudang');
+        Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
     });
 

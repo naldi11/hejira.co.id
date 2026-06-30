@@ -24,13 +24,10 @@ class GudangReturnController extends Controller
 
     public function index(Request $request)
     {
-        // Hanya Pusat yang bisa mengembalikan barang ke Gudang
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $user = auth()->user();
 
         $q = GudangReturn::where('from_entity', 'hendhys')
-            ->where('branch_id', auth()->user()->branch_id)
+            ->where('branch_id', $user->branch_id)
             ->with(['creator', 'receiver']);
 
         if ($status = $request->status) {
@@ -50,16 +47,23 @@ class GudangReturnController extends Controller
 
     public function create()
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
+        $user = auth()->user();
+        $isPusat = $user->branch->type === 'pusat';
+
+        if ($isPusat) {
+            $products = Product::where('status', 'active')
+                ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
+                ->where('hendhys_stock_pusat.quantity', '>', 0)
+                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock');
+        } else {
+            $products = Product::where('status', 'active')
+                ->join('hendhys_stock_branch', 'master_products.id', '=', 'hendhys_stock_branch.product_id')
+                ->where('hendhys_stock_branch.branch_id', $user->branch_id)
+                ->where('hendhys_stock_branch.quantity', '>', 0)
+                ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock');
         }
 
-        // Ambil produk yang ada di stok pusat hendhys dan quantity > 0
-        $products = Product::where('status', 'active')
-            ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-            ->where('hendhys_stock_pusat.quantity', '>', 0)
-            ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
-            ->with('unit')
+        $products = $products->with('unit')
             ->orderBy('master_products.name')
             ->get()
             ->map(fn ($p) => [
@@ -82,9 +86,7 @@ class GudangReturnController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if ($user->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $isPusat = $user->branch->type === 'pusat';
 
         $request->validate([
             'date' => 'required|date',
@@ -98,7 +100,7 @@ class GudangReturnController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request, $user) {
+            DB::transaction(function () use ($request, $user, $isPusat) {
                 $ret = GudangReturn::create([
                     'return_number' => $this->numbers->generateYearly('RET-HND-GDG', 'gudang_returns', 'return_number'),
                     'from_entity' => 'hendhys',
@@ -110,10 +112,15 @@ class GudangReturnController extends Controller
                 ]);
 
                 foreach ($request->items as $item) {
-                    $stokPusat = HendhysStockPusat::where('product_id', $item['product_id'])->first();
+                    if ($isPusat) {
+                        $stok = HendhysStockPusat::where('product_id', $item['product_id'])->first();
+                    } else {
+                        $stok = \App\Models\HendhysStockBranch::where('branch_id', $user->branch_id)
+                            ->where('product_id', $item['product_id'])->first();
+                    }
 
-                    if (!$stokPusat || $stokPusat->quantity < $item['quantity']) {
-                        throw new \Exception("Stok Pusat tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
+                    if (!$stok || $stok->quantity < $item['quantity']) {
+                        throw new \Exception("Stok tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
                     }
 
                     GudangReturnDetail::create([
@@ -125,7 +132,7 @@ class GudangReturnController extends Controller
                         'notes' => $item['notes'] ?? null
                     ]);
 
-                    // Potong stok Pusat Hendhys
+                    // Potong stok Hendhys (Pusat atau Cabang secara otomatis lewat debitHendhys)
                     $this->stockService->debitHendhys(
                         $item['product_id'],
                         $item['quantity'],
@@ -138,16 +145,20 @@ class GudangReturnController extends Controller
             });
 
             return redirect()->route('hendhys.returns-to-gudang.index')
-                ->with('success', 'Retur barang ke Gudang berhasil dikirim dan stok Pusat telah dikurangi.');
+                ->with('success', 'Return ke Gudang berhasil dikirim.');
 
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Gagal memproses retur: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal membuat return: ' . $e->getMessage());
         }
     }
 
     public function show(GudangReturn $returns_to_gudang)
     {
-        if (auth()->user()->branch->type !== 'pusat' || $returns_to_gudang->from_entity !== 'hendhys') {
+        if ($returns_to_gudang->from_entity !== 'hendhys') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (!auth()->user()->hasRole('owner') && auth()->user()->branch_id !== $returns_to_gudang->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 

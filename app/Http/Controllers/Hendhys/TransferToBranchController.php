@@ -211,7 +211,7 @@ class TransferToBranchController extends Controller
                     $transferOut->request->update(['status' => 'completed']);
                 }
 
-                // AUTO-RETURN: Credit shortfall back to Gudang stock
+                // AUTO-RETURN: Credit shortfall back to Gudang stock & create Return to Gudang document
                 $shortfallItems = [];
                 foreach ($transferOut->details as $detail) {
                     $sentQty     = (float) $detail->quantity;
@@ -235,6 +235,32 @@ class TransferToBranchController extends Controller
                             $user->id,
                             "Selisih penerimaan dari {$transferOut->transfer_number}"
                         );
+                    }
+                }
+
+                if (!empty($shortfallItems)) {
+                    $returnRecord = \App\Models\GudangReturn::create([
+                        'return_number' => $this->numbers->generateYearly('RET-HND-GDG', 'gudang_returns', 'return_number'),
+                        'from_entity'   => 'hendhys',
+                        'branch_id'     => $transferOut->branch_id,
+                        'date'          => now()->toDateString(),
+                        'status'        => 'received',
+                        'notes'         => "Retur otomatis selisih penerimaan dari transfer Gudang {$transferOut->transfer_number}",
+                        'created_by'    => $user->id,
+                        'received_by'   => $user->id,
+                        'received_at'   => now(),
+                    ]);
+
+                    foreach ($shortfallItems as $sh) {
+                        \App\Models\GudangReturnDetail::create([
+                            'return_id'         => $returnRecord->id,
+                            'product_id'        => $sh['product_id'],
+                            'quantity'          => $sh['qty'],
+                            'unit_id'           => $sh['unit_id'],
+                            'received_quantity' => $sh['qty'],
+                            'condition'         => 'Baik',
+                            'notes'             => 'Selisih penerimaan barang',
+                        ]);
                     }
                 }
             });
