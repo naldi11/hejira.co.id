@@ -67,14 +67,56 @@ class BranchController extends Controller
 
     public function destroy(Branch $branch)
     {
+        $name = $branch->name;
+        $blockers = [];
+
+        // Cek semua data terkait yang mencegah penghapusan
         if ($branch->users()->count() > 0) {
-            return back()->with('error', "Cabang {$branch->name} tidak bisa dihapus karena masih memiliki user aktif.");
+            $blockers[] = $branch->users()->count() . ' user';
         }
 
-        $name = $branch->name;
-        $branch->delete();
-        $this->logger->log('delete', 'master.branch', "Hapus cabang: $name");
+        // Cek stok Hendhys cabang
+        if (\App\Models\HendhysStockBranch::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'data stok cabang';
+        }
 
-        return redirect()->route('master.branches.index')->with('success', "Cabang $name berhasil dihapus.");
+        // Cek transaksi Hendhys
+        if (\App\Models\HendhysTransaction::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'riwayat transaksi';
+        }
+
+        // Cek transfer ke cabang
+        if (\App\Models\HendhysTransferToBranch::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'riwayat transfer';
+        }
+
+        // Cek branch requests
+        if (\App\Models\HendhysBranchRequest::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'data request stok';
+        }
+
+        // Cek returns from branch
+        if (\App\Models\HendhysReturnFromBranch::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'data return barang';
+        }
+
+        if (!empty($blockers)) {
+            return back()->with('error',
+                "Cabang \"$name\" tidak bisa dihapus karena masih memiliki: " .
+                implode(', ', $blockers) . ". " .
+                "Nonaktifkan cabang jika tidak ingin digunakan lagi."
+            );
+        }
+
+        try {
+            $branch->delete();
+            $this->logger->log('delete', 'master.branch', "Hapus cabang: $name");
+            return redirect()->route('master.branches.index')->with('success', "Cabang $name berhasil dihapus.");
+        } catch (\Illuminate\Database\QueryException $e) {
+            return back()->with('error',
+                "Cabang \"$name\" tidak bisa dihapus karena masih ada data yang terhubung. " .
+                "Nonaktifkan cabang jika tidak ingin digunakan lagi."
+            );
+        }
     }
 }
