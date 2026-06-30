@@ -17,7 +17,7 @@ export default function TransferOutShow({ transfer: t }) {
                             <h2 className="font-mono text-xl font-bold text-gray-800 dark:text-white/90">{t.transfer_number}</h2>
                             <p className="mt-1 text-sm text-gray-550 dark:text-gray-400">Tanggal: {t.date} · Oleh {t.creator}</p>
                         </div>
-                        <StatusBadge status={t.status || 'received'} />
+                        <StatusBadge status={t.status} />
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 border-b border-gray-200 p-6 md:grid-cols-3 text-sm dark:border-gray-800">
@@ -72,6 +72,11 @@ export default function TransferOutShow({ transfer: t }) {
                     </Link>
 
                     <div className="flex gap-3">
+                        {t.status === 'sent' && (
+                            <Link href={route('hendhys.gudang-transfers.receive-form', t.id)} className="inline-flex items-center gap-2 rounded-2xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-700">
+                                <Icon name="done_all" className="text-[20px]" /> Konfirmasi Diterima di Cabang
+                            </Link>
+                        )}
                         <a href={route('hendhys.transfer-requests.print-gudang', t.id)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors dark:hover:bg-white/[0.01] dark:border-gray-800 dark:bg-white/[0.03]">
                             <Icon name="print" className="text-[20px]" /> Cetak BAST
                         </a>

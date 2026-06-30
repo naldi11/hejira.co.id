@@ -19,6 +19,7 @@ class TransferOutResource extends JsonResource
         return [
             'id'              => $this->id,
             'transfer_number' => $this->transfer_number,
+            'status'          => $this->status,
             'date'            => $this->date,
             'to_entity'       => $this->to_entity,
             'branch'          => $this->whenLoaded('branch', fn () => $this->branch?->name),
