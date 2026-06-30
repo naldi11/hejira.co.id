@@ -15,6 +15,10 @@ class JihansProductionConfig extends Model
         'tk_product_id',
         'tc_product_id',
         'kribab_product_id',
+        'hitam_besar_product_id', 'hitam_sedang_product_id', 'hitam_mini_product_id',
+        'albaik_besar_product_id', 'albaik_sedang_product_id', 'albaik_mini_product_id',
+        'regular_besar_product_id', 'regular_sedang_product_id', 'regular_mini_product_id',
+        'lentur_besar_product_id', 'lentur_sedang_product_id', 'lentur_mini_product_id',
         'updated_by',
     ];
 

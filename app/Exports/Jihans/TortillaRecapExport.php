@@ -25,7 +25,11 @@ class TortillaRecapExport implements FromCollection, WithHeadings, WithMapping, 
             ['REKAP PRODUKSI KARYAWAN TORTILLA'],
             ['Periode: ' . $this->period],
             [''],
-            ['Nama Karyawan', 'Total Hadir', 'TB', 'TS', 'TK', 'TC', 'KRIBAB']
+            ['Nama Karyawan', 'Total Hadir', 'TB', 'TS', 'TK', 'TC', 'KRIBAB', 
+             'HTM BSR', 'HTM SDG', 'HTM MNI', 
+             'ALBK BSR', 'ALBK SDG', 'ALBK MNI', 
+             'RGLR BSR', 'RGLR SDG', 'RGLR MNI', 
+             'LNTR BSR', 'LNTR SDG', 'LNTR MNI']
         ];
     }
 
@@ -39,6 +43,18 @@ class TortillaRecapExport implements FromCollection, WithHeadings, WithMapping, 
             $item->total_tk,
             $item->total_tc,
             $item->total_kribab,
+            $item->total_hitam_besar,
+            $item->total_hitam_sedang,
+            $item->total_hitam_mini,
+            $item->total_albaik_besar,
+            $item->total_albaik_sedang,
+            $item->total_albaik_mini,
+            $item->total_regular_besar,
+            $item->total_regular_sedang,
+            $item->total_regular_mini,
+            $item->total_lentur_besar,
+            $item->total_lentur_sedang,
+            $item->total_lentur_mini,
         ];
     }
 

@@ -179,6 +179,18 @@ export default function TortillaRecap({ recap, filters, noFilter, dateFrom, date
                                             <th className="px-6 py-4 font-semibold text-center">Tortilla Kecil</th>
                                             <th className="px-6 py-4 font-semibold text-center">Tortilla Catering</th>
                                             <th className="px-6 py-4 font-semibold text-center">Kribab</th>
+                                            <th className="px-6 py-4 font-semibold text-center">HTM BSR</th>
+                                            <th className="px-6 py-4 font-semibold text-center">HTM SDG</th>
+                                            <th className="px-6 py-4 font-semibold text-center">HTM MNI</th>
+                                            <th className="px-6 py-4 font-semibold text-center">ALB BSR</th>
+                                            <th className="px-6 py-4 font-semibold text-center">ALB SDG</th>
+                                            <th className="px-6 py-4 font-semibold text-center">ALB MNI</th>
+                                            <th className="px-6 py-4 font-semibold text-center">REG BSR</th>
+                                            <th className="px-6 py-4 font-semibold text-center">REG SDG</th>
+                                            <th className="px-6 py-4 font-semibold text-center">REG MNI</th>
+                                            <th className="px-6 py-4 font-semibold text-center">LEN BSR</th>
+                                            <th className="px-6 py-4 font-semibold text-center">LEN SDG</th>
+                                            <th className="px-6 py-4 font-semibold text-center">LEN MNI</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -195,6 +207,18 @@ export default function TortillaRecap({ recap, filters, noFilter, dateFrom, date
                                                 <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_tk || 0}</td>
                                                 <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_tc || 0}</td>
                                                 <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_kribab || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_hitam_besar || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_hitam_sedang || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_hitam_mini || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_albaik_besar || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_albaik_sedang || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_albaik_mini || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_regular_besar || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_regular_sedang || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_regular_mini || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_lentur_besar || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_lentur_sedang || 0}</td>
+                                                <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-300 font-semibold">{item.total_lentur_mini || 0}</td>
                                             </tr>
                                         ))}
                                     </tbody>

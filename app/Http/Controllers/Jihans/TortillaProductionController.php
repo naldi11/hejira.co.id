@@ -99,11 +99,23 @@ class TortillaProductionController extends Controller
         $request->validate([
             'date'       => 'required|date',
             'notes'      => 'nullable|string',
-            'tb_qty'     => 'required|integer|min:0',
-            'ts_qty'     => 'required|integer|min:0',
-            'tk_qty'     => 'required|integer|min:0',
-            'tc_qty'     => 'required|integer|min:0',
-            'kribab_qty' => 'required|integer|min:0',
+            'tb_qty'     => 'nullable|integer|min:0',
+            'ts_qty'     => 'nullable|integer|min:0',
+            'tk_qty'     => 'nullable|integer|min:0',
+            'tc_qty'     => 'nullable|integer|min:0',
+            'kribab_qty' => 'nullable|integer|min:0',
+            'hitam_besar_qty' => 'nullable|integer|min:0',
+            'hitam_sedang_qty' => 'nullable|integer|min:0',
+            'hitam_mini_qty' => 'nullable|integer|min:0',
+            'albaik_besar_qty' => 'nullable|integer|min:0',
+            'albaik_sedang_qty' => 'nullable|integer|min:0',
+            'albaik_mini_qty' => 'nullable|integer|min:0',
+            'regular_besar_qty' => 'nullable|integer|min:0',
+            'regular_sedang_qty' => 'nullable|integer|min:0',
+            'regular_mini_qty' => 'nullable|integer|min:0',
+            'lentur_besar_qty' => 'nullable|integer|min:0',
+            'lentur_sedang_qty' => 'nullable|integer|min:0',
+            'lentur_mini_qty' => 'nullable|integer|min:0',
         ]);
 
         $existing = JihansTortillaSession::whereDate('date', $request->date)
@@ -118,7 +130,11 @@ class TortillaProductionController extends Controller
         }
 
         $totalQtyAll = ($request->tb_qty ?? 0) + ($request->ts_qty ?? 0) + ($request->tk_qty ?? 0)
-                     + ($request->tc_qty ?? 0) + ($request->kribab_qty ?? 0);
+                     + ($request->tc_qty ?? 0) + ($request->kribab_qty ?? 0)
+                     + ($request->hitam_besar_qty ?? 0) + ($request->hitam_sedang_qty ?? 0) + ($request->hitam_mini_qty ?? 0)
+                     + ($request->albaik_besar_qty ?? 0) + ($request->albaik_sedang_qty ?? 0) + ($request->albaik_mini_qty ?? 0)
+                     + ($request->regular_besar_qty ?? 0) + ($request->regular_sedang_qty ?? 0) + ($request->regular_mini_qty ?? 0)
+                     + ($request->lentur_besar_qty ?? 0) + ($request->lentur_sedang_qty ?? 0) + ($request->lentur_mini_qty ?? 0);
 
         if ($totalQtyAll <= 0) {
             return back()->withInput()->withErrors(['details' => 'Total produksi harus lebih dari 0.']);
@@ -136,6 +152,18 @@ class TortillaProductionController extends Controller
                 'tk'     => ['field' => 'tk_product_id',     'name' => 'Tortilla Kecil'],
                 'tc'     => ['field' => 'tc_product_id',     'name' => 'Tortilla Catering'],
                 'kribab' => ['field' => 'kribab_product_id', 'name' => 'Kribab'],
+                'hitam_besar' => ['field' => 'hitam_besar_product_id', 'name' => 'Tortilla Hitam Besar'],
+                'hitam_sedang' => ['field' => 'hitam_sedang_product_id', 'name' => 'Tortilla Hitam Sedang'],
+                'hitam_mini' => ['field' => 'hitam_mini_product_id', 'name' => 'Tortilla Hitam Mini'],
+                'albaik_besar' => ['field' => 'albaik_besar_product_id', 'name' => 'Tortilla Albaik Besar'],
+                'albaik_sedang' => ['field' => 'albaik_sedang_product_id', 'name' => 'Tortilla Albaik Sedang'],
+                'albaik_mini' => ['field' => 'albaik_mini_product_id', 'name' => 'Tortilla Albaik Mini'],
+                'regular_besar' => ['field' => 'regular_besar_product_id', 'name' => 'Tortilla Regular Besar'],
+                'regular_sedang' => ['field' => 'regular_sedang_product_id', 'name' => 'Tortilla Regular Sedang'],
+                'regular_mini' => ['field' => 'regular_mini_product_id', 'name' => 'Tortilla Regular Mini'],
+                'lentur_besar' => ['field' => 'lentur_besar_product_id', 'name' => 'Tortilla Lentur Besar'],
+                'lentur_sedang' => ['field' => 'lentur_sedang_product_id', 'name' => 'Tortilla Lentur Sedang'],
+                'lentur_mini' => ['field' => 'lentur_mini_product_id', 'name' => 'Tortilla Lentur Mini'],
             ];
 
             $configUpdated = false;
@@ -219,6 +247,18 @@ class TortillaProductionController extends Controller
                 'tk_product_id'     => $config->tk_product_id,
                 'tc_product_id'     => $config->tc_product_id,
                 'kribab_product_id' => $config->kribab_product_id,
+                'hitam_besar_product_id' => $config->hitam_besar_product_id,
+                'hitam_sedang_product_id' => $config->hitam_sedang_product_id,
+                'hitam_mini_product_id' => $config->hitam_mini_product_id,
+                'albaik_besar_product_id' => $config->albaik_besar_product_id,
+                'albaik_sedang_product_id' => $config->albaik_sedang_product_id,
+                'albaik_mini_product_id' => $config->albaik_mini_product_id,
+                'regular_besar_product_id' => $config->regular_besar_product_id,
+                'regular_sedang_product_id' => $config->regular_sedang_product_id,
+                'regular_mini_product_id' => $config->regular_mini_product_id,
+                'lentur_besar_product_id' => $config->lentur_besar_product_id,
+                'lentur_sedang_product_id' => $config->lentur_sedang_product_id,
+                'lentur_mini_product_id' => $config->lentur_mini_product_id,
             ]);
 
             // Save single detail row with null karyawan for prediction
@@ -229,6 +269,18 @@ class TortillaProductionController extends Controller
                 'tk_qty'      => $request->tk_qty,
                 'tc_qty'      => $request->tc_qty,
                 'kribab_qty'  => $request->kribab_qty,
+                'hitam_besar_qty' => $request->hitam_besar_qty,
+                'hitam_sedang_qty' => $request->hitam_sedang_qty,
+                'hitam_mini_qty' => $request->hitam_mini_qty,
+                'albaik_besar_qty' => $request->albaik_besar_qty,
+                'albaik_sedang_qty' => $request->albaik_sedang_qty,
+                'albaik_mini_qty' => $request->albaik_mini_qty,
+                'regular_besar_qty' => $request->regular_besar_qty,
+                'regular_sedang_qty' => $request->regular_sedang_qty,
+                'regular_mini_qty' => $request->regular_mini_qty,
+                'lentur_besar_qty' => $request->lentur_besar_qty,
+                'lentur_sedang_qty' => $request->lentur_sedang_qty,
+                'lentur_mini_qty' => $request->lentur_mini_qty,
             ]);
 
             $productQtyMap = [];
@@ -238,6 +290,18 @@ class TortillaProductionController extends Controller
                 $session->tk_product_id     => (int) $request->tk_qty,
                 $session->tc_product_id     => (int) $request->tc_qty,
                 $session->kribab_product_id => (int) $request->kribab_qty,
+                $session->hitam_besar_product_id => (int) $request->hitam_besar_qty,
+                $session->hitam_sedang_product_id => (int) $request->hitam_sedang_qty,
+                $session->hitam_mini_product_id => (int) $request->hitam_mini_qty,
+                $session->albaik_besar_product_id => (int) $request->albaik_besar_qty,
+                $session->albaik_sedang_product_id => (int) $request->albaik_sedang_qty,
+                $session->albaik_mini_product_id => (int) $request->albaik_mini_qty,
+                $session->regular_besar_product_id => (int) $request->regular_besar_qty,
+                $session->regular_sedang_product_id => (int) $request->regular_sedang_qty,
+                $session->regular_mini_product_id => (int) $request->regular_mini_qty,
+                $session->lentur_besar_product_id => (int) $request->lentur_besar_qty,
+                $session->lentur_sedang_product_id => (int) $request->lentur_sedang_qty,
+                $session->lentur_mini_product_id => (int) $request->lentur_mini_qty,
             ];
             
             foreach ($variantMap as $pid => $qty) {
@@ -285,6 +349,18 @@ class TortillaProductionController extends Controller
             'tk'     => $tortilla->details->sum('tk_qty'),
             'tc'     => $tortilla->details->sum('tc_qty'),
             'kribab' => $tortilla->details->sum('kribab_qty'),
+            'hitam_besar' => $tortilla->details->sum('hitam_besar_qty'),
+            'hitam_sedang' => $tortilla->details->sum('hitam_sedang_qty'),
+            'hitam_mini' => $tortilla->details->sum('hitam_mini_qty'),
+            'albaik_besar' => $tortilla->details->sum('albaik_besar_qty'),
+            'albaik_sedang' => $tortilla->details->sum('albaik_sedang_qty'),
+            'albaik_mini' => $tortilla->details->sum('albaik_mini_qty'),
+            'regular_besar' => $tortilla->details->sum('regular_besar_qty'),
+            'regular_sedang' => $tortilla->details->sum('regular_sedang_qty'),
+            'regular_mini' => $tortilla->details->sum('regular_mini_qty'),
+            'lentur_besar' => $tortilla->details->sum('lentur_besar_qty'),
+            'lentur_sedang' => $tortilla->details->sum('lentur_sedang_qty'),
+            'lentur_mini' => $tortilla->details->sum('lentur_mini_qty'),
         ];
 
         $variants = [
@@ -293,6 +369,18 @@ class TortillaProductionController extends Controller
             'tk'     => 'Tortilla Kecil',
             'tc'     => 'Tortilla Catering',
             'kribab' => 'Kribab',
+            'hitam_besar' => 'Tortilla Hitam Besar',
+            'hitam_sedang' => 'Tortilla Hitam Sedang',
+            'hitam_mini' => 'Tortilla Hitam Mini',
+            'albaik_besar' => 'Tortilla Albaik Besar',
+            'albaik_sedang' => 'Tortilla Albaik Sedang',
+            'albaik_mini' => 'Tortilla Albaik Mini',
+            'regular_besar' => 'Tortilla Regular Besar',
+            'regular_sedang' => 'Tortilla Regular Sedang',
+            'regular_mini' => 'Tortilla Regular Mini',
+            'lentur_besar' => 'Tortilla Lentur Besar',
+            'lentur_sedang' => 'Tortilla Lentur Sedang',
+            'lentur_mini' => 'Tortilla Lentur Mini',
         ];
 
         return view('jihans.tortilla.faktur-prediksi', compact('tortilla', 'totals', 'variants'));
@@ -305,16 +393,32 @@ class TortillaProductionController extends Controller
             'notes'                 => 'nullable|string',
             'details'               => 'required|array|min:1',
             'details.*.karyawan_id' => 'required|exists:master_karyawan,id',
-            'details.*.tb_qty'      => 'required|integer|min:0',
-            'details.*.ts_qty'      => 'required|integer|min:0',
-            'details.*.tk_qty'      => 'required|integer|min:0',
-            'details.*.tc_qty'      => 'required|integer|min:0',
-            'details.*.kribab_qty'  => 'required|integer|min:0',
+            'details.*.tb_qty'      => 'nullable|integer|min:0',
+            'details.*.ts_qty'      => 'nullable|integer|min:0',
+            'details.*.tk_qty'      => 'nullable|integer|min:0',
+            'details.*.tc_qty'      => 'nullable|integer|min:0',
+            'details.*.kribab_qty'  => 'nullable|integer|min:0',
+            'details.*.hitam_besar_qty' => 'nullable|integer|min:0',
+            'details.*.hitam_sedang_qty' => 'nullable|integer|min:0',
+            'details.*.hitam_mini_qty' => 'nullable|integer|min:0',
+            'details.*.albaik_besar_qty' => 'nullable|integer|min:0',
+            'details.*.albaik_sedang_qty' => 'nullable|integer|min:0',
+            'details.*.albaik_mini_qty' => 'nullable|integer|min:0',
+            'details.*.regular_besar_qty' => 'nullable|integer|min:0',
+            'details.*.regular_sedang_qty' => 'nullable|integer|min:0',
+            'details.*.regular_mini_qty' => 'nullable|integer|min:0',
+            'details.*.lentur_besar_qty' => 'nullable|integer|min:0',
+            'details.*.lentur_sedang_qty' => 'nullable|integer|min:0',
+            'details.*.lentur_mini_qty' => 'nullable|integer|min:0',
         ]);
 
         $totalQtyAll = collect($request->details)->sum(function ($d) {
             return ($d['tb_qty'] ?? 0) + ($d['ts_qty'] ?? 0) + ($d['tk_qty'] ?? 0)
-                 + ($d['tc_qty'] ?? 0) + ($d['kribab_qty'] ?? 0);
+                 + ($d['tc_qty'] ?? 0) + ($d['kribab_qty'] ?? 0)
+                 + ($d['hitam_besar_qty'] ?? 0) + ($d['hitam_sedang_qty'] ?? 0) + ($d['hitam_mini_qty'] ?? 0)
+                 + ($d['albaik_besar_qty'] ?? 0) + ($d['albaik_sedang_qty'] ?? 0) + ($d['albaik_mini_qty'] ?? 0)
+                 + ($d['regular_besar_qty'] ?? 0) + ($d['regular_sedang_qty'] ?? 0) + ($d['regular_mini_qty'] ?? 0)
+                 + ($d['lentur_besar_qty'] ?? 0) + ($d['lentur_sedang_qty'] ?? 0) + ($d['lentur_mini_qty'] ?? 0);
         });
 
         if ($totalQtyAll <= 0) {
@@ -339,6 +443,18 @@ class TortillaProductionController extends Controller
                 'tk'     => ['field' => 'tk_product_id',     'name' => 'Tortilla Kecil'],
                 'tc'     => ['field' => 'tc_product_id',     'name' => 'Tortilla Catering'],
                 'kribab' => ['field' => 'kribab_product_id', 'name' => 'Kribab'],
+                'hitam_besar' => ['field' => 'hitam_besar_product_id', 'name' => 'Tortilla Hitam Besar'],
+                'hitam_sedang' => ['field' => 'hitam_sedang_product_id', 'name' => 'Tortilla Hitam Sedang'],
+                'hitam_mini' => ['field' => 'hitam_mini_product_id', 'name' => 'Tortilla Hitam Mini'],
+                'albaik_besar' => ['field' => 'albaik_besar_product_id', 'name' => 'Tortilla Albaik Besar'],
+                'albaik_sedang' => ['field' => 'albaik_sedang_product_id', 'name' => 'Tortilla Albaik Sedang'],
+                'albaik_mini' => ['field' => 'albaik_mini_product_id', 'name' => 'Tortilla Albaik Mini'],
+                'regular_besar' => ['field' => 'regular_besar_product_id', 'name' => 'Tortilla Regular Besar'],
+                'regular_sedang' => ['field' => 'regular_sedang_product_id', 'name' => 'Tortilla Regular Sedang'],
+                'regular_mini' => ['field' => 'regular_mini_product_id', 'name' => 'Tortilla Regular Mini'],
+                'lentur_besar' => ['field' => 'lentur_besar_product_id', 'name' => 'Tortilla Lentur Besar'],
+                'lentur_sedang' => ['field' => 'lentur_sedang_product_id', 'name' => 'Tortilla Lentur Sedang'],
+                'lentur_mini' => ['field' => 'lentur_mini_product_id', 'name' => 'Tortilla Lentur Mini'],
             ];
 
             $configUpdated = false;
@@ -430,6 +546,18 @@ class TortillaProductionController extends Controller
                 'tk_product_id'     => $config->tk_product_id,
                 'tc_product_id'     => $config->tc_product_id,
                 'kribab_product_id' => $config->kribab_product_id,
+                'hitam_besar_product_id' => $config->hitam_besar_product_id,
+                'hitam_sedang_product_id' => $config->hitam_sedang_product_id,
+                'hitam_mini_product_id' => $config->hitam_mini_product_id,
+                'albaik_besar_product_id' => $config->albaik_besar_product_id,
+                'albaik_sedang_product_id' => $config->albaik_sedang_product_id,
+                'albaik_mini_product_id' => $config->albaik_mini_product_id,
+                'regular_besar_product_id' => $config->regular_besar_product_id,
+                'regular_sedang_product_id' => $config->regular_sedang_product_id,
+                'regular_mini_product_id' => $config->regular_mini_product_id,
+                'lentur_besar_product_id' => $config->lentur_besar_product_id,
+                'lentur_sedang_product_id' => $config->lentur_sedang_product_id,
+                'lentur_mini_product_id' => $config->lentur_mini_product_id,
             ]);
 
             // Override prediksi hari yang sama jika ada
@@ -447,6 +575,18 @@ class TortillaProductionController extends Controller
                         $existingPrediksi->tk_product_id     => (int) $oldDetail->tk_qty,
                         $existingPrediksi->tc_product_id     => (int) $oldDetail->tc_qty,
                         $existingPrediksi->kribab_product_id => (int) $oldDetail->kribab_qty,
+                        $existingPrediksi->hitam_besar_product_id => (int) $oldDetail->hitam_besar_qty,
+                        $existingPrediksi->hitam_sedang_product_id => (int) $oldDetail->hitam_sedang_qty,
+                        $existingPrediksi->hitam_mini_product_id => (int) $oldDetail->hitam_mini_qty,
+                        $existingPrediksi->albaik_besar_product_id => (int) $oldDetail->albaik_besar_qty,
+                        $existingPrediksi->albaik_sedang_product_id => (int) $oldDetail->albaik_sedang_qty,
+                        $existingPrediksi->albaik_mini_product_id => (int) $oldDetail->albaik_mini_qty,
+                        $existingPrediksi->regular_besar_product_id => (int) $oldDetail->regular_besar_qty,
+                        $existingPrediksi->regular_sedang_product_id => (int) $oldDetail->regular_sedang_qty,
+                        $existingPrediksi->regular_mini_product_id => (int) $oldDetail->regular_mini_qty,
+                        $existingPrediksi->lentur_besar_product_id => (int) $oldDetail->lentur_besar_qty,
+                        $existingPrediksi->lentur_sedang_product_id => (int) $oldDetail->lentur_sedang_qty,
+                        $existingPrediksi->lentur_mini_product_id => (int) $oldDetail->lentur_mini_qty,
                     ];
                     foreach ($variantMap as $pid => $qty) {
                         if ($pid && $qty > 0) {
@@ -467,6 +607,18 @@ class TortillaProductionController extends Controller
                     'tk_qty'      => $detail['tk_qty'],
                     'tc_qty'      => $detail['tc_qty'],
                     'kribab_qty'  => $detail['kribab_qty'],
+                    'hitam_besar_qty' => $detail['hitam_besar_qty'],
+                    'hitam_sedang_qty' => $detail['hitam_sedang_qty'],
+                    'hitam_mini_qty' => $detail['hitam_mini_qty'],
+                    'albaik_besar_qty' => $detail['albaik_besar_qty'],
+                    'albaik_sedang_qty' => $detail['albaik_sedang_qty'],
+                    'albaik_mini_qty' => $detail['albaik_mini_qty'],
+                    'regular_besar_qty' => $detail['regular_besar_qty'],
+                    'regular_sedang_qty' => $detail['regular_sedang_qty'],
+                    'regular_mini_qty' => $detail['regular_mini_qty'],
+                    'lentur_besar_qty' => $detail['lentur_besar_qty'],
+                    'lentur_sedang_qty' => $detail['lentur_sedang_qty'],
+                    'lentur_mini_qty' => $detail['lentur_mini_qty'],
                 ]);
 
                 // Akumulasi qty per produk
@@ -476,6 +628,18 @@ class TortillaProductionController extends Controller
                     $session->tk_product_id     => (int) $detail['tk_qty'],
                     $session->tc_product_id     => (int) $detail['tc_qty'],
                     $session->kribab_product_id => (int) $detail['kribab_qty'],
+                    $session->hitam_besar_product_id => (int) $detail['hitam_besar_qty'],
+                    $session->hitam_sedang_product_id => (int) $detail['hitam_sedang_qty'],
+                    $session->hitam_mini_product_id => (int) $detail['hitam_mini_qty'],
+                    $session->albaik_besar_product_id => (int) $detail['albaik_besar_qty'],
+                    $session->albaik_sedang_product_id => (int) $detail['albaik_sedang_qty'],
+                    $session->albaik_mini_product_id => (int) $detail['albaik_mini_qty'],
+                    $session->regular_besar_product_id => (int) $detail['regular_besar_qty'],
+                    $session->regular_sedang_product_id => (int) $detail['regular_sedang_qty'],
+                    $session->regular_mini_product_id => (int) $detail['regular_mini_qty'],
+                    $session->lentur_besar_product_id => (int) $detail['lentur_besar_qty'],
+                    $session->lentur_sedang_product_id => (int) $detail['lentur_sedang_qty'],
+                    $session->lentur_mini_product_id => (int) $detail['lentur_mini_qty'],
                 ];
                 foreach ($variantMap as $pid => $qty) {
                     if ($pid && $qty > 0) {
@@ -558,7 +722,19 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(ts_qty) as total_ts'),
                 DB::raw('SUM(tk_qty) as total_tk'),
                 DB::raw('SUM(tc_qty) as total_tc'),
-                DB::raw('SUM(kribab_qty) as total_kribab')
+                DB::raw('SUM(kribab_qty) as total_kribab'),
+                DB::raw('SUM(hitam_besar_qty) as total_hitam_besar'),
+                DB::raw('SUM(hitam_sedang_qty) as total_hitam_sedang'),
+                DB::raw('SUM(hitam_mini_qty) as total_hitam_mini'),
+                DB::raw('SUM(albaik_besar_qty) as total_albaik_besar'),
+                DB::raw('SUM(albaik_sedang_qty) as total_albaik_sedang'),
+                DB::raw('SUM(albaik_mini_qty) as total_albaik_mini'),
+                DB::raw('SUM(regular_besar_qty) as total_regular_besar'),
+                DB::raw('SUM(regular_sedang_qty) as total_regular_sedang'),
+                DB::raw('SUM(regular_mini_qty) as total_regular_mini'),
+                DB::raw('SUM(lentur_besar_qty) as total_lentur_besar'),
+                DB::raw('SUM(lentur_sedang_qty) as total_lentur_sedang'),
+                DB::raw('SUM(lentur_mini_qty) as total_lentur_mini')
             )
             ->whereHas('session', function ($s) use ($dateFrom, $dateTo) {
                 $s->where('type', 'aktual');
@@ -600,7 +776,19 @@ class TortillaProductionController extends Controller
                 DB::raw('SUM(ts_qty) as total_ts'),
                 DB::raw('SUM(tk_qty) as total_tk'),
                 DB::raw('SUM(tc_qty) as total_tc'),
-                DB::raw('SUM(kribab_qty) as total_kribab')
+                DB::raw('SUM(kribab_qty) as total_kribab'),
+                DB::raw('SUM(hitam_besar_qty) as total_hitam_besar'),
+                DB::raw('SUM(hitam_sedang_qty) as total_hitam_sedang'),
+                DB::raw('SUM(hitam_mini_qty) as total_hitam_mini'),
+                DB::raw('SUM(albaik_besar_qty) as total_albaik_besar'),
+                DB::raw('SUM(albaik_sedang_qty) as total_albaik_sedang'),
+                DB::raw('SUM(albaik_mini_qty) as total_albaik_mini'),
+                DB::raw('SUM(regular_besar_qty) as total_regular_besar'),
+                DB::raw('SUM(regular_sedang_qty) as total_regular_sedang'),
+                DB::raw('SUM(regular_mini_qty) as total_regular_mini'),
+                DB::raw('SUM(lentur_besar_qty) as total_lentur_besar'),
+                DB::raw('SUM(lentur_sedang_qty) as total_lentur_sedang'),
+                DB::raw('SUM(lentur_mini_qty) as total_lentur_mini')
             )
             ->whereHas('session', function ($s) use ($dateFrom, $dateTo) {
                 $s->where('type', 'aktual');

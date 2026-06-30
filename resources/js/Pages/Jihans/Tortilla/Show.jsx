@@ -14,7 +14,19 @@ export default function TortillaShow({ tortilla }) {
         tk: acc.tk + parseInt(curr.tk_qty || 0),
         tc: acc.tc + parseInt(curr.tc_qty || 0),
         kribab: acc.kribab + parseInt(curr.kribab_qty || 0),
-    }), { tb: 0, ts: 0, tk: 0, tc: 0, kribab: 0 }) : null;
+        hitam_besar: acc.hitam_besar + parseInt(curr.hitam_besar_qty || 0),
+        hitam_sedang: acc.hitam_sedang + parseInt(curr.hitam_sedang_qty || 0),
+        hitam_mini: acc.hitam_mini + parseInt(curr.hitam_mini_qty || 0),
+        albaik_besar: acc.albaik_besar + parseInt(curr.albaik_besar_qty || 0),
+        albaik_sedang: acc.albaik_sedang + parseInt(curr.albaik_sedang_qty || 0),
+        albaik_mini: acc.albaik_mini + parseInt(curr.albaik_mini_qty || 0),
+        regular_besar: acc.regular_besar + parseInt(curr.regular_besar_qty || 0),
+        regular_sedang: acc.regular_sedang + parseInt(curr.regular_sedang_qty || 0),
+        regular_mini: acc.regular_mini + parseInt(curr.regular_mini_qty || 0),
+        lentur_besar: acc.lentur_besar + parseInt(curr.lentur_besar_qty || 0),
+        lentur_sedang: acc.lentur_sedang + parseInt(curr.lentur_sedang_qty || 0),
+        lentur_mini: acc.lentur_mini + parseInt(curr.lentur_mini_qty || 0),
+    }), { tb: 0, ts: 0, tk: 0, tc: 0, kribab: 0, hitam_besar: 0, hitam_sedang: 0, hitam_mini: 0, albaik_besar: 0, albaik_sedang: 0, albaik_mini: 0, regular_besar: 0, regular_sedang: 0, regular_mini: 0, lentur_besar: 0, lentur_sedang: 0, lentur_mini: 0 }) : null;
 
     return (
         <JihansLayout pageTitle={`Detail Produksi ${tortilla.session_number}`}>
@@ -114,6 +126,54 @@ export default function TortillaShow({ tortilla }) {
                                             <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Kribab</p>
                                             <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.kribab_qty || 0}</p>
                                         </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Hitam Besar</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.hitam_besar_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Hitam Sedang</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.hitam_sedang_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Hitam Mini</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.hitam_mini_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Albaik Besar</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.albaik_besar_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Albaik Sedang</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.albaik_sedang_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Albaik Mini</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.albaik_mini_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Regular Besar</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.regular_besar_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Regular Sedang</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.regular_sedang_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Regular Mini</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.regular_mini_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Lentur Besar</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.lentur_besar_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Lentur Sedang</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.lentur_sedang_qty || 0}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-orange-50 p-4 text-center border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40">
+                                            <p className="text-[10px] font-semibold text-orange-600 uppercase mb-2 dark:text-orange-400 tracking-wider">Lentur Mini</p>
+                                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">{tortilla.details[0]?.lentur_mini_qty || 0}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
@@ -127,6 +187,18 @@ export default function TortillaShow({ tortilla }) {
                                                 <th className="px-4 py-4 font-semibold text-center w-24">TK</th>
                                                 <th className="px-4 py-4 font-semibold text-center w-24">TC</th>
                                                 <th className="px-4 py-4 font-semibold text-center w-24">Kribab</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">HTM BSR</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">HTM SDG</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">HTM MNI</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">ALB BSR</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">ALB SDG</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">ALB MNI</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">REG BSR</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">REG SDG</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">REG MNI</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">LEN BSR</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">LEN SDG</th>
+                                                <th className="px-4 py-4 font-semibold text-center w-24">LEN MNI</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -140,6 +212,18 @@ export default function TortillaShow({ tortilla }) {
                                                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.tk_qty}</td>
                                                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.tc_qty}</td>
                                                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.kribab_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.hitam_besar_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.hitam_sedang_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.hitam_mini_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.albaik_besar_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.albaik_sedang_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.albaik_mini_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.regular_besar_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.regular_sedang_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.regular_mini_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.lentur_besar_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.lentur_sedang_qty}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{detail.lentur_mini_qty}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -151,6 +235,18 @@ export default function TortillaShow({ tortilla }) {
                                                 <td className="px-4 py-3 text-center">{totals.tk}</td>
                                                 <td className="px-4 py-3 text-center">{totals.tc}</td>
                                                 <td className="px-4 py-3 text-center">{totals.kribab}</td>
+                                                <td className="px-4 py-3 text-center">{totals.hitam_besar}</td>
+                                                <td className="px-4 py-3 text-center">{totals.hitam_sedang}</td>
+                                                <td className="px-4 py-3 text-center">{totals.hitam_mini}</td>
+                                                <td className="px-4 py-3 text-center">{totals.albaik_besar}</td>
+                                                <td className="px-4 py-3 text-center">{totals.albaik_sedang}</td>
+                                                <td className="px-4 py-3 text-center">{totals.albaik_mini}</td>
+                                                <td className="px-4 py-3 text-center">{totals.regular_besar}</td>
+                                                <td className="px-4 py-3 text-center">{totals.regular_sedang}</td>
+                                                <td className="px-4 py-3 text-center">{totals.regular_mini}</td>
+                                                <td className="px-4 py-3 text-center">{totals.lentur_besar}</td>
+                                                <td className="px-4 py-3 text-center">{totals.lentur_sedang}</td>
+                                                <td className="px-4 py-3 text-center">{totals.lentur_mini}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
