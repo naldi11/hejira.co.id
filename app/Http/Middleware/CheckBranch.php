@@ -17,6 +17,7 @@ class CheckBranch
 
             if ($activeBranchId) {
                 $user->branch_id = $activeBranchId;
+                $user->unsetRelation('branch');
                 $branch = \App\Models\Branch::find($activeBranchId);
                 if ($branch) {
                     $user->setRelation('branch', $branch);
@@ -28,6 +29,7 @@ class CheckBranch
 
             if (!$activeBranchId && $user->branch_id) {
                 session(['active_branch_id' => $user->branch_id]);
+                $user->unsetRelation('branch');
                 $branch = \App\Models\Branch::find($user->branch_id);
                 if ($branch) {
                     $user->setRelation('branch', $branch);

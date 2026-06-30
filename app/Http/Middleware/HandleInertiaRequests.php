@@ -36,11 +36,16 @@ class HandleInertiaRequests extends Middleware
                     'email'  => $user->email,
                     'entity' => $user->entity,
                     'roles'  => $user->getRoleNames(),
-                    'branch' => $user->branch ? [
-                        'id'   => $user->branch->id,
-                        'name' => $user->branch->name,
-                        'type' => $user->branch->type,
-                    ] : null,
+                    'branch' => $user ? (function() use ($user) {
+                        $branchId = session('active_branch_id') ?: $user->branch_id;
+                        if (!$branchId) return null;
+                        $branch = \App\Models\Branch::find($branchId);
+                        return $branch ? [
+                            'id'   => $branch->id,
+                            'name' => $branch->name,
+                            'type' => $branch->type,
+                        ] : null;
+                    })() : null,
                 ] : null,
             ],
 
