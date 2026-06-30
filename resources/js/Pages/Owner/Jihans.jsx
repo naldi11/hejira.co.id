@@ -172,6 +172,16 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                                                 </tr>
                                             ))}
                                     </tbody>
+                                    {filteredJihansStocks.length > 0 && (
+                                        <tfoot>
+                                            <tr className="bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-200 dark:border-gray-800 font-bold">
+                                                <td colSpan={2} className="px-4 py-3 text-slate-700 dark:text-gray-300">Total</td>
+                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">
+                                                    {formatQty(filteredJihansStocks.reduce((sum, s) => sum + Number(s.quantity), 0))}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </table>
                             </div>
                         </div>
@@ -239,6 +249,16 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                                                 </tr>
                                             ))}
                                     </tbody>
+                                    {transactions.data.length > 0 && (
+                                        <tfoot>
+                                            <tr className="bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-200 dark:border-gray-800 font-bold">
+                                                <td colSpan={4} className="px-4 py-3 text-slate-700 dark:text-gray-300 text-right">Total Halaman Ini</td>
+                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">
+                                                    {formatRupiah(transactions.data.reduce((sum, t) => sum + Number(t.grand_total), 0))}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </table>
                             </div>
                             {transactions.meta?.links && <div className="mt-4"><Pagination links={transactions.meta.links} /></div>}
@@ -283,6 +303,16 @@ export default function OwnerJihans({ stats, transactions, stocks, gudangStocks,
                                                 </tr>
                                             ))}
                                     </tbody>
+                                    {gudangStocks.data.length > 0 && (
+                                        <tfoot>
+                                            <tr className="bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-200 dark:border-gray-800 font-bold">
+                                                <td colSpan={2} className="px-4 py-3 text-slate-700 dark:text-gray-300">Total</td>
+                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">
+                                                    {formatQty(gudangStocks.data.reduce((sum, s) => sum + Number(s.quantity), 0))}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </table>
                             </div>
                             {gudangStocks.meta?.links && <div className="mt-4"><Pagination links={gudangStocks.meta.links} /></div>}

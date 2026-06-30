@@ -108,6 +108,19 @@ export default function OwnerHendhys({ stats, transactions, stocks, branches, fi
                                         </tr>
                                     ))}
                             </tbody>
+                            {filteredStocks.length > 0 && (
+                                <tfoot>
+                                    <tr className="bg-slate-50/80 dark:bg-white/[0.02] border-t border-slate-200 dark:border-gray-800 font-bold">
+                                        <td colSpan={3} className="px-4 py-3 text-slate-700 dark:text-gray-300">Total</td>
+                                        <td className="px-4 py-3 text-right font-black text-slate-950 dark:text-white">
+                                            {formatQty(filteredStocks.reduce((sum, s) => sum + Number(s.total_quantity), 0))}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-bold text-amber-600 dark:text-amber-400">
+                                            {formatQty(filteredStocks.reduce((sum, s) => sum + Number(s.total_quantity_return), 0))}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </div>
