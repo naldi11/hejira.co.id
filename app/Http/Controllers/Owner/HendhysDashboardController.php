@@ -35,24 +35,63 @@ class HendhysDashboardController extends Controller
 
         $transactions = $query->latest('id')->paginate(10)->withQueryString();
 
-        // Get stocks for pusat
-        $pusatStocks = DB::table('master_products as p')
-            ->leftJoin('hendhys_stock_pusat as s', 'p.id', '=', 's.product_id')
-            ->where('p.status', 'active')
-            ->where(fn($w) => $w->whereRaw('p.visible_hendhys = 1')->orWhereNotNull('s.quantity'))
-            ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), DB::raw('COALESCE(s.quantity_return, 0) as quantity_return'))
-            ->orderBy('p.name')
+        $products = DB::table('master_products')
+            ->where('status', 'active')
+            ->where('visible_hendhys', true)
+            ->orderBy('name')
             ->get();
 
-        // Get stocks for cabang
-        $cabangStocks = DB::table('master_products as p')
-            ->join('hendhys_stock_branch as s', 'p.id', '=', 's.product_id')
-            ->join('master_branches as b', 'b.id', '=', 's.branch_id')
-            ->where('p.status', 'active')
-            ->select('p.name', 'p.code', 'b.name as branch_name', 's.quantity', 's.quantity_return')
-            ->orderBy('b.name')
-            ->orderBy('p.name')
-            ->get();
+        $pusatStocks = DB::table('hendhys_stock_pusat')
+            ->get()
+            ->keyBy('product_id');
+
+        $cabangStocks = DB::table('hendhys_stock_branch as sb')
+            ->join('master_branches as b', 'b.id', '=', 'sb.branch_id')
+            ->select('sb.product_id', 'b.name as branch_name', 'sb.quantity', 'sb.quantity_return')
+            ->get()
+            ->groupBy('product_id');
+
+        $consolidatedStocks = $products->map(function ($p) use ($pusatStocks, $cabangStocks) {
+            $pusatQty = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity : 0.0;
+            $pusatRet = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity_return : 0.0;
+
+            $branches = [];
+            $totalQty = $pusatQty;
+            $totalRet = $pusatRet;
+
+            if ($pusatQty > 0 || $pusatRet > 0) {
+                $branches[] = [
+                    'branch_name' => 'Hendhys Produksi',
+                    'quantity' => $pusatQty,
+                    'quantity_return' => $pusatRet,
+                ];
+            }
+
+            if (isset($cabangStocks[$p->id])) {
+                foreach ($cabangStocks[$p->id] as $cs) {
+                    $qty = (float) $cs->quantity;
+                    $ret = (float) $cs->quantity_return;
+                    if ($qty > 0 || $ret > 0) {
+                        $branches[] = [
+                            'branch_name' => $cs->branch_name,
+                            'quantity' => $qty,
+                            'quantity_return' => $ret,
+                        ];
+                        $totalQty += $qty;
+                        $totalRet += $ret;
+                    }
+                }
+            }
+
+            return [
+                'id' => $p->id,
+                'code' => $p->code,
+                'name' => $p->name,
+                'branches' => $branches,
+                'total_quantity' => $totalQty,
+                'total_quantity_return' => $totalRet,
+            ];
+        });
 
         return Inertia::render('Owner/Hendhys', [
             'stats' => [
@@ -60,8 +99,7 @@ class HendhysDashboardController extends Controller
                 'production_today' => HendhysProduction::whereDate('date', today())->count(),
             ],
             'transactions' => $transactions,
-            'pusatStocks' => $pusatStocks,
-            'cabangStocks' => $cabangStocks,
+            'stocks' => $consolidatedStocks,
             'branches' => $branches->map(fn($b) => ['id' => $b->id, 'name' => $b->name]),
             'filters' => $request->only('search', 'date_from', 'date_to', 'status', 'branch_id'),
         ]);

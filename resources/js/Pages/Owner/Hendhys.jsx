@@ -6,7 +6,7 @@ import EmptyState from '@/Components/EmptyState';
 import Pagination from '@/Components/Pagination';
 import { formatRupiah, formatQty, formatDate } from '@/lib/format';
 
-export default function OwnerHendhys({ stats, transactions, pusatStocks, cabangStocks, branches, filters }) {
+export default function OwnerHendhys({ stats, transactions, stocks, branches, filters }) {
     const [form, setForm] = useState({
         search: filters.search ?? '',
         date_from: filters.date_from ?? '',
@@ -16,7 +16,6 @@ export default function OwnerHendhys({ stats, transactions, pusatStocks, cabangS
     });
 
     const [stockSearch, setStockSearch] = useState('');
-    const [stockTab, setStockTab] = useState('pusat'); // pusat or cabang
 
     const handleFilter = (e) => {
         e?.preventDefault();
@@ -29,15 +28,10 @@ export default function OwnerHendhys({ stats, transactions, pusatStocks, cabangS
         }, { preserveState: true, replace: true });
     };
 
-    const filteredPusatStocks = pusatStocks.filter(s => 
-        s.name.toLowerCase().includes(stockSearch.toLowerCase()) || 
-        s.code.toLowerCase().includes(stockSearch.toLowerCase())
-    );
-
-    const filteredCabangStocks = cabangStocks.filter(s => 
+    const filteredStocks = stocks.filter(s => 
         s.name.toLowerCase().includes(stockSearch.toLowerCase()) || 
         s.code.toLowerCase().includes(stockSearch.toLowerCase()) ||
-        s.branch_name.toLowerCase().includes(stockSearch.toLowerCase())
+        s.branches.some(b => b.branch_name.toLowerCase().includes(stockSearch.toLowerCase()))
     );
 
     return (
@@ -59,25 +53,12 @@ export default function OwnerHendhys({ stats, transactions, pusatStocks, cabangS
                     </div>
                 </div>
 
-                {/* Stock List Section (Pusat & Cabang Tabs) */}
+                {/* Stock List Section */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                         <div>
                             <h3 className="font-bold text-slate-800 dark:text-white/95 text-lg flex items-center gap-2"><Icon name="inventory" className="text-amber-500" /> Stok Produk Hendhys</h3>
-                            <div className="mt-2 flex gap-2">
-                                <button 
-                                    onClick={() => setStockTab('pusat')}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg ${stockTab === 'pusat' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-gray-800 dark:text-gray-300'}`}
-                                >
-                                    Stok Pusat
-                                </button>
-                                <button 
-                                    onClick={() => setStockTab('cabang')}
-                                    className={`px-3 py-1 text-xs font-bold rounded-lg ${stockTab === 'cabang' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-gray-800 dark:text-gray-300'}`}
-                                >
-                                    Stok Cabang
-                                </button>
-                            </div>
+                            <p className="text-xs text-slate-405 mt-1">Daftar sisa stok di tiap unit cabang beserta total keseluruhannya</p>
                         </div>
                         <div className="relative min-w-[240px]">
                             <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]" />
@@ -92,53 +73,42 @@ export default function OwnerHendhys({ stats, transactions, pusatStocks, cabangS
                     </div>
 
                     <div className="custom-scrollbar overflow-x-auto">
-                        {stockTab === 'pusat' ? (
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 dark:bg-white/[0.02] text-xs font-semibold text-slate-500 dark:text-gray-400">
-                                    <tr>
-                                        <th className="px-4 py-3">Kode</th>
-                                        <th className="px-4 py-3">Nama Produk</th>
-                                        <th className="px-4 py-3 text-right">Siap Jual</th>
-                                        <th className="px-4 py-3 text-right">Retur</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-                                    {filteredPusatStocks.length === 0 ? <EmptyState colSpan={4} icon="inventory" message="Stok pusat tidak ditemukan." />
-                                        : filteredPusatStocks.map((s, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01]">
-                                                <td className="px-4 py-3 font-mono font-bold text-xs text-slate-500">{s.code}</td>
-                                                <td className="px-4 py-3 font-medium text-slate-800 dark:text-white/90">{s.name}</td>
-                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatQty(s.quantity)}</td>
-                                                <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400">{formatQty(s.quantity_return)}</td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 dark:bg-white/[0.02] text-xs font-semibold text-slate-500 dark:text-gray-400">
-                                    <tr>
-                                        <th className="px-4 py-3">Cabang</th>
-                                        <th className="px-4 py-3">Kode</th>
-                                        <th className="px-4 py-3">Nama Produk</th>
-                                        <th className="px-4 py-3 text-right">Siap Jual</th>
-                                        <th className="px-4 py-3 text-right">Retur</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-                                    {filteredCabangStocks.length === 0 ? <EmptyState colSpan={5} icon="inventory" message="Stok cabang tidak ditemukan." />
-                                        : filteredCabangStocks.map((s, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01]">
-                                                <td className="px-4 py-3 font-semibold text-slate-700 dark:text-gray-300">{s.branch_name}</td>
-                                                <td className="px-4 py-3 font-mono font-bold text-xs text-slate-500">{s.code}</td>
-                                                <td className="px-4 py-3 font-medium text-slate-800 dark:text-white/90">{s.name}</td>
-                                                <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatQty(s.quantity)}</td>
-                                                <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400">{formatQty(s.quantity_return)}</td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        )}
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-white/[0.02] text-xs font-semibold text-slate-500 dark:text-gray-400">
+                                <tr>
+                                    <th className="px-4 py-3">Kode</th>
+                                    <th className="px-4 py-3">Nama Produk</th>
+                                    <th className="px-4 py-3">Penyebaran Stok Unit Cabang</th>
+                                    <th className="px-4 py-3 text-right">Total Siap Jual</th>
+                                    <th className="px-4 py-3 text-right">Total Retur</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
+                                {filteredStocks.length === 0 ? <EmptyState colSpan={5} icon="inventory" message="Stok produk tidak ditemukan." />
+                                    : filteredStocks.map((s, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-4 py-3 font-mono font-bold text-xs text-slate-500">{s.code}</td>
+                                            <td className="px-4 py-3 font-medium text-slate-800 dark:text-white/90">{s.name}</td>
+                                            <td className="px-4 py-3">
+                                                {s.branches && s.branches.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {s.branches.map((b, bIdx) => (
+                                                            <span key={bIdx} className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-650 border border-slate-100 dark:bg-white/[0.02] dark:border-gray-800 dark:text-gray-300">
+                                                                📍 {b.branch_name}: <strong className="text-slate-900 dark:text-white font-bold">{formatQty(b.quantity)}</strong>
+                                                                {b.quantity_return > 0 && <span className="text-[10px] text-amber-500 font-medium ml-0.5">(Retur: {formatQty(b.quantity_return)})</span>}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 text-xs italic">Tidak ada stok di unit manapun</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatQty(s.total_quantity)}</td>
+                                            <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400">{formatQty(s.total_quantity_return)}</td>
+                                        </tr>
+                                    ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
