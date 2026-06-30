@@ -33,14 +33,13 @@ export default function OwnerDashboard({ stats, trends }) {
 
             <div className="space-y-6">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <StatCard icon="storefront" color="bg-orange-100 text-orange-600 dark:bg-orange-950/20 dark:text-orange-400" label="Total Pendapatan Jihan's" value={formatRupiah(stats.jihans_revenue)} sub="Akumulasi transaksi lunas" />
                     <StatCard icon="cake" color="bg-amber-100 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400" label="Total Pendapatan Hendhys" value={formatRupiah(stats.hendhys_revenue)} sub="Akumulasi transaksi lunas" />
-                    <StatCard icon="inventory_2" color="bg-teal-100 text-teal-600 dark:bg-teal-950/20 dark:text-teal-400" label="Total Item di Gudang" value={formatQty(stats.total_items_gudang)} sub="Saldo kuantitas inventori" />
                 </div>
 
                 {/* Entity Navigation Cards */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <Link href={route('owner.jihans')} className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-orange-300 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-orange-700">
                         <div>
                             <div className="flex items-center gap-3"><Icon name="storefront" className="text-[28px] text-orange-500" /><h3 className="font-bold text-slate-800 dark:text-white/95">Jihan's Food</h3></div>
@@ -54,13 +53,6 @@ export default function OwnerDashboard({ stats, trends }) {
                             <p className="mt-3 text-sm text-slate-500 dark:text-gray-400">Pantau pergerakan stok, transaksi penjualan cabang, dan pusat Hendhys.</p>
                         </div>
                         <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-amber-600 group-hover:text-amber-500">Lihat Detail <Icon name="arrow_forward" className="text-[14px]" /></span>
-                    </Link>
-                    <Link href={route('owner.gudang')} className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-teal-300 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-teal-700">
-                        <div>
-                            <div className="flex items-center gap-3"><Icon name="warehouse" className="text-[28px] text-teal-500" /><h3 className="font-bold text-slate-800 dark:text-white/95">Gudang Utama</h3></div>
-                            <p className="mt-3 text-sm text-slate-500 dark:text-gray-400">Kelola inventori pusat, mutasi keluar masuk barang, dan purchase order (PO) supplier.</p>
-                        </div>
-                        <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-teal-600 group-hover:text-teal-500">Lihat Detail <Icon name="arrow_forward" className="text-[14px]" /></span>
                     </Link>
                 </div>
 
