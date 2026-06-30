@@ -19,12 +19,14 @@ class TransferRequestController extends Controller
 
     public function index(Request $request)
     {
-        // Hanya Pusat yang bisa request ke Gudang
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $user = auth()->user();
+        $isPusat = $user->branch->type === 'pusat';
 
         $q = TransferRequest::where('from_entity', 'hendhys')->with(['creator', 'approver', 'transferOuts']);
+
+        if (!$isPusat) {
+            $q->where('branch_id', $user->branch_id);
+        }
 
         if ($status = $request->status) {
             $q->where('status', $status);
@@ -37,7 +39,7 @@ class TransferRequestController extends Controller
 
         // Load incoming transfers from Gudang with status 'sent'
         $incoming = \App\Models\TransferOut::where('to_entity', 'hendhys')
-            ->where('branch_id', auth()->user()->branch_id)
+            ->where('branch_id', $user->branch_id)
             ->where('status', 'sent')
             ->with(['creator', 'request'])
             ->get()
@@ -58,10 +60,6 @@ class TransferRequestController extends Controller
 
     public function create()
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
-
         $products = Product::where('status', 'active')
             ->where('source_type', 'purchased')
             ->visibleInGudang()
@@ -80,10 +78,6 @@ class TransferRequestController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
-
         $request->validate([
             'date' => 'required|date',
             'notes' => 'nullable|string',
@@ -100,7 +94,7 @@ class TransferRequestController extends Controller
 
         if ($producedNames->isNotEmpty()) {
             return back()->withInput()->withErrors([
-                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa diminta dari Gudang: '
+                'items' => 'Produk berikut adalah produk produksi sendiri and tidak bisa diminta dari Gudang: '
                            . $producedNames->implode(', '),
             ]);
         }
@@ -139,7 +133,11 @@ class TransferRequestController extends Controller
 
     public function show(TransferRequest $transferRequest)
     {
-        if (auth()->user()->branch->type !== 'pusat' || $transferRequest->from_entity !== 'hendhys') {
+        if ($transferRequest->from_entity !== 'hendhys') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (!auth()->user()->hasRole('owner') && auth()->user()->branch_id !== $transferRequest->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 
