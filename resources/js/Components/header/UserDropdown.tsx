@@ -62,13 +62,55 @@ export default function UserDropdown() {
             {user?.email || ""}
           </span>
           {user?.roles && user.roles.length > 0 && (
-            <span className="mt-1.5 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 uppercase tracking-wider">
-              {user.roles[0].replace('_', ' ')}
-            </span>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              <span className="inline-block rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 uppercase tracking-wider">
+                {user.roles[0].replace('_', ' ')}
+              </span>
+              {user?.branch?.name && (
+                <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-400 uppercase tracking-wider">
+                  📍 {user.branch.name}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
         <ul className="flex flex-col gap-1 pt-3 pb-3 border-b border-gray-200 dark:border-gray-800">
+          {user?.roles?.some((r) => ['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys', 'kasir_jihans', 'admin_jihans', 'super_admin_jihans'].includes(r)) && (
+            <li>
+              <DropdownItem
+                onItemClick={closeDropdown}
+                tag="a"
+                href="/select-branch"
+                className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              >
+                <svg
+                  className="stroke-gray-500 group-hover:stroke-gray-700 dark:stroke-gray-400 dark:group-hover:stroke-gray-300"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9 22V12H15V22"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Ganti Cabang Aktif
+              </DropdownItem>
+            </li>
+          )}
           <li>
             <DropdownItem
               onItemClick={closeDropdown}
