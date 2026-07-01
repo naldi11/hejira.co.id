@@ -56,19 +56,33 @@ class FixRetroactiveShifts extends Command
                 $user = User::find($userId);
                 if (!$user) continue;
 
-                $firstTrx = $trxs->first();
-                $lastTrx = $trxs->last();
-
-                // Check if shift already exists for this user on this date
-                $exists = CashierShift::where('entity', $entity)
+                $existingShifts = CashierShift::where('entity', $entity)
                     ->where('user_id', $userId)
                     ->whereDate('opened_at', $date)
-                    ->exists();
+                    ->get();
 
-                if ($exists) {
-                    $this->warn("Shift already exists for {$user->name} on {$date}. Skipping.");
+                // Filter out transactions that belong to an existing shift
+                $orphanTrxs = $trxs->filter(function($trx) use ($existingShifts) {
+                    foreach ($existingShifts as $shift) {
+                        $trxTime = Carbon::parse($trx->created_at);
+                        $start = Carbon::parse($shift->opened_at);
+                        $end = $shift->closed_at ? Carbon::parse($shift->closed_at) : Carbon::now();
+                        
+                        // Check if transaction is within the shift's timeframe
+                        if ($trxTime->betweenIncluded($start, $end)) {
+                            return false; // Not an orphan, belongs to this shift
+                        }
+                    }
+                    return true; // It's an orphan
+                });
+
+                if ($orphanTrxs->isEmpty()) {
+                    $this->warn("No orphan transactions for {$user->name} on {$date}. All transactions are already in shifts.");
                     continue;
                 }
+
+                $firstTrx = $orphanTrxs->first();
+                $lastTrx = $orphanTrxs->last();
 
                 $openedAt = Carbon::parse($firstTrx->created_at)->subMinutes(5);
                 $closedAt = Carbon::parse($lastTrx->created_at)->addMinutes(5);
