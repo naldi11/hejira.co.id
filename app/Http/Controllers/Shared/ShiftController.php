@@ -130,6 +130,9 @@ class ShiftController extends Controller
 
         $closedAt = $shift->closed_at ?? now();
 
+        // Extra column exists in hendhys_transaction_payments for specific type tracking
+        $hasPtypeCol = ($entity === 'hendhys');
+
         // 1. Rincian Metode Pembayaran
         $paymentSummary = DB::table($paymentTable . ' as p')
             ->join($transactionTable . ' as t', 't.id', '=', 'p.transaction_id')
@@ -141,9 +144,20 @@ class ShiftController extends Controller
                 COALESCE(SUM(CASE
                     WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
                     WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
+                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'tunai' THEN LEAST(p.amount, t.grand_total)" : "") . "
                     ELSE 0 END), 0) as tunai,
-                COALESCE(SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END), 0) as kartu_debit,
-                COALESCE(SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END), 0) as kartu_kredit,
+                COALESCE(SUM(CASE
+                    WHEN pm.type = 'transfer' THEN p.amount
+                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'transfer' THEN p.amount" : "") . "
+                    ELSE 0 END), 0) as transfer,
+                COALESCE(SUM(CASE
+                    WHEN pm.type = 'kartu_debit' THEN p.amount
+                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_debit' THEN p.amount" : "") . "
+                    ELSE 0 END), 0) as kartu_debit,
+                COALESCE(SUM(CASE
+                    WHEN pm.type = 'kartu_kredit' THEN p.amount
+                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_kredit' THEN p.amount" : "") . "
+                    ELSE 0 END), 0) as kartu_kredit,
                 COALESCE(SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END), 0) as kredit
             ")
             ->first();

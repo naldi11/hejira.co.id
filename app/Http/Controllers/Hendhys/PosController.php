@@ -207,6 +207,7 @@ class PosController extends Controller
                     'transaction_id'    => $transaction->id,
                     'payment_method_id' => $pmId,
                     'payment_method'    => $paymentMethodLegacy,
+                    'payment_type'      => $paymentType,
                     'amount'            => $request->amount_paid,
                     'bank_name'         => null,
                     'reference_number'  => $request->reference_number

@@ -23,9 +23,20 @@ class ReportController extends Controller
                 SUM(CASE
                     WHEN pm.type = 'tunai' THEN p.amount
                     WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_type = 'tunai' THEN p.amount
                     ELSE 0 END) as tunai,
-                SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
-                SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
+                SUM(CASE
+                    WHEN pm.type = 'transfer' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_type = 'transfer' THEN p.amount
+                    ELSE 0 END) as transfer,
+                SUM(CASE
+                    WHEN pm.type = 'kartu_debit' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_debit' THEN p.amount
+                    ELSE 0 END) as kartu_debit,
+                SUM(CASE
+                    WHEN pm.type = 'kartu_kredit' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_kredit' THEN p.amount
+                    ELSE 0 END) as kartu_kredit
             ")
             ->groupBy('p.transaction_id');
 

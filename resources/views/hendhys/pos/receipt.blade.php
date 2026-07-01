@@ -206,9 +206,20 @@
             </tr>
             @endif
 
-            @php $payment = $transaction->payments->first(); @endphp
+            @php
+                $payment = $transaction->payments->first();
+                $ptypeLabels = [
+                    'tunai'        => 'Tunai',
+                    'transfer'     => 'Transfer',
+                    'kartu_debit'  => 'Debit Card',
+                    'kartu_kredit' => 'Kartu Kredit',
+                ];
+                $ptype = $payment?->payment_type ?? ($payment?->payment_method === 'transfer' ? 'transfer' : 'tunai');
+                $ptypeLabel = $ptypeLabels[$ptype] ?? 'Tunai';
+                $isTunai = $ptype === 'tunai';
+            @endphp
             <tr>
-                <td colspan="2">Tunai</td>
+                <td colspan="2">{{ $ptypeLabel }}</td>
                 <td>=</td>
                 <td class="text-right font-bold">
                     {{ number_format($payment ? $payment->amount : $transaction->grand_total, 0, ',', '.') }}
@@ -224,7 +235,7 @@
                 <td colspan="2">Kembali</td>
                 <td>=</td>
                 <td class="text-right font-bold">
-                    {{ number_format($payment ? max(0, $payment->amount - $transaction->grand_total) : 0, 0, ',', '.') }}
+                    {{ $isTunai ? number_format($payment ? max(0, $payment->amount - $transaction->grand_total) : 0, 0, ',', '.') : 0 }}
                 </td>
             </tr>
         </table>

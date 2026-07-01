@@ -354,14 +354,24 @@
         </table>
     </div>
 
-    {{-- ===== TOTALS ===== --}}
+    @php
+        $payment = $transaction->payments->first();
+        $ptypeLabels = [
+            'tunai'        => 'Tunai',
+            'transfer'     => 'Transfer',
+            'kartu_debit'  => 'Debit Card',
+            'kartu_kredit' => 'Kartu Kredit',
+        ];
+        $ptype = $payment?->payment_type ?? ($payment?->payment_method === 'transfer' ? 'transfer' : 'tunai');
+        $ptypeLabel = $ptypeLabels[$ptype] ?? 'Tunai';
+        $isTunai = $ptype === 'tunai';
+    @endphp
     <div class="totals-section">
         <div class="payment-status">
-            @php $payment = $transaction->payments->first(); @endphp
             @if($payment)
                 <div class="status-badge">LUNAS</div>
                 <div style="font-size: 9px; color: #6b7280; font-weight: 700">
-                    METODE: {{ strtoupper($payment->method->name ?? $payment->payment_method) }}
+                    METODE: {{ strtoupper($ptypeLabel) }}
                 </div>
             @else
                 <div class="status-badge" style="border-color: #dc2626; color: #dc2626;">PENDING</div>
@@ -391,15 +401,17 @@
             </div>
             @if($payment)
             <div class="totals-row" style="margin-top: 4px">
-                <span class="label">Tunai</span>
+                <span class="label">{{ $ptypeLabel }}</span>
                 <span class="value">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
             </div>
+            @if($isTunai)
             <div class="totals-row">
                 <span class="label">Kembalian</span>
                 <span class="value" style="color:#059669">
                     Rp {{ number_format(max(0, $payment->amount - $transaction->grand_total), 0, ',', '.') }}
                 </span>
             </div>
+            @endif
             @endif
         </div>
     </div>

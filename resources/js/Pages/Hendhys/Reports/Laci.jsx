@@ -519,6 +519,12 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                     </td>
                                                 </tr>
                                                 <tr>
+                                                    <td className="p-3 font-medium">Transfer Bank</td>
+                                                    <td className="p-3 text-right font-medium">
+                                                        {formatRupiah(detailData.payment_summary.transfer ?? 0)}
+                                                    </td>
+                                                </tr>
+                                                <tr>
                                                     <td className="p-3 font-medium">EDC / Kartu Debit</td>
                                                     <td className="p-3 text-right font-medium">
                                                         {formatRupiah(detailData.payment_summary.kartu_debit)}
@@ -543,6 +549,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                     <td className="p-3 text-right">
                                                         {formatRupiah(
                                                             parseFloat(detailData.payment_summary.tunai) +
+                                                            parseFloat(detailData.payment_summary.transfer ?? 0) +
                                                             parseFloat(detailData.payment_summary.kartu_debit) +
                                                             parseFloat(detailData.payment_summary.kartu_kredit) +
                                                             parseFloat(detailData.payment_summary.kredit)
