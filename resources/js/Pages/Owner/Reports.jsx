@@ -84,7 +84,8 @@ export default function OwnerReports({ reportData, filters }) {
                                 type="date"
                                 value={form.date_from}
                                 onChange={(e) => setForm({...form, date_from: e.target.value})}
-                                className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-transparent dark:text-white"
+                                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white min-w-[150px] cursor-pointer"
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -93,7 +94,8 @@ export default function OwnerReports({ reportData, filters }) {
                                 type="date"
                                 value={form.date_to}
                                 onChange={(e) => setForm({...form, date_to: e.target.value})}
-                                className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-transparent dark:text-white"
+                                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white min-w-[150px] cursor-pointer"
                             />
                         </div>
                         <button type="submit" className="px-5 py-1.8 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg">Terapkan Filter</button>
