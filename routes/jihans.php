@@ -88,14 +88,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::get('production/{production}/faktur', [\App\Http\Controllers\Jihans\ProductionController::class, 'printFaktur'])->name('production.faktur');
             Route::resource('production', \App\Http\Controllers\Jihans\ProductionController::class)->except(['edit', 'update', 'destroy']);
 
-            // Request ke Gudang
-            Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy', 'show']); // show is shared/parent
-            Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form');
-            Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive');
-            Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print');
 
-            // Retur ke Gudang
-            Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
             // Laporan Bisnis (Minus PDF route which is now shared)
             Route::prefix('reports')->name('reports.')->group(function () {
@@ -107,8 +100,14 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             });
         });
 
-        // BAST Print & show of transfer-requests is shared
+        // Shared: Request ke Gudang & Retur ke Gudang (Kasir & Admin)
+        Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy', 'show']);
+        Route::get('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->name('transfer-requests.receive-form');
+        Route::post('transfer-requests/{transfer_out}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->name('transfer-requests.receive');
+        Route::get('transfer-requests/{transfer_out}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->name('transfer-requests.print');
         Route::get('transfer-requests/{transferRequest}', [TransferRequestController::class, 'show'])->name('transfer-requests.show');
+
+        Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
     });
 

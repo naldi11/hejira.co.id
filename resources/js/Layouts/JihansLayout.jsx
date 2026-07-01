@@ -61,7 +61,7 @@ export default function JihansLayout({ pageTitle, children }) {
         { name: 'Stok Tersedia', path: route('jihans.stock.index') }
     ];
 
-    if (isAdmin) {
+    if (isKasir || isAdmin) {
         inventorySubItems.push({ name: 'Request ke Gudang', path: route('jihans.transfer-requests.index') });
         inventorySubItems.push({ name: 'Return ke Gudang', path: route('jihans.returns-to-gudang.index') });
     }
