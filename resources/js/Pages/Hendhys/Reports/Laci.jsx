@@ -177,6 +177,20 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                         Uang Diharapkan (Saat Ini): <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatRupiah(activeShift.expected_cash)}</span>
                                     </p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2 border-t border-amber-200/50 dark:border-amber-900/30">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Transfer Bank: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(activeShift.payment_summary?.transfer ?? 0)}</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Kartu Debit: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(activeShift.payment_summary?.kartu_debit ?? 0)}</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Kartu Kredit: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(activeShift.payment_summary?.kartu_kredit ?? 0)}</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Kredit/Bon: <span className="font-semibold text-rose-600 dark:text-rose-400">{formatRupiah(activeShift.payment_summary?.kredit ?? 0)}</span>
+                                        </p>
+                                    </div>
                                 </div>
                                 <div>
                                     <button 
@@ -248,15 +262,18 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <th className="px-4 py-3">Tutup Shift</th>
                                     <th className="px-4 py-3 text-center">Status</th>
                                     <th className="px-4 py-3 text-right">Modal Awal</th>
-                                    <th className="px-4 py-3 text-right">Expected Cash</th>
-                                    <th className="px-4 py-3 text-right">Actual Cash</th>
+                                    <th className="px-4 py-3 text-right text-emerald-600">Expected Cash</th>
+                                    <th className="px-4 py-3 text-right">Transfer</th>
+                                    <th className="px-4 py-3 text-right">Debit</th>
+                                    <th className="px-4 py-3 text-right text-rose-500">Kredit (Bon)</th>
+                                    <th className="px-4 py-3 text-right font-bold">Actual Cash</th>
                                     <th className="px-4 py-3 text-right">Selisih</th>
                                     <th className="px-4 py-3 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {rows.data?.length === 0 ? (
-                                    <EmptyState colSpan={9} icon="assessment" message="Belum ada riwayat shift laci kasir." />
+                                    <EmptyState colSpan={12} icon="assessment" message="Belum ada riwayat shift laci kasir." />
                                 ) : (
                                     rows.data?.map((r, i) => {
                                         const isClosed = r.status === 'closed';
@@ -264,9 +281,9 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
 
                                         return (
                                             <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
-                                                <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{r.user?.name ?? 'Sistem'}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{formatDateTime(r.opened_at)}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{isClosed ? formatDateTime(r.closed_at) : '-'}</td>
+                                                <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{r.user?.name ?? 'Sistem'}</td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(r.opened_at)}</td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{isClosed ? formatDateTime(r.closed_at) : '-'}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
                                                         isClosed 
@@ -276,14 +293,23 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                         {isClosed ? 'Selesai' : 'Aktif'}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">{formatRupiah(r.starting_cash)}</td>
-                                                <td className="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">
+                                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(r.starting_cash)}</td>
+                                                <td className="px-4 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                                                     {formatRupiah(r.expected_cash)}
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">
+                                                <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                                    {formatRupiah(r.payment_summary?.transfer ?? 0)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                                    {formatRupiah(r.payment_summary?.kartu_debit ?? 0)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right text-rose-500 dark:text-rose-400 whitespace-nowrap">
+                                                    {formatRupiah(r.payment_summary?.kredit ?? 0)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                                     {isClosed ? formatRupiah(r.actual_cash) : '-'}
                                                 </td>
-                                                <td className={`px-4 py-3 text-right font-bold ${
+                                                <td className={`px-4 py-3 text-right font-bold whitespace-nowrap ${
                                                     hasDiscrepancy 
                                                         ? (r.discrepancy > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600 dark:text-rose-400') 
                                                         : 'text-gray-700 dark:text-gray-300'
@@ -293,7 +319,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                 <td className="px-4 py-3 text-center">
                                                     <button 
                                                         onClick={() => handleViewDetail(r)}
-                                                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold"
+                                                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold whitespace-nowrap"
                                                     >
                                                         <Icon name="visibility" className="text-[16px]" /> Detail
                                                     </button>

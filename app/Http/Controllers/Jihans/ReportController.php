@@ -57,6 +57,8 @@ class ReportController extends Controller
             ->withQueryString();
 
         foreach ($rows as $row) {
+            $summary = $row->calculatePaymentSummary();
+            $row->payment_summary = $summary;
             if ($row->status === 'open') {
                 $row->expected_cash = $row->calculateExpectedCashSoFar();
             }
@@ -68,6 +70,7 @@ class ReportController extends Controller
 
         if ($activeShift) {
             $activeShift->expected_cash = $activeShift->calculateExpectedCashSoFar();
+            $activeShift->payment_summary = $activeShift->calculatePaymentSummary();
         }
 
         return Inertia::render('Jihans/Reports/Laci', [
