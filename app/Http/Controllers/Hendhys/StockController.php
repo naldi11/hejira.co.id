@@ -41,9 +41,9 @@ class StockController extends Controller
                 });
             }
 
-            $stocks = $q->when($lowStockOnly, fn ($q) => $q->whereRaw(
-                    'COALESCE(hendhys_stock_pusat.quantity, 0) < master_products.stock_min OR COALESCE(hendhys_stock_pusat.quantity, 0) = 0'
-                ))
+            $stocks = $q->when($lowStockOnly, fn ($q) => $q
+                    ->whereRaw('COALESCE(hendhys_stock_pusat.quantity, 0) < master_products.stock_min')
+                    ->where('master_products.stock_min', '>', 0))
                 ->when($lowStockOnly, function ($q) {
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_pusat.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_pusat.quantity', 'desc');
@@ -78,9 +78,9 @@ class StockController extends Controller
 
             $branchStocks = $branchStocksQuery
                 ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock', 'hendhys_stock_branch.branch_id')
-                ->when($lowStockOnly, fn ($q) => $q->whereRaw(
-                    'COALESCE(hendhys_stock_branch.quantity, 0) < master_products.stock_min OR COALESCE(hendhys_stock_branch.quantity, 0) = 0'
-                ))
+                ->when($lowStockOnly, fn ($q) => $q
+                    ->whereRaw('COALESCE(hendhys_stock_branch.quantity, 0) < master_products.stock_min')
+                    ->where('master_products.stock_min', '>', 0))
                 ->when($lowStockOnly, function ($q) {
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_branch.quantity', 'desc');
@@ -116,9 +116,9 @@ class StockController extends Controller
                 });
             }
 
-            $stocks = $q->when($lowStockOnly, fn ($q) => $q->whereRaw(
-                    'COALESCE(hendhys_stock_branch.quantity, 0) < master_products.stock_min OR COALESCE(hendhys_stock_branch.quantity, 0) = 0'
-                ))
+            $stocks = $q->when($lowStockOnly, fn ($q) => $q
+                    ->whereRaw('COALESCE(hendhys_stock_branch.quantity, 0) < master_products.stock_min')
+                    ->where('master_products.stock_min', '>', 0))
                 ->when($lowStockOnly, function ($q) {
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_branch.quantity', 'desc');

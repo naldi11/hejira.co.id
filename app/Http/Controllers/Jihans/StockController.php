@@ -27,9 +27,9 @@ class StockController extends Controller
                 ->where('master_products.name', 'like', "%{$request->search}%")
                 ->orWhere('master_products.code', 'like', "%{$request->search}%")))
             ->when($request->filled('jenis'), fn ($q) => $q->where('master_products.jenis', $request->jenis))
-            ->when($lowStockOnly, fn ($q) => $q->whereRaw(
-                'COALESCE(jihans_retail_stock.quantity, 0) < master_products.stock_min OR COALESCE(jihans_retail_stock.quantity, 0) = 0'
-            ))
+            ->when($lowStockOnly, fn ($q) => $q
+                ->whereRaw('COALESCE(jihans_retail_stock.quantity, 0) < master_products.stock_min')
+                ->where('master_products.stock_min', '>', 0))
             ->when($lowStockOnly, function ($q) {
                 $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(jihans_retail_stock.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                   ->orderBy('jihans_retail_stock.quantity', 'desc');
