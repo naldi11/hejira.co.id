@@ -26,20 +26,34 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             ->middleware('role:kasir_jihans|admin_jihans|super_admin_jihans')
             ->name('reports.laci');
 
+        // Shift Control Routes
+        Route::middleware('role:kasir_jihans|admin_jihans|super_admin_jihans')->group(function () {
+            Route::post('/shifts/open', [\App\Http\Controllers\Shared\ShiftController::class, 'open'])->name('shifts.open');
+            Route::post('/shifts/close', [\App\Http\Controllers\Shared\ShiftController::class, 'close'])->name('shifts.close');
+            Route::get('/shifts/status', [\App\Http\Controllers\Shared\ShiftController::class, 'status'])->name('shifts.status');
+            Route::get('/shifts/{shift}/details', [\App\Http\Controllers\Shared\ShiftController::class, 'show'])->name('shifts.details');
+            
+            // PDF Export route (accessible by Kasir & Admin)
+            Route::get('/reports/pdf/{type}', [\App\Http\Controllers\Jihans\ReportController::class, 'pdf'])->name('reports.pdf');
+        });
+
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
         Route::middleware(['role:kasir_jihans|super_admin_jihans'])->group(function () {
-            // POS Kasir
-            Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
-            Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
-            Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+            // POS routes gated by active shift
+            Route::middleware('check.active.shift')->group(function () {
+                // POS Kasir
+                Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+                Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
+                Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
 
-            // Transaksi Pending
-            Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');
-            Route::post('/pending', [PendingController::class, 'store'])->name('pending.store');
-            Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
-            Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
+                // Transaksi Pending
+                Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');
+                Route::post('/pending', [PendingController::class, 'store'])->name('pending.store');
+                Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
+                Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
+            });
         });
 
         // ==========================================
@@ -83,14 +97,13 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             // Retur ke Gudang
             Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
-            // Laporan Bisnis
+            // Laporan Bisnis (Minus PDF route which is now shared)
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/',           [\App\Http\Controllers\Jihans\ReportController::class, 'index'])->name('index');
                 Route::get('/harian',     [\App\Http\Controllers\Jihans\ReportController::class, 'harian'])->name('harian');
                 Route::get('/mingguan',   [\App\Http\Controllers\Jihans\ReportController::class, 'mingguan'])->name('mingguan');
                 Route::get('/bulanan',    [\App\Http\Controllers\Jihans\ReportController::class, 'bulanan'])->name('bulanan');
                 Route::get('/pelanggan',  [\App\Http\Controllers\Jihans\ReportController::class, 'pelanggan'])->name('pelanggan');
-                Route::get('/pdf/{type}', [\App\Http\Controllers\Jihans\ReportController::class, 'pdf'])->name('pdf');
             });
         });
 

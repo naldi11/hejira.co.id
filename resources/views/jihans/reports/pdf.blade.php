@@ -233,6 +233,71 @@
             </table>
         </div>
         @endforeach
+    @elseif($type === 'laci')
+        {{-- SHIFT SUMMARY Layout --}}
+        <table class="data">
+            <colgroup>
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+                <col style="width: 10%;">
+                <col style="width: 12%;">
+                <col style="width: 12%;">
+                <col style="width: 12%;">
+                <col style="width: 9%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Kasir</th>
+                    <th>Waktu Buka</th>
+                    <th>Waktu Tutup</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-right">Modal Awal</th>
+                    <th class="text-right">Expected Cash</th>
+                    <th class="text-right">Actual Cash</th>
+                    <th class="text-right">Selisih</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($rows as $row)
+                <tr>
+                    <td>{{ strtoupper($row->user->name ?? 'Sistem') }}</td>
+                    <td>{{ $row->opened_at ? $row->opened_at->format('d/m/Y H:i') : '-' }}</td>
+                    <td>{{ $row->closed_at ? $row->closed_at->format('d/m/Y H:i') : '-' }}</td>
+                    <td class="text-center">{{ strtoupper($row->status) }}</td>
+                    <td class="text-right">{{ number_format($row->starting_cash, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ $row->status === 'closed' ? number_format($row->expected_cash, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $row->status === 'closed' ? number_format($row->actual_cash, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right font-bold">{{ $row->status === 'closed' ? number_format($row->discrepancy, 0, ',', '.') : '-' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="4" class="text-left" style="font-style: italic;">TOTAL CLOSED SHIFTS:</td>
+                    <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('starting_cash'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('expected_cash'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('actual_cash'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('discrepancy'), 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <br><br><br>
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+            <tr>
+                <td style="width: 50%; text-align: center;">
+                    Dibuat Oleh,<br><br><br><br>
+                    <strong>( ............................ )</strong><br>
+                    Kasir
+                </td>
+                <td style="width: 50%; text-align: center;">
+                    Diverifikasi Oleh,<br><br><br><br>
+                    <strong>( ............................ )</strong><br>
+                    Supervisor / Toko
+                </td>
+            </tr>
+        </table>
     @else
         {{-- SUMMARY Layout --}}
         <table class="data">

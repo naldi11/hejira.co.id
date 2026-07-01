@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission'=> \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'check.entity'      => \App\Http\Middleware\CheckEntity::class,
             'check.branch'      => \App\Http\Middleware\CheckBranch::class,
+            'check.active.shift'=> \App\Http\Middleware\CheckActiveShift::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

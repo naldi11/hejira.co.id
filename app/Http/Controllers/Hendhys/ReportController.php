@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Inertia\Inertia;
+use App\Models\CashierShift;
 
 class ReportController extends Controller
 {
@@ -44,24 +45,28 @@ class ReportController extends Controller
 
     public function laci(Request $request)
     {
-        $rows = $this->buildSummaryQuery($request, auth()->id())
-            ->selectRaw("
-                t.date,
-                COUNT(*)                                                                   as jumlah_transaksi,
-                SUM(t.grand_total)                                                         as total_transaksi,
-                SUM(CASE WHEN t.status = 'pending'     THEN t.grand_total ELSE 0 END)     as kredit,
-                COALESCE(SUM(pay_agg.tunai), 0)                                            as tunai,
-                COALESCE(SUM(pay_agg.kartu_debit), 0)                                     as kartu_debit,
-                COALESCE(SUM(pay_agg.kartu_kredit), 0)                                    as kartu_kredit
-            ")
-            ->groupBy('t.date')
-            ->orderBy('t.date', 'desc')
+        $user = auth()->user();
+        $isPusatOrAdmin = $user->hasRole('admin_hendhys') || $user->hasRole('super_admin_hendhys');
+
+        $query = CashierShift::with('user')
+            ->where('entity', 'hendhys')
+            ->when(!$isPusatOrAdmin, fn($q) => $q->where('user_id', $user->id))
+            ->when($user->branch && $user->branch->type !== 'pusat', fn($q) => $q->where('branch_id', $user->branch_id))
+            ->when($request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to));
+
+        $rows = $query->orderBy('opened_at', 'desc')
             ->paginate(30)
             ->withQueryString();
+
+        $activeShift = CashierShift::where('user_id', $user->id)
+            ->where('status', 'open')
+            ->first();
 
         return Inertia::render('Hendhys/Reports/Laci', [
             'rows'    => $rows,
             'filters' => $request->only('date_from', 'date_to'),
+            'activeShift' => $activeShift,
         ]);
     }
 
@@ -204,8 +209,11 @@ class ReportController extends Controller
 
     public function pdf(Request $request, $type)
     {
-        // ⏭️ PDF export tetap Blade/DomPDF
-        $user    = auth()->user();
+        $user = auth()->user();
+        if ($user->hasRole('kasir_hendhys') && $type !== 'laci') {
+            abort(403, 'Akses ditolak.');
+        }
+
         $branch  = $user->branch;
         $title   = "Laporan " . ucfirst($type);
         $rows    = collect();
@@ -258,19 +266,14 @@ class ReportController extends Controller
         } else {
             $query = null;
             if ($type === 'laci') {
-                $title = "Laporan Laci Kasir: " . $user->name;
-                $query = $this->buildSummaryQuery($request, $user->id)
-                    ->selectRaw("
-                        t.date,
-                        COUNT(*) as jumlah_transaksi,
-                        SUM(t.grand_total) as total_transaksi,
-                        COALESCE(SUM(pay_agg.tunai), 0) as tunai,
-                        SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END) as kredit,
-                        COALESCE(SUM(pay_agg.kartu_debit), 0) as kartu_debit,
-                        COALESCE(SUM(pay_agg.kartu_kredit), 0) as kartu_kredit
-                    ")
-                    ->groupBy('t.date')
-                    ->orderBy('t.date', 'desc');
+                $title = "Laporan Sesi Laci Kasir";
+                $query = CashierShift::with('user')
+                    ->where('entity', 'hendhys')
+                    ->when($user->hasRole('kasir_hendhys'), fn($q) => $q->where('user_id', $user->id))
+                    ->when($user->branch && $user->branch->type !== 'pusat', fn($q) => $q->where('branch_id', $user->branch_id))
+                    ->when($request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
+                    ->when($request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to))
+                    ->orderBy('opened_at', 'desc');
             } elseif ($type === 'mingguan') {
                 $title = "Laporan Penjualan Mingguan";
                 $query = $this->buildSummaryQuery($request)

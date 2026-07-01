@@ -30,28 +30,41 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             ->middleware('role:kasir_hendhys|admin_hendhys|super_admin_hendhys')
             ->name('reports.laci');
 
+        // Shift Control Routes
+        Route::middleware('role:kasir_hendhys|admin_hendhys|super_admin_hendhys')->group(function () {
+            Route::post('/shifts/open', [\App\Http\Controllers\Shared\ShiftController::class, 'open'])->name('shifts.open');
+            Route::post('/shifts/close', [\App\Http\Controllers\Shared\ShiftController::class, 'close'])->name('shifts.close');
+            Route::get('/shifts/status', [\App\Http\Controllers\Shared\ShiftController::class, 'status'])->name('shifts.status');
+            Route::get('/shifts/{shift}/details', [\App\Http\Controllers\Shared\ShiftController::class, 'show'])->name('shifts.details');
+            
+            // PDF Export route (accessible by Kasir & Admin)
+            Route::get('/reports/pdf/{type}', [\App\Http\Controllers\Hendhys\ReportController::class, 'pdf'])->name('reports.pdf');
+        });
+
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
         Route::middleware(['role:kasir_hendhys|super_admin_hendhys'])->group(function () {
-            // POS (pusat & cabang)
-            Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
-            Route::get('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
-            Route::get('/pos/held-stock', [PosController::class, 'heldStock'])->name('pos.held-stock');
-            Route::get('/pos/customer-search', [PosController::class, 'customerSearch'])->name('pos.customer-search');
-            Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
-            Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
-            Route::get('/pos/{transaction}/invoice', [PosController::class, 'invoice'])->name('pos.invoice');
-
-            // Transaksi Pending
-            Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');
-            Route::post('/pending', [PendingController::class, 'store'])->name('pending.store');
-            Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
-            Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
-
             // Receive from Pusat (Cabang receiving)
             Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
             Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
+            
+            // POS routes gated by active shift
+            Route::middleware('check.active.shift')->group(function () {
+                Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+                Route::get('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
+                Route::get('/pos/held-stock', [PosController::class, 'heldStock'])->name('pos.held-stock');
+                Route::get('/pos/customer-search', [PosController::class, 'customerSearch'])->name('pos.customer-search');
+                Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
+                Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
+                Route::get('/pos/{transaction}/invoice', [PosController::class, 'invoice'])->name('pos.invoice');
+
+                // Transaksi Pending
+                Route::get('/pending', [PendingController::class, 'index'])->name('pending.index');
+                Route::post('/pending', [PendingController::class, 'store'])->name('pending.store');
+                Route::get('/pending/{pending}', [PendingController::class, 'show'])->name('pending.show');
+                Route::delete('/pending/{pending}', [PendingController::class, 'destroy'])->name('pending.destroy');
+            });
         });
 
         // ==========================================
@@ -88,14 +101,13 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
 
 
-            // Laporan Bisnis
+            // Laporan Bisnis (Minus PDF route which is now shared)
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/',          [\App\Http\Controllers\Hendhys\ReportController::class, 'index'])->name('index');
                 Route::get('/harian',    [\App\Http\Controllers\Hendhys\ReportController::class, 'harian'])->name('harian');
                 Route::get('/mingguan',  [\App\Http\Controllers\Hendhys\ReportController::class, 'mingguan'])->name('mingguan');
                 Route::get('/bulanan',   [\App\Http\Controllers\Hendhys\ReportController::class, 'bulanan'])->name('bulanan');
                 Route::get('/pelanggan', [\App\Http\Controllers\Hendhys\ReportController::class, 'pelanggan'])->name('pelanggan');
-                Route::get('/pdf/{type}', [\App\Http\Controllers\Hendhys\ReportController::class, 'pdf'])->name('pdf');
             });
         });
 
