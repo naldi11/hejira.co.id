@@ -58,24 +58,19 @@ export default function HendhysLayout({ pageTitle, children }) {
     }
 
     const inventorySubItems = [
-        { name: 'Stok Tersedia', path: route('hendhys.stock.index') }
+        { name: 'Stok Tersedia', path: route('hendhys.stock.index') },
+        { name: 'Penerimaan dari Produksi', path: route('hendhys.transfer-to-branch.index') },
+        { name: "Penerimaan dari Jihaan's Food", path: route('hendhys.transfer-to-branch.index', { tab: 'gudang' }) },
+        { name: "Request ke Jihaan's Food", path: route('hendhys.transfer-requests.index') },
     ];
 
     if (!isPusat) {
-        inventorySubItems.push({ name: 'Penerimaan dari Produksi', path: route('hendhys.transfer-to-branch.index') });
-        inventorySubItems.push({ name: "Penerimaan dari Jihaan's Food", path: route('hendhys.transfer-to-branch.index', { tab: 'gudang' }) });
+        inventorySubItems.push({ name: 'Request ke Hendhys Produksi', path: route('hendhys.branch-requests.index') });
     }
 
-    if (isPusat) {
-        if (isAdmin) {
-            inventorySubItems.push({ name: "Request ke Jihaan's Food", path: route('hendhys.transfer-requests.index') });
-            inventorySubItems.push({ name: "Return ke Jihaan's Food", path: route('hendhys.returns-to-gudang.index') });
-        }
-    } else {
-        // Cabang: Kasir & Admin can request/return to both Gudang and Hendhys Produksi
-        inventorySubItems.push({ name: "Request ke Jihaan's Food", path: route('hendhys.transfer-requests.index') });
-        inventorySubItems.push({ name: 'Request ke Hendhys Produksi', path: route('hendhys.branch-requests.index') });
-        inventorySubItems.push({ name: "Return ke Jihaan's Food", path: route('hendhys.returns-to-gudang.index') });
+    inventorySubItems.push({ name: "Return ke Jihaan's Food", path: route('hendhys.returns-to-gudang.index') });
+
+    if (!isPusat) {
         inventorySubItems.push({ name: 'Return ke Hendhys Produksi', path: route('hendhys.returns.index') });
     }
 

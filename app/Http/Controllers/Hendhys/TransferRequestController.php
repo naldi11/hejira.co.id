@@ -20,11 +20,11 @@ class TransferRequestController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isAdmin = $user->hasRole('admin_hendhys') || $user->hasRole('super_admin_hendhys');
 
         $q = TransferRequest::where('from_entity', 'hendhys')->with(['creator', 'approver', 'transferOuts']);
 
-        if (!$isPusat) {
+        if (!$isAdmin) {
             $q->where('branch_id', $user->branch_id);
         }
 

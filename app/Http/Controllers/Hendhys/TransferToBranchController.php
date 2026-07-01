@@ -35,7 +35,9 @@ class TransferToBranchController extends Controller
 
         $q = HendhysTransferToBranch::with(['branch', 'branchRequest', 'creator', 'receiver']);
 
-        if ($user->branch->type === 'cabang') {
+        $isAdmin = $user->hasRole('admin_hendhys') || $user->hasRole('super_admin_hendhys');
+
+        if (!$isAdmin) {
             $q->where('branch_id', $user->branch_id);
         }
 
@@ -52,7 +54,7 @@ class TransferToBranchController extends Controller
         $gudangQuery = TransferOut::where('to_entity', 'hendhys')
             ->with(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
 
-        if ($user->branch->type === 'cabang') {
+        if (!$isAdmin) {
             $gudangQuery->where('branch_id', $user->branch_id);
         }
 
