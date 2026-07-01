@@ -226,10 +226,10 @@ class TransferToBranchController extends Controller
                             'product'    => $detail->product?->name ?? '?',
                         ];
                         // Credit selisih kembali ke stok Gudang
-                        $this->stockService->creditGudang(
+                        $this->stockService->creditJihansGudang(
                             $detail->product_id,
                             $detail->unit_id,
-                            $selisih,
+                            (int) $selisih,
                             'return_receiving',
                             $transferOut->id,
                             $user->id,

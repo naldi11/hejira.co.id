@@ -26,6 +26,15 @@ class HendhysPosTest extends TestCase
         $user = User::factory()->create(['entity' => 'hendhys', 'branch_id' => $branch->id]);
         $user->assignRole('kasir_hendhys');
 
+        \App\Models\CashierShift::create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'entity' => 'hendhys',
+            'status' => 'open',
+            'opened_at' => now(),
+            'starting_cash' => 100000,
+        ]);
+
         return $user;
     }
 

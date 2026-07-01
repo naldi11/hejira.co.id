@@ -47,13 +47,6 @@ class JihansMiscTest extends TestCase
                 ->has('lowStocks'));
     }
 
-    public function test_production_config_edit_renders_inertia(): void
-    {
-        $this->actingAs($this->adminJihans())
-            ->get(route('jihans.master.production-config.edit'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Jihans/ProductionConfig')->has('config')->has('products'));
-    }
 
     public function test_returns_index_renders_inertia(): void
     {

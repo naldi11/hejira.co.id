@@ -22,6 +22,14 @@ class JihansTransferRequestTest extends TestCase
         $user = User::factory()->create(['entity' => 'jihans']);
         $user->assignRole('kasir_jihans');
 
+        \App\Models\CashierShift::create([
+            'user_id' => $user->id,
+            'entity' => 'jihans',
+            'status' => 'open',
+            'opened_at' => now(),
+            'starting_cash' => 100000,
+        ]);
+
         return $user;
     }
 
