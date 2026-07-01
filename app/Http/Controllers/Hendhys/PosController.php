@@ -63,7 +63,6 @@ class PosController extends Controller
         // Metode Pembayaran Aktif
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
             ->whereIn('entity_scope', ['hendhys', 'all'])
-            ->orderBy('sort_order')
             ->orderBy('name')
             ->get(['id', 'name', 'type', 'bank_name', 'account_number', 'account_name', 'image'])
             ->map(fn ($pm) => [
