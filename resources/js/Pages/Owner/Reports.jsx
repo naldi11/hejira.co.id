@@ -36,7 +36,7 @@ export default function OwnerReports({ reportData, filters }) {
     };
 
     // Calculate chart details
-    const maxVal = Math.max(...reportData.map(d => d.total), 1);
+    const maxVal = Math.max(...reportData.map(d => Math.max(d.jihans, d.hendhys)), 1);
     const chartHeight = 150;
     const chartWidth = 600;
     const barWidth = Math.max(10, (chartWidth - 80) / Math.max(1, reportData.length));
@@ -116,27 +116,34 @@ export default function OwnerReports({ reportData, filters }) {
                                 {/* Render bars for each data point */}
                                 {reportData.map((d, idx) => {
                                     const x = 50 + idx * barWidth;
-                                    const hTotal = (d.total / maxVal) * (chartHeight - 40);
                                     const hJihans = (d.jihans / maxVal) * (chartHeight - 40);
                                     const hHendhys = (d.hendhys / maxVal) * (chartHeight - 40);
 
+                                    // Capped bar widths for neat layout
+                                    const singleBarWidth = Math.min(20, (barWidth - 16) / 2);
+                                    const totalPairWidth = singleBarWidth * 2 + 4;
+                                    const startOffset = (barWidth - totalPairWidth) / 2;
+
                                     return (
                                         <g key={idx} className="group">
-                                            {/* Stacked bar or side by side. Stacked is clean: Jihans (orange) on bottom, Hendhys (amber) on top */}
+                                            {/* Jihans Bar (Orange) */}
                                             <rect
-                                                x={x + 4}
+                                                x={x + startOffset}
                                                 y={chartHeight - 20 - hJihans}
-                                                width={barWidth - 8}
-                                                height={hJihans}
+                                                width={singleBarWidth}
+                                                height={Math.max(1, hJihans)}
                                                 fill="#f97316"
+                                                rx="2"
                                                 className="transition-all hover:opacity-90"
                                             />
+                                            {/* Hendhys Bar (Amber) */}
                                             <rect
-                                                x={x + 4}
-                                                y={chartHeight - 20 - hJihans - hHendhys}
-                                                width={barWidth - 8}
-                                                height={hHendhys}
+                                                x={x + startOffset + singleBarWidth + 4}
+                                                y={chartHeight - 20 - hHendhys}
+                                                width={singleBarWidth}
+                                                height={Math.max(1, hHendhys)}
                                                 fill="#f59e0b"
+                                                rx="2"
                                                 className="transition-all hover:opacity-90"
                                             />
                                             
@@ -145,16 +152,16 @@ export default function OwnerReports({ reportData, filters }) {
                                                 x={x + barWidth / 2}
                                                 y={chartHeight - 5}
                                                 textAnchor="middle"
-                                                className="text-[8px] font-semibold fill-slate-400 dark:fill-gray-500"
+                                                className="text-[9px] font-semibold fill-slate-400 dark:fill-gray-500"
                                             >
                                                 {d.label}
                                             </text>
                                             
                                             {/* Tooltip on group hover */}
                                             <g className="hidden group-hover:block pointer-events-none">
-                                                <rect x={x - 20} y={chartHeight - 20 - hTotal - 35} width="80" height="30" rx="4" fill="#0f172a" />
-                                                <text x={x + 20} y={chartHeight - 20 - hTotal - 23} textAnchor="middle" fill="#fff" className="text-[7px] font-bold">Jihans: {formatQty(d.jihans / 1000)}k</text>
-                                                <text x={x + 20} y={chartHeight - 20 - hTotal - 13} textAnchor="middle" fill="#fff" className="text-[7px] font-bold">Hendhys: {formatQty(d.hendhys / 1000)}k</text>
+                                                <rect x={x + barWidth/2 - 60} y={chartHeight - 20 - Math.max(hJihans, hHendhys) - 38} width="120" height="32" rx="6" fill="#0f172a" />
+                                                <text x={x + barWidth/2} y={chartHeight - 20 - Math.max(hJihans, hHendhys) - 25} textAnchor="middle" fill="#fff" className="text-[7.5px] font-bold">Jihans: {formatRupiah(d.jihans)}</text>
+                                                <text x={x + barWidth/2} y={chartHeight - 20 - Math.max(hJihans, hHendhys) - 15} textAnchor="middle" fill="#fff" className="text-[7.5px] font-bold">Hendhys: {formatRupiah(d.hendhys)}</text>
                                             </g>
                                         </g>
                                     );
