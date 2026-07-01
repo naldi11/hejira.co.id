@@ -90,6 +90,7 @@ class FixRetroactiveShifts extends Command
                 $shift = new CashierShift();
                 $shift->entity = $entity;
                 $shift->user_id = $userId;
+                $shift->branch_id = $user->branch_id;
                 $shift->opened_at = $openedAt;
                 $shift->closed_at = $closedAt;
                 $shift->starting_cash = 0;
