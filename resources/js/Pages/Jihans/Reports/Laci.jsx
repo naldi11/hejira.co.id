@@ -369,17 +369,11 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
 
             {/* Modal Detail Sesi Shift */}
             <Modal show={detailModal} onClose={() => setDetailModal(false)} maxWidth="xl">
-                <div className="p-6">
+                <div>
                     <div className="flex items-center justify-between border-b pb-4 mb-4">
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 flex items-center gap-2">
                             <Icon name="assessment" className="text-orange-500" /> Detail Shift Kasir
                         </h3>
-                        <button 
-                            onClick={() => setDetailModal(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                            <Icon name="close" />
-                        </button>
                     </div>
 
                     {detailLoading ? (

@@ -28,7 +28,7 @@ export default function Modal({ show, onClose, title, subtitle, icon, children, 
                 onClick={onClose}
             />
 
-            <div className={`relative w-full ${maxWidth} overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl`}>
+            <div className={`relative w-full ${maxWidth} overflow-hidden rounded-none border border-slate-200 bg-white shadow-2xl`}>
                 <div className="absolute right-0 top-0 p-6">
                     <button
                         type="button"

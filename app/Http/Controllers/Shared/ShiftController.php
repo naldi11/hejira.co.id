@@ -91,8 +91,8 @@ class ShiftController extends Controller
             ->where('t.status', '!=', 'cancelled')
             ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
             ->sum(DB::raw("CASE
-                WHEN pm.type = 'tunai' THEN p.amount
-                WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
+                WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
                 ELSE 0 END"));
 
         $expectedCash = $shift->starting_cash + (int) $cashSales;
@@ -139,8 +139,8 @@ class ShiftController extends Controller
             ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
             ->selectRaw("
                 COALESCE(SUM(CASE
-                    WHEN pm.type = 'tunai' THEN p.amount
-                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN p.amount
+                    WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
+                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
                     ELSE 0 END), 0) as tunai,
                 COALESCE(SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END), 0) as kartu_debit,
                 COALESCE(SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END), 0) as kartu_kredit,
