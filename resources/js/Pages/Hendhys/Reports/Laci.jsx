@@ -150,25 +150,27 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                                        <h3 className="font-bold text-gray-800 dark:text-amber-100">Laci Kasir Sedang Tertutup</h3>
-                                    </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        Anda harus membuka shift dan menginput modal awal sebelum mulai melayani penjualan di POS.
-                                    </p>
-                                </div>
-                                <div>
-                                    <button 
-                                        onClick={() => setOpenShiftModal(true)}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm transition"
-                                    >
-                                        <Icon name="vpn_key" /> Buka Laci Kasir (Mulai Shift)
-                                    </button>
-                                </div>
-                            </div>
+                             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                                 <div className="flex gap-4">
+                                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-md shadow-rose-500/20">
+                                         <Icon name="lock" className="text-[24px]" />
+                                     </div>
+                                     <div className="space-y-1">
+                                         <h3 className="text-lg font-bold text-rose-800 dark:text-rose-200">Akses POS Terkunci — Laci Kasir Belum Dibuka</h3>
+                                         <p className="text-sm text-rose-650/90 dark:text-rose-300 max-w-2xl leading-relaxed">
+                                             Sesuai Prosedur Operasional Standar (SOP), Anda wajib memulai shift kerja dengan menginput uang modal awal terlebih dahulu. Fitur penjualan dan checkout kasir tetap dikunci hingga laci diaktifkan.
+                                         </p>
+                                     </div>
+                                 </div>
+                                 <div className="shrink-0">
+                                     <button 
+                                         onClick={() => setOpenShiftModal(true)}
+                                         className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all duration-200"
+                                     >
+                                         <Icon name="vpn_key" /> Buka Laci & Mulai Shift Kerja
+                                     </button>
+                                 </div>
+                             </div>
                         )}
                     </div>
                 )}

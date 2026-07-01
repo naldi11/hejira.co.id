@@ -28,7 +28,7 @@ class CheckActiveShift
                 }
                 
                 $laciRoute = ($user->entity === 'jihans') ? 'jihans.reports.laci' : 'hendhys.reports.laci';
-                return redirect()->route($laciRoute)->with('error', 'Laci kasir belum dibuka. Silakan masukkan modal awal untuk membuka shift.');
+                return redirect()->route($laciRoute)->with('error', 'Akses POS Dibatasi! Silakan lakukan pembukaan shift dengan menginput saldo modal awal terlebih dahulu.');
             }
         }
 
