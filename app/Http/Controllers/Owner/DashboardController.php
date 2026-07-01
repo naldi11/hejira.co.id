@@ -263,4 +263,186 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
+    public function detail(\Illuminate\Http\Request $request)
+    {
+        $mode = $request->query('mode', 'stock');
+        $unit = $request->query('unit', 'gudang');
+
+        $title = 'Detail';
+        $subtitle = '';
+        $list = [];
+
+        if ($mode === 'stock') {
+            if ($unit === 'gudang') {
+                $title = 'Jihans Gudang';
+                $list = JihansGudangStock::with('product')->get()
+                    ->map(fn($s) => [
+                        'code' => $s->product?->code ?? '-',
+                        'name' => $s->product?->name ?? '-',
+                        'quantity' => (float) $s->quantity,
+                        'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
+                    ])->values();
+                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
+            } elseif ($unit === 'retail') {
+                $title = 'Jihans Retail';
+                $list = DB::table('master_products as p')
+                    ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
+                    ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
+                    ->where('p.status', 'active')
+                    ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
+                    ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
+                    ->orderBy('p.name')
+                    ->get()
+                    ->map(fn($s) => [
+                        'code' => $s->code,
+                        'name' => $s->name,
+                        'quantity' => (float) $s->quantity,
+                        'unit' => $s->unit ?? 'PCS'
+                    ])->values();
+                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
+            } elseif ($unit === 'hendhys_pusat') {
+                $title = 'Hendhys Pusat';
+                $hendhysProducts = DB::table('master_products')
+                    ->where('status', 'active')
+                    ->where('visible_hendhys', true)
+                    ->orderBy('name')
+                    ->get();
+                $pusatStocks = DB::table('hendhys_stock_pusat')->get()->keyBy('product_id');
+                $list = $hendhysProducts->map(function ($p) use ($pusatStocks) {
+                    $pusatQty = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity : 0.0;
+                    return [
+                        'code' => $p->code,
+                        'name' => $p->name,
+                        'quantity' => $pusatQty,
+                        'unit' => 'PCS'
+                    ];
+                })->filter(fn($p) => $p['quantity'] > 0)->values();
+                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
+            } elseif (str_starts_with($unit, 'hendhys_cabang_')) {
+                $branchId = str_replace('hendhys_cabang_', '', $unit);
+                $branch = Branch::find($branchId);
+                $title = $branch ? $branch->name : 'Hendhys Cabang';
+                
+                $hendhysProducts = DB::table('master_products')
+                    ->where('status', 'active')
+                    ->where('visible_hendhys', true)
+                    ->orderBy('name')
+                    ->get();
+                $cabangStocks = DB::table('hendhys_stock_branch')
+                    ->where('branch_id', $branchId)
+                    ->get()
+                    ->keyBy('product_id');
+
+                $list = $hendhysProducts->map(function ($p) use ($cabangStocks) {
+                    $qty = isset($cabangStocks[$p->id]) ? (float) $cabangStocks[$p->id]->quantity : 0.0;
+                    $qty_ret = isset($cabangStocks[$p->id]) ? (float) $cabangStocks[$p->id]->quantity_return : 0.0;
+                    return [
+                        'code' => $p->code,
+                        'name' => $p->name,
+                        'quantity' => $qty,
+                        'quantity_return' => $qty_ret,
+                        'unit' => 'PCS'
+                    ];
+                })->filter(fn($p) => $p['quantity'] > 0 || $p['quantity_return'] > 0)->values();
+                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
+            } elseif ($unit === 'movements') {
+                $title = 'Mutasi Pergerakan Stok';
+                $list = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->take(100)->get()
+                    ->map(fn($m) => [
+                        'date' => $m->created_at->toDateTimeString(),
+                        'product_name' => $m->product?->name ?? '-',
+                        'type' => $m->type,
+                        'quantity' => (float) $m->quantity,
+                        'notes' => $m->notes,
+                        'user' => $m->creator?->name ?? '-'
+                    ])->values();
+                $subtitle = $list->count() . ' Mutasi Terakhir';
+            } elseif ($unit === 'po') {
+                $title = 'Purchase Order Supplier';
+                $list = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->take(100)->get()
+                    ->map(fn($po) => [
+                        'po_number' => $po->po_number,
+                        'supplier' => $po->supplier?->name ?? '-',
+                        'date' => $po->date ? $po->date->toDateString() : '-',
+                        'status' => $po->status,
+                        'total_amount' => (float) $po->total_amount,
+                        'user' => $po->creator?->name ?? '-'
+                    ])->values();
+                $subtitle = $list->count() . ' PO Terakhir';
+            }
+        } elseif ($mode === 'omset') {
+            if ($unit === 'all_transactions') {
+                $title = 'Semua Unit Bisnis';
+                $jihans = JihansTransaction::with('creator')->latest('id')->take(50)->get()
+                    ->map(fn($t) => [
+                        'date' => $t->date,
+                        'transaction_number' => $t->transaction_number,
+                        'customer' => $t->customer_name,
+                        'grand_total' => (float) $t->grand_total,
+                        'status' => $t->status,
+                        'type_unit' => "Jihan's Food",
+                        'user' => $t->creator?->name ?? '-'
+                    ]);
+                $hendhys = HendhysTransaction::with(['creator', 'branch'])->latest('id')->take(50)->get()
+                    ->map(fn($t) => [
+                        'date' => $t->date,
+                        'transaction_number' => $t->transaction_number,
+                        'customer' => $t->customer_name,
+                        'grand_total' => (float) $t->grand_total,
+                        'status' => $t->status,
+                        'type_unit' => $t->branch?->name ?? 'Hendhys Produksi (Pusat)',
+                        'user' => $t->creator?->name ?? '-'
+                    ]);
+                $list = collect($jihans)->concat($hendhys)->sortByDesc('date')->values();
+                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+            } elseif ($unit === 'jihans_transactions') {
+                $title = "Jihan's Food";
+                $list = JihansTransaction::with('creator')->latest('id')->take(100)->get()
+                    ->map(fn($t) => [
+                        'date' => $t->date,
+                        'transaction_number' => $t->transaction_number,
+                        'customer' => $t->customer_name,
+                        'grand_total' => (float) $t->grand_total,
+                        'status' => $t->status,
+                        'user' => $t->creator?->name ?? '-'
+                    ])->values();
+                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+            } elseif ($unit === 'hendhys_pusat') {
+                $title = 'Hendhys Pusat';
+                $list = HendhysTransaction::with('creator')->whereNull('branch_id')->latest('id')->take(100)->get()
+                    ->map(fn($t) => [
+                        'date' => $t->date,
+                        'transaction_number' => $t->transaction_number,
+                        'customer' => $t->customer_name,
+                        'grand_total' => (float) $t->grand_total,
+                        'status' => $t->status,
+                        'user' => $t->creator?->name ?? '-'
+                    ])->values();
+                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+            } elseif (str_starts_with($unit, 'hendhys_cabang_')) {
+                $branchId = str_replace('hendhys_cabang_', '', $unit);
+                $branch = Branch::find($branchId);
+                $title = $branch ? $branch->name : 'Hendhys Cabang';
+                $list = HendhysTransaction::with('creator')->where('branch_id', $branchId)->latest('id')->take(100)->get()
+                    ->map(fn($t) => [
+                        'date' => $t->date,
+                        'transaction_number' => $t->transaction_number,
+                        'customer' => $t->customer_name,
+                        'grand_total' => (float) $t->grand_total,
+                        'status' => $t->status,
+                        'user' => $t->creator?->name ?? '-'
+                    ])->values();
+                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+            }
+        }
+
+        return Inertia::render('Owner/Detail', [
+            'mode' => $mode,
+            'unit' => $unit,
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'list' => $list
+        ]);
+    }
 }
