@@ -281,8 +281,9 @@ class ReportController extends Controller
                     ->where('entity', 'hendhys')
                     ->when($user->hasRole('kasir_hendhys'), fn($q) => $q->where('user_id', $user->id))
                     ->when($user->branch && $user->branch->type !== 'pusat', fn($q) => $q->where('branch_id', $user->branch_id))
-                    ->when($request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
-                    ->when($request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to))
+                    ->when($request->shift_id, fn($q) => $q->where('id', $request->shift_id))
+                    ->when(!$request->shift_id && $request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
+                    ->when(!$request->shift_id && $request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to))
                     ->orderBy('opened_at', 'desc');
             } elseif ($type === 'mingguan') {
                 $title = "Laporan Penjualan Mingguan";

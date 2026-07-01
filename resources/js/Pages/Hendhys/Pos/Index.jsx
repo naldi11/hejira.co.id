@@ -21,15 +21,20 @@ export default function PosIndex({ products, paymentMethods }) {
     const [discount, setDiscount] = useState(0);
     const [amountPaid, setAmountPaid] = useState('');
     const [notes, setNotes] = useState('');
-    // Default default payment method selected
     const [selectedPayment, setSelectedPayment] = useState(() => {
-        const cashMethod = paymentMethods.find(pm => 
-            pm.name.toLowerCase().includes('tunai') || 
+        const cashMethod = paymentMethods.find(pm =>
+            pm.type === 'tunai' ||
+            pm.name.toLowerCase().includes('tunai') ||
             pm.name.toLowerCase().includes('cash')
         );
         return cashMethod?.id ?? (paymentMethods[0]?.id ?? '');
     });
     const [processing, setProcessing] = useState(false);
+
+    const selectedMethod = paymentMethods.find(pm => pm.id === selectedPayment);
+    const isNonCash = selectedMethod && selectedMethod.type !== 'tunai' &&
+        !selectedMethod.name.toLowerCase().includes('tunai') &&
+        !selectedMethod.name.toLowerCase().includes('cash');
 
     const filtered = useMemo(() => {
         if (!search) return products;
@@ -79,9 +84,10 @@ export default function PosIndex({ products, paymentMethods }) {
     const grandTotal = subtotal - (discount || 0);
 
     const changeAmount = useMemo(() => {
+        if (isNonCash) return 0;
         const paid = parseFloat(amountPaid) || 0;
         return Math.max(0, paid - grandTotal);
-    }, [amountPaid, grandTotal]);
+    }, [amountPaid, grandTotal, isNonCash]);
 
     const quickCashOptions = useMemo(() => {
         if (grandTotal <= 0) return [];
@@ -141,7 +147,7 @@ export default function PosIndex({ products, paymentMethods }) {
 
     const checkout = () => {
         if (cart.length === 0) return alert('Keranjang kosong!');
-        const paid = parseFloat(amountPaid) || 0;
+        const paid = isNonCash ? grandTotal : (parseFloat(amountPaid) || 0);
         if (paid < grandTotal) return alert('Nominal bayar kurang dari grand total!');
 
         setProcessing(true);
@@ -152,7 +158,7 @@ export default function PosIndex({ products, paymentMethods }) {
             subtotal: subtotal,
             grand_total: grandTotal,
             discount_amount: discount || 0,
-            amount_paid: paid,
+            amount_paid: isNonCash ? grandTotal : paid,
             notes: notes,
             payment_method_id: selectedPayment,
             ppn_type: 'none',
@@ -407,21 +413,29 @@ export default function PosIndex({ products, paymentMethods }) {
                                 <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Total</span>
                                 <span className="text-lg font-black text-amber-600 dark:text-amber-400">{formatRupiah(grandTotal)}</span>
                             </div>
-                            <div className="text-right">
-                                <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Nominal Bayar</span>
-                                <input 
-                                    type="number" 
-                                    min="0" 
-                                    value={amountPaid} 
-                                    onChange={(e) => setAmountPaid(e.target.value)} 
-                                    placeholder="0"
-                                    className="w-36 rounded-lg border-gray-300 py-2 px-3 text-sm font-extrabold text-right dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500" 
-                                />
-                            </div>
+                            {isNonCash ? (
+                                <div className="text-right">
+                                    <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Nominal Bayar</span>
+                                    <span className="text-sm font-extrabold text-gray-700 dark:text-gray-200">{formatRupiah(grandTotal)}</span>
+                                    <span className="block text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">Lunas Otomatis</span>
+                                </div>
+                            ) : (
+                                <div className="text-right">
+                                    <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Nominal Bayar</span>
+                                    <input 
+                                        type="number" 
+                                        min="0" 
+                                        value={amountPaid} 
+                                        onChange={(e) => setAmountPaid(e.target.value)} 
+                                        placeholder="0"
+                                        className="w-36 rounded-lg border-gray-300 py-2 px-3 text-sm font-extrabold text-right dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500" 
+                                    />
+                                </div>
+                            )}
                         </div>
 
-                        {/* Quick cash suggestions */}
-                        {quickCashOptions.length > 0 && (
+                        {/* Quick cash suggestions - hanya untuk tunai */}
+                        {!isNonCash && quickCashOptions.length > 0 && (
                             <div className="flex flex-wrap justify-end gap-1.5 mt-1">
                                 {quickCashOptions.map((opt, idx) => (
                                     <button
@@ -440,14 +454,45 @@ export default function PosIndex({ products, paymentMethods }) {
                             </div>
                         )}
 
-                        {/* Kembalian */}
+                        {/* Kembalian - hanya tampil untuk pembayaran tunai */}
+                        {!isNonCash && (
                         <div className="flex items-center justify-between text-sm pt-0.5">
                             <span className="text-gray-500 dark:text-gray-400">Kembalian:</span>
                             <span className={`text-base font-extrabold ${changeAmount > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-800 dark:text-white/90'}`}>
                                 {formatRupiah(changeAmount)}
                             </span>
                         </div>
-                        
+                        )}
+
+                        {/* Metode Pembayaran */}
+                        {paymentMethods.length > 0 && (
+                        <div className="space-y-1.5 pt-0.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Metode Pembayaran</label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                {paymentMethods.map(pm => (
+                                    <button
+                                        key={pm.id}
+                                        type="button"
+                                        onClick={() => setSelectedPayment(pm.id)}
+                                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all ${
+                                            selectedPayment === pm.id
+                                                ? 'bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-600/20'
+                                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-400 hover:text-amber-600'
+                                        }`}
+                                    >
+                                        {pm.name}
+                                    </button>
+                                ))}
+                            </div>
+                            {isNonCash && selectedMethod?.bank_name && (
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                                    {selectedMethod.bank_name}{selectedMethod.account_number ? ` · ${selectedMethod.account_number}` : ''}
+                                    {selectedMethod.account_name ? ` (${selectedMethod.account_name})` : ''}
+                                </p>
+                            )}
+                        </div>
+                        )}
+
                         {/* Catatan (Full Width) */}
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Catatan</label>
@@ -462,7 +507,7 @@ export default function PosIndex({ products, paymentMethods }) {
                         
                         <button 
                             onClick={checkout} 
-                            disabled={processing || cart.length === 0 || amountPaid === '' || parseFloat(amountPaid) < grandTotal} 
+                            disabled={processing || cart.length === 0 || (!isNonCash && (amountPaid === '' || parseFloat(amountPaid) < grandTotal))} 
                             className="w-full rounded-xl bg-amber-600 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50 transition-colors"
                         >
                             {processing ? 'Memproses...' : 'Bayar & Cetak Struk'}

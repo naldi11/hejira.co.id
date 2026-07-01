@@ -16,6 +16,45 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
         date_to: filters.date_to ?? '' 
     });
 
+    // Export Modal
+    const [exportModal, setExportModal] = useState(false);
+    const [exportType, setExportType] = useState('shift'); // shift | harian | mingguan | bulanan
+    const [exportShiftId, setExportShiftId] = useState('');
+    const [exportDateFrom, setExportDateFrom] = useState('');
+    const [exportDateTo, setExportDateTo] = useState('');
+    const [exportMonth, setExportMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    });
+
+    const handleExport = () => {
+        let url = '';
+        const base = route('hendhys.reports.pdf', exportType === 'shift' ? 'laci' : exportType);
+        if (exportType === 'shift') {
+            if (!exportShiftId) return alert('Pilih shift terlebih dahulu!');
+            url = `${base}?shift_id=${exportShiftId}`;
+        } else if (exportType === 'harian') {
+            url = `${base}?date_from=${exportDateFrom}&date_to=${exportDateTo}`;
+        } else if (exportType === 'mingguan') {
+            url = `${base}?date_from=${exportDateFrom}&date_to=${exportDateTo}`;
+        } else if (exportType === 'bulanan') {
+            // bulanan: send year-month as date_from/date_to
+            const [y, m] = exportMonth.split('-');
+            const lastDay = new Date(y, m, 0).getDate();
+            url = `${base}?date_from=${exportMonth}-01&date_to=${exportMonth}-${lastDay}`;
+        }
+        window.open(url, '_blank');
+        setExportModal(false);
+    };
+
+    const EXPORT_TYPES = [
+        { id: 'shift', label: 'Per Shift', icon: 'badge' },
+        { id: 'harian', label: 'Harian', icon: 'today' },
+        { id: 'mingguan', label: 'Mingguan', icon: 'date_range' },
+        { id: 'bulanan', label: 'Bulanan', icon: 'calendar_month' },
+    ];
+
+
     // Modal States
     const [openShiftModal, setOpenShiftModal] = useState(false);
     const [closeShiftModal, setCloseShiftModal] = useState(false);
@@ -110,13 +149,12 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                         <p className="text-sm text-gray-500 dark:text-gray-400">Kelola buka-tutup shift dan rekapitulasi laci uang kasir</p>
                     </div>
                     <div className="flex gap-2">
-                        <a 
-                            href={route('hendhys.reports.pdf', 'laci') + `?date_from=${filterForm.date_from}&date_to=${filterForm.date_to}`} 
-                            target="_blank" 
-                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.01] dark:border-gray-800 dark:bg-white/[0.03]"
+                        <button
+                            onClick={() => setExportModal(true)}
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.01] dark:border-gray-800 dark:bg-white/[0.03] transition"
                         >
                             <Icon name="picture_as_pdf" /> Export PDF
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -603,6 +641,110 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                     </div>
                 </div>
             </Modal>
+
+            {/* Export PDF Modal */}
+            <Modal show={exportModal} onClose={() => setExportModal(false)} maxWidth="md">
+                <div className="p-6">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white/90 flex items-center gap-2 mb-5">
+                        <Icon name="picture_as_pdf" className="text-amber-500" /> Export Laporan PDF
+                    </h3>
+
+                    {/* Pilihan Tipe Export */}
+                    <div className="mb-5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Jenis Laporan</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {EXPORT_TYPES.map(t => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => setExportType(t.id)}
+                                    className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
+                                        exportType === t.id
+                                            ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20'
+                                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-400'
+                                    }`}
+                                >
+                                    <Icon name={t.icon} className="text-[18px]" /> {t.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Per Shift: pilih dari daftar shift */}
+                    {exportType === 'shift' && (
+                        <div className="mb-5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Shift</label>
+                            <select
+                                value={exportShiftId}
+                                onChange={e => setExportShiftId(e.target.value)}
+                                className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500"
+                            >
+                                <option value="">-- Pilih Shift --</option>
+                                {rows.data?.filter(r => r.status === 'closed').map((r, i) => (
+                                    <option key={r.id} value={r.id}>
+                                        {r.user?.name ?? 'Kasir'} — {formatDateTime(r.opened_at)} s/d {formatDateTime(r.closed_at)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Harian & Mingguan: pilih rentang tanggal */}
+                    {(exportType === 'harian' || exportType === 'mingguan') && (
+                        <div className="mb-5 space-y-3">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block">Rentang Tanggal</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={exportDateFrom}
+                                    onChange={e => setExportDateFrom(e.target.value)}
+                                    onClick={e => e.target.showPicker?.()}
+                                    className="flex-1 rounded-lg border-gray-200 py-2 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500 cursor-pointer"
+                                />
+                                <span className="text-gray-400 text-sm">s/d</span>
+                                <input
+                                    type="date"
+                                    value={exportDateTo}
+                                    onChange={e => setExportDateTo(e.target.value)}
+                                    onClick={e => e.target.showPicker?.()}
+                                    className="flex-1 rounded-lg border-gray-200 py-2 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bulanan: pilih bulan */}
+                    {exportType === 'bulanan' && (
+                        <div className="mb-5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Bulan</label>
+                            <input
+                                type="month"
+                                value={exportMonth}
+                                onChange={e => setExportMonth(e.target.value)}
+                                className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500 cursor-pointer"
+                            />
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setExportModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 transition"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="flex items-center gap-1.5 px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg shadow-sm transition"
+                        >
+                            <Icon name="picture_as_pdf" /> Download PDF
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </HendhysLayout>
+
     );
 }

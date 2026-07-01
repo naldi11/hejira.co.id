@@ -39,6 +39,11 @@ class PosController extends Controller
         }
 
         $products = $q->with(['unit', 'tieredPrices'])->get()
+            ->sort(fn($a, $b) =>
+                ($b->current_stock > 0 ? 1 : 0) - ($a->current_stock > 0 ? 1 : 0)
+                ?: strcmp($a->name, $b->name)
+            )
+            ->values()
             ->map(fn ($p) => [
                 'id'            => $p->id,
                 'name'          => $p->name,
@@ -58,11 +63,13 @@ class PosController extends Controller
         // Metode Pembayaran Aktif
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
             ->whereIn('entity_scope', ['hendhys', 'all'])
+            ->orderBy('sort_order')
             ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image'])
+            ->get(['id', 'name', 'type', 'bank_name', 'account_number', 'account_name', 'image'])
             ->map(fn ($pm) => [
                 'id'             => $pm->id,
                 'name'           => $pm->name,
+                'type'           => $pm->type,
                 'bank_name'      => $pm->bank_name,
                 'account_number' => $pm->account_number,
                 'account_name'   => $pm->account_name,
