@@ -20,7 +20,7 @@ class CheckActiveShift
                 ->first();
 
             if (!$activeShift) {
-                if ($request->wantsJson() || $request->ajax()) {
+                if (($request->wantsJson() || $request->ajax()) && !$request->hasHeader('X-Inertia')) {
                     return response()->json([
                         'error' => 'Laci kasir belum dibuka. Anda harus membuka shift terlebih dahulu.',
                         'shift_required' => true,
