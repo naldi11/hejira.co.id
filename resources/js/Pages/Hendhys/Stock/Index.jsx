@@ -143,13 +143,21 @@ function BranchStockCard({ item }) {
 
 export default function HendhysStockIndex({ stocks, branches, branchStocks, selectedBranchId, isPusat, filters }) {
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ search: filters.search ?? '', branch_id: filters.branch_id ?? '' });
+    const [form, setForm] = useState({ 
+        search: filters.search ?? '', 
+        branch_id: filters.branch_id ?? '',
+        low_stock: filters.low_stock === '1'
+    });
     const [activeTab, setActiveTab] = useState('cabang'); // cabang or gudang
 
     const reload = (e) => {
         e?.preventDefault();
         router.get(route('hendhys.stock.index'),
-            { search: form.search || undefined, branch_id: form.branch_id || undefined },
+            { 
+                search: form.search || undefined, 
+                branch_id: form.branch_id || undefined,
+                low_stock: form.low_stock ? '1' : undefined
+            },
             { 
                 preserveState: true, 
                 preserveScroll: true, 
@@ -205,8 +213,17 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                                 className="w-full h-11 rounded-lg border border-gray-300 bg-transparent pl-10 pr-4 text-sm text-gray-800 outline-hidden transition focus:border-amber-350 focus:ring-3 focus:ring-amber-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-amber-800" 
                             />
                         </div>
+                        <label className="flex h-11 items-center gap-2 cursor-pointer rounded-lg border border-gray-300 bg-transparent px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50/50 dark:border-gray-700 dark:text-gray-250 dark:hover:bg-gray-900/30">
+                            <input
+                                type="checkbox"
+                                checked={form.low_stock}
+                                onChange={(e) => setForm({ ...form, low_stock: e.target.checked })}
+                                className="h-4.5 w-4.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900"
+                            />
+                            <span>Stok Menipis</span>
+                        </label>
                         <button type="submit" className="h-11 rounded-xl bg-amber-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-700 transition-all">Filter</button>
-                        {form.search && (
+                        {(form.search || form.low_stock) && (
                             <Link href={route('hendhys.stock.index')} className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-5 text-sm font-bold text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
                                 Reset
                             </Link>

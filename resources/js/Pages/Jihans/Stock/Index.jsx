@@ -13,14 +13,22 @@ const JENIS = ['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minum
 
 export default function JihansStockIndex({ stocks, filters }) {
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ search: filters.search ?? '', jenis: filters.jenis ?? '' });
+    const [form, setForm] = useState({ 
+        search: filters.search ?? '', 
+        jenis: filters.jenis ?? '',
+        low_stock: filters.low_stock === '1'
+    });
     const [activeTab, setActiveTab] = useState('cabang'); // cabang or gudang
-    const hasFilter = form.search || form.jenis;
+    const hasFilter = form.search || form.jenis || form.low_stock;
 
     const reload = (e) => {
         e?.preventDefault();
         router.get(route('jihans.stock.index'),
-            { search: form.search || undefined, jenis: form.jenis || undefined },
+            { 
+                search: form.search || undefined, 
+                jenis: form.jenis || undefined,
+                low_stock: form.low_stock ? '1' : undefined
+            },
             { preserveState: true, preserveScroll: true, replace: true, only: ['stocks', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
     };
 
@@ -80,6 +88,15 @@ export default function JihansStockIndex({ stocks, filters }) {
                                     </option>
                                 ))}
                             </select>
+                            <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-4 py-2 text-sm text-gray-750 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input
+                                    type="checkbox"
+                                    checked={form.low_stock}
+                                    onChange={(e) => setForm({ ...form, low_stock: e.target.checked })}
+                                    className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-800"
+                                />
+                                <span>Stok Menipis</span>
+                            </label>
                             <button type="submit" className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors">
                                 Filter
                             </button>

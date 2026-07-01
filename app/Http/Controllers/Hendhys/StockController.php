@@ -17,6 +17,7 @@ class StockController extends Controller
     {
         $user = auth()->user();
         $isPusat = $user->branch->type === 'pusat';
+        $lowStockOnly = $request->low_stock === '1';
 
         if ($isPusat) {
             // --- PUSAT: stok milik pusat ---
@@ -40,7 +41,13 @@ class StockController extends Controller
                 });
             }
 
-            $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
+            $stocks = $q->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(hendhys_stock_pusat.quantity, 0) <= master_products.stock_min')->where('master_products.stock_min', '>', 0))
+                ->when($lowStockOnly, function ($q) {
+                    $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_pusat.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
+                      ->orderBy('hendhys_stock_pusat.quantity', 'desc');
+                })
+                ->orderBy('master_products.name')
+                ->paginate(20)->withQueryString();
 
             // Daftar cabang aktif beserta stok masing-masing
             $branches = Branch::where('is_active', true)
@@ -68,6 +75,11 @@ class StockController extends Controller
 
             $branchStocks = $branchStocksQuery
                 ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock', 'hendhys_stock_branch.quantity_return as return_stock', 'hendhys_stock_branch.branch_id')
+                ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(hendhys_stock_branch.quantity, 0) <= master_products.stock_min')->where('master_products.stock_min', '>', 0))
+                ->when($lowStockOnly, function ($q) {
+                    $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
+                      ->orderBy('hendhys_stock_branch.quantity', 'desc');
+                })
                 ->orderBy('master_products.name')
                 ->paginate(20, ['*'], 'branch_page')
                 ->withQueryString();
@@ -78,7 +90,7 @@ class StockController extends Controller
                 'branchStocks'     => HendhysStockResource::collection($branchStocks),
                 'selectedBranchId' => $selectedBranchId,
                 'isPusat'          => true,
-                'filters'          => $request->only('search', 'branch_id'),
+                'filters'          => $request->only('search', 'branch_id', 'low_stock'),
             ]);
         } else {
             // --- CABANG: hanya stok milik branch sendiri ---
@@ -98,12 +110,18 @@ class StockController extends Controller
                 });
             }
 
-            $stocks = $q->orderBy('master_products.name')->paginate(20)->withQueryString();
+            $stocks = $q->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(hendhys_stock_branch.quantity, 0) <= master_products.stock_min')->where('master_products.stock_min', '>', 0))
+                ->when($lowStockOnly, function ($q) {
+                    $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
+                      ->orderBy('hendhys_stock_branch.quantity', 'desc');
+                })
+                ->orderBy('master_products.name')
+                ->paginate(20)->withQueryString();
 
             return Inertia::render('Hendhys/Stock/Index', [
                 'stocks'  => HendhysStockResource::collection($stocks),
                 'isPusat' => false,
-                'filters' => $request->only('search'),
+                'filters' => $request->only('search', 'low_stock'),
             ]);
         }
     }

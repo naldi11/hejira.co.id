@@ -392,7 +392,11 @@ class StockService
             ->when($search, fn ($q, $s) => $q->where(fn ($w) => $w
                 ->where('master_products.name', 'like', "%{$s}%")
                 ->orWhere('master_products.code', 'like', "%{$s}%")))
-            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(jihans_gudang_stock.quantity, 0) <= master_products.stock_min'))
+            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(jihans_gudang_stock.quantity, 0) <= master_products.stock_min')->where('master_products.stock_min', '>', 0))
+            ->when($lowStockOnly, function ($q) {
+                $q->orderBy(DB::raw("CASE WHEN COALESCE(jihans_gudang_stock.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
+                  ->orderBy('jihans_gudang_stock.quantity', 'desc');
+            })
             ->orderBy('master_products.name')
             ->paginate($perPage)
             ->withQueryString();

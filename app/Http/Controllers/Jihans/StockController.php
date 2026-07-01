@@ -14,6 +14,8 @@ class StockController extends Controller
 {
     public function index(Request $request)
     {
+        $lowStockOnly = $request->low_stock === '1';
+
         $stocks = Product::where('status', 'active')
             ->where(fn ($w) => $w->visibleInJihans()->orWhereExists(fn ($sq) => $sq
                 ->from('jihans_retail_stock')->whereColumn('jihans_retail_stock.product_id', 'master_products.id')))
@@ -25,12 +27,17 @@ class StockController extends Controller
                 ->where('master_products.name', 'like', "%{$request->search}%")
                 ->orWhere('master_products.code', 'like', "%{$request->search}%")))
             ->when($request->filled('jenis'), fn ($q) => $q->where('master_products.jenis', $request->jenis))
+            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(jihans_retail_stock.quantity, 0) <= master_products.stock_min')->where('master_products.stock_min', '>', 0))
+            ->when($lowStockOnly, function ($q) {
+                $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(jihans_retail_stock.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
+                  ->orderBy('jihans_retail_stock.quantity', 'desc');
+            })
             ->orderBy('master_products.name')
             ->paginate(20)->withQueryString();
 
         return Inertia::render('Jihans/Stock/Index', [
             'stocks'  => ProductStockResource::collection($stocks),
-            'filters' => $request->only('search', 'jenis'),
+            'filters' => $request->only('search', 'jenis', 'low_stock'),
         ]);
     }
 
