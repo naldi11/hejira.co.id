@@ -183,31 +183,33 @@ class PosController extends Controller
                     );
                 }
 
+                // Resolve payment type and method id
+                $paymentType = $request->payment_type ?? 'tunai'; // tunai, transfer, kartu_debit, kartu_kredit
                 $pmId = $request->payment_method_id;
-                $paymentMethod = 'cash';
 
+                // Map payment_type to legacy payment_method enum (cash, transfer)
+                $paymentMethodLegacy = match($paymentType) {
+                    'transfer'     => 'transfer',
+                    'kartu_debit'  => 'transfer',
+                    'kartu_kredit' => 'transfer',
+                    default        => 'cash',
+                };
+
+                // Jika tidak ada payment_method_id dari DB, coba cari dari master_payment_methods berdasarkan type
                 if (!$pmId) {
-                    $defaultPM = \App\Models\PaymentMethod::where('is_active', true)
-                        ->where(function($q) {
-                            $q->where('name', 'like', '%tunai%')
-                              ->orWhere('name', 'like', '%cash%');
-                        })->first();
-                    if (!$defaultPM) {
-                        $defaultPM = \App\Models\PaymentMethod::where('is_active', true)->first();
-                    }
-                    $pmId = $defaultPM?->id;
-                } else {
-                    $pm = \App\Models\PaymentMethod::find($pmId);
-                    $paymentMethod = $pm?->type ?? 'cash';
+                    $pm = \App\Models\PaymentMethod::where('is_active', true)
+                        ->where('type', $paymentType)
+                        ->first();
+                    $pmId = $pm?->id;
                 }
 
                 HendhysTransactionPayment::create([
-                    'transaction_id' => $transaction->id,
+                    'transaction_id'    => $transaction->id,
                     'payment_method_id' => $pmId,
-                    'payment_method' => $paymentMethod,
-                    'amount' => $request->amount_paid,
-                    'bank_name' => null,
-                    'reference_number' => $request->reference_number
+                    'payment_method'    => $paymentMethodLegacy,
+                    'amount'            => $request->amount_paid,
+                    'bank_name'         => null,
+                    'reference_number'  => $request->reference_number
                 ]);
 
 

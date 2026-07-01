@@ -21,20 +21,24 @@ export default function PosIndex({ products, paymentMethods }) {
     const [discount, setDiscount] = useState(0);
     const [amountPaid, setAmountPaid] = useState('');
     const [notes, setNotes] = useState('');
-    const [selectedPayment, setSelectedPayment] = useState(() => {
-        const cashMethod = paymentMethods.find(pm =>
-            pm.type === 'tunai' ||
-            pm.name.toLowerCase().includes('tunai') ||
-            pm.name.toLowerCase().includes('cash')
-        );
-        return cashMethod?.id ?? (paymentMethods[0]?.id ?? '');
-    });
+    const [selectedPayment, setSelectedPayment] = useState('tunai');
     const [processing, setProcessing] = useState(false);
 
-    const selectedMethod = paymentMethods.find(pm => pm.id === selectedPayment);
-    const isNonCash = selectedMethod && selectedMethod.type !== 'tunai' &&
-        !selectedMethod.name.toLowerCase().includes('tunai') &&
-        !selectedMethod.name.toLowerCase().includes('cash');
+    // Tipe pembayaran hardcoded - selalu tampil
+    const PAYMENT_TYPES = [
+        { type: 'tunai',        label: 'Tunai / Cash',  icon: '💵' },
+        { type: 'transfer',     label: 'Transfer',       icon: '🏦' },
+        { type: 'kartu_debit',  label: 'Debit Card',     icon: '💳' },
+        { type: 'kartu_kredit', label: 'Kartu Kredit',   icon: '💰' },
+    ];
+
+    const isNonCash = selectedPayment !== 'tunai';
+
+    // Cari payment method dari DB yang cocok dengan type terpilih (optional, untuk bank info)
+    const selectedMethod = paymentMethods.find(pm =>
+        pm.type === selectedPayment ||
+        (selectedPayment === 'tunai' && (pm.name?.toLowerCase().includes('tunai') || pm.name?.toLowerCase().includes('cash')))
+    );
 
     const filtered = useMemo(() => {
         if (!search) return products;
@@ -160,7 +164,8 @@ export default function PosIndex({ products, paymentMethods }) {
             discount_amount: discount || 0,
             amount_paid: isNonCash ? grandTotal : paid,
             notes: notes,
-            payment_method_id: selectedPayment,
+            payment_method_id: selectedMethod?.id ?? null,
+            payment_type: selectedPayment,
             ppn_type: 'none',
             tax_amount: 0,
             other_costs: 0,
@@ -464,23 +469,22 @@ export default function PosIndex({ products, paymentMethods }) {
                         </div>
                         )}
 
-                        {/* Metode Pembayaran */}
-                        {paymentMethods.length > 0 && (
+                        {/* Metode Pembayaran - selalu tampil */}
                         <div className="space-y-1.5 pt-0.5">
                             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Metode Pembayaran</label>
                             <div className="grid grid-cols-2 gap-1.5">
-                                {paymentMethods.map(pm => (
+                                {PAYMENT_TYPES.map(pt => (
                                     <button
-                                        key={pm.id}
+                                        key={pt.type}
                                         type="button"
-                                        onClick={() => setSelectedPayment(pm.id)}
-                                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all ${
-                                            selectedPayment === pm.id
+                                        onClick={() => setSelectedPayment(pt.type)}
+                                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all text-left ${
+                                            selectedPayment === pt.type
                                                 ? 'bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-600/20'
                                                 : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-400 hover:text-amber-600'
                                         }`}
                                     >
-                                        {pm.name}
+                                        <span className="mr-1">{pt.icon}</span> {pt.label}
                                     </button>
                                 ))}
                             </div>
@@ -491,7 +495,6 @@ export default function PosIndex({ products, paymentMethods }) {
                                 </p>
                             )}
                         </div>
-                        )}
 
                         {/* Catatan (Full Width) */}
                         <div className="space-y-1">
