@@ -78,6 +78,18 @@ class ReturnController extends Controller
                             $userId,
                             'Penerimaan retur (Bagus) dari ' . ($return->from_entity === 'hendhys' ? 'Hendhys' : 'Jihans'),
                         );
+                    } elseif ($itemData['received_quantity'] > 0) {
+                        // Kadaluwarsa / Rusak — log agar muncul di Kartu Stok,
+                        // tapi TIDAK menambah qty siap jual
+                        $condLabel = $itemData['condition'] === 'Kadaluwarsa' ? 'Kadaluwarsa' : 'Rusak (Defect)';
+                        $this->stock->logJihansGudangReturnMovement(
+                            $detail->product_id,
+                            (int) $itemData['received_quantity'],
+                            'return_receiving',
+                            $return->id,
+                            $userId,
+                            "Penerimaan retur ({$condLabel}) dari " . ($return->from_entity === 'hendhys' ? 'Hendhys' : 'Jihans') . ' — tidak masuk stok siap jual',
+                        );
                     }
                 }
 

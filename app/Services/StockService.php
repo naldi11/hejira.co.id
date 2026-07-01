@@ -89,6 +89,35 @@ class StockService
         ]);
     }
 
+    /**
+     * Write a movement log entry WITHOUT changing the stock balance.
+     * Used for defect / expired returns so they appear in Kartu Stok
+     * but do not inflate the sellable qty.
+     */
+    public function logJihansGudangReturnMovement(
+        int    $productId,
+        int    $qty,
+        string $source,
+        int    $referenceId,
+        ?int   $userId = null,
+        ?string $notes = null
+    ): void {
+        $currentQty = (int) (JihansGudangStock::where('product_id', $productId)->value('quantity') ?? 0);
+
+        JihansGudangStockMovement::create([
+            'product_id'      => $productId,
+            'type'            => 'in',
+            'source'          => $source,
+            'reference_id'    => $referenceId,
+            'quantity'        => $qty,
+            'quantity_before' => $currentQty,
+            'quantity_after'  => $currentQty,   // balance unchanged
+            'notes'           => $notes,
+            'created_by'      => $userId,
+            'created_at'      => now(),
+        ]);
+    }
+
     public function adjustJihansGudang(
         int    $productId,
         int    $unitId,
@@ -397,6 +426,7 @@ class StockService
                 $q->orderBy(DB::raw("CASE WHEN COALESCE(jihans_gudang_stock.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                   ->orderBy('jihans_gudang_stock.quantity', 'desc');
             })
+            ->orderBy(DB::raw("CASE WHEN COALESCE(jihans_gudang_stock.quantity, 0) > 0 THEN 0 ELSE 1 END"), 'asc')
             ->orderBy('master_products.name')
             ->paginate($perPage)
             ->withQueryString();

@@ -32,6 +32,7 @@ class StockController extends Controller
                 $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(jihans_retail_stock.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                   ->orderBy('jihans_retail_stock.quantity', 'desc');
             })
+            ->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(jihans_retail_stock.quantity, 0) > 0 THEN 0 ELSE 1 END"), 'asc')
             ->orderBy('master_products.name')
             ->paginate(20)->withQueryString();
 

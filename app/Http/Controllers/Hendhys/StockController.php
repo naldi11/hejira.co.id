@@ -46,6 +46,7 @@ class StockController extends Controller
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_pusat.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_pusat.quantity', 'desc');
                 })
+                ->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_pusat.quantity, 0) > 0 THEN 0 ELSE 1 END"), 'asc')
                 ->orderBy('master_products.name')
                 ->paginate(20)->withQueryString();
 
@@ -80,6 +81,7 @@ class StockController extends Controller
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_branch.quantity', 'desc');
                 })
+                ->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) > 0 THEN 0 ELSE 1 END"), 'asc')
                 ->orderBy('master_products.name')
                 ->paginate(20, ['*'], 'branch_page')
                 ->withQueryString();
@@ -115,6 +117,7 @@ class StockController extends Controller
                     $q->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) = 0 THEN 1 ELSE 0 END"), 'asc')
                       ->orderBy('hendhys_stock_branch.quantity', 'desc');
                 })
+                ->orderBy(\Illuminate\Support\Facades\DB::raw("CASE WHEN COALESCE(hendhys_stock_branch.quantity, 0) > 0 THEN 0 ELSE 1 END"), 'asc')
                 ->orderBy('master_products.name')
                 ->paginate(20)->withQueryString();
 
