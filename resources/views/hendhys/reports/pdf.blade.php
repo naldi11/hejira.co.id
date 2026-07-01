@@ -199,46 +199,69 @@
         {{-- SHIFT SUMMARY Layout --}}
         <table class="data">
             <colgroup>
-                <col style="width: 15%;">
-                <col style="width: 15%;">
-                <col style="width: 15%;">
-                <col style="width: 10%;">
-                <col style="width: 12%;">
-                <col style="width: 12%;">
-                <col style="width: 12%;">
+                <col style="width: 14%;">
+                <col style="width: 17%;">
                 <col style="width: 9%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
             </colgroup>
             <thead>
                 <tr>
                     <th>Kasir</th>
-                    <th>Waktu Buka</th>
-                    <th>Waktu Tutup</th>
-                    <th class="text-center">Status</th>
+                    <th>Waktu Shift</th>
                     <th class="text-right">Modal Awal</th>
-                    <th class="text-right">Expected Cash</th>
+                    <th class="text-right">Tunai(Exp)</th>
+                    <th class="text-right">Transfer</th>
+                    <th class="text-right">Debit</th>
+                    <th class="text-right">Kredit</th>
                     <th class="text-right">Actual Cash</th>
                     <th class="text-right">Selisih</th>
                 </tr>
             </thead>
             <tbody>
+                @php
+                    $totalTransfer = 0;
+                    $totalDebit = 0;
+                    $totalKredit = 0;
+                @endphp
                 @foreach($rows as $row)
+                @php
+                    $isClosed = $row->status === 'closed';
+                    $summary = $row->calculatePaymentSummary();
+                    if ($isClosed) {
+                        $totalTransfer += $summary['transfer'] ?? 0;
+                        $totalDebit += $summary['kartu_debit'] ?? 0;
+                        $totalKredit += $summary['kredit'] ?? 0;
+                    }
+                @endphp
                 <tr>
-                    <td>{{ strtoupper($row->user->name ?? 'Sistem') }}</td>
-                    <td>{{ $row->opened_at ? $row->opened_at->format('d/m/Y H:i') : '-' }}</td>
-                    <td>{{ $row->closed_at ? $row->closed_at->format('d/m/Y H:i') : '-' }}</td>
-                    <td class="text-center">{{ strtoupper($row->status) }}</td>
+                    <td>{{ strtoupper($row->user->name ?? 'Sistem') }}<br><small>({{ strtoupper($row->status) }})</small></td>
+                    <td>
+                        {{ $row->opened_at ? $row->opened_at->format('d/m/Y H:i') : '-' }} <br> s/d <br>
+                        {{ $row->closed_at ? $row->closed_at->format('d/m/Y H:i') : '-' }}
+                    </td>
                     <td class="text-right">{{ number_format($row->starting_cash, 0, ',', '.') }}</td>
-                    <td class="text-right">{{ $row->status === 'closed' ? number_format($row->expected_cash, 0, ',', '.') : '-' }}</td>
-                    <td class="text-right">{{ $row->status === 'closed' ? number_format($row->actual_cash, 0, ',', '.') : '-' }}</td>
-                    <td class="text-right font-bold">{{ $row->status === 'closed' ? number_format($row->discrepancy, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $isClosed ? number_format($row->expected_cash, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $isClosed ? number_format($summary['transfer'] ?? 0, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $isClosed ? number_format($summary['kartu_debit'] ?? 0, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $isClosed ? number_format($summary['kredit'] ?? 0, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right">{{ $isClosed ? number_format($row->actual_cash, 0, ',', '.') : '-' }}</td>
+                    <td class="text-right font-bold">{{ $isClosed ? number_format($row->discrepancy, 0, ',', '.') : '-' }}</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="4" class="text-left" style="font-style: italic;">TOTAL CLOSED SHIFTS:</td>
+                    <td colspan="2" class="text-left" style="font-style: italic;">TOTAL CLOSED SHIFTS:</td>
                     <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('starting_cash'), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('expected_cash'), 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($totalTransfer, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($totalDebit, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($totalKredit, 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('actual_cash'), 0, ',', '.') }}</td>
                     <td class="text-right">{{ number_format($rows->where('status', 'closed')->sum('discrepancy'), 0, ',', '.') }}</td>
                 </tr>
