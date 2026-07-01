@@ -10,7 +10,7 @@ class HendhysTransactionPayment extends Model
     protected $table = 'hendhys_transaction_payments';
 
     protected $fillable = [
-        'transaction_id', 'payment_method_id', 'payment_method', 'amount', 'bank_name', 'reference_number'
+        'transaction_id', 'payment_method_id', 'payment_method', 'payment_type', 'amount', 'bank_name', 'reference_number'
     ];
 
     public function transaction(): BelongsTo

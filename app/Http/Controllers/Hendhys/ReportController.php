@@ -28,6 +28,7 @@ class ReportController extends Controller
                 SUM(CASE
                     WHEN pm.type = 'transfer' THEN p.amount
                     WHEN p.payment_method_id IS NULL AND p.payment_type = 'transfer' THEN p.amount
+                    WHEN p.payment_method_id IS NULL AND p.payment_method = 'transfer' AND p.payment_type IS NULL THEN p.amount
                     ELSE 0 END) as transfer,
                 SUM(CASE
                     WHEN pm.type = 'kartu_debit' THEN p.amount

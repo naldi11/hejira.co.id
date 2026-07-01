@@ -149,6 +149,7 @@ class ShiftController extends Controller
                 COALESCE(SUM(CASE
                     WHEN pm.type = 'transfer' THEN p.amount
                     " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'transfer' THEN p.amount" : "") . "
+                    WHEN p.payment_method_id IS NULL AND p.payment_method = 'transfer' AND " . ($hasPtypeCol ? "p.payment_type IS NULL" : "1") . " THEN p.amount
                     ELSE 0 END), 0) as transfer,
                 COALESCE(SUM(CASE
                     WHEN pm.type = 'kartu_debit' THEN p.amount
