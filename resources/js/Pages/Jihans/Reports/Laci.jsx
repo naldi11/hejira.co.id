@@ -143,7 +143,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                             setActualCash(0);
                                             setCloseShiftModal(true);
                                         }}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-rose-650 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl shadow-sm transition"
                                     >
                                         <Icon name="lock" /> Tutup Laci (Akhiri Shift)
                                     </button>
@@ -359,7 +359,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                         </button>
                         <button 
                             type="submit"
-                            className="px-5 py-2 bg-rose-650 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-sm"
+                            className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow-sm"
                         >
                             Konfirmasi Tutup Shift
                         </button>
