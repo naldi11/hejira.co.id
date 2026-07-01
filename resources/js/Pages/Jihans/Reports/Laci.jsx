@@ -136,6 +136,9 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                         Uang Modal Awal: <span className="font-semibold text-orange-600 dark:text-orange-400">{formatRupiah(activeShift.starting_cash)}</span>
                                     </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Uang Diharapkan (Saat Ini): <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatRupiah(activeShift.expected_cash)}</span>
+                                    </p>
                                 </div>
                                 <div>
                                     <button 
@@ -150,7 +153,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                                  <div className="flex gap-4">
                                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-md shadow-rose-500/20">
                                          <Icon name="lock" className="text-[24px]" />
@@ -237,7 +240,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                 </td>
                                                 <td className="px-4 py-3 text-right">{formatRupiah(r.starting_cash)}</td>
                                                 <td className="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">
-                                                    {isClosed ? formatRupiah(r.expected_cash) : '-'}
+                                                    {formatRupiah(r.expected_cash)}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium text-gray-700 dark:text-gray-300">
                                                     {isClosed ? formatRupiah(r.actual_cash) : '-'}
@@ -567,7 +570,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                         detailData.sold_items.map((item, idx) => (
                                                             <tr key={idx}>
                                                                 <td className="p-3 font-medium text-gray-700 dark:text-white/80">{item.product_name}</td>
-                                                                <td className="p-3 text-center font-bold text-orange-600">{item.total_qty}</td>
+                                                                <td className="p-3 text-center font-bold text-orange-600">{parseInt(item.total_qty)}</td>
                                                                 <td className="p-3 text-right">{formatRupiah(item.price)}</td>
                                                                 <td className="p-3 text-right font-bold">{formatRupiah(item.total_amount)}</td>
                                                             </tr>

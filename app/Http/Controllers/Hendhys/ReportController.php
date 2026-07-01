@@ -59,9 +59,19 @@ class ReportController extends Controller
             ->paginate(30)
             ->withQueryString();
 
+        foreach ($rows as $row) {
+            if ($row->status === 'open') {
+                $row->expected_cash = $row->calculateExpectedCashSoFar();
+            }
+        }
+
         $activeShift = CashierShift::where('user_id', $user->id)
             ->where('status', 'open')
             ->first();
+
+        if ($activeShift) {
+            $activeShift->expected_cash = $activeShift->calculateExpectedCashSoFar();
+        }
 
         return Inertia::render('Hendhys/Reports/Laci', [
             'rows'    => $rows,
