@@ -29,8 +29,8 @@ class StockController extends Controller
                       });
                 })
                 ->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-                ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock', 'hendhys_stock_pusat.quantity_return as return_stock', 'gudang_stock.quantity as parent_stock')
+                ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
+                ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock', 'hendhys_stock_pusat.quantity_return as return_stock', 'jihans_gudang_stock.quantity as parent_stock')
                 ->with(['unit', 'category']);
 
             if ($search = $request->search) {

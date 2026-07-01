@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Unit;
+use App\Models\Product;
+
+class JihansGudangStock extends Model
+{
+    protected $table    = 'jihans_gudang_stock';
+    public    $timestamps = false;
+
+    protected $fillable = ['product_id', 'quantity', 'unit_id', 'last_updated'];
+
+    protected function casts(): array
+    {
+        return [
+            'quantity'     => 'decimal:3',
+            'last_updated' => 'datetime',
+        ];
+    }
+
+    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
+    public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
+}

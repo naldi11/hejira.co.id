@@ -10,7 +10,6 @@ import Button from '@/Components/ui/button/Button';
 const route = window.route;
 
 const VISIBILITY = [
-    { key: 'visible_gudang', label: 'Gudang Tempua', icon: 'warehouse' },
     { key: 'visible_jihans', label: "Jihan's Food", icon: 'storefront' },
     { key: 'visible_hendhys', label: 'Hendhys Brownies', icon: 'cake' },
 ];

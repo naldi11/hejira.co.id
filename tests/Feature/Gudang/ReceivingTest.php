@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Gudang;
 
-use App\Models\GudangStock;
+use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Receiving;
@@ -79,7 +79,7 @@ class ReceivingTest extends TestCase
         $this->assertSame('open', $grn->status);
 
         // Only the "bagus" quantity (8) enters active warehouse stock; the 2 damaged do not.
-        $this->assertSame(8, (int) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertSame(8, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
 
         // Both good and damaged rows are recorded as receiving details.
         $this->assertDatabaseHas('gudang_receiving_details', ['receiving_id' => $grn->id, 'kondisi' => 'baik', 'quantity' => 8]);

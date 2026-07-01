@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\GudangStockExport;
+use App\Exports\JihansGudangStockExport;
 
 class ExportService
 {
-    public function exportGudangStock(string $format = 'xlsx')
+    public function exportJihansGudangStock(string $format = 'xlsx')
     {
-        $filename = 'stok-gudang-' . now()->format('YmdHis') . '.' . $format;
-        return Excel::download(new GudangStockExport, $filename);
+        $filename = 'stok-jihans-gudang-' . now()->format('YmdHis') . '.' . $format;
+        return Excel::download(new JihansGudangStockExport, $filename);
     }
 
     // Tambahkan method export lainnya di sini seiring kebutuhan

@@ -23,14 +23,10 @@ class OwnerTest extends TestCase
         return $user;
     }
 
-    /** @return array<string, array{0:string,1:string}> */
     public static function ownerPages(): array
     {
         return [
             'dashboard' => ['owner.dashboard', 'Owner/Dashboard'],
-            'gudang'    => ['owner.gudang', 'Owner/Gudang'],
-            'jihans'    => ['owner.jihans', 'Owner/Jihans'],
-            'hendhys'   => ['owner.hendhys', 'Owner/Hendhys'],
             'reports'   => ['owner.reports', 'Owner/Reports'],
         ];
     }

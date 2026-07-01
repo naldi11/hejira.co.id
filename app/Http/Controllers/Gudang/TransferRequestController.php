@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Gudang\ApproveTransferRequest;
 use App\Http\Requests\Gudang\RejectTransferRequest;
 use App\Http\Resources\Gudang\TransferRequestResource;
-use App\Models\GudangStock;
+use App\Models\JihansGudangStock;
 use App\Models\TransferRequest;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
@@ -44,7 +44,7 @@ class TransferRequestController extends Controller
         $transferRequest->load(['branch', 'requester', 'approver', 'details.product', 'details.unit']);
 
         // Batch the warehouse-stock lookup (one query instead of one-per-row).
-        $stocks = GudangStock::whereIn('product_id', $transferRequest->details->pluck('product_id'))
+        $stocks = JihansGudangStock::whereIn('product_id', $transferRequest->details->pluck('product_id'))
             ->pluck('quantity', 'product_id');
         $transferRequest->details->each(function ($detail) use ($stocks) {
             $detail->warehouse_stock = (float) ($stocks[$detail->product_id] ?? 0);

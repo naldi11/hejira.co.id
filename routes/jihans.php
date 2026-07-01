@@ -60,17 +60,19 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
                 
                 Route::resource('karyawan', \App\Http\Controllers\Master\KaryawanController::class)->except(['show']);
 
-                Route::get('production-config', [\App\Http\Controllers\Jihans\JihansProductionConfigController::class, 'edit'])->name('production-config.edit');
-                Route::put('production-config', [\App\Http\Controllers\Jihans\JihansProductionConfigController::class, 'update'])->name('production-config.update');
+
             });
 
-            // Produksi Tortilla (Opsi A)
-            Route::get('tortilla/recap', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'recap'])->name('tortilla.recap');
-            Route::get('tortilla/recap/export', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'exportRecap'])->name('tortilla.recap.export');
-            Route::get('tortilla/prediksi/create', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'createPrediksi'])->name('tortilla.prediksi.create');
-            Route::post('tortilla/prediksi', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'storePrediksi'])->name('tortilla.prediksi.store');
-            Route::get('tortilla/{tortilla}/faktur', [\App\Http\Controllers\Jihans\TortillaProductionController::class, 'printFaktur'])->name('tortilla.faktur');
-            Route::resource('tortilla', \App\Http\Controllers\Jihans\TortillaProductionController::class)->except(['edit', 'update', 'destroy']);
+            // Produksi (Dinamis)
+            Route::get('production/recap', [\App\Http\Controllers\Jihans\ProductionController::class, 'recap'])->name('production.recap');
+            Route::get('production/recap/export', [\App\Http\Controllers\Jihans\ProductionController::class, 'exportRecap'])->name('production.recap.export');
+            Route::get('production/prediksi/create', [\App\Http\Controllers\Jihans\ProductionController::class, 'createPrediksi'])->name('production.prediksi.create');
+            Route::post('production/prediksi', [\App\Http\Controllers\Jihans\ProductionController::class, 'storePrediksi'])->name('production.prediksi.store');
+            Route::get('production/{production}/prediksi/edit', [\App\Http\Controllers\Jihans\ProductionController::class, 'editPrediksi'])->name('production.prediksi.edit');
+            Route::put('production/{production}/prediksi', [\App\Http\Controllers\Jihans\ProductionController::class, 'updatePrediksi'])->name('production.prediksi.update');
+            Route::delete('production/{production}/prediksi', [\App\Http\Controllers\Jihans\ProductionController::class, 'destroyPrediksi'])->name('production.prediksi.destroy');
+            Route::get('production/{production}/faktur', [\App\Http\Controllers\Jihans\ProductionController::class, 'printFaktur'])->name('production.faktur');
+            Route::resource('production', \App\Http\Controllers\Jihans\ProductionController::class)->except(['edit', 'update', 'destroy']);
 
             // Request ke Gudang
             Route::resource('transfer-requests', TransferRequestController::class)->except(['edit', 'update', 'destroy', 'show']); // show is shared/parent

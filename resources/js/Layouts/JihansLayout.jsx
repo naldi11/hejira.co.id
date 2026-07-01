@@ -51,8 +51,8 @@ export default function JihansLayout({ pageTitle, children }) {
             name: 'Manufaktur',
             icon: <Icon name="factory" className="text-[22px]" />,
             subItems: [
-                { name: 'Prediksi Produksi', path: route('jihans.tortilla.prediksi.create') },
-                { name: 'Aktual Produksi', path: route('jihans.tortilla.index') },
+                { name: 'Prediksi Produksi', path: route('jihans.production.prediksi.create') },
+                { name: 'Data Produksi', path: route('jihans.production.index') },
             ],
         });
     }
@@ -80,7 +80,6 @@ export default function JihansLayout({ pageTitle, children }) {
                 { name: 'Daftar Produk', path: route('jihans.master.products.index') },
                 { name: 'Pelanggan', path: route('jihans.master.customers.index') },
                 { name: 'Karyawan', path: route('jihans.master.karyawan.index') },
-                { name: 'Konfigurasi Produksi', path: route('jihans.master.production-config.edit') },
             ],
         });
     }

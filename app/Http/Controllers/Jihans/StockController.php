@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Jihans;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Gudang\ProductStockResource;
 use App\Http\Resources\Gudang\StockMovementResource;
-use App\Models\JihansStockMovement;
+use App\Models\JihansRetailStockMovement;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,10 +16,10 @@ class StockController extends Controller
     {
         $stocks = Product::where('status', 'active')
             ->where(fn ($w) => $w->visibleInJihans()->orWhereExists(fn ($sq) => $sq
-                ->from('jihans_stock')->whereColumn('jihans_stock.product_id', 'master_products.id')))
-            ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'jihans_stock.quantity as current_stock', 'gudang_stock.quantity as gudang_stock')
+                ->from('jihans_retail_stock')->whereColumn('jihans_retail_stock.product_id', 'master_products.id')))
+            ->leftJoin('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
+            ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
+            ->select('master_products.*', 'jihans_retail_stock.quantity as current_stock', 'jihans_gudang_stock.quantity as gudang_stock')
             ->with(['unit', 'category'])
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('master_products.name', 'like', "%{$request->search}%")
@@ -36,7 +36,7 @@ class StockController extends Controller
 
     public function movements(Request $request)
     {
-        $movements = JihansStockMovement::with(['product', 'creator'])
+        $movements = JihansRetailStockMovement::with(['product', 'creator'])
             ->when($request->filled('search'), fn ($q) => $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$request->search}%")))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->orderByDesc('created_at')

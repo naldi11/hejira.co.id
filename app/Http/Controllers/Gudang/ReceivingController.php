@@ -7,7 +7,7 @@ use App\Http\Requests\Gudang\StoreReceivingRequest;
 use App\Http\Requests\Gudang\UpdateReceivingRequest;
 use App\Http\Requests\Gudang\UploadReceivingPhotoRequest;
 use App\Http\Resources\Gudang\ReceivingResource;
-use App\Models\GudangStock;
+use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Receiving;
@@ -138,7 +138,7 @@ class ReceivingController extends Controller
                         'notes'        => $item['notes'] ?? null,
                     ]);
 
-                    $this->stock->creditGudang($item['product_id'], $item['unit_id'], $qtyBagus, 'purchase_receiving', $receiving->id, auth()->id());
+                    $this->stock->creditJihansGudang($item['product_id'], $item['unit_id'], $qtyBagus, 'purchase_receiving', $receiving->id, auth()->id());
                 }
 
                 if ($qtyRusak > 0) {
@@ -236,14 +236,14 @@ class ReceivingController extends Controller
                 $delta  = (float) $item['quantity'] - (float) $detail->quantity;
 
                 if ($delta > 0) {
-                    $this->stock->creditGudang($detail->product_id, $detail->unit_id, $delta, 'receiving_edit', $receiving->id, auth()->id());
+                    $this->stock->creditJihansGudang($detail->product_id, $detail->unit_id, $delta, 'receiving_edit', $receiving->id, auth()->id());
                 } elseif ($delta < 0) {
                     $absDelta = abs($delta);
-                    $stock = GudangStock::where('product_id', $detail->product_id)->first();
+                    $stock = JihansGudangStock::where('product_id', $detail->product_id)->first();
                     if (! $stock || $stock->quantity < $absDelta) {
                         throw new \Exception("Stok tidak mencukupi untuk koreksi produk: {$detail->product->name}");
                     }
-                    $this->stock->debitGudang($detail->product_id, $absDelta, 'receiving_edit', $receiving->id, auth()->id());
+                    $this->stock->debitJihansGudang($detail->product_id, $absDelta, 'receiving_edit', $receiving->id, auth()->id());
                 }
 
                 $newHpp = (float) $item['hpp_price'];

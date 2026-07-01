@@ -11,7 +11,6 @@ import Button from '@/Components/ui/button/Button';
 const route = window.route;
 
 const VISIBILITY = [
-    { key: 'visible_gudang', label: 'Gudang', icon: 'warehouse' },
     { key: 'visible_jihans', label: "Jihan's", icon: 'storefront' },
     { key: 'visible_hendhys', label: 'Hendhys', icon: 'cake' },
 ];
@@ -359,7 +358,7 @@ export default function ProductForm({ categories, units, brands, product = null 
                                 </div>
                                 <div>
                                     <label className={labelClass}>Visibilitas Entitas</label>
-                                    <div className="mt-2 grid grid-cols-3 gap-2">
+                                    <div className="mt-2 grid grid-cols-2 gap-2">
                                         {VISIBILITY.map((v) => {
                                             const on = data[v.key];
                                             return (

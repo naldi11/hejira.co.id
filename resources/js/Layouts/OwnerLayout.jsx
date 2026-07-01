@@ -13,14 +13,6 @@ export default function OwnerLayout({ pageTitle, children }) {
             path: route('owner.dashboard')
         },
         {
-            name: "Dashboard Entitas",
-            icon: <Icon name="business" className="text-[22px]" />,
-            subItems: [
-                { name: "Jihan's Food", path: route('owner.jihans') },
-                { name: 'Hendhys Brownies', path: route('owner.hendhys') },
-            ]
-        },
-        {
             name: "Laporan Data",
             icon: <Icon name="assessment" className="text-[22px]" />,
             path: route('owner.reports')

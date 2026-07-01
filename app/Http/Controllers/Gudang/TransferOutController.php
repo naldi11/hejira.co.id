@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Gudang\StoreTransferOutRequest;
 use App\Http\Resources\Gudang\TransferOutResource;
 use App\Models\Branch;
-use App\Models\GudangStock;
+use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
@@ -45,8 +45,8 @@ class TransferOutController extends Controller
         $products = Product::where('status', 'active')
             ->visibleInGudang()
             ->with('unit')
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
+            ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
+            ->select('master_products.*', 'jihans_gudang_stock.quantity as current_stock')
             ->orderBy('master_products.name')
             ->get()
             ->map(fn ($p) => [
@@ -69,7 +69,7 @@ class TransferOutController extends Controller
                 ->whereIn('status', ['approved', 'partial'])
                 ->findOrFail($request->request_id);
 
-            $stocks = GudangStock::whereIn('product_id', $tr->details->pluck('product_id'))->pluck('quantity', 'product_id');
+            $stocks = JihansGudangStock::whereIn('product_id', $tr->details->pluck('product_id'))->pluck('quantity', 'product_id');
 
             $transferRequest = [
                 'id'             => $tr->id,
@@ -106,7 +106,7 @@ class TransferOutController extends Controller
 
         // Stock sufficiency check.
         foreach ($data['items'] as $item) {
-            $stock = GudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
+            $stock = JihansGudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
             if ($item['quantity'] > $stock) {
                 $product = Product::find($item['product_id']);
                 return back()->withInput()->withErrors([

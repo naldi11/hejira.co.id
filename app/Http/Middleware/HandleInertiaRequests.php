@@ -86,9 +86,9 @@ class HandleInertiaRequests extends Middleware
                         }
 
                         // 2. Low stock items in Gudang
-                        $lowStockCount = \App\Models\GudangStock::join('master_products', 'gudang_stock.product_id', '=', 'master_products.id')
+                        $lowStockCount = \App\Models\JihansGudangStock::join('master_products', 'jihans_gudang_stock.product_id', '=', 'master_products.id')
                             ->where('master_products.status', 'active')
-                            ->whereRaw('gudang_stock.quantity <= master_products.stock_min')
+                            ->whereRaw('jihans_gudang_stock.quantity <= master_products.stock_min')
                             ->count();
                         if ($lowStockCount > 0) {
                             $items[] = [
@@ -133,9 +133,9 @@ class HandleInertiaRequests extends Middleware
                         }
 
                         // 2. Low stock in Jihans
-                        $lowStockCount = \App\Models\JihansStock::join('master_products', 'jihans_stock.product_id', '=', 'master_products.id')
+                        $lowStockCount = \App\Models\JihansRetailStock::join('master_products', 'jihans_retail_stock.product_id', '=', 'master_products.id')
                             ->where('master_products.status', 'active')
-                            ->whereRaw('jihans_stock.quantity <= master_products.stock_min')
+                            ->whereRaw('jihans_retail_stock.quantity <= master_products.stock_min')
                             ->count();
                         if ($lowStockCount > 0) {
                             $items[] = [

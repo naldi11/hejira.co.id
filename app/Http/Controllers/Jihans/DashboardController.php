@@ -25,9 +25,9 @@ class DashboardController extends Controller
 
         $lowStocks = Product::where('status', 'active')
             ->whereIn('master_products.entity_scope', ['jihans', 'all'])
-            ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->where('jihans_stock.quantity', '<=', 50)
-            ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+            ->join('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
+            ->where('jihans_retail_stock.quantity', '<=', 50)
+            ->select('master_products.*', 'jihans_retail_stock.quantity as current_stock')
             ->take(5)->get()
             ->map(fn ($s) => [
                 'id'            => $s->id,

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Gudang;
 
-use App\Models\GudangStock;
-use App\Models\GudangStockMovement;
+use App\Models\JihansGudangStock;
+use App\Models\JihansGudangStockMovement;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Unit;
@@ -44,7 +44,7 @@ class StockTest extends TestCase
         ], $overrides));
 
         if ($stock !== null) {
-            GudangStock::create([
+            JihansGudangStock::create([
                 'product_id' => $product->id,
                 'quantity'   => $stock,
                 'unit_id'    => $unit->id,
@@ -115,9 +115,9 @@ class StockTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        $this->assertSame(7, (int) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertSame(7, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
 
-        $this->assertDatabaseHas('gudang_stock_movements', [
+        $this->assertDatabaseHas('jihans_gudang_stock_movements', [
             'product_id'      => $product->id,
             'source'          => 'adjustment',
             'type'            => 'out',
@@ -141,7 +141,7 @@ class StockTest extends TestCase
             ->assertSessionHasErrors('notes');
 
         // Balance must remain untouched when validation fails.
-        $this->assertSame(10, (int) GudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertSame(10, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
     }
 
     public function test_adjust_rejects_negative_quantity(): void

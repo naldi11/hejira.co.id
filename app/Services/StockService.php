@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\GudangStock;
-use App\Models\GudangStockMovement;
+use App\Models\JihansGudangStock;
+use App\Models\JihansGudangStockMovement;
 use App\Models\HendhysStockBranch;
 use App\Models\HendhysStockIn;
 use App\Models\HendhysStockMovement;
 use App\Models\HendhysStockPusat;
-use App\Models\JihansStock;
-use App\Models\JihansStockIn;
-use App\Models\JihansStockInDetail;
-use App\Models\JihansStockMovement;
+use App\Models\JihansRetailStock;
+use App\Models\JihansRetailStockIn;
+use App\Models\JihansRetailStockInDetail;
+use App\Models\JihansRetailStockMovement;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\Branch;
@@ -22,9 +22,9 @@ class StockService
 {
     public function __construct(private NumberGeneratorService $numbers) {}
 
-    // ── Gudang ────────────────────────────────────────────────────────────────
+    // ── Jihans Gudang ─────────────────────────────────────────────────────────
 
-    public function creditGudang(
+    public function creditJihansGudang(
         int    $productId,
         int    $unitId,
         int    $qty,
@@ -33,7 +33,7 @@ class StockService
         ?int   $userId = null,
         ?string $notes = null
     ): void {
-        $stock = GudangStock::firstOrCreate(
+        $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
@@ -43,7 +43,7 @@ class StockService
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
-        GudangStockMovement::create([
+        JihansGudangStockMovement::create([
             'product_id'      => $productId,
             'type'            => 'in',
             'source'          => $source,
@@ -57,7 +57,7 @@ class StockService
         ]);
     }
 
-    public function debitGudang(
+    public function debitJihansGudang(
         int    $productId,
         int    $qty,
         string $source,
@@ -65,7 +65,7 @@ class StockService
         ?int   $userId = null,
         ?string $notes = null
     ): void {
-        $stock = GudangStock::firstOrCreate(
+        $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
         );
@@ -75,7 +75,7 @@ class StockService
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
-        GudangStockMovement::create([
+        JihansGudangStockMovement::create([
             'product_id'      => $productId,
             'type'            => 'out',
             'source'          => $source,
@@ -89,14 +89,14 @@ class StockService
         ]);
     }
 
-    public function adjustGudang(
+    public function adjustJihansGudang(
         int    $productId,
         int    $unitId,
         int    $newQty,
         ?int   $userId = null,
         ?string $notes = null
     ): void {
-        $stock = GudangStock::firstOrCreate(
+        $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
@@ -107,7 +107,7 @@ class StockService
 
         $stock->update(['quantity' => $newQty, 'last_updated' => now()]);
 
-        GudangStockMovement::create([
+        JihansGudangStockMovement::create([
             'product_id'      => $productId,
             'type'            => $type,
             'source'          => 'adjustment',
@@ -121,7 +121,7 @@ class StockService
         ]);
     }
 
-    // ── Transfer Keluar: hanya debit Gudang ──────────────────────────────────
+    // ── Transfer Keluar: hanya debit Jihans Gudang ───────────────────────────
 
     public function processTransferOut(TransferOut $transfer): void
     {
@@ -129,7 +129,7 @@ class StockService
             $userId = $transfer->created_by;
 
             foreach ($transfer->details as $detail) {
-                $this->debitGudang(
+                $this->debitJihansGudang(
                     $detail->product_id,
                     $detail->quantity,
                     'transfer_out',
@@ -149,24 +149,24 @@ class StockService
             if ($qty <= 0) continue;
 
             if ($transfer->to_entity === 'jihans') {
-                $this->creditJihans($detail->product_id, $detail->unit_id, $qty, 'transfer_gudang', $transfer->id, $userId);
+                $this->creditJihansRetail($detail->product_id, $detail->unit_id, $qty, 'transfer_gudang', $transfer->id, $userId);
             } else {
                 $this->creditHendhys($detail->product_id, $detail->unit_id, $qty, $transfer->branch_id, 'transfer_gudang', $transfer->id, $userId);
             }
         }
 
         if ($transfer->to_entity === 'jihans') {
-            $this->createJihansStockIn($transfer);
+            $this->createJihansRetailStockIn($transfer);
         } else {
             $this->createHendhysStockIn($transfer);
         }
     }
 
-    // ── Jihans ────────────────────────────────────────────────────────────────
+    // ── Jihans Retail ─────────────────────────────────────────────────────────
 
-    public function creditJihans(int $productId, int $unitId, float $qty, string $source, ?int $refId, ?int $userId): void
+    public function creditJihansRetail(int $productId, int $unitId, float $qty, string $source, ?int $refId, ?int $userId): void
     {
-        $stock = JihansStock::firstOrCreate(
+        $stock = JihansRetailStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
@@ -175,12 +175,12 @@ class StockService
         $after  = $before + $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
-        $this->recordJihansMovement($productId, 'in', $source, $refId, $qty, $before, $after, $userId);
+        $this->recordJihansRetailMovement($productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function debitJihans(int $productId, float $qty, string $source, ?int $refId, ?int $userId): void
+    public function debitJihansRetail(int $productId, float $qty, string $source, ?int $refId, ?int $userId): void
     {
-        $stock = JihansStock::firstOrCreate(
+        $stock = JihansRetailStock::firstOrCreate(
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
         );
@@ -189,12 +189,12 @@ class StockService
         $after  = max(0, $before - $qty);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
-        $this->recordJihansMovement($productId, 'out', $source, $refId, $qty, $before, $after, $userId);
+        $this->recordJihansRetailMovement($productId, 'out', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function recordJihansMovement(int $productId, string $type, string $source, ?int $refId, float $qty, float $before, float $after, ?int $userId): void
+    public function recordJihansRetailMovement(int $productId, string $type, string $source, ?int $refId, float $qty, float $before, float $after, ?int $userId): void
     {
-        DB::table('jihans_stock_movements')->insert([
+        DB::table('jihans_retail_stock_movements')->insert([
             'product_id'      => $productId,
             'type'            => $type,
             'source'          => $source,
@@ -207,10 +207,10 @@ class StockService
         ]);
     }
 
-    private function createJihansStockIn(TransferOut $transfer): void
+    private function createJihansRetailStockIn(TransferOut $transfer): void
     {
-        $stockIn = JihansStockIn::create([
-            'stock_in_number' => $this->numbers->generateYearly('JHS-STI', 'jihans_stock_in', 'stock_in_number'),
+        $stockIn = JihansRetailStockIn::create([
+            'stock_in_number' => $this->numbers->generateYearly('JHS-STI', 'jihans_retail_stock_in', 'stock_in_number'),
             'transfer_out_id' => $transfer->id,
             'date'            => $transfer->date,
             'notes'           => $transfer->notes,
@@ -222,7 +222,7 @@ class StockService
             $qty = (float) ($detail->received_quantity ?? $detail->quantity);
             if ($qty <= 0) continue;
 
-            JihansStockInDetail::create([
+            JihansRetailStockInDetail::create([
                 'stock_in_id' => $stockIn->id,
                 'product_id'  => $detail->product_id,
                 'quantity'    => $qty,
@@ -358,19 +358,19 @@ class StockService
         \App\Models\Product::where('id', $productId)->update(['hpp' => $hppPrice]);
     }
 
-    // ── Gudang stock listing (read model) ────────────────────────────────────
+    // ── Jihans Gudang stock listing (read model) ─────────────────────────────
 
     /**
      * Paginated warehouse stock: every active INV product left-joined with its
-     * current Gudang balance. Eager-loads unit + category to avoid N+1.
+     * current Jihans Gudang balance. Eager-loads unit + category to avoid N+1.
      */
-    public function paginateGudangStock(?string $search = null, bool $lowStockOnly = false, int $perPage = 20): LengthAwarePaginator
+    public function paginateJihansGudangStock(?string $search = null, bool $lowStockOnly = false, int $perPage = 20): LengthAwarePaginator
     {
         return Product::query()
             ->with(['unit', 'category'])
             ->visibleInGudang()
-            ->leftJoin('gudang_stock', 'master_products.id', '=', 'gudang_stock.product_id')
-            ->select('master_products.*', 'gudang_stock.quantity as current_stock')
+            ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
+            ->select('master_products.*', 'jihans_gudang_stock.quantity as current_stock')
             ->selectRaw("
                 (SELECT COALESCE(SUM(grd.received_quantity), 0)
                  FROM gudang_return_details grd
@@ -392,7 +392,7 @@ class StockService
             ->when($search, fn ($q, $s) => $q->where(fn ($w) => $w
                 ->where('master_products.name', 'like', "%{$s}%")
                 ->orWhere('master_products.code', 'like', "%{$s}%")))
-            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(gudang_stock.quantity, 0) <= master_products.stock_min'))
+            ->when($lowStockOnly, fn ($q) => $q->whereRaw('COALESCE(jihans_gudang_stock.quantity, 0) <= master_products.stock_min'))
             ->orderBy('master_products.name')
             ->paginate($perPage)
             ->withQueryString();

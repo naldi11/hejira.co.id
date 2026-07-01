@@ -8,7 +8,7 @@ use App\Http\Requests\Gudang\StockIndexRequest;
 use App\Http\Resources\Gudang\ProductStockResource;
 use App\Http\Resources\Gudang\StockMovementResource;
 use App\Http\Resources\UnitResource;
-use App\Models\GudangStockMovement;
+use App\Models\JihansGudangStockMovement;
 use App\Models\Product;
 use App\Models\Unit;
 use App\Services\ActivityLogService;
@@ -27,7 +27,7 @@ class StockController extends Controller
     {
         $filters = $request->validated();
 
-        $stocks = $this->stock->paginateGudangStock(
+        $stocks = $this->stock->paginateJihansGudangStock(
             $filters['search'] ?? null,
             ($filters['low_stock'] ?? null) === '1',
         );
@@ -44,7 +44,7 @@ class StockController extends Controller
 
     public function movements(Request $request)
     {
-        $movements = GudangStockMovement::with(['product', 'creator'])
+        $movements = JihansGudangStockMovement::with(['product', 'creator'])
             ->when($request->filled('search'), fn ($q) => $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$request->search}%")))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->when($request->filled('source'), fn ($q) => $q->where('source', $request->source))
@@ -62,7 +62,7 @@ class StockController extends Controller
         $data    = $request->validated();
         $product = Product::findOrFail($data['product_id']);
 
-        $this->stock->adjustGudang(
+        $this->stock->adjustJihansGudang(
             $data['product_id'],
             $data['unit_id'],
             $data['quantity'],

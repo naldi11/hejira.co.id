@@ -7,7 +7,7 @@ use App\Http\Requests\Jihans\StoreGudangReturnRequest;
 use App\Http\Resources\Gudang\GudangReturnResource;
 use App\Models\GudangReturn;
 use App\Models\GudangReturnDetail;
-use App\Models\JihansStock;
+use App\Models\JihansRetailStock;
 use App\Models\Product;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
@@ -42,9 +42,9 @@ class GudangReturnController extends Controller
     {
         return Inertia::render('Jihans/Returns/Create', [
             'products' => Product::where('status', 'active')
-                ->join('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-                ->where('jihans_stock.quantity', '>', 0)
-                ->select('master_products.*', 'jihans_stock.quantity as current_stock')
+                ->join('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
+                ->where('jihans_retail_stock.quantity', '>', 0)
+                ->select('master_products.*', 'jihans_retail_stock.quantity as current_stock')
                 ->with('unit')->orderBy('master_products.name')->get()
                 ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'code' => $p->code, 'unit_id' => $p->unit_id, 'unit_name' => $p->unit?->abbreviation ?? 'PCS', 'stock' => (float) $p->current_stock]),
             'units'    => Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]),
@@ -69,9 +69,9 @@ class GudangReturnController extends Controller
                 ]);
 
                 foreach ($data['items'] as $item) {
-                    $stock = JihansStock::where('product_id', $item['product_id'])->first();
+                    $stock = JihansRetailStock::where('product_id', $item['product_id'])->first();
                     if (! $stock || $stock->quantity < $item['quantity']) {
-                        throw new \Exception("Stok Jihans tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
+                        throw new \Exception("Stok Retail Jihans tidak mencukupi untuk diretur (Produk ID: {$item['product_id']})");
                     }
 
                     GudangReturnDetail::create([
@@ -83,7 +83,7 @@ class GudangReturnController extends Controller
                         'notes'      => $item['notes'] ?? null,
                     ]);
 
-                    $this->stockService->debitJihans($item['product_id'], $item['quantity'], 'return_gudang', $ret->id, $userId);
+                    $this->stockService->debitJihansRetail($item['product_id'], $item['quantity'], 'return_gudang', $ret->id, $userId);
                 }
             });
 

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Jihans\StorePosTransactionRequest;
 use App\Http\Resources\Jihans\PosProductResource;
 use App\Models\Customer;
-use App\Models\JihansStock;
+use App\Models\JihansRetailStock;
 use App\Models\JihansTransaction;
 use App\Models\Product;
 use App\Services\ActivityLogService;
@@ -29,8 +29,8 @@ class PosController extends Controller
     {
         $products = Product::where('status', 'active')
             ->visibleInJihans()
-            ->leftJoin('jihans_stock', 'master_products.id', '=', 'jihans_stock.product_id')
-            ->select('master_products.*', DB::raw('COALESCE(jihans_stock.quantity, 0) as current_stock'))
+            ->leftJoin('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
+            ->select('master_products.*', DB::raw('COALESCE(jihans_retail_stock.quantity, 0) as current_stock'))
             ->with(['unit', 'tieredPrices', 'category'])
             ->orderBy('master_products.name')
             ->get();
@@ -52,7 +52,7 @@ class PosController extends Controller
         $data = $request->validated();
 
         foreach ($data['items'] as $item) {
-            $available = JihansStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
+            $available = JihansRetailStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
             if ($item['quantity'] > $available) {
                 return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$item['product_id']}."], 422);
             }
@@ -91,7 +91,7 @@ class PosController extends Controller
                     'total'           => $item['total'],
                 ]);
 
-                $this->stock->debitJihans($item['product_id'], $item['quantity'], 'pos_sale', $trx->id, auth()->id());
+                $this->stock->debitJihansRetail($item['product_id'], $item['quantity'], 'pos_sale', $trx->id, auth()->id());
             }
 
             $trx->payments()->create([
