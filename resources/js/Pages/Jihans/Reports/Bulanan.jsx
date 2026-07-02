@@ -44,7 +44,19 @@ export default function ReportBulanan({ rows, filters }) {
                                 <input
                                     type="date"
                                     value={form.date_from}
-                                    onChange={(e) => setForm({...form, date_from: e.target.value})}
+                                    onChange={(e) => {
+                                        const newDateFrom = e.target.value;
+                                        let newDateTo = form.date_to;
+                                        if (newDateFrom) {
+                                            const from = new Date(newDateFrom);
+                                            const year = from.getFullYear();
+                                            const month = from.getMonth() + 1;
+                                            const lastDay = new Date(year, month, 0).getDate();
+                                            const formattedMonth = month.toString().padStart(2, '0');
+                                            newDateTo = `${year}-${formattedMonth}-${lastDay}`;
+                                        }
+                                        setForm({...form, date_from: newDateFrom, date_to: newDateTo});
+                                    }}
                                     className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-3 py-2 text-sm text-gray-800 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                                 />
                                 <span className="text-sm text-gray-400 dark:text-gray-500">s/d</span>
