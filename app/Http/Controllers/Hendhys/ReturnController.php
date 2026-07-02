@@ -166,7 +166,7 @@ class ReturnController extends Controller
                         $detail->unit_id,
                         $detail->quantity,
                         null, // null untuk Pusat
-                        'return_receiving',
+                        'return_from_branch',
                         $return->id,
                         $user->id
                     );

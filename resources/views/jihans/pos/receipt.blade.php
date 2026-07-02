@@ -371,7 +371,7 @@
 
             <div style="margin-top: 8px; text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.35;">
                 BANK BRI<br>
-                1092-0100-0385-583<br>
+                1092-0100-0365-563<br>
                 A/N ANNY RITONGA
             </div>
         </div>
