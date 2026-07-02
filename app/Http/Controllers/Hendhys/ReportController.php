@@ -380,11 +380,22 @@ class ReportController extends Controller
         }
 
         $viewName = ($type === 'harian') ? 'hendhys.reports.harian_pdf' : 'hendhys.reports.pdf';
-        $paperSize = ($type === 'pelanggan') ? 'legal' : [0, 0, 792, 684];
-        $orientation = ($type === 'pelanggan') ? 'portrait' : 'landscape';
         
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'branch', 'isDetailed', 'orientation'))
-                ->setPaper($paperSize, $orientation);
+        $requestedSize = $request->input('paper_size', '58');
+        
+        if ($type === 'pelanggan') {
+            $pdfPaper = 'legal';
+            $orientation = 'portrait';
+        } elseif ($type === 'laci') {
+            $pdfPaper = ($requestedSize == '80') ? [0, 0, 226.77, 841.89] : [0, 0, 164.41, 841.89];
+            $orientation = 'portrait';
+        } else {
+            $pdfPaper = [0, 0, 792, 684];
+            $orientation = 'landscape';
+        }
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'branch', 'isDetailed', 'orientation', 'requestedSize'))
+                ->setPaper($pdfPaper, $orientation);
         $pdf->getDomPDF()->set_option("enable_php", true);
 
         return $pdf->stream($title . '.pdf');

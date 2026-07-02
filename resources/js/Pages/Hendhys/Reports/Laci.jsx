@@ -22,6 +22,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [exportShiftId, setExportShiftId] = useState('');
     const [exportDateFrom, setExportDateFrom] = useState('');
     const [exportDateTo, setExportDateTo] = useState('');
+    const [exportPaperSize, setExportPaperSize] = useState('58');
     const [exportMonth, setExportMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -43,6 +44,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
             const lastDay = new Date(y, m, 0).getDate();
             url = `${base}?date_from=${exportMonth}-01&date_to=${exportMonth}-${lastDay}`;
         }
+        url += (url.includes('?') ? '&' : '?') + `paper_size=${exportPaperSize}`;
         window.open(url, '_blank');
         setExportModal(false);
     };
@@ -705,20 +707,33 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
 
                     {/* Per Shift: pilih dari daftar shift */}
                     {exportType === 'shift' && (
-                        <div className="mb-5">
-                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Shift</label>
-                            <select
-                                value={exportShiftId}
-                                onChange={e => setExportShiftId(e.target.value)}
-                                className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500"
-                            >
-                                <option value="">-- Pilih Shift --</option>
-                                {rows.data?.filter(r => r.status === 'closed').map((r, i) => (
-                                    <option key={r.id} value={r.id}>
-                                        {r.user?.name ?? 'Kasir'} — {formatDateTime(r.opened_at)} s/d {formatDateTime(r.closed_at)}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="mb-5 space-y-4">
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Shift</label>
+                                <select
+                                    value={exportShiftId}
+                                    onChange={e => setExportShiftId(e.target.value)}
+                                    className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-orange-500 focus:ring-orange-500"
+                                >
+                                    <option value="">-- Pilih Shift --</option>
+                                    {rows.data?.filter(r => r.status === 'closed').map((r, i) => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.user?.name ?? 'Kasir'} — {formatDateTime(r.opened_at)} s/d {formatDateTime(r.closed_at)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Ukuran Kertas</label>
+                                <select
+                                    value={exportPaperSize}
+                                    onChange={e => setExportPaperSize(e.target.value)}
+                                    className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-orange-500 focus:ring-orange-500"
+                                >
+                                    <option value="58">Thermal 58mm</option>
+                                    <option value="80">Thermal 80mm</option>
+                                </select>
+                            </div>
                         </div>
                     )}
 

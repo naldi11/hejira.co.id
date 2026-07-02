@@ -22,6 +22,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [exportShiftId, setExportShiftId] = useState('');
     const [exportDateFrom, setExportDateFrom] = useState('');
     const [exportDateTo, setExportDateTo] = useState('');
+    const [exportPaperSize, setExportPaperSize] = useState('58');
     const [exportMonth, setExportMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -42,6 +43,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
             const lastDay = new Date(y, m, 0).getDate();
             url = `${base}?date_from=${exportMonth}-01&date_to=${exportMonth}-${lastDay}`;
         }
+        url += (url.includes('?') ? '&' : '?') + `paper_size=${exportPaperSize}`;
         window.open(url, '_blank');
         setExportModal(false);
     };

@@ -5,7 +5,7 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: {{ $type === 'laci' ? '58mm 297mm' : ($type === 'pelanggan' ? 'legal portrait' : '11in 9.5in') }};
+            size: {{ $type === 'laci' ? ($requestedSize == '80' ? '80mm 297mm' : '58mm 297mm') : ($type === 'pelanggan' ? 'legal portrait' : '11in 9.5in') }};
             margin-top: {{ $type === 'laci' ? '0.2cm' : '1.2cm' }};
             margin-bottom: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
             margin-left: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
