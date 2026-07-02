@@ -322,13 +322,22 @@ class ReportController extends Controller
             $rows = $query->get();
         }
 
-        // Laporan harian kini menggunakan landscape A5 sesuai template baru
-        $orientation = ($type === 'pelanggan') ? 'portrait' : 'landscape';
-        $paperSize = ($type === 'pelanggan') ? 'legal' : [0, 0, 792, 684];
+        $requestedSize = $request->input('paper_size', '58');
+        
+        if ($type === 'pelanggan') {
+            $pdfPaper = 'legal';
+            $orientation = 'portrait';
+        } elseif ($type === 'laci') {
+            $pdfPaper = ($requestedSize == '80') ? [0, 0, 226.77, 841.89] : [0, 0, 164.41, 841.89];
+            $orientation = 'portrait';
+        } else {
+            $pdfPaper = [0, 0, 792, 684];
+            $orientation = 'landscape';
+        }
 
         $viewName = ($type === 'harian') ? 'jihans.reports.harian_pdf' : 'jihans.reports.pdf';
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation'))
-                ->setPaper($paperSize, $orientation);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('rows', 'type', 'title', 'request', 'isDetailed', 'orientation', 'requestedSize'))
+                ->setPaper($pdfPaper, $orientation);
         $pdf->getDomPDF()->set_option("enable_php", true);
 
         return $pdf->stream($title . '.pdf');

@@ -5,11 +5,11 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: {{ $type === 'pelanggan' ? 'legal portrait' : '11in 9.5in' }};
-            margin-top: {{ $isDetailed ? '0.3cm' : '1.2cm' }};
-            margin-bottom: {{ $isDetailed ? '1.0cm' : '0.6cm' }};
-            margin-left: 0.6cm;
-            margin-right: 0.6cm;
+            size: {{ $type === 'laci' ? ($requestedSize == '80' ? '80mm 297mm' : '58mm 297mm') : ($type === 'pelanggan' ? 'legal portrait' : '11in 9.5in') }};
+            margin-top: {{ $type === 'laci' ? '0.2cm' : ($isDetailed ? '0.3cm' : '1.2cm') }};
+            margin-bottom: {{ $type === 'laci' ? '0.2cm' : ($isDetailed ? '1.0cm' : '0.6cm') }};
+            margin-left: {{ $type === 'laci' ? '0.2cm' : '0.6cm' }};
+            margin-right: {{ $type === 'laci' ? '0.2cm' : '0.6cm' }};
         }
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #000000; line-height: 1.25; margin: 0; padding: 0; }
         
