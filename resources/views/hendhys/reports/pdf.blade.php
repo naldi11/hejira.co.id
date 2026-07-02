@@ -11,7 +11,7 @@
             margin-left: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
             margin-right: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000; line-height: 1.35; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000000; font-weight: bold; line-height: 1.35; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {

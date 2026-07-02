@@ -11,7 +11,7 @@
             margin-left: 0.6cm;
             margin-right: 0.6cm;
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000; line-height: 1.25; margin: 0; padding: 0; }
+        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000000; font-weight: bold; line-height: 1.25; margin: 0; padding: 0; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {
