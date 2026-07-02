@@ -5,13 +5,13 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: {{ $type === 'laci' ? '80mm 297mm' : ($type === 'pelanggan' ? 'legal portrait' : '11in 9.5in') }};
+            size: {{ $type === 'laci' ? '58mm 297mm' : ($type === 'pelanggan' ? 'legal portrait' : '11in 9.5in') }};
             margin-top: {{ $type === 'laci' ? '0.2cm' : '1.2cm' }};
             margin-bottom: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
             margin-left: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
             margin-right: {{ $type === 'laci' ? '0.2cm' : '0.8cm' }};
         }
-        body { font-family: 'Courier', 'Courier New', monospace; font-size: 10px; color: #000000; font-weight: bold; line-height: 1.35; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #000000; line-height: 1.35; }
         
         /* Fixed Header/Footer for PDF Pages */
         .page-header {

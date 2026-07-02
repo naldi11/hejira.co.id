@@ -9,10 +9,9 @@
             margin: 0.5cm;
         }
         body { 
-            font-family: 'Courier', 'Courier New', monospace; 
+            font-family: 'Helvetica', 'Arial', sans-serif; 
             font-size: 12px; 
             color: #000000; 
-            font-weight: bold; 
             line-height: 1.3; 
             margin: 0; 
             padding: 0; 
