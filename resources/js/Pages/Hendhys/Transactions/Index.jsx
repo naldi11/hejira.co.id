@@ -71,9 +71,14 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                                             <td className="px-6 py-4 text-center"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'}`}>{t.status}</span></td>
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{t.creator}</td>
                                             <td className="px-6 py-4 text-right">
-                                                <a href={route('hendhys.transactions.show', t.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
-                                                    <Icon name="receipt" className="text-[16px]" /> Struk
-                                                </a>
+                                                <div className="flex justify-end gap-2">
+                                                    <a href={`${route('hendhys.transactions.show', t.id)}?paper_size=58`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
+                                                        <Icon name="receipt" className="text-[16px]" /> Struk 58mm
+                                                    </a>
+                                                    <a href={`${route('hendhys.transactions.show', t.id)}?paper_size=80`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
+                                                        <Icon name="receipt" className="text-[16px]" /> Struk 80mm
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

@@ -9,7 +9,7 @@
         
         body {
             background: #e5e7eb;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11.5px;
             color: #000;
             display: flex;
@@ -20,7 +20,7 @@
         .receipt-container {
             background: #fff;
             width: 100%;
-            max-width: 320px;  /* Lebar standar struk thermal 80mm */
+            max-width: {{ $paperSize == '80' ? '320px' : '220px' }};
             padding: 12px 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }

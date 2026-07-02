@@ -23,6 +23,7 @@ export default function PosIndex({ products, paymentMethods }) {
     const [notes, setNotes] = useState('');
     const [selectedPayment, setSelectedPayment] = useState('tunai');
     const [processing, setProcessing] = useState(false);
+    const [paperSize, setPaperSize] = useState('58');
 
     // Tipe pembayaran hardcoded - selalu tampil
     const PAYMENT_TYPES = [
@@ -196,7 +197,7 @@ export default function PosIndex({ products, paymentMethods }) {
                 setAmountPaid('');
                 setNotes('');
                 if (data.redirect) {
-                    window.location.href = data.redirect;
+                    window.location.href = data.redirect + '?paper_size=' + paperSize;
                 }
             } else {
                 alert(data.error || data.message || 'Gagal memproses transaksi');
@@ -506,6 +507,19 @@ export default function PosIndex({ products, paymentMethods }) {
                                 placeholder="Catatan transaksi (opsional)..." 
                                 className="w-full rounded-lg border-gray-300 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500" 
                             />
+                        </div>
+
+                        {/* Ukuran Kertas Struk */}
+                        <div className="space-y-1 mt-3 mb-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Ukuran Kertas Struk</label>
+                            <select 
+                                value={paperSize} 
+                                onChange={(e) => setPaperSize(e.target.value)} 
+                                className="w-full rounded-lg border-gray-300 py-2 px-3 text-sm font-bold dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500"
+                            >
+                                <option value="58">Thermal 58mm (Kecil)</option>
+                                <option value="80">Thermal 80mm (Besar)</option>
+                            </select>
                         </div>
                         
                         <button 

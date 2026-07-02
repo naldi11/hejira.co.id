@@ -1,1 +1,0 @@
-import{t as e}from"./app-DT1oOE_W.js";var t=e();function n({name:e,className:n=``,filled:r=!1,...i}){return(0,t.jsx)(`span`,{className:`material-symbols-outlined${r?` fill`:``} ${n}`,"aria-hidden":`true`,...i,children:e})}export{n as t};

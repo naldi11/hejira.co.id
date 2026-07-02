@@ -230,7 +230,7 @@ class PosController extends Controller
         }
     }
 
-    public function receipt(HendhysTransaction $transaction)
+    public function receipt(\Illuminate\Http\Request $request, HendhysTransaction $transaction)
     {
         $user = auth()->user();
         if ($user->branch->type === 'cabang' && $transaction->branch_id !== $user->branch_id) {
@@ -241,7 +241,8 @@ class PosController extends Controller
         }
 
         $transaction->load(['details.unit', 'payments.method', 'creator', 'customer']);
-        return view('hendhys.pos.receipt', compact('transaction'));
+        $paperSize = $request->input('paper_size', '58');
+        return view('hendhys.pos.receipt', compact('transaction', 'paperSize'));
     }
 
     public function invoice(HendhysTransaction $transaction)

@@ -34,10 +34,11 @@ class TransactionController extends Controller
      * Reprint a sale from history → the SAME 80mm thermal receipt used after a sale
      * (one template, consistent output). Kept as a Blade print document.
      */
-    public function show($id)
+    public function show(\Illuminate\Http\Request $request, $id)
     {
         $transaction = HendhysTransaction::with(['details.product', 'details.unit', 'creator', 'customer', 'branch', 'payments'])->findOrFail($id);
+        $paperSize = $request->input('paper_size', '58');
 
-        return view('hendhys.pos.receipt', compact('transaction'));
+        return view('hendhys.pos.receipt', compact('transaction', 'paperSize'));
     }
 }

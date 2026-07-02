@@ -119,12 +119,12 @@ class PosController extends Controller
         return redirect()->route('jihans.pos.receipt', $transaction->id);
     }
 
-    /** Printable receipt — kept as a Blade document. */
-    public function receipt(JihansTransaction $transaction)
+    public function receipt(\Illuminate\Http\Request $request, JihansTransaction $transaction)
     {
         $transaction->load(['details.unit', 'payments.method', 'creator', 'customer']);
+        $paperSize = $request->input('paper_size', '58');
 
-        return view('jihans.pos.receipt', compact('transaction'));
+        return view('jihans.pos.receipt', compact('transaction', 'paperSize'));
     }
 
     public function invoice($id)
