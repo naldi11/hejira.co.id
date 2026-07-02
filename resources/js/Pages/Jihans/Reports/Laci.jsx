@@ -716,7 +716,15 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                         <div className="mb-5 space-y-3">
                             <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block">Rentang Tanggal</label>
                             <div className="flex items-center gap-2">
-                                <input type="date" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)}
+                                <input type="date" value={exportDateFrom} onChange={e => {
+                                    const val = e.target.value;
+                                    setExportDateFrom(val);
+                                    if (exportType === 'mingguan' && val) {
+                                        const from = new Date(val);
+                                        from.setDate(from.getDate() + 6);
+                                        setExportDateTo(from.toISOString().split('T')[0]);
+                                    }
+                                }}
                                     onClick={e => e.target.showPicker?.()}
                                     className="flex-1 rounded-lg border-gray-200 py-2 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-orange-500 focus:ring-orange-500 cursor-pointer" />
                                 <span className="text-gray-400 text-sm">s/d</span>

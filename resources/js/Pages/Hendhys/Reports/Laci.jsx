@@ -730,7 +730,15 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 <input
                                     type="date"
                                     value={exportDateFrom}
-                                    onChange={e => setExportDateFrom(e.target.value)}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setExportDateFrom(val);
+                                        if (exportType === 'mingguan' && val) {
+                                            const from = new Date(val);
+                                            from.setDate(from.getDate() + 6);
+                                            setExportDateTo(from.toISOString().split('T')[0]);
+                                        }
+                                    }}
                                     onClick={e => e.target.showPicker?.()}
                                     className="flex-1 rounded-lg border-gray-200 py-2 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500 cursor-pointer"
                                 />
