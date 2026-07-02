@@ -373,6 +373,13 @@ class ReportController extends Controller
 
             if (!$query) abort(404);
             $rows = $query->get();
+            
+            if ($type === 'laci') {
+                foreach ($rows as $row) {
+                    $row->sales_summary = $row->calculateSalesSummary();
+                    $row->payment_summary = $row->calculatePaymentSummary();
+                }
+            }
         }
 
         $viewName = ($type === 'harian') ? 'hendhys.reports.harian_pdf' : 'hendhys.reports.pdf';

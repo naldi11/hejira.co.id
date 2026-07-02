@@ -111,4 +111,29 @@ class CashierShift extends Model
 
         return (array) $summary;
     }
+    /**
+     * Get sales summary for the shift
+     */
+    public function calculateSalesSummary(): array
+    {
+        $entity = $this->entity;
+        $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
+
+        $closedAt = $this->closed_at ?? now();
+
+        $summary = \Illuminate\Support\Facades\DB::table($transactionTable)
+            ->where('created_by', $this->user_id)
+            ->where('status', '!=', 'cancelled')
+            ->whereBetween('created_at', [$this->opened_at, $closedAt])
+            ->selectRaw("
+                COUNT(id) as jumlah_transaksi,
+                COALESCE(SUM(discount_amount), 0) as tot_potongan,
+                COALESCE(SUM(tax_amount), 0) as tot_pajak,
+                0 as tot_biaya,
+                COALESCE(SUM(grand_total), 0) as total
+            ")
+            ->first();
+
+        return (array) $summary;
+    }
 }

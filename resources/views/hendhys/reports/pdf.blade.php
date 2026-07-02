@@ -111,10 +111,7 @@
         <h1 class="brand-name" style="font-size: 14px;">HENDHYS BROWNIES</h1>
         <p class="brand-sub" style="font-size: 10px; margin-bottom: 2px;">{{ strtoupper($branch->name ?? 'PUSAT') }}</p>
         <p class="brand-addr" style="font-size: 9px; margin-bottom: 5px;">{{ $branch->address ?? '' }}</p>
-        <div class="report-title" style="font-size: 11px; margin-top: 5px; border-top: 1px dashed #000; padding-top: 5px;">{{ strtoupper($title) }}</div>
-        <div class="period-label" style="font-size: 9px; margin-top: 2px;">
-            PERIODE : {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/y') : \Carbon\Carbon::now()->format('d/m/y') }}
-        </div>
+        <div class="report-title" style="font-size: 12px; margin-top: 5px; border-top: 1px dashed #000; padding-top: 5px;">LAPORAN PENJUALAN/KASIR</div>
     </div>
     @else
     <table class="header-table">
@@ -211,120 +208,185 @@
         @endforeach
     @elseif($type === 'laci')
         {{-- SHIFT SUMMARY Thermal Layout --}}
-        <div class="thermal-receipt">
-            @php
-                $totalTransfer = 0;
-                $totalDebit = 0;
-                $totalKredit = 0;
-            @endphp
+        <div class="thermal-receipt" style="font-size: 11px;">
             @foreach($rows as $row)
             @php
                 $isClosed = $row->status === 'closed';
-                $summary = $row->calculatePaymentSummary();
-                if ($isClosed) {
-                    $totalTransfer += $summary['transfer'] ?? 0;
-                    $totalDebit += $summary['kartu_debit'] ?? 0;
-                    $totalKredit += $summary['kredit'] ?? 0;
-                }
+                $sales = $row->sales_summary ?? [];
+                $payment = $row->payment_summary ?? [];
+                
+                $jmlTransaksi = $sales['jumlah_transaksi'] ?? 0;
+                $totPotongan = $sales['tot_potongan'] ?? 0;
+                $totPajak = $sales['tot_pajak'] ?? 0;
+                $totBiaya = $sales['tot_biaya'] ?? 0;
+                $totalPenjualan = $sales['total'] ?? 0;
+                
+                $tunai = $payment['tunai'] ?? 0;
+                $kredit = $payment['kredit'] ?? 0;
+                $debit = $payment['kartu_debit'] ?? 0;
+                $kkredit = $payment['kartu_kredit'] ?? 0;
+                $emoney = $payment['transfer'] ?? 0;
+                $deposit = 0;
+                $donasi = 0;
+                $kembalian = 0;
+                
+                $returTunai = 0;
+                $returKredit = 0;
+                $returDeposit = 0;
+                $totRetur = 0;
             @endphp
-            <div style="border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
-                <div style="font-weight: bold; font-size: 11px;">KASIR: {{ strtoupper($row->user->name ?? 'Sistem') }} ({{ strtoupper($row->status) }})</div>
-                <div style="font-size: 9px; margin-bottom: 5px;">
-                    SHIFT: {{ $row->opened_at ? $row->opened_at->format('d/m/y H:i') : '-' }} s/d {{ $row->closed_at ? $row->closed_at->format('d/m/y H:i') : '-' }}
-                </div>
-                <table style="width: 100%; font-size: 10px;">
+            
+            <div style="text-align: left; margin-bottom: 5px;">
+                <table style="width: 100%; font-size: 11px;">
                     <tr>
-                        <td style="width: 45%;">Modal Awal</td>
-                        <td style="width: 5%; text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($row->starting_cash, 0, ',', '.') }}</td>
+                        <td style="width: 35%;">PERIODE</td>
+                        <td style="width: 5%;">:</td>
+                        <td>{{ $row->opened_at ? $row->opened_at->format('d-m-y') : '-' }} s/d {{ $row->closed_at ? $row->closed_at->format('d-m-y') : '-' }}</td>
                     </tr>
                     <tr>
-                        <td>Tunai (Exp)</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ $isClosed ? number_format($row->expected_cash, 0, ',', '.') : '-' }}</td>
+                        <td>USER</td>
+                        <td>:</td>
+                        <td>{{ strtoupper($row->user->name ?? 'Sistem') }}</td>
                     </tr>
                     <tr>
-                        <td>Transfer</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ $isClosed ? number_format($summary['transfer'] ?? 0, 0, ',', '.') : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Debit</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ $isClosed ? number_format($summary['kartu_debit'] ?? 0, 0, ',', '.') : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Kredit</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ $isClosed ? number_format($summary['kredit'] ?? 0, 0, ',', '.') : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold;">Actual Cash</td>
-                        <td style="font-weight: bold; text-align: center;">:</td>
-                        <td style="font-weight: bold; text-align: right;">{{ $isClosed ? number_format($row->actual_cash, 0, ',', '.') : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold;">Selisih</td>
-                        <td style="font-weight: bold; text-align: center;">:</td>
-                        <td style="font-weight: bold; text-align: right;">{{ $isClosed ? number_format($row->discrepancy, 0, ',', '.') : '-' }}</td>
-                    </tr>
-                </table>
-            </div>
-            @endforeach
-
-            {{-- TOTALS --}}
-            <div style="border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px;">
-                <div style="font-weight: bold; font-size: 11px; text-align: center; margin-bottom: 5px;">TOTAL CLOSED SHIFTS</div>
-                <table style="width: 100%; font-size: 10px; font-weight: bold;">
-                    <tr>
-                        <td style="width: 45%;">Tot Modal</td>
-                        <td style="width: 5%; text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($rows->where('status', 'closed')->sum('starting_cash'), 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Tunai(E)</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($rows->where('status', 'closed')->sum('expected_cash'), 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Transfer</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($totalTransfer, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Debit</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($totalDebit, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Kredit</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($totalKredit, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Actual</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($rows->where('status', 'closed')->sum('actual_cash'), 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Tot Selisih</td>
-                        <td style="text-align: center;">:</td>
-                        <td style="text-align: right;">{{ number_format($rows->where('status', 'closed')->sum('discrepancy'), 0, ',', '.') }}</td>
+                        <td>DEPT/GDNG</td>
+                        <td>:</td>
+                        <td>UTM</td>
                     </tr>
                 </table>
             </div>
 
-            <div style="text-align: center; font-size: 10px; margin-top: 20px;">
-                Dibuat Oleh,<br><br><br><br>
-                <strong>( ............................ )</strong><br>
-                Kasir
+            <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 5px;">
+                <table style="width: 100%; font-size: 11px;">
+                    <tr>
+                        <td style="width: 55%;">JML TRANSAKSI</td>
+                        <td style="width: 5%;">:</td>
+                        <td style="text-align: right;">{{ $jmlTransaksi }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT. POTONGAN</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($totPotongan, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT. PAJAK</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($totPajak, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT. BIAYA</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($totBiaya, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($totalPenjualan, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR TUNAI</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($tunai, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR KREDIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($kredit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR DEBIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($debit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR KKREDIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($kkredit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR EMONEY</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($emoney, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>BAYAR DEPOSIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($deposit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>KEMBALIAN</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($kembalian, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT. DEPOSIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($deposit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT. DONASI</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($donasi, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 5px;">
+                <div style="margin-bottom: 2px;">RETUR PENJUALAN</div>
+                <table style="width: 100%; font-size: 11px;">
+                    <tr>
+                        <td style="width: 55%;">RET.TUNAI</td>
+                        <td style="width: 5%;">:</td>
+                        <td style="text-align: right;">{{ number_format($returTunai, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>RET.KREDIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($returKredit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>RET.DEPOSIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($returDeposit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TOT.RETUR</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($totRetur, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 15px;">
+                <div style="margin-bottom: 2px;">SETELAH POTONG RETUR</div>
+                <table style="width: 100%; font-size: 11px;">
+                    <tr>
+                        <td style="width: 55%;">TOTAL</td>
+                        <td style="width: 5%;">:</td>
+                        <td style="text-align: right;">{{ number_format($totalPenjualan - $totRetur, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>TUNAI</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($tunai - $returTunai, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>KREDIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($kredit - $returKredit, 0, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td>DEPOSIT</td>
+                        <td>:</td>
+                        <td style="text-align: right;">{{ number_format($deposit - $returDeposit, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
             </div>
             
-            <div style="text-align: center; font-size: 10px; margin-top: 20px;">
-                Diverifikasi Oleh,<br><br><br><br>
-                <strong>( ............................ )</strong><br>
-                Supervisor / Toko
-            </div>
+            @if(!$loop->last)
+                <div style="border-top: 2px solid #000; margin: 15px 0;"></div>
+            @endif
+            @endforeach
         </div>
     @else
         {{-- SUMMARY Layout --}}
