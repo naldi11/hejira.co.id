@@ -204,10 +204,6 @@ class ReportController extends Controller
     public function pdf(Request $request, $type)
     {
         $user = auth()->user();
-        $isPusatOrAdmin = $user->hasRole('admin_jihans') || $user->hasRole('super_admin_jihans');
-        if (!$isPusatOrAdmin && $type !== 'laci') {
-            abort(403, 'Akses ditolak.');
-        }
 
         $title = "Laporan " . ucfirst($type);
         $rows = collect();
