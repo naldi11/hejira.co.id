@@ -15,7 +15,14 @@ export default function ProductionsShow({ production }) {
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-250 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
                         <div>
-                            <h2 className="font-mono text-xl font-bold text-gray-800 dark:text-white/90">{p.production_number}</h2>
+                            <div className="flex items-center gap-3">
+                                <h2 className="font-mono text-xl font-bold text-gray-800 dark:text-white/90">{p.production_number}</h2>
+                                {p.is_prediksi ? (
+                                    <span className="rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-200">PREDIKSI</span>
+                                ) : (
+                                    <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">AKTUAL</span>
+                                )}
+                            </div>
                             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Tanggal: {p.date} · Oleh {p.creator}</p>
                         </div>
                     </div>

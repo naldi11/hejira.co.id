@@ -11,8 +11,18 @@ class HendhysProduction extends Model
     protected $table = 'hendhys_productions';
 
     protected $fillable = [
-        'production_number', 'date', 'total_items', 'notes', 'created_by'
+        'production_number', 'type', 'date', 'total_items', 'notes', 'created_by', 'overridden_at'
     ];
+
+    protected $casts = [
+        'overridden_at' => 'datetime',
+        'date' => 'date',
+    ];
+
+    public function isPrediksi(): bool
+    {
+        return $this->type === 'prediksi';
+    }
 
     public function details(): HasMany
     {

@@ -52,7 +52,8 @@ export default function HendhysLayout({ pageTitle, children }) {
             name: 'Produksi',
             icon: <Icon name="factory" className="text-[22px]" />,
             subItems: [
-                { name: 'Produksi Hendhys', path: route('hendhys.productions.index') },
+                { name: 'Prediksi Produksi', path: route('hendhys.productions.prediksi.create') },
+                { name: 'Data Produksi', path: route('hendhys.productions.index') },
             ],
         });
     }

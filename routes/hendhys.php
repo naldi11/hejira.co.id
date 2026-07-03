@@ -86,6 +86,11 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
 
             // Produksi (khusus pusat)
+            Route::get('productions/prediksi/create', [ProductionController::class, 'createPrediksi'])->name('productions.prediksi.create');
+            Route::post('productions/prediksi', [ProductionController::class, 'storePrediksi'])->name('productions.prediksi.store');
+            Route::get('productions/prediksi/{production}/edit', [ProductionController::class, 'editPrediksi'])->name('productions.prediksi.edit');
+            Route::put('productions/prediksi/{production}', [ProductionController::class, 'updatePrediksi'])->name('productions.prediksi.update');
+            Route::delete('productions/prediksi/{production}', [ProductionController::class, 'destroyPrediksi'])->name('productions.prediksi.destroy');
             Route::resource('productions', ProductionController::class)->except(['edit', 'update', 'destroy']);
 
 

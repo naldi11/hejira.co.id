@@ -372,16 +372,37 @@ export default function PosIndex({ products, paymentMethods }) {
                                             <p className="text-sm font-bold text-gray-800 truncate dark:text-white/90">{c.name}</p>
                                             <p className="text-xs text-amber-600 dark:text-amber-400">{formatRupiah(getPrice(c))} / {c.unit}</p>
                                         </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex items-center gap-1 shrink-0">
                                             <button 
-                                                onClick={() => updateQty(c.product_id, c.qty - 1)} 
+                                                onClick={() => updateQty(c.product_id, (Number(c.qty) || 0) - 1)} 
                                                 className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                                             >
                                                 <Icon name="remove" className="text-[16px]" />
                                             </button>
-                                            <span className="w-8 text-center text-sm font-bold text-gray-800 dark:text-white/90">{c.qty}</span>
+                                            <input 
+                                                type="number"
+                                                min="1"
+                                                value={c.qty}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === '') {
+                                                        setCart(cart.map(item => item.product_id === c.product_id ? { ...item, qty: '' } : item));
+                                                    } else {
+                                                        const num = parseInt(val, 10);
+                                                        if (!isNaN(num)) {
+                                                            setCart(cart.map(item => item.product_id === c.product_id ? { ...item, qty: num } : item));
+                                                        }
+                                                    }
+                                                }}
+                                                onBlur={(e) => {
+                                                    if (e.target.value === '' || parseInt(e.target.value, 10) <= 0) {
+                                                        updateQty(c.product_id, 1); // fallback if empty
+                                                    }
+                                                }}
+                                                className="w-10 text-center text-sm font-bold text-gray-800 dark:text-white/90 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-amber-500 focus:ring-0 p-0 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                                            />
                                             <button 
-                                                onClick={() => updateQty(c.product_id, c.qty + 1)} 
+                                                onClick={() => updateQty(c.product_id, (Number(c.qty) || 0) + 1)} 
                                                 className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:hover:bg-amber-500/30"
                                             >
                                                 <Icon name="add" className="text-[16px]" />
