@@ -63,22 +63,19 @@ class FixTimezoneUtcToWib extends Command
         // 4. jihans_retail_stock_movements
         $this->info('Memperbaiki tabel jihans_retail_stock_movements...');
         DB::statement("UPDATE jihans_retail_stock_movements SET 
-            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_ADD(updated_at, INTERVAL 7 HOUR)
+            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR)
             WHERE created_at < ?", [$threshold]);
 
         // 5. jihans_gudang_stock_movements
         $this->info('Memperbaiki tabel jihans_gudang_stock_movements...');
         DB::statement("UPDATE jihans_gudang_stock_movements SET 
-            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_ADD(updated_at, INTERVAL 7 HOUR)
+            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR)
             WHERE created_at < ?", [$threshold]);
 
         // 6. hendhys_stock_movements
         $this->info('Memperbaiki tabel hendhys_stock_movements...');
         DB::statement("UPDATE hendhys_stock_movements SET 
-            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_ADD(updated_at, INTERVAL 7 HOUR)
+            created_at = DATE_ADD(created_at, INTERVAL 7 HOUR)
             WHERE created_at < ?", [$threshold]);
 
         $this->info('Perbaikan selesai! Semua data lama berhasil dimajukan 7 jam ke WIB.');
