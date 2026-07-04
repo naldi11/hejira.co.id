@@ -268,10 +268,22 @@ class DashboardController extends Controller
     {
         $mode = $request->query('mode', 'stock');
         $unit = $request->query('unit', 'gudang');
+        $filter = $request->query('filter', 'all'); // 'today', 'week', 'month', 'all'
 
         $title = 'Detail';
         $subtitle = '';
         $list = [];
+
+        // Apply date filter logic for omset
+        $dateFilter = function($q) use ($filter) {
+            if ($filter === 'today') {
+                $q->whereDate('date', today());
+            } elseif ($filter === 'week') {
+                $q->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+            } elseif ($filter === 'month') {
+                $q->whereMonth('date', now()->month)->whereYear('date', now()->year);
+            }
+        };
 
         if ($mode === 'stock') {
             if ($unit === 'gudang') {
@@ -371,69 +383,159 @@ class DashboardController extends Controller
                     ])->values();
                 $subtitle = $list->count() . ' PO Terakhir';
             }
-        } elseif ($mode === 'omset') {
+        }
+        
+        $trends = [];
+        if ($mode === 'omset') {
+            Carbon::setLocale('id');
+
+            $mapTransaction = function($t, $typeUnit) {
+                return [
+                    'id' => $t->id,
+                    'date' => Carbon::parse($t->created_at ?? $t->date)->translatedFormat('d M Y, H:i') . ' (' . Carbon::parse($t->created_at ?? $t->date)->diffForHumans() . ')',
+                    'transaction_number' => $t->transaction_number,
+                    'customer' => $t->customer_name,
+                    'grand_total' => (float) $t->grand_total,
+                    'status' => $t->status,
+                    'type_unit' => $typeUnit,
+                    'user' => $t->creator?->name ?? '-',
+                    'details' => $t->details->map(fn($d) => [
+                        'product_name' => $d->product_name,
+                        'quantity' => (float) $d->quantity,
+                        'price' => (float) $d->price,
+                        'total' => (float) $d->total,
+                    ])
+                ];
+            };
+
+            // Dynamic Trend Calculation based on filter
+            $trendQueryCallback = null;
+            $mapTrends = null;
+
+            if ($filter === 'today') {
+                $hours = collect();
+                for ($i = 8; $i <= 22; $i++) {
+                    $hours->push(sprintf('%02d:00', $i));
+                }
+                $trendQueryCallback = function($q) {
+                    return $q->whereDate('date', today())
+                             ->selectRaw('HOUR(created_at) as h, SUM(grand_total) as total')
+                             ->groupBy('h')
+                             ->pluck('total', 'h');
+                };
+                $mapTrends = function($salesMap1, $salesMap2 = []) use ($hours) {
+                    return $hours->map(fn($h) => [
+                        'date' => $h,
+                        'total' => (float) (($salesMap1[(int)substr($h,0,2)] ?? 0) + ($salesMap2[(int)substr($h,0,2)] ?? 0)),
+                    ])->values();
+                };
+            } elseif ($filter === 'week') {
+                $days = collect();
+                $start = now()->startOfWeek();
+                for ($i = 0; $i < 7; $i++) {
+                    $days->push($start->copy()->addDays($i)->format('Y-m-d'));
+                }
+                $trendQueryCallback = function($q) use ($start) {
+                    return $q->whereBetween('date', [$start, now()->endOfWeek()])
+                             ->selectRaw('date, SUM(grand_total) as total')
+                             ->groupBy('date')
+                             ->pluck('total', 'date');
+                };
+                $mapTrends = function($salesMap1, $salesMap2 = []) use ($days) {
+                    return $days->map(fn($d) => [
+                        'date' => Carbon::parse($d)->translatedFormat('D'),
+                        'total' => (float) (($salesMap1[$d] ?? 0) + ($salesMap2[$d] ?? 0)),
+                    ])->values();
+                };
+            } elseif ($filter === 'month') {
+                $days = collect();
+                $start = now()->startOfMonth();
+                $daysInMonth = now()->daysInMonth;
+                for ($i = 0; $i < $daysInMonth; $i++) {
+                    $days->push($start->copy()->addDays($i)->format('Y-m-d'));
+                }
+                $trendQueryCallback = function($q) {
+                    return $q->whereMonth('date', now()->month)
+                             ->whereYear('date', now()->year)
+                             ->selectRaw('date, SUM(grand_total) as total')
+                             ->groupBy('date')
+                             ->pluck('total', 'date');
+                };
+                $mapTrends = function($salesMap1, $salesMap2 = []) use ($days) {
+                    return $days->map(fn($d) => [
+                        'date' => Carbon::parse($d)->format('d'),
+                        'total' => (float) (($salesMap1[$d] ?? 0) + ($salesMap2[$d] ?? 0)),
+                    ])->values();
+                };
+            } else {
+                $months = collect();
+                for ($i = 1; $i <= 12; $i++) {
+                    $months->push($i);
+                }
+                $trendQueryCallback = function($q) {
+                    return $q->whereYear('date', now()->year)
+                             ->selectRaw('MONTH(date) as m, SUM(grand_total) as total')
+                             ->groupBy('m')
+                             ->pluck('total', 'm');
+                };
+                $mapTrends = function($salesMap1, $salesMap2 = []) use ($months) {
+                    return $months->map(fn($m) => [
+                        'date' => Carbon::createFromDate(now()->year, $m, 1)->translatedFormat('M'),
+                        'total' => (float) (($salesMap1[$m] ?? 0) + ($salesMap2[$m] ?? 0)),
+                    ])->values();
+                };
+            }
+
             if ($unit === 'all_transactions') {
                 $title = 'Semua Unit Bisnis';
-                $jihans = JihansTransaction::with('creator')->latest('id')->take(50)->get()
-                    ->map(fn($t) => [
-                        'date' => $t->date,
-                        'transaction_number' => $t->transaction_number,
-                        'customer' => $t->customer_name,
-                        'grand_total' => (float) $t->grand_total,
-                        'status' => $t->status,
-                        'type_unit' => "Jihan's Food",
-                        'user' => $t->creator?->name ?? '-'
-                    ]);
-                $hendhys = HendhysTransaction::with(['creator', 'branch'])->latest('id')->take(50)->get()
-                    ->map(fn($t) => [
-                        'date' => $t->date,
-                        'transaction_number' => $t->transaction_number,
-                        'customer' => $t->customer_name,
-                        'grand_total' => (float) $t->grand_total,
-                        'status' => $t->status,
-                        'type_unit' => $t->branch?->name ?? 'Hendhys Produksi (Pusat)',
-                        'user' => $t->creator?->name ?? '-'
-                    ]);
-                $list = collect($jihans)->concat($hendhys)->sortByDesc('date')->values();
-                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $jihansQuery = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
+                $dateFilter($jihansQuery);
+                $jihans = $jihansQuery->latest('id')->take(50)->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"));
+
+                $hendhysQuery = HendhysTransaction::with(['creator', 'branch', 'details'])->where('status', 'paid');
+                $dateFilter($hendhysQuery);
+                $hendhys = $hendhysQuery->latest('id')->take(50)->get()->map(fn($t) => $mapTransaction($t, $t->branch?->name ?? 'Hendhys Produksi (Pusat)'));
+
+                $list = collect($jihans)->concat($hendhys)->sortByDesc('id')->values();
+                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+
+                // Trends
+                $jSales = $trendQueryCallback(JihansTransaction::where('status', 'paid'));
+                $hSales = $trendQueryCallback(HendhysTransaction::where('status', 'paid'));
+                $trends = $mapTrends($jSales, $hSales);
             } elseif ($unit === 'jihans_transactions') {
                 $title = "Jihan's Food";
-                $list = JihansTransaction::with('creator')->latest('id')->take(100)->get()
-                    ->map(fn($t) => [
-                        'date' => $t->date,
-                        'transaction_number' => $t->transaction_number,
-                        'customer' => $t->customer_name,
-                        'grand_total' => (float) $t->grand_total,
-                        'status' => $t->status,
-                        'user' => $t->creator?->name ?? '-'
-                    ])->values();
-                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $query = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
+                $dateFilter($query);
+                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"))->values();
+                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+
+                // Trends
+                $sales = $trendQueryCallback(JihansTransaction::where('status', 'paid'));
+                $trends = $mapTrends($sales);
             } elseif ($unit === 'hendhys_pusat') {
                 $title = 'Hendhys Pusat';
-                $list = HendhysTransaction::with('creator')->whereNull('branch_id')->latest('id')->take(100)->get()
-                    ->map(fn($t) => [
-                        'date' => $t->date,
-                        'transaction_number' => $t->transaction_number,
-                        'customer' => $t->customer_name,
-                        'grand_total' => (float) $t->grand_total,
-                        'status' => $t->status,
-                        'user' => $t->creator?->name ?? '-'
-                    ])->values();
-                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $query = HendhysTransaction::with(['creator', 'details'])->whereNull('branch_id')->where('status', 'paid');
+                $dateFilter($query);
+                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'))->values();
+                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+
+                // Trends
+                $sales = $trendQueryCallback(HendhysTransaction::whereNull('branch_id')->where('status', 'paid'));
+                $trends = $mapTrends($sales);
             } elseif (str_starts_with($unit, 'hendhys_cabang_')) {
                 $branchId = str_replace('hendhys_cabang_', '', $unit);
                 $branch = Branch::find($branchId);
                 $title = $branch ? $branch->name : 'Hendhys Cabang';
-                $list = HendhysTransaction::with('creator')->where('branch_id', $branchId)->latest('id')->take(100)->get()
-                    ->map(fn($t) => [
-                        'date' => $t->date,
-                        'transaction_number' => $t->transaction_number,
-                        'customer' => $t->customer_name,
-                        'grand_total' => (float) $t->grand_total,
-                        'status' => $t->status,
-                        'user' => $t->creator?->name ?? '-'
-                    ])->values();
-                $subtitle = 'Total: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                
+                $query = HendhysTransaction::with(['creator', 'details'])->where('branch_id', $branchId)->where('status', 'paid');
+                $dateFilter($query);
+                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, $title))->values();
+                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+
+                // Trends
+                $sales = $trendQueryCallback(HendhysTransaction::where('branch_id', $branchId)->where('status', 'paid'));
+                $trends = $mapTrends($sales);
             }
         }
 
@@ -442,7 +544,9 @@ class DashboardController extends Controller
             'unit' => $unit,
             'title' => $title,
             'subtitle' => $subtitle,
-            'list' => $list
+            'list' => $list,
+            'filter' => $filter,
+            'trends' => $trends
         ]);
     }
 }

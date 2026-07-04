@@ -94,9 +94,14 @@ export default function JihansTransactionsIndex({ transactions, filters }) {
                                             </td>
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{t.creator ?? '-'}</td>
                                             <td className="px-6 py-4 text-right">
-                                                <a href={route('jihans.transactions.show', t.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
-                                                    <Icon name="receipt" className="text-[16px]" /> Struk
-                                                </a>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link href={route('jihans.pos.edit', t.id)} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20">
+                                                        <Icon name="edit" className="text-[16px]" /> Edit
+                                                    </Link>
+                                                    <a href={route('jihans.transactions.show', t.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
+                                                        <Icon name="receipt" className="text-[16px]" /> Struk
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

@@ -11,7 +11,7 @@ const axios = window.axios;
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function PosIndex({ products, customers }) {
+export default function PosIndex({ products, customers, editTransaction }) {
     const [cart, setCart] = useState([]);
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
@@ -25,9 +25,9 @@ export default function PosIndex({ products, customers }) {
     const [showPayment, setShowPayment] = useState(false);
     const [amountPaid, setAmountPaid] = useState(0);
     const [processing, setProcessing] = useState(false);
+    const isEditMode = !!editTransaction;
 
     const recalculateCart = (currentCart, type = customerType) => {
-        // 1. Calculate combined meat & tortilla quantity first
         const combinedQty = currentCart.reduce((sum, item) => {
             const product = products.find(p => p.id === item.product_id);
             if (product) {
@@ -42,12 +42,10 @@ export default function PosIndex({ products, customers }) {
             return sum;
         }, 0);
 
-        // 2. Map items with recalculated prices
         return currentCart.map(item => {
             const product = products.find(p => p.id === item.product_id);
             if (!product) return item;
 
-            // Determine effective quantity for pricing
             let effectiveQty = item.quantity;
             if (type === 'Reseller') {
                 effectiveQty = Math.max(effectiveQty, 50);
@@ -64,7 +62,6 @@ export default function PosIndex({ products, customers }) {
                 effectiveQty = Math.max(effectiveQty, combinedQty);
             }
 
-            // Calculate tiered price for this effective quantity
             let price = product.selling_price || 0;
             const sortedTiers = [...(product.tiered_prices ?? [])].sort((a, b) => b.min_qty - a.min_qty);
             for (const tier of sortedTiers) {
@@ -83,6 +80,32 @@ export default function PosIndex({ products, customers }) {
     };
 
     useEffect(() => {
+        if (editTransaction) {
+            setCustomerType(editTransaction.customer_type ?? 'Pelanggan Retail');
+            setCustomerId(editTransaction.customer_id ?? '');
+            setCustomerName(editTransaction.customer_name ?? '');
+            setDate(editTransaction.date ?? todayISO());
+            setNotes(editTransaction.notes ?? '');
+            setExtraDiscount(editTransaction.extra_discount ?? 0);
+            setPpnType(editTransaction.ppn_type ?? 'none');
+            setShippingFee(editTransaction.shipping_fee ?? 0);
+            
+            const loadedCart = editTransaction.items.map(item => ({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                product_code: item.product_code,
+                barcode: '', // optional
+                price: item.price,
+                quantity: item.quantity,
+                discount: item.discount,
+                unit_name: item.unit_name,
+                max_stock: 9999, // We don't restrict max stock strictly here since it's edit
+                is_custom_price: item.is_custom_price,
+            }));
+            setCart(recalculateCart(loadedCart, editTransaction.customer_type ?? 'Pelanggan Retail'));
+            return;
+        }
+
         const raw = localStorage.getItem('jihans_resume_cart');
         if (!raw) return;
         try {
@@ -95,7 +118,7 @@ export default function PosIndex({ products, customers }) {
             setCart(recalculateCart(d.items ?? [], type));
         } catch { /* ignore */ }
         localStorage.removeItem('jihans_resume_cart');
-    }, []);
+    }, [editTransaction]);
 
     const totals = useMemo(() => {
         let subtotal = 0; let itemDiscount = 0;
@@ -114,7 +137,7 @@ export default function PosIndex({ products, customers }) {
 
     const addItem = (input) => {
         const itemsToAdd = Array.isArray(input) ? input : [input];
-        const validItems = itemsToAdd.filter(p => p.current_stock > 0);
+        const validItems = itemsToAdd.filter(p => p.current_stock > 0 || isEditMode);
         if (validItems.length === 0) return;
 
         setCart((prev) => {
@@ -186,13 +209,19 @@ export default function PosIndex({ products, customers }) {
         if (amountPaid < totals.grand) { alert('Uang pembayaran kurang dari total tagihan.'); return; }
         setProcessing(true);
         try {
-            const { data } = await axios.post(route('jihans.pos.store'), {
+            const payload = {
                 transaction_date: date, customer_id: customerId || null, customer_name: customerName, customer_type: customerType,
                 ppn_type: ppnType, ppn_rate: 11, subtotal: totals.subtotal, discount_amount: totals.itemDiscount,
                 extra_discount: Number(extraDiscount) || 0, tax_amount: totals.tax, other_costs: Number(shippingFee) || 0,
                 grand_total: totals.grand, amount_paid: amountPaid, reference_number: null, notes,
                 items: buildItems(),
-            }, { headers: { 'X-CSRF-TOKEN': csrf() } });
+            };
+            
+            const req = isEditMode 
+                ? axios.put(route('jihans.pos.update', editTransaction.id), payload, { headers: { 'X-CSRF-TOKEN': csrf() } })
+                : axios.post(route('jihans.pos.store'), payload, { headers: { 'X-CSRF-TOKEN': csrf() } });
+            
+            const { data } = await req;
             if (data.success) { window.location.href = data.redirect; }
         } catch (err) {
             const r = err.response?.data;

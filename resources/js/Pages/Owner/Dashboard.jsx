@@ -153,19 +153,9 @@ export default function OwnerDashboard({ stats, trends }) {
                             <h2 className="font-bold text-slate-800 dark:text-white text-base">Rincian Omset Penjualan</h2>
                             <p className="text-xs text-slate-400">Klik card untuk melihat detail transaksi</p>
                         </div>
-                        <div className="ml-auto text-right">
-                            <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold">Total Omset</p>
-                            <p className="text-2xl font-black text-emerald-600">{formatRupiah(stats.total_revenue)}</p>
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                        <SubUnitCard
-                            icon="done_all" color="text-blue-500"
-                            title="Semua Unit" subtitle="Penjualan Konsolidasi"
-                            value={formatRupiah(stats.total_revenue)} label="Total Konsolidasi"
-                            onClick={() => openOmsetDetail('all_transactions')}
-                        />
                         <SubUnitCard
                             icon="storefront" color="text-orange-500"
                             title="Jihan's Food" subtitle="Pendapatan retail Jihan's"
@@ -192,28 +182,79 @@ export default function OwnerDashboard({ stats, trends }) {
 
                 {/* ── Sales Chart & Today ─────────────────────────────────── */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-                        <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
-                            <Icon name="trending_up" className="text-blue-500" /> Tren Pendapatan Konsolidasi (7 Hari Terakhir)
-                        </h3>
-                        <div className="w-full">
-                            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
-                                <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
-                                <line x1="20" y1={chartHeight / 2} x2={chartWidth - 20} y2={chartHeight / 2} stroke="#f1f5f9" strokeDasharray="3" />
-                                <line x1="20" y1={chartHeight - 10} x2={chartWidth - 20} y2={chartHeight - 10} stroke="#cbd5e1" />
-                                <path
-                                    d={`M 20,${chartHeight - 10} L ${pathData} L ${points[points.length - 1].x},${chartHeight - 10} Z`}
-                                    fill="rgba(59, 130, 246, 0.1)"
-                                />
-                                <polyline fill="none" stroke="#3b82f6" strokeWidth="3" points={pathData} />
-                                {points.map((p, idx) => (
-                                    <g key={idx} className="group">
-                                        <circle cx={p.x} cy={p.y} r="5" fill="#3b82f6" className="cursor-pointer" />
-                                        <text x={p.x} y={chartHeight - 2} textAnchor="middle" className="text-[8px] fill-slate-400 font-semibold">{p.date}</text>
-                                        <text x={p.x} y={p.y - 10} textAnchor="middle" className="hidden group-hover:block text-[9px] font-bold fill-slate-850">{formatQty(p.total / 1000)}k</text>
-                                    </g>
-                                ))}
-                            </svg>
+                    <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Jihans Chart */}
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+                            <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
+                                <Icon name="storefront" className="text-orange-500" /> Tren Jihan's Food (7 Hari)
+                            </h3>
+                            <div className="w-full">
+                                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
+                                    <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
+                                    <line x1="20" y1={chartHeight / 2} x2={chartWidth - 20} y2={chartHeight / 2} stroke="#f1f5f9" strokeDasharray="3" />
+                                    <line x1="20" y1={chartHeight - 10} x2={chartWidth - 20} y2={chartHeight - 10} stroke="#cbd5e1" />
+                                    
+                                    {(() => {
+                                        const maxJihans = Math.max(...trends.map(t => t.jihans), 1);
+                                        const pts = trends.map((t, idx) => ({
+                                            x: (idx / (trends.length - 1)) * (chartWidth - 40) + 20,
+                                            y: chartHeight - (t.jihans / maxJihans) * (chartHeight - 20) - 10,
+                                            ...t
+                                        }));
+                                        const path = pts.map(p => `${p.x},${p.y}`).join(' ');
+                                        return (
+                                            <>
+                                                <path d={`M 20,${chartHeight - 10} L ${path} L ${pts[pts.length - 1].x},${chartHeight - 10} Z`} fill="rgba(249, 115, 22, 0.1)" />
+                                                <polyline fill="none" stroke="#f97316" strokeWidth="3" points={path} />
+                                                {pts.map((p, idx) => (
+                                                    <g key={idx} className="group">
+                                                        <circle cx={p.x} cy={p.y} r="5" fill="#f97316" className="cursor-pointer" />
+                                                        <text x={p.x} y={chartHeight - 2} textAnchor="middle" className="text-[8px] fill-slate-400 font-semibold">{p.date}</text>
+                                                        <text x={p.x} y={p.y - 10} textAnchor="middle" className="hidden group-hover:block text-[9px] font-bold fill-slate-850">{formatQty(p.jihans / 1000)}k</text>
+                                                    </g>
+                                                ))}
+                                            </>
+                                        );
+                                    })()}
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Hendhys Chart */}
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+                            <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
+                                <Icon name="cake" className="text-amber-500" /> Tren Hendhys (7 Hari)
+                            </h3>
+                            <div className="w-full">
+                                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
+                                    <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
+                                    <line x1="20" y1={chartHeight / 2} x2={chartWidth - 20} y2={chartHeight / 2} stroke="#f1f5f9" strokeDasharray="3" />
+                                    <line x1="20" y1={chartHeight - 10} x2={chartWidth - 20} y2={chartHeight - 10} stroke="#cbd5e1" />
+                                    
+                                    {(() => {
+                                        const maxHendhys = Math.max(...trends.map(t => t.hendhys), 1);
+                                        const pts = trends.map((t, idx) => ({
+                                            x: (idx / (trends.length - 1)) * (chartWidth - 40) + 20,
+                                            y: chartHeight - (t.hendhys / maxHendhys) * (chartHeight - 20) - 10,
+                                            ...t
+                                        }));
+                                        const path = pts.map(p => `${p.x},${p.y}`).join(' ');
+                                        return (
+                                            <>
+                                                <path d={`M 20,${chartHeight - 10} L ${path} L ${pts[pts.length - 1].x},${chartHeight - 10} Z`} fill="rgba(245, 158, 11, 0.1)" />
+                                                <polyline fill="none" stroke="#f59e0b" strokeWidth="3" points={path} />
+                                                {pts.map((p, idx) => (
+                                                    <g key={idx} className="group">
+                                                        <circle cx={p.x} cy={p.y} r="5" fill="#f59e0b" className="cursor-pointer" />
+                                                        <text x={p.x} y={chartHeight - 2} textAnchor="middle" className="text-[8px] fill-slate-400 font-semibold">{p.date}</text>
+                                                        <text x={p.x} y={p.y - 10} textAnchor="middle" className="hidden group-hover:block text-[9px] font-bold fill-slate-850">{formatQty(p.hendhys / 1000)}k</text>
+                                                    </g>
+                                                ))}
+                                            </>
+                                        );
+                                    })()}
+                                </svg>
+                            </div>
                         </div>
                     </div>
 
@@ -235,13 +276,6 @@ export default function OwnerDashboard({ stats, trends }) {
                                     <span className="text-sm font-semibold text-slate-700 dark:text-gray-300">Hendhys Brownies</span>
                                 </div>
                                 <span className="text-base font-bold text-amber-600 dark:text-amber-400">{formatRupiah(stats.hendhys_today)}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-950/20 dark:bg-blue-950/10 border-t-2">
-                                <div className="flex items-center gap-2.5">
-                                    <Icon name="done_all" className="text-[22px] text-blue-600" />
-                                    <span className="text-sm font-bold text-slate-800 dark:text-white/90">Total Konsolidasi</span>
-                                </div>
-                                <span className="text-base font-extrabold text-blue-600 dark:text-blue-400">{formatRupiah(stats.total_today)}</span>
                             </div>
                         </div>
                     </div>

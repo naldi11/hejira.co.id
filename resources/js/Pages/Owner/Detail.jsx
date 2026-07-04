@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
 import { formatRupiah, formatQty } from '@/lib/format';
@@ -80,8 +80,13 @@ function StockItemCard({ row, type }) {
 
 /* ─── Transaction Card ───────────────────────────────────────────────────── */
 function TransactionCard({ row, showBranch }) {
+    const [expanded, setExpanded] = useState(false);
+
     return (
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div 
+            onClick={() => setExpanded(!expanded)}
+            className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition cursor-pointer hover:border-blue-200 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700"
+        >
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -96,13 +101,42 @@ function TransactionCard({ row, showBranch }) {
                     <p className="text-[10px] text-slate-400 mt-1">{row.date}</p>
                 </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">Kasir: {row.user}</p>
+            
+            <div className="flex items-center justify-between mt-2">
+                <p className="text-[11px] text-slate-400">Kasir: {row.user}</p>
+                <button className="text-[10px] font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1">
+                    {expanded ? 'Tutup Detail' : 'Lihat Detail'}
+                    <Icon name={expanded ? 'expand_less' : 'expand_more'} className="text-[14px]" />
+                </button>
+            </div>
+
+            {expanded && row.details && (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-gray-800 space-y-3">
+                    {row.details.map((detail, idx) => (
+                        <div key={idx} className="flex justify-between items-start text-sm">
+                            <div className="flex-1 min-w-0 pr-4">
+                                <p className="font-medium text-slate-800 dark:text-slate-200 truncate">{detail.product_name}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    {formatQty(detail.quantity)} x {formatRupiah(detail.price)}
+                                </p>
+                            </div>
+                            <p className="font-semibold text-slate-900 dark:text-slate-100 shrink-0">
+                                {formatRupiah(detail.total)}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
 
-export default function Detail({ mode, unit, title, subtitle, list }) {
+export default function Detail({ mode, unit, title, subtitle, list, filter, trends }) {
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleFilterChange = (newFilter) => {
+        router.get(route('owner.dashboard.detail'), { mode, unit, filter: newFilter }, { preserveState: true, preserveScroll: true });
+    };
 
     const getStockCardType = () => {
         if (unit === 'movements') return 'movements';
@@ -129,17 +163,21 @@ export default function Detail({ mode, unit, title, subtitle, list }) {
 
     const filteredData = getFilteredData();
 
+    // Chart dimensions
+    const chartHeight = 120;
+    const chartWidth = 500;
+
     return (
         <OwnerLayout pageTitle={`Detail: ${title}`}>
             <Head title={`Detail — ${title}`} />
 
             <div className="space-y-6 max-w-3xl mx-auto">
                 {/* Header Card */}
-                <div className="flex items-center justify-between bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] p-5 rounded-2xl shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] p-5 rounded-2xl shadow-sm gap-4">
                     <div className="flex items-center gap-3">
                         <Link
                             href={route('owner.dashboard')}
-                            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                         >
                             <Icon name="arrow_back" className="text-[20px]" />
                         </Link>
@@ -148,10 +186,69 @@ export default function Detail({ mode, unit, title, subtitle, list }) {
                             <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
                         </div>
                     </div>
-                    <span className="text-xs bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 px-3 py-1.5 rounded-full font-bold uppercase tracking-wider">
-                        {mode}
-                    </span>
+                    {mode === 'omset' && (
+                        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-gray-900/50 self-start sm:self-auto overflow-x-auto">
+                            {[
+                                { id: 'all', label: 'Semua' },
+                                { id: 'today', label: 'Hari Ini' },
+                                { id: 'week', label: 'Minggu Ini' },
+                                { id: 'month', label: 'Bulan Ini' }
+                            ].map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => handleFilterChange(f.id)}
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition ${
+                                        filter === f.id
+                                            ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400'
+                                            : 'text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                    }`}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
+                {/* Sales Chart */}
+                {mode === 'omset' && trends && trends.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+                        <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
+                            <Icon name="trending_up" className="text-blue-500" /> Tren Omset 
+                            {filter === 'today' ? ' (Hari Ini)' : filter === 'week' ? ' (Minggu Ini)' : filter === 'month' ? ' (Bulan Ini)' : ' (Tahun Ini)'}
+                        </h3>
+                        <div className="w-full">
+                            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
+                                <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
+                                <line x1="20" y1={chartHeight / 2} x2={chartWidth - 20} y2={chartHeight / 2} stroke="#f1f5f9" strokeDasharray="3" />
+                                <line x1="20" y1={chartHeight - 10} x2={chartWidth - 20} y2={chartHeight - 10} stroke="#cbd5e1" />
+                                
+                                {(() => {
+                                    const maxVal = Math.max(...trends.map(t => t.total), 1);
+                                    const pts = trends.map((t, idx) => ({
+                                        x: (idx / (trends.length - 1)) * (chartWidth - 40) + 20,
+                                        y: chartHeight - (t.total / maxVal) * (chartHeight - 20) - 10,
+                                        ...t
+                                    }));
+                                    const path = pts.map(p => `${p.x},${p.y}`).join(' ');
+                                    return (
+                                        <>
+                                            <path d={`M 20,${chartHeight - 10} L ${path} L ${pts[pts.length - 1].x},${chartHeight - 10} Z`} fill="rgba(59, 130, 246, 0.1)" />
+                                            <polyline fill="none" stroke="#3b82f6" strokeWidth="3" points={path} />
+                                            {pts.map((p, idx) => (
+                                                <g key={idx} className="group">
+                                                    <circle cx={p.x} cy={p.y} r="5" fill="#3b82f6" className="cursor-pointer" />
+                                                    <text x={p.x} y={chartHeight - 2} textAnchor="middle" className="text-[8px] fill-slate-400 font-semibold">{p.date}</text>
+                                                    <text x={p.x} y={p.y - 10} textAnchor="middle" className="hidden group-hover:block text-[9px] font-bold fill-slate-850">{formatQty(p.total / 1000)}k</text>
+                                                </g>
+                                            ))}
+                                        </>
+                                    );
+                                })()}
+                            </svg>
+                        </div>
+                    </div>
+                )}
 
                 {/* Search input */}
                 <div className="relative">

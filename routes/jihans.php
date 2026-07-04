@@ -46,6 +46,8 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
                 // POS Kasir
                 Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
                 Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
+                Route::get('/pos/{transaction}/edit', [PosController::class, 'edit'])->name('pos.edit');
+                Route::put('/pos/{transaction}', [PosController::class, 'update'])->name('pos.update');
                 Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
 
                 // Transaksi Pending
