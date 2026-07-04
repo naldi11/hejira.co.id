@@ -6,7 +6,7 @@ import SearchableSelect from '@/Components/SearchableSelect';
 
 const route = window.route;
 
-export default function ProductionsForm({ products, units, type = 'aktual', formAction, warning, targetDate, production, isEdit = false }) {
+export default function ProductionsForm({ products, units, type = 'aktual', formAction, warning, targetDate, prediction_id, production, isEdit = false }) {
     
     // Initialize items from existing production details if available
     const initialItems = production?.details?.map(d => ({
@@ -19,6 +19,7 @@ export default function ProductionsForm({ products, units, type = 'aktual', form
     const { data, setData, post, put, processing, errors } = useForm({ 
         date: targetDate || production?.date || new Date().toISOString().slice(0, 10), 
         notes: production?.notes || '', 
+        prediction_id: prediction_id || '',
         items: initialItems
     });
 

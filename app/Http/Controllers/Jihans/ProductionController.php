@@ -53,18 +53,11 @@ class ProductionController extends Controller
 
     public function create(Request $request)
     {
+        $predictionId = $request->query('prediction_id');
         $targetDate = $request->query('date', date('Y-m-d'));
         if ($targetDate && strlen($targetDate) > 10) {
             $targetDate = substr($targetDate, 0, 10);
         }
-
-        $existingAktual = JihansProductionSession::whereDate('date', $targetDate)
-            ->where('type', 'aktual')
-            ->first();
-
-        $warning = $existingAktual 
-            ? 'Aktual produksi untuk tanggal ' . $targetDate . ' sudah diinput. Anda tidak bisa menginput ulang atau mengeditnya.'
-            : null;
 
         $karyawans = Karyawan::where('entity_scope', 'jihans')
             ->where('is_active', true)
@@ -73,35 +66,28 @@ class ProductionController extends Controller
 
         $products = $this->getProductionProducts();
 
-        $existingPrediksi = JihansProductionSession::with('details')
-            ->whereDate('date', $targetDate)
-            ->where('type', 'prediksi')
-            ->first();
+        $existingPrediksi = null;
+        if ($predictionId) {
+            $existingPrediksi = JihansProductionSession::with('details')
+                ->where('id', $predictionId)
+                ->where('type', 'prediksi')
+                ->first();
+        }
 
         return Inertia::render('Jihans/Production/Form', [
             'karyawans'  => $karyawans,
             'products'   => $products,
             'type'       => 'aktual',
             'formAction' => route('jihans.production.store'),
-            'warning'    => $warning,
-            'targetDate' => $targetDate,
+            'warning'    => null,
+            'targetDate' => $existingPrediksi ? $existingPrediksi->date : $targetDate,
+            'prediction_id' => $existingPrediksi ? $existingPrediksi->id : null,
             'production' => $existingPrediksi,
         ]);
     }
 
     public function createPrediksi()
     {
-        $existingToday = JihansProductionSession::whereDate('date', today())
-            ->whereIn('type', ['prediksi', 'aktual'])
-            ->first();
-
-        $warning = null;
-        if ($existingToday) {
-            $warning = $existingToday->type === 'aktual'
-                ? 'Aktual produksi hari ini sudah diinput. Prediksi tidak diperlukan lagi.'
-                : 'Prediksi hari ini sudah ada. Menyimpan ulang akan gagal.';
-        }
-
         $karyawans = Karyawan::where('entity_scope', 'jihans')
             ->where('is_active', true)
             ->orderBy('name')
@@ -114,7 +100,7 @@ class ProductionController extends Controller
             'products'   => $products,
             'type'       => 'prediksi',
             'formAction' => route('jihans.production.prediksi.store'),
-            'warning'    => $warning,
+            'warning'    => null,
         ]);
     }
 
@@ -128,17 +114,6 @@ class ProductionController extends Controller
             'details.*.product_id'  => 'required|integer|exists:master_products,id',
             'details.*.quantity'    => 'required|numeric|min:0',
         ]);
-
-        $existing = JihansProductionSession::whereDate('date', $request->date)
-            ->whereIn('type', ['prediksi', 'aktual'])
-            ->first();
-
-        if ($existing) {
-            $msg = $existing->type === 'aktual'
-                ? 'Aktual produksi tanggal ini sudah ada. Prediksi tidak bisa dibuat.'
-                : 'Prediksi untuk tanggal ini sudah ada.';
-            return back()->withInput()->withErrors(['date' => $msg]);
-        }
 
         $totalQty = collect($request->details)->sum('quantity');
         if ($totalQty <= 0) {
@@ -175,6 +150,7 @@ class ProductionController extends Controller
         $request->validate([
             'date'       => 'required|date',
             'notes'      => 'nullable|string',
+            'prediction_id' => 'nullable|integer|exists:jihans_production_sessions,id',
             'details'    => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
             'details.*.product_id'  => 'required|integer|exists:master_products,id',
@@ -187,20 +163,14 @@ class ProductionController extends Controller
             return back()->withInput()->withErrors(['details' => 'Total produksi harus lebih dari 0.']);
         }
 
-        $existingAktual = JihansProductionSession::whereDate('date', $request->date)
-            ->where('type', 'aktual')
-            ->first();
-
-        if ($existingAktual) {
-            return back()->withInput()->withErrors(['date' => 'Aktual produksi untuk tanggal ini sudah diinput dan tidak bisa diubah.']);
-        }
-
         DB::transaction(function () use ($request) {
-            // Override prediksi hari yang sama jika ada
-            $existingPrediksi = JihansProductionSession::with('details')->where('type', 'prediksi')
-                ->whereDate('date', $request->date)
-                ->whereNull('overridden_at')
-                ->first();
+            $existingPrediksi = null;
+            if ($request->prediction_id) {
+                $existingPrediksi = JihansProductionSession::with('details')->where('type', 'prediksi')
+                    ->where('id', $request->prediction_id)
+                    ->whereNull('overridden_at')
+                    ->first();
+            }
 
             $oldProductQtyMap = [];
             if ($existingPrediksi) {

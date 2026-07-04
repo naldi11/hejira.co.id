@@ -79,7 +79,7 @@ export default function ProductionsIndex({ productions, filters }) {
                                                     {p.is_prediksi ? (
                                                         <>
                                                             <Link href={route('hendhys.productions.prediksi.edit', p.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800">Edit</Link>
-                                                            <Link href={route('hendhys.productions.create', { date: p.date })} className="text-sm font-medium text-emerald-600 hover:text-emerald-800">Input Aktual</Link>
+                                                            <Link href={route('hendhys.productions.create', { prediction_id: p.id })} className="text-sm font-medium text-emerald-600 hover:text-emerald-800">Input Aktual</Link>
                                                             <button onClick={() => deletePrediksi(p.id)} className="text-sm font-medium text-red-600 hover:text-red-800">Hapus</button>
                                                         </>
                                                     ) : (

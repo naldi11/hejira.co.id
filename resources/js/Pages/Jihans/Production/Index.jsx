@@ -152,7 +152,7 @@ export default function Index({ sessions, filters }) {
                                                 {session.type === 'prediksi' && (
                                                     <>
                                                         <Link
-                                                            href={route('jihans.production.create', { date: session.date })}
+                                                            href={route('jihans.production.create', { prediction_id: session.id })}
                                                             className="text-brand-600 hover:text-brand-900 dark:text-brand-500 dark:hover:text-brand-400 font-medium text-xs bg-brand-50 px-2 py-1 rounded"
                                                             title="Input Aktual dari Prediksi ini"
                                                         >

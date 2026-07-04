@@ -69,31 +69,28 @@ class ProductionController extends Controller
             abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
         }
 
+        $predictionId = $request->query('prediction_id');
         $targetDate = $request->query('date', date('Y-m-d'));
         if ($targetDate && strlen($targetDate) > 10) {
             $targetDate = substr($targetDate, 0, 10);
         }
 
-        $existingAktual = HendhysProduction::whereDate('date', $targetDate)
-            ->where('type', 'aktual')
-            ->first();
-
-        $warning = $existingAktual 
-            ? 'Aktual produksi untuk tanggal ' . $targetDate . ' sudah diinput. Anda tidak bisa menginput ulang atau mengeditnya.'
-            : null;
-
-        $existingPrediksi = HendhysProduction::with('details')
-            ->whereDate('date', $targetDate)
-            ->where('type', 'prediksi')
-            ->first();
+        $existingPrediksi = null;
+        if ($predictionId) {
+            $existingPrediksi = HendhysProduction::with('details')
+                ->where('id', $predictionId)
+                ->where('type', 'prediksi')
+                ->first();
+        }
 
         return Inertia::render('Hendhys/Productions/Form', [
             'products'   => $this->getProductionProducts(),
             'units'      => $this->getUnits(),
             'type'       => 'aktual',
             'formAction' => route('hendhys.productions.store'),
-            'warning'    => $warning,
-            'targetDate' => $targetDate,
+            'warning'    => null,
+            'targetDate' => $existingPrediksi ? $existingPrediksi->date : $targetDate,
+            'prediction_id' => $existingPrediksi ? $existingPrediksi->id : null,
             'production' => $existingPrediksi ? new HendhysProductionResource($existingPrediksi) : null,
         ]);
     }
@@ -104,23 +101,12 @@ class ProductionController extends Controller
             abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
         }
 
-        $existingToday = HendhysProduction::whereDate('date', today())
-            ->whereIn('type', ['prediksi', 'aktual'])
-            ->first();
-
-        $warning = null;
-        if ($existingToday) {
-            $warning = $existingToday->type === 'aktual'
-                ? 'Aktual produksi hari ini sudah diinput. Prediksi tidak diperlukan lagi.'
-                : 'Prediksi hari ini sudah ada. Menyimpan ulang akan gagal.';
-        }
-
         return Inertia::render('Hendhys/Productions/Form', [
             'products'   => $this->getProductionProducts(),
             'units'      => $this->getUnits(),
             'type'       => 'prediksi',
             'formAction' => route('hendhys.productions.prediksi.store'),
-            'warning'    => $warning,
+            'warning'    => null,
         ]);
     }
 
@@ -138,17 +124,6 @@ class ProductionController extends Controller
             'items.*.quantity_produced' => 'required|numeric|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
-
-        $existing = HendhysProduction::whereDate('date', $request->date)
-            ->whereIn('type', ['prediksi', 'aktual'])
-            ->first();
-
-        if ($existing) {
-            $msg = $existing->type === 'aktual'
-                ? 'Aktual produksi tanggal ini sudah ada. Prediksi tidak bisa dibuat.'
-                : 'Prediksi untuk tanggal ini sudah ada.';
-            return back()->withInput()->withErrors(['date' => $msg]);
-        }
 
         try {
             DB::transaction(function () use ($request) {
@@ -187,27 +162,23 @@ class ProductionController extends Controller
         $request->validate([
             'date' => 'required|date',
             'notes' => 'nullable|string',
+            'prediction_id' => 'nullable|integer|exists:hendhys_productions,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity_produced' => 'required|numeric|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
-        $existingAktual = HendhysProduction::whereDate('date', $request->date)
-            ->where('type', 'aktual')
-            ->first();
-
-        if ($existingAktual) {
-            return back()->withInput()->withErrors(['date' => 'Aktual produksi untuk tanggal ini sudah diinput dan tidak bisa diubah.']);
-        }
-
         try {
             DB::transaction(function () use ($request) {
-                // Override prediksi hari yang sama jika ada
-                $existingPrediksi = HendhysProduction::with('details')->where('type', 'prediksi')
-                    ->whereDate('date', $request->date)
-                    ->whereNull('overridden_at')
-                    ->first();
+                $existingPrediksi = null;
+                
+                if ($request->prediction_id) {
+                    $existingPrediksi = HendhysProduction::with('details')->where('type', 'prediksi')
+                        ->where('id', $request->prediction_id)
+                        ->whereNull('overridden_at')
+                        ->first();
+                }
 
                 if ($existingPrediksi) {
                     $existingPrediksi->details()->delete();

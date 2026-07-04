@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 
-export default function Form({ karyawans, products, type, warning, targetDate, isEdit = false, production = null, formAction }) {
+export default function Form({ karyawans, products, type, warning, targetDate, prediction_id, isEdit = false, production = null, formAction }) {
     const isPrediksi = type === 'prediksi';
 
     // State for basic info
@@ -99,7 +99,7 @@ export default function Form({ karyawans, products, type, warning, targetDate, i
             });
         });
 
-        const payload = { date, notes, details };
+        const payload = { date, notes, prediction_id, details };
 
         if (isEdit) {
             router.put(formAction, payload);
