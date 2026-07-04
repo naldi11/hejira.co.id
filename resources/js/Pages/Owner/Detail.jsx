@@ -131,8 +131,94 @@ function TransactionCard({ row, showBranch }) {
     );
 }
 
-export default function Detail({ mode, unit, title, subtitle, list, filter, trends }) {
+/* ─── Shift Card ─────────────────────────────────────────────────────────── */
+function ShiftCard({ row, showBranch }) {
+    const [expanded, setExpanded] = useState(false);
+    const isClosed = row.status === 'closed';
+
+    return (
+        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-amber-200 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700">
+            <div 
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-start justify-between gap-2 cursor-pointer"
+            >
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-bold text-slate-800 dark:text-white/90 text-sm">Shift {row.user}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isClosed ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {isClosed ? 'Selesai' : 'Aktif'}
+                        </span>
+                    </div>
+                    {showBranch && <p className="text-xs text-slate-400 mt-0.5">{row.type_unit}</p>}
+                    <div className="flex gap-4 mt-1">
+                        <div>
+                            <p className="text-[10px] text-slate-400">Buka</p>
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{new Date(row.opened_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                        {isClosed && (
+                            <div>
+                                <p className="text-[10px] text-slate-400">Tutup</p>
+                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{new Date(row.closed_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="text-right shrink-0">
+                    <p className="text-[10px] text-slate-400">Expected Cash</p>
+                    <p className="font-black text-emerald-600 dark:text-emerald-400">{formatRupiah(row.expected_cash)}</p>
+                    {isClosed && (
+                        <p className={`text-[11px] font-bold mt-1 ${row.discrepancy === 0 ? 'text-slate-400' : row.discrepancy > 0 ? 'text-blue-500' : 'text-rose-500'}`}>
+                            Selisih: {formatRupiah(row.discrepancy)}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {expanded && (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-gray-800 text-sm">
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Tunai (Cash)</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.tunai)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Transfer</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.transfer)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Kartu Debit</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.kartu_debit)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Kartu Kredit</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.kartu_kredit)}</span>
+                        </div>
+                        <div className="flex justify-between col-span-2 border-t border-slate-100 dark:border-gray-800 pt-2 mt-1">
+                            <span className="font-bold text-slate-800 dark:text-white">Modal Awal</span>
+                            <span className="font-bold text-amber-600">{formatRupiah(row.starting_cash)}</span>
+                        </div>
+                        {isClosed && (
+                            <div className="flex justify-between col-span-2">
+                                <span className="font-bold text-slate-800 dark:text-white">Uang Aktual di Laci</span>
+                                <span className="font-bold text-slate-800 dark:text-white">{formatRupiah(row.actual_cash)}</span>
+                            </div>
+                        )}
+                        {row.note && (
+                            <div className="col-span-2 mt-2 p-2 bg-slate-50 dark:bg-gray-800 rounded-lg text-xs">
+                                <span className="font-semibold text-slate-600 dark:text-gray-300 block mb-0.5">Catatan Kasir:</span>
+                                <span className="italic text-slate-500 dark:text-gray-400">{row.note}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function Detail({ mode, unit, title, subtitle, list, shifts, filter, trends }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState('transactions');
 
     const handleFilterChange = (newFilter) => {
         router.get(route('owner.dashboard.detail'), { mode, unit, filter: newFilter }, { preserveState: true, preserveScroll: true });
@@ -145,7 +231,7 @@ export default function Detail({ mode, unit, title, subtitle, list, filter, tren
         return 'default';
     };
 
-    const getFilteredData = () => {
+    const getFilteredTransactions = () => {
         if (!searchQuery) return list;
         const q = searchQuery.toLowerCase();
         return list.filter(item =>
@@ -161,7 +247,18 @@ export default function Detail({ mode, unit, title, subtitle, list, filter, tren
         );
     };
 
-    const filteredData = getFilteredData();
+    const getFilteredShifts = () => {
+        if (!shifts) return [];
+        if (!searchQuery) return shifts;
+        const q = searchQuery.toLowerCase();
+        return shifts.filter(item => 
+            (item.user && item.user.toLowerCase().includes(q)) ||
+            (item.note && item.note.toLowerCase().includes(q))
+        );
+    };
+
+    const filteredTransactions = getFilteredTransactions();
+    const filteredShifts = getFilteredShifts();
 
     // Chart dimensions
     const chartHeight = 120;
@@ -262,24 +359,52 @@ export default function Detail({ mode, unit, title, subtitle, list, filter, tren
                     />
                 </div>
 
+                {/* Tabs for Omset Mode */}
+                {mode === 'omset' && (
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setActiveTab('transactions')}
+                            className={`flex-1 py-2 text-sm font-bold rounded-xl transition flex justify-center items-center gap-1.5 ${activeTab === 'transactions' ? 'bg-slate-800 text-white shadow-md dark:bg-white dark:text-slate-900' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 dark:bg-white/[0.02] dark:border-gray-800'}`}
+                        >
+                            <Icon name="receipt" className="text-[16px]" /> Transaksi
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('shifts')}
+                            className={`flex-1 py-2 text-sm font-bold rounded-xl transition flex justify-center items-center gap-1.5 ${activeTab === 'shifts' ? 'bg-amber-500 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 dark:bg-white/[0.02] dark:border-gray-800'}`}
+                        >
+                            <Icon name="assessment" className="text-[16px]" /> Laci Kasir (Shift)
+                        </button>
+                    </div>
+                )}
+
                 {/* List Container */}
                 <div className="space-y-3">
-                    {filteredData.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400 bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] rounded-2xl">
-                            <Icon name="search_off" className="text-[48px]" />
-                            <p className="text-sm">Tidak ada data yang cocok dengan pencarian.</p>
-                        </div>
-                    ) : mode === 'stock' ? (
-                        filteredData.map((row, idx) => (
+                    {mode === 'stock' ? (
+                        filteredTransactions.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400 bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] rounded-2xl">
+                                <Icon name="search_off" className="text-[48px]" />
+                                <p className="text-sm">Tidak ada data yang cocok dengan pencarian.</p>
+                            </div>
+                        ) : filteredTransactions.map((row, idx) => (
                             <StockItemCard key={idx} row={row} type={getStockCardType()} />
                         ))
+                    ) : activeTab === 'transactions' ? (
+                        filteredTransactions.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400 bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] rounded-2xl">
+                                <Icon name="search_off" className="text-[48px]" />
+                                <p className="text-sm">Tidak ada transaksi yang cocok.</p>
+                            </div>
+                        ) : filteredTransactions.map((row, idx) => (
+                            <TransactionCard key={idx} row={row} showBranch={unit === 'all_transactions'} />
+                        ))
                     ) : (
-                        filteredData.map((row, idx) => (
-                            <TransactionCard
-                                key={idx}
-                                row={row}
-                                showBranch={unit === 'all_transactions'}
-                            />
+                        filteredShifts.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400 bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] rounded-2xl">
+                                <Icon name="search_off" className="text-[48px]" />
+                                <p className="text-sm">Tidak ada shift yang cocok.</p>
+                            </div>
+                        ) : filteredShifts.map((row, idx) => (
+                            <ShiftCard key={idx} row={row} showBranch={unit === 'all_transactions'} />
                         ))
                     )}
                 </div>

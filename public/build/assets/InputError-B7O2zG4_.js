@@ -1,0 +1,1 @@
+import{t as e}from"./app-BGeYKF55.js";var t=e();function n({message:e,className:n=``,...r}){return e?(0,t.jsx)(`p`,{...r,className:`text-sm text-rose-600 ${n}`,children:e}):null}export{n as t};

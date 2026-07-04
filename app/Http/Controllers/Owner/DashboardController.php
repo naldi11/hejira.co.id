@@ -15,6 +15,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PoDetail;
 use App\Models\HendhysTransaction;
 use App\Models\JihansTransaction;
+use App\Models\CashierShift;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -273,6 +274,7 @@ class DashboardController extends Controller
         $title = 'Detail';
         $subtitle = '';
         $list = [];
+        $shifts = collect(); // Store shifts for the omset mode
 
         // Apply date filter logic for omset
         $dateFilter = function($q) use ($filter) {
@@ -408,6 +410,34 @@ class DashboardController extends Controller
                 ];
             };
 
+            $dateFilterShift = function($q) use ($filter) {
+                if ($filter === 'today') {
+                    $q->whereDate('opened_at', today());
+                } elseif ($filter === 'week') {
+                    $q->whereBetween('opened_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                } elseif ($filter === 'month') {
+                    $q->whereMonth('opened_at', now()->month)->whereYear('opened_at', now()->year);
+                }
+            };
+
+            $mapShift = function($s, $typeUnit) {
+                $s->payment_summary = $s->calculatePaymentSummary();
+                return [
+                    'id' => $s->id,
+                    'user' => $s->user?->name ?? 'Sistem',
+                    'opened_at' => $s->opened_at,
+                    'closed_at' => $s->closed_at,
+                    'status' => $s->status,
+                    'starting_cash' => $s->starting_cash,
+                    'expected_cash' => $s->expected_cash,
+                    'actual_cash' => $s->actual_cash,
+                    'discrepancy' => $s->discrepancy,
+                    'note' => $s->note,
+                    'payment_summary' => $s->payment_summary,
+                    'type_unit' => $typeUnit,
+                ];
+            };
+
             // Dynamic Trend Calculation based on filter
             $trendQueryCallback = null;
             $mapTrends = null;
@@ -497,6 +527,17 @@ class DashboardController extends Controller
                 $hendhys = $hendhysQuery->latest('id')->take(50)->get()->map(fn($t) => $mapTransaction($t, $t->branch?->name ?? 'Hendhys Produksi (Pusat)'));
 
                 $list = collect($jihans)->concat($hendhys)->sortByDesc('id')->values();
+
+                // Shifts
+                $sJihansQ = CashierShift::with(['user', 'branch'])->where('entity', 'jihans');
+                $dateFilterShift($sJihansQ);
+                $sJihans = $sJihansQ->latest('id')->take(50)->get()->map(fn($s) => $mapShift($s, "Jihan's Food"));
+
+                $sHendhysQ = CashierShift::with(['user', 'branch'])->where('entity', 'hendhys');
+                $dateFilterShift($sHendhysQ);
+                $sHendhys = $sHendhysQ->latest('id')->take(50)->get()->map(fn($s) => $mapShift($s, $s->branch?->name ?? 'Hendhys Pusat'));
+
+                $shifts = collect($sJihans)->concat($sHendhys)->sortByDesc('id')->values();
                 $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
 
                 // Trends
@@ -508,6 +549,10 @@ class DashboardController extends Controller
                 $query = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
                 $dateFilter($query);
                 $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"))->values();
+                
+                $shiftQ = CashierShift::with(['user'])->where('entity', 'jihans');
+                $dateFilterShift($shiftQ);
+                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, "Jihan's Food"))->values();
                 $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
 
                 // Trends
@@ -518,6 +563,10 @@ class DashboardController extends Controller
                 $query = HendhysTransaction::with(['creator', 'details'])->whereNull('branch_id')->where('status', 'paid');
                 $dateFilter($query);
                 $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'))->values();
+
+                $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->whereNull('branch_id');
+                $dateFilterShift($shiftQ);
+                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'))->values();
                 $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
 
                 // Trends
@@ -531,6 +580,10 @@ class DashboardController extends Controller
                 $query = HendhysTransaction::with(['creator', 'details'])->where('branch_id', $branchId)->where('status', 'paid');
                 $dateFilter($query);
                 $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, $title))->values();
+
+                $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->where('branch_id', $branchId);
+                $dateFilterShift($shiftQ);
+                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, $title))->values();
                 $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
 
                 // Trends
@@ -545,6 +598,7 @@ class DashboardController extends Controller
             'title' => $title,
             'subtitle' => $subtitle,
             'list' => $list,
+            'shifts' => $shifts,
             'filter' => $filter,
             'trends' => $trends
         ]);
