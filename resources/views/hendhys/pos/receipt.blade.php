@@ -11,6 +11,7 @@
             background: #e5e7eb;
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11.5px;
+            font-weight: bold; /* Ditebalkan penuh agar tidak putus-putus di printer kasir */
             color: #000;
             display: flex;
             justify-content: center;
@@ -28,7 +29,7 @@
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-left { text-align: left; }
-        .font-bold { font-weight: bold; }
+        .font-bold { font-weight: 900; } /* Dipertebal dari bold biasa */
         
         .mb-1 { margin-bottom: 2px; }
         .mb-2 { margin-bottom: 4px; }
