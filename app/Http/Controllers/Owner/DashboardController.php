@@ -96,12 +96,19 @@ class DashboardController extends Controller
 
         // Detailed Tables Data (values() added to reset collection keys for clean JSON arrays)
         // 1. Jihans Gudang Stocks
-        $gudangStocksList = JihansGudangStock::with('product')->get()
+        $gudangStocksList = DB::table('master_products as p')
+            ->leftJoin('jihans_gudang_stocks as s', 'p.id', '=', 's.product_id')
+            ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
+            ->where('p.status', 'active')
+            ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
+            ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
+            ->orderBy('p.name')
+            ->get()
             ->map(fn($s) => [
-                'code' => $s->product?->code ?? '-',
-                'name' => $s->product?->name ?? '-',
+                'code' => $s->code,
+                'name' => $s->name,
                 'quantity' => (float) $s->quantity,
-                'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
+                'unit' => $s->unit ?? 'PCS'
             ])->values();
 
         // 2. Jihans Retail Stocks
@@ -276,12 +283,19 @@ class DashboardController extends Controller
         if ($mode === 'stock') {
             if ($unit === 'gudang') {
                 $title = 'Jihans Gudang';
-                $list = JihansGudangStock::with('product')->get()
+                $list = DB::table('master_products as p')
+                    ->leftJoin('jihans_gudang_stocks as s', 'p.id', '=', 's.product_id')
+                    ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
+                    ->where('p.status', 'active')
+                    ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
+                    ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
+                    ->orderBy('p.name')
+                    ->get()
                     ->map(fn($s) => [
-                        'code' => $s->product?->code ?? '-',
-                        'name' => $s->product?->name ?? '-',
+                        'code' => $s->code,
+                        'name' => $s->name,
                         'quantity' => (float) $s->quantity,
-                        'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
+                        'unit' => $s->unit ?? 'PCS'
                     ])->values();
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif ($unit === 'retail') {
@@ -317,7 +331,7 @@ class DashboardController extends Controller
                         'quantity' => $pusatQty,
                         'unit' => 'PCS'
                     ];
-                })->filter(fn($p) => $p['quantity'] > 0)->values();
+                })->values();
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif (str_starts_with($unit, 'hendhys_cabang_')) {
                 $branchId = str_replace('hendhys_cabang_', '', $unit);
@@ -344,7 +358,7 @@ class DashboardController extends Controller
                         'quantity_return' => $qty_ret,
                         'unit' => 'PCS'
                     ];
-                })->filter(fn($p) => $p['quantity'] > 0 || $p['quantity_return'] > 0)->values();
+                })->values();
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif ($unit === 'movements') {
                 $title = 'Mutasi Pergerakan Stok';
