@@ -44,13 +44,11 @@ class FixOldDataTimezone extends Command
         // 2. jihans_transaction_payments & hendhys_transaction_payments (Kelebihan 7 jam)
         $this->info('Memperbaiki tabel payments (-7 jam)...');
         DB::statement("UPDATE jihans_transaction_payments SET 
-            created_at = DATE_SUB(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_SUB(updated_at, INTERVAL 7 HOUR)
+            created_at = DATE_SUB(created_at, INTERVAL 7 HOUR)
             WHERE created_at <= ?", [$threshold]);
             
         DB::statement("UPDATE hendhys_transaction_payments SET 
-            created_at = DATE_SUB(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_SUB(updated_at, INTERVAL 7 HOUR)
+            created_at = DATE_SUB(created_at, INTERVAL 7 HOUR)
             WHERE created_at <= ?", [$threshold]);
 
         // 3. jihans_transactions & hendhys_transactions (Kelebihan 14 jam karena ditambah oleh app:undo-double-timezone)
