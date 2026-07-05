@@ -538,7 +538,9 @@ class DashboardController extends Controller
                 $sHendhys = $sHendhysQ->latest('id')->take(50)->get()->map(fn($s) => $mapShift($s, $s->branch?->name ?? 'Hendhys Pusat'));
 
                 $shifts = collect($sJihans)->concat($sHendhys)->sortByDesc('id')->values();
-                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $totalJihansOmset = (clone $jihansQuery)->sum('grand_total');
+                $totalHendhysOmset = (clone $hendhysQuery)->sum('grand_total');
+                $subtitle = 'Total Omset: Rp ' . number_format($totalJihansOmset + $totalHendhysOmset, 0, ',', '.');
 
                 // Trends
                 $jSales = $trendQueryCallback(JihansTransaction::where('status', 'paid'));
@@ -553,7 +555,8 @@ class DashboardController extends Controller
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'jihans');
                 $dateFilterShift($shiftQ);
                 $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, "Jihan's Food"))->values();
-                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $totalOmset = (clone $query)->sum('grand_total');
+                $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
                 // Trends
                 $sales = $trendQueryCallback(JihansTransaction::where('status', 'paid'));
@@ -567,7 +570,8 @@ class DashboardController extends Controller
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->whereNull('branch_id');
                 $dateFilterShift($shiftQ);
                 $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'))->values();
-                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $totalOmset = (clone $query)->sum('grand_total');
+                $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
                 // Trends
                 $sales = $trendQueryCallback(HendhysTransaction::whereNull('branch_id')->where('status', 'paid'));
@@ -584,7 +588,8 @@ class DashboardController extends Controller
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->where('branch_id', $branchId);
                 $dateFilterShift($shiftQ);
                 $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, $title))->values();
-                $subtitle = 'Total Omset: Rp ' . number_format($list->sum('grand_total'), 0, ',', '.');
+                $totalOmset = (clone $query)->sum('grand_total');
+                $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
                 // Trends
                 $sales = $trendQueryCallback(HendhysTransaction::where('branch_id', $branchId)->where('status', 'paid'));
