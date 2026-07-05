@@ -26,7 +26,6 @@ class FixAbsoluteTimezone extends Command
         DB::statement("UPDATE jihans_transactions t
             JOIN jihans_transaction_payments p ON t.id = p.transaction_id
             SET t.created_at = p.created_at,
-                t.updated_at = p.updated_at,
                 t.date = DATE(p.created_at),
                 t.time = TIME(p.created_at)");
 
