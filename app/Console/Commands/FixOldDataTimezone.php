@@ -33,13 +33,13 @@ class FixOldDataTimezone extends Command
         $threshold = '2026-07-05 16:00:00';
 
         // 1. master_cashier_shifts (Kelebihan 7 jam karena murni salah simpan string)
-        $this->info('Memperbaiki tabel master_cashier_shifts (-7 jam)...');
-        DB::statement("UPDATE master_cashier_shifts SET 
-            opened_at = DATE_SUB(opened_at, INTERVAL 7 HOUR),
-            closed_at = DATE_SUB(closed_at, INTERVAL 7 HOUR),
-            created_at = DATE_SUB(created_at, INTERVAL 7 HOUR),
-            updated_at = DATE_SUB(updated_at, INTERVAL 7 HOUR)
-            WHERE created_at <= ?", [$threshold]);
+        $this->info('Tabel master_cashier_shifts SUDAH BERHASIL diproses pada run pertama (Dilewati)...');
+        // DB::statement("UPDATE master_cashier_shifts SET 
+        //     opened_at = DATE_SUB(opened_at, INTERVAL 7 HOUR),
+        //     closed_at = DATE_SUB(closed_at, INTERVAL 7 HOUR),
+        //     created_at = DATE_SUB(created_at, INTERVAL 7 HOUR),
+        //     updated_at = DATE_SUB(updated_at, INTERVAL 7 HOUR)
+        //     WHERE created_at <= ?", [$threshold]);
 
         // 2. jihans_transaction_payments & hendhys_transaction_payments (Kelebihan 7 jam)
         $this->info('Memperbaiki tabel payments (-7 jam)...');
