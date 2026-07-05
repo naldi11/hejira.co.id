@@ -20,7 +20,7 @@ const FILES = [
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/TransferToBranch/Create.jsx",
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Productions/Index.jsx",
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Productions/Show.jsx",
-    "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Productions/Create.jsx",
+    "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Productions/Form.jsx",
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Returns/Index.jsx",
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Returns/Show.jsx",
     "/Applications/MAMP/htdocs/hejira.co.id/resources/js/Pages/Hendhys/Returns/Create.jsx",

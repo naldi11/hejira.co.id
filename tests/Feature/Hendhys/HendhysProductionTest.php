@@ -80,7 +80,7 @@ class HendhysProductionTest extends TestCase
         $this->actingAs($this->hendhysAdmin())
             ->get(route('hendhys.productions.create'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Productions/Create')->has('products')->has('units'));
+            ->assertInertia(fn (Assert $page) => $page->component('Hendhys/Productions/Form')->has('products')->has('units'));
     }
 
     public function test_transfer_requests_index_renders(): void
