@@ -362,7 +362,7 @@ class DashboardController extends Controller
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif ($unit === 'movements') {
                 $title = 'Mutasi Pergerakan Stok';
-                $list = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->take(100)->get()
+                $list = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->get()
                     ->map(fn($m) => [
                         'date' => $m->created_at->toDateTimeString(),
                         'product_name' => $m->product?->name ?? '-',
@@ -374,7 +374,7 @@ class DashboardController extends Controller
                 $subtitle = $list->count() . ' Mutasi Terakhir';
             } elseif ($unit === 'po') {
                 $title = 'Purchase Order Supplier';
-                $list = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->take(100)->get()
+                $list = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->get()
                     ->map(fn($po) => [
                         'po_number' => $po->po_number,
                         'supplier' => $po->supplier?->name ?? '-',
@@ -550,11 +550,11 @@ class DashboardController extends Controller
                 $title = "Jihan's Food";
                 $query = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"))->values();
+                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"))->values();
                 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'jihans');
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, "Jihan's Food"))->values();
+                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, "Jihan's Food"))->values();
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
@@ -565,11 +565,11 @@ class DashboardController extends Controller
                 $title = 'Hendhys Pusat';
                 $query = HendhysTransaction::with(['creator', 'details'])->whereNull('branch_id')->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'))->values();
+                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'))->values();
 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->whereNull('branch_id');
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'))->values();
+                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'))->values();
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
@@ -583,11 +583,11 @@ class DashboardController extends Controller
                 
                 $query = HendhysTransaction::with(['creator', 'details'])->where('branch_id', $branchId)->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->take(100)->get()->map(fn($t) => $mapTransaction($t, $title))->values();
+                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, $title))->values();
 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->where('branch_id', $branchId);
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->take(100)->get()->map(fn($s) => $mapShift($s, $title))->values();
+                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, $title))->values();
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
