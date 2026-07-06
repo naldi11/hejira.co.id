@@ -147,8 +147,8 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                 <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(shift.starting_cash)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500 dark:text-gray-400">Pemasukan Tunai</span>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatRupiah(summary.tunai)}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Total Omset</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatRupiah(summary.omset)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500 dark:text-gray-400">Pengeluaran</span>
@@ -156,7 +156,7 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                             </div>
                             <div className="flex items-center justify-between pt-2 mt-1 border-t border-dashed border-gray-200 dark:border-gray-700">
                                 <span className="text-sm font-bold text-gray-800 dark:text-gray-200">Sisa</span>
-                                <span className="font-black text-blue-600 dark:text-blue-400">{formatRupiah(shift.expected_cash)}</span>
+                                <span className="font-black text-blue-600 dark:text-blue-400">{formatRupiah((Number(summary.omset) || 0) - (Number(shift.total_expenses) || 0))}</span>
                             </div>
                         </div>
                     </div>
