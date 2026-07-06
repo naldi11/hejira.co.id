@@ -64,7 +64,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
 
     // Form inputs
     const [startingCash, setStartingCash] = useState(0);
-    const [actualCash, setActualCash] = useState(0);
+    const [actualCash, setActualCash] = useState('');
     const [closeNote, setCloseNote] = useState('');
 
     // Detail shift state
