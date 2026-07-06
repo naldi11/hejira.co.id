@@ -641,10 +641,28 @@ class DashboardController extends Controller
         });
 
         $payments = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
-            ->leftJoin('master_payment_methods as pm', 'p.payment_method_id', '=', 'pm.id')
             ->whereIn('p.transaction_id', $trxIds)
-            ->select('p.amount', 'pm.type', 'pm.name as method_name')
+            ->select('p.amount', 'p.payment_method')
             ->get();
+
+        $payments = $payments->map(function($p) {
+            $type = 'lainnya';
+            $method = strtolower($p->payment_method ?? '');
+            
+            if ($method === 'cash' || $method === 'tunai') {
+                $type = 'tunai';
+            } elseif ($method === 'transfer') {
+                $type = 'transfer';
+            } elseif ($method === 'debit' || $method === 'kredit' || str_contains($method, 'qris')) {
+                // If it's qris, sometimes they group it under transfer or debit, but let's just make it transfer for simplicity if qris is transfer
+                // Actually they just have tunai, transfer, debit, kredit in UI. 
+                // We'll map qris to transfer or debit depending on standard. Let's map qris to transfer.
+                $type = $method === 'debit' || $method === 'kredit' ? $method : 'transfer';
+            }
+            
+            $p->type = $type;
+            return $p;
+        });
 
         $tunai = $payments->where('type', 'tunai')->sum('amount');
         $transfer = $payments->where('type', 'transfer')->sum('amount');
