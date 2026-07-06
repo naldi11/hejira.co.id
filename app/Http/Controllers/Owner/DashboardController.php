@@ -619,11 +619,19 @@ class DashboardController extends Controller
 
         $closedAt = $shift->closed_at ?? now();
 
+        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
+            ->where('branch_id', $shift->branch_id)
+            ->where('id', '<', $shift->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+
         $transactions = \Illuminate\Support\Facades\DB::table($transactionTable . ' as t')
             ->select('t.*')
             ->where('t.created_by', $shift->user_id)
             ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->whereBetween('t.created_at', [$startAt, $closedAt])
             ->orderBy('t.created_at', 'desc')
             ->get();
 
@@ -642,7 +650,7 @@ class DashboardController extends Controller
 
         $payments = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
             ->whereIn('p.transaction_id', $trxIds)
-            ->select('p.amount', 'p.payment_method')
+            ->select('p.transaction_id', 'p.amount', 'p.payment_method')
             ->get();
 
         $payments = $payments->map(function($p) {
@@ -654,9 +662,6 @@ class DashboardController extends Controller
             } elseif ($method === 'transfer') {
                 $type = 'transfer';
             } elseif ($method === 'debit' || $method === 'kredit' || str_contains($method, 'qris')) {
-                // If it's qris, sometimes they group it under transfer or debit, but let's just make it transfer for simplicity if qris is transfer
-                // Actually they just have tunai, transfer, debit, kredit in UI. 
-                // We'll map qris to transfer or debit depending on standard. Let's map qris to transfer.
                 $type = $method === 'debit' || $method === 'kredit' ? $method : 'transfer';
             }
             
@@ -664,10 +669,31 @@ class DashboardController extends Controller
             return $p;
         });
 
-        $tunai = $payments->where('type', 'tunai')->sum('amount');
-        $transfer = $payments->where('type', 'transfer')->sum('amount');
-        $debit = $payments->where('type', 'debit')->sum('amount');
-        $kredit = $payments->where('type', 'kredit')->sum('amount');
+        // Attach payments to transactions
+        $transactions = $transactions->map(function($t) use ($payments) {
+            $t->payments = $payments->where('transaction_id', $t->id)->values();
+            return $t;
+        });
+
+
+        $tunai = 0;
+        $transfer = 0;
+        $debit = 0;
+        $kredit = 0;
+
+        foreach ($transactions as $t) {
+            $tTransfer = $t->payments->where('type', 'transfer')->sum('amount');
+            $tDebit = $t->payments->where('type', 'debit')->sum('amount');
+            $tKredit = $t->payments->where('type', 'kredit')->sum('amount');
+            
+            // Tunai adalah sisa dari grand_total dikurangi pembayaran non-tunai (karena kembalian selalu dalam bentuk tunai)
+            $tTunai = max(0, $t->grand_total - ($tTransfer + $tDebit + $tKredit));
+            
+            $tunai += $tTunai;
+            $transfer += $tTransfer;
+            $debit += $tDebit;
+            $kredit += $tKredit;
+        }
 
         $totalOmset = $transactions->sum('grand_total');
         

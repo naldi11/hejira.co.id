@@ -80,6 +80,14 @@ class ShiftController extends Controller
         $closedAt = now();
         $entity = $shift->entity;
 
+        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
+            ->where('branch_id', $shift->branch_id)
+            ->where('id', '<', $shift->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+
         // Calculate total cash collected during shift
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
@@ -89,7 +97,7 @@ class ShiftController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->where('t.created_by', $shift->user_id)
             ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->whereBetween('t.created_at', [$startAt, $closedAt])
             ->sum(DB::raw("CASE
                 WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
                 WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
@@ -130,6 +138,14 @@ class ShiftController extends Controller
 
         $closedAt = $shift->closed_at ?? now();
 
+        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
+            ->where('branch_id', $shift->branch_id)
+            ->where('id', '<', $shift->id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+
         // Extra column exists in hendhys_transaction_payments for specific type tracking
         $hasPtypeCol = ($entity === 'hendhys');
 
@@ -139,7 +155,7 @@ class ShiftController extends Controller
             ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
             ->where('t.created_by', $shift->user_id)
             ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->whereBetween('t.created_at', [$startAt, $closedAt])
             ->selectRaw("
                 COALESCE(SUM(CASE
                     WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
@@ -168,7 +184,7 @@ class ShiftController extends Controller
             ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
             ->where('t.created_by', $shift->user_id)
             ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->whereBetween('t.created_at', [$startAt, $closedAt])
             ->select([
                 't.id',
                 't.transaction_number',
@@ -185,7 +201,7 @@ class ShiftController extends Controller
             ->join($transactionTable . ' as t', 't.id', '=', 'd.transaction_id')
             ->where('t.created_by', $shift->user_id)
             ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->whereBetween('t.created_at', [$startAt, $closedAt])
             ->select([
                 'd.product_name',
                 DB::raw('SUM(d.quantity) as total_qty'),
