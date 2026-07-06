@@ -66,6 +66,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [startingCash, setStartingCash] = useState(0);
     const [actualCash, setActualCash] = useState('');
     const [closeNote, setCloseNote] = useState('');
+    const [expenses, setExpenses] = useState([]);
 
     // Detail shift state
     const [detailLoading, setDetailLoading] = useState(false);
@@ -99,12 +100,14 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
         e.preventDefault();
         router.post(route('hendhys.shifts.close'), {
             actual_cash: parseInt(actualCash) || 0,
-            note: closeNote
+            note: closeNote,
+            expenses: expenses
         }, {
             onSuccess: () => {
                 setCloseShiftModal(false);
-                setActualCash(0);
+                setActualCash('');
                 setCloseNote('');
+                setExpenses([]);
             }
         });
     };
@@ -264,71 +267,58 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <th className="px-4 py-3">Tutup Shift</th>
                                     <th className="px-4 py-3 text-center">Status</th>
                                     <th className="px-4 py-3 text-right">Modal Awal</th>
-                                    <th className="px-4 py-3 text-right text-emerald-600">Uang di Laci</th>
-                                    <th className="px-4 py-3 text-right">Transfer</th>
-                                    <th className="px-4 py-3 text-right">Debit</th>
-                                    <th className="px-4 py-3 text-right text-rose-500">Kredit (Bon)</th>
-                                    <th className="px-4 py-3 text-right font-bold">Uang Fisik Aktual</th>
-                                    <th className="px-4 py-3 text-right">Selisih</th>
-                                    <th className="px-4 py-3 text-center">Aksi</th>
+                                    <th className="px-4 py-4 font-semibold">Uang di Laci</th>
+                                    <th className="px-4 py-4 font-semibold text-center">Total Pengeluaran</th>
+                                    <th className="px-4 py-4 font-semibold">Transfer</th>
+                                    <th className="px-4 py-4 font-semibold">Debit</th>
+                                    <th className="px-4 py-4 font-semibold text-rose-500">Kredit (Bon)</th>
+                                    <th className="px-4 py-4 font-semibold text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {rows.data?.length === 0 ? (
                                     <EmptyState colSpan={12} icon="assessment" message="Belum ada riwayat shift laci kasir." />
                                 ) : (
-                                    rows.data?.map((r, i) => {
-                                        const isClosed = r.status === 'closed';
-                                        const hasDiscrepancy = isClosed && r.discrepancy !== 0;
-
-                                        return (
-                                            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
-                                                <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{r.user?.name ?? 'Sistem'}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(r.opened_at)}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{isClosed ? formatDateTime(r.closed_at) : '-'}</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                                        isClosed 
-                                                            ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' 
-                                                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                                                    }`}>
-                                                        {isClosed ? 'Selesai' : 'Aktif'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(r.starting_cash)}</td>
-                                                <td className="px-4 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                                    {formatRupiah(r.expected_cash)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                                    {formatRupiah(r.payment_summary?.transfer ?? 0)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                                    {formatRupiah(r.payment_summary?.kartu_debit ?? 0)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right text-rose-500 dark:text-rose-400 whitespace-nowrap">
-                                                    {formatRupiah(r.payment_summary?.kredit ?? 0)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                                                    {isClosed ? formatRupiah(r.actual_cash) : '-'}
-                                                </td>
-                                                <td className={`px-4 py-3 text-right font-bold whitespace-nowrap ${
-                                                    hasDiscrepancy 
-                                                        ? (r.discrepancy > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600 dark:text-rose-400') 
-                                                        : 'text-gray-700 dark:text-gray-300'
+                                    rows.data?.map((row, i) => (
+                                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                            <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.user?.name ?? 'Sistem'}</td>
+                                            <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(row.opened_at)}</td>
+                                            <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{row.status === 'closed' ? formatDateTime(row.closed_at) : '-'}</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                                    row.status === 'closed' 
+                                                        ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' 
+                                                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
                                                 }`}>
-                                                    {isClosed ? (r.discrepancy === 0 ? 'Pas' : formatRupiah(r.discrepancy)) : '-'}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <button 
-                                                        onClick={() => handleViewDetail(r)}
-                                                        className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold whitespace-nowrap"
-                                                    >
-                                                        <Icon name="visibility" className="text-[16px]" /> Detail
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                    {row.status === 'closed' ? 'Selesai' : 'Aktif'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(row.starting_cash)}</td>
+                                            <td className="px-4 py-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                                {formatRupiah(row.expected_cash)}
+                                            </td>
+                                            <td className="px-4 py-4 text-center font-medium text-rose-500">
+                                                {formatRupiah(row.total_expenses ?? 0)}
+                                            </td>
+                                            <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                                                {formatRupiah(row.payment_summary?.transfer ?? 0)}
+                                            </td>
+                                            <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                                                {formatRupiah(row.payment_summary?.kartu_debit ?? 0)}
+                                            </td>
+                                            <td className="px-4 py-4 text-rose-500 font-medium">
+                                                {formatRupiah(row.payment_summary?.kredit ?? 0)}
+                                            </td>
+                                            <td className="px-4 py-4 text-right">
+                                                <button 
+                                                    onClick={() => handleViewDetail(row)}
+                                                    className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold whitespace-nowrap"
+                                                >
+                                                    <Icon name="visibility" className="text-[16px]" /> Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
                                 )}
                             </tbody>
                         </table>
@@ -388,6 +378,72 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                     </h3>
                     <div className="space-y-4">
                         <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">
+                                    Catatan Pengeluaran (Bila Ada)
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setExpenses([...expenses, { amount: '', description: '' }])}
+                                    className="text-xs font-semibold text-amber-600 hover:text-amber-700 bg-amber-50 px-2 py-1 rounded-md transition"
+                                >
+                                    + Tambah Pengeluaran
+                                </button>
+                            </div>
+                            {expenses.length > 0 && (
+                                <div className="space-y-3 mb-4 p-3 bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-xl">
+                                    {expenses.map((expense, index) => (
+                                        <div key={index} className="flex gap-2 items-start">
+                                            <div className="flex-1 space-y-2">
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={expense.description}
+                                                    onChange={(e) => {
+                                                        const newExpenses = [...expenses];
+                                                        newExpenses[index].description = e.target.value;
+                                                        setExpenses(newExpenses);
+                                                    }}
+                                                    placeholder="Deskripsi (Mis: Beli Es Batu)"
+                                                    className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                />
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
+                                                    <input
+                                                        type="number"
+                                                        required
+                                                        min="1"
+                                                        value={expense.amount}
+                                                        onChange={(e) => {
+                                                            const newExpenses = [...expenses];
+                                                            newExpenses[index].amount = e.target.value;
+                                                            setExpenses(newExpenses);
+                                                        }}
+                                                        placeholder="Nominal pengeluaran"
+                                                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newExpenses = expenses.filter((_, i) => i !== index);
+                                                    setExpenses(newExpenses);
+                                                }}
+                                                className="mt-1 p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                                            >
+                                                <Icon name="close" className="text-[18px]" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm font-bold text-rose-600">
+                                        <span>Total Pengeluaran:</span>
+                                        <span>{formatRupiah(expenses.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0))}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div>
                             <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
                                 Uang Tunai Fisik Aktual (Actual Cash)
                             </label>
@@ -403,7 +459,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 />
                             </div>
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                Hitung seluruh uang kertas + koin fisik di laci meja kasir lalu input di sini.
+                                Hitung seluruh uang tunai fisik di laci (setelah dikurangi pengeluaran jika ada) lalu input di sini.
                             </p>
                         </div>
                         <div>
@@ -482,16 +538,6 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <p className="text-gray-400 font-semibold">Modal Awal</p>
                                     <p className="font-semibold text-gray-700 dark:text-amber-400">{formatRupiah(selectedShift.starting_cash)}</p>
                                 </div>
-                                <div>
-                                    <p className="text-gray-400 font-semibold">Selisih Uang Fisik</p>
-                                    <p className={`font-bold ${
-                                        selectedShift.discrepancy === 0 
-                                            ? 'text-emerald-500' 
-                                            : (selectedShift.discrepancy > 0 ? 'text-blue-500' : 'text-rose-500')
-                                    }`}>
-                                        {selectedShift.status === 'closed' ? (selectedShift.discrepancy === 0 ? 'Pas / Cocok' : formatRupiah(selectedShift.discrepancy)) : '-'}
-                                    </p>
-                                </div>
                             </div>
 
                             {/* Tabs */}
@@ -525,6 +571,16 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     }`}
                                 >
                                     Produk Terjual
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('expenses')}
+                                    className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-[2px] transition ${
+                                        activeTab === 'expenses' 
+                                            ? 'border-amber-500 text-amber-500' 
+                                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                                    }`}
+                                >
+                                    Pengeluaran
                                 </button>
                             </div>
 
@@ -650,6 +706,52 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                         ))
                                                     )}
                                                 </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'expenses' && (
+                                    <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden text-sm">
+                                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                            <table className="w-full text-left">
+                                                <thead className="bg-gray-50 dark:bg-white/[0.02] sticky top-0">
+                                                    <tr>
+                                                        <th className="p-3">Keterangan</th>
+                                                        <th className="p-3 text-right">Nominal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y dark:divide-gray-800">
+                                                    {(!selectedShift.expenses_detail || selectedShift.expenses_detail.length === 0) ? (
+                                                        <tr>
+                                                            <td colSpan="2" className="p-8 text-center text-gray-500">
+                                                                <Icon name="receipt_long" className="text-4xl mb-2 opacity-50" />
+                                                                <p>Tidak ada pengeluaran dicatat</p>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        selectedShift.expenses_detail.map((exp, idx) => (
+                                                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                                                <td className="p-3 font-medium text-gray-800 dark:text-gray-200">
+                                                                    {exp.description}
+                                                                </td>
+                                                                <td className="p-3 text-right text-rose-500 font-bold">
+                                                                    {formatRupiah(exp.amount)}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                                {selectedShift.expenses_detail && selectedShift.expenses_detail.length > 0 && (
+                                                    <tfoot>
+                                                        <tr className="bg-gray-50 dark:bg-white/[0.02] font-bold border-t border-gray-200 dark:border-gray-800">
+                                                            <td className="p-3 text-right text-gray-600 dark:text-gray-400">Total Pengeluaran</td>
+                                                            <td className="p-3 text-right text-rose-600">
+                                                                {formatRupiah(selectedShift.total_expenses)}
+                                                            </td>
+                                                        </tr>
+                                                    </tfoot>
+                                                )}
                                             </table>
                                         </div>
                                     </div>

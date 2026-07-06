@@ -22,6 +22,8 @@ class CashierShift extends Model
         'starting_cash',
         'expected_cash',
         'actual_cash',
+        'total_expenses',
+        'expenses_detail',
         'discrepancy',
         'note',
     ];
@@ -32,6 +34,8 @@ class CashierShift extends Model
         'starting_cash' => 'integer',
         'expected_cash' => 'integer',
         'actual_cash' => 'integer',
+        'total_expenses' => 'integer',
+        'expenses_detail' => 'array',
         'discrepancy' => 'integer',
     ];
 

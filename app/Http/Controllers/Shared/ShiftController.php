@@ -66,6 +66,9 @@ class ShiftController extends Controller
         $request->validate([
             'actual_cash' => 'required|integer|min:0',
             'note' => 'nullable|string',
+            'expenses' => 'nullable|array',
+            'expenses.*.amount' => 'required|integer|min:1',
+            'expenses.*.description' => 'required|string',
         ]);
 
         $user = auth()->user();
@@ -103,13 +106,21 @@ class ShiftController extends Controller
                 WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
                 ELSE 0 END"));
 
-        $expectedCash = $shift->starting_cash + (int) $cashSales;
+        $expenses = $request->expenses ?? [];
+        $totalExpenses = 0;
+        foreach ($expenses as $expense) {
+            $totalExpenses += (int) $expense['amount'];
+        }
+
+        $expectedCash = $shift->starting_cash + (int) $cashSales - $totalExpenses;
         $actualCash = (int) $request->actual_cash;
         $discrepancy = $actualCash - $expectedCash;
 
         $shift->update([
             'expected_cash' => $expectedCash,
             'actual_cash' => $actualCash,
+            'total_expenses' => $totalExpenses,
+            'expenses_detail' => $expenses,
             'discrepancy' => $discrepancy,
             'status' => 'closed',
             'closed_at' => $closedAt,

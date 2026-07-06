@@ -56,7 +56,7 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                 </div>
 
                 {/* --- SHIFT INFO CARDS --- */}
-                <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.02]">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
@@ -119,6 +119,30 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                 </div>
                                 <span className="font-bold text-gray-900 dark:text-white">{formatRupiah(summary.debit + summary.kredit)}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.02]">
+                        <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Pengeluaran Shift</h3>
+                        <div className="space-y-3">
+                            {(!shift.expenses_detail || shift.expenses_detail.length === 0) ? (
+                                <p className="text-sm text-gray-400 italic">Tidak ada pengeluaran</p>
+                            ) : (
+                                <>
+                                    <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                        {shift.expenses_detail.map((exp, idx) => (
+                                            <div key={idx} className="flex items-start justify-between text-sm">
+                                                <span className="text-gray-600 dark:text-gray-400 flex-1 pr-2">{exp.description}</span>
+                                                <span className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{formatRupiah(exp.amount)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Total Pengeluaran</span>
+                                        <span className="font-bold text-rose-500">{formatRupiah(shift.total_expenses)}</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
