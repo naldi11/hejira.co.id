@@ -222,7 +222,7 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                                 <p className="text-xs text-gray-500">{formatQty(d.quantity)} x {formatRupiah(d.price)}</p>
                                             </div>
                                             <div className="font-medium text-gray-900 dark:text-white text-right">
-                                                {formatRupiah(d.subtotal)}
+                                                {formatRupiah(d.total)}
                                             </div>
                                         </div>
                                     ))}
