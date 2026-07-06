@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
 import { formatRupiah, formatQty } from '@/lib/format';
 
 export default function ShiftDetail({ shift, transactions, summary }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
     // Format date Helper
     const formatDateTime = (dateString) => {
         if (!dateString) return '-';
@@ -14,6 +16,22 @@ export default function ShiftDetail({ shift, transactions, summary }) {
             hour: '2-digit', minute: '2-digit'
         });
     };
+
+    // Filter transactions locally
+    const filteredTransactions = transactions.filter(t => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        
+        const matchTrx = t.transaction_number?.toLowerCase().includes(q);
+        const matchCustomer = (t.customer_name || 'umum').toLowerCase().includes(q);
+        
+        // Cek apakah ada produk dalam detail struk yang cocok dengan pencarian
+        const matchProduct = t.details?.some(d => 
+            d.product_name?.toLowerCase().includes(q)
+        );
+
+        return matchTrx || matchCustomer || matchProduct;
+    });
 
     return (
         <OwnerLayout>
@@ -105,8 +123,20 @@ export default function ShiftDetail({ shift, transactions, summary }) {
 
                 {/* --- TRANSACTIONS LIST --- */}
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.02]">
-                    <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
+                    <div className="flex flex-col sm:flex-row items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.02] gap-4">
                         <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">Riwayat Transaksi Lengkap</h2>
+                        <div className="relative w-full sm:w-72">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                <Icon name="search" className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                className="block w-full rounded-lg border border-gray-300 bg-white p-2 pl-9 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                placeholder="Cari No. Trx, Pelanggan, atau Produk..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
                     </div>
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -120,14 +150,14 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                {transactions.length === 0 ? (
+                                {filteredTransactions.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                                            Tidak ada transaksi pada shift ini.
+                                            {searchQuery ? 'Tidak ada transaksi yang cocok dengan pencarian Anda.' : 'Tidak ada transaksi pada shift ini.'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    transactions.map((t) => (
+                                    filteredTransactions.map((t) => (
                                         <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                                 {formatDateTime(t.created_at)}
