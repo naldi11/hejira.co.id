@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
+import Modal from '@/Components/Modal';
 import { formatRupiah, formatQty } from '@/lib/format';
 
 export default function ShiftDetail({ shift, transactions, summary }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
 
     // Format date Helper
     const formatDateTime = (dateString) => {
@@ -158,7 +160,11 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                     </tr>
                                 ) : (
                                     filteredTransactions.map((t) => (
-                                        <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                        <tr 
+                                            key={t.id} 
+                                            className="hover:bg-orange-50 dark:hover:bg-white/[0.05] cursor-pointer transition-colors"
+                                            onClick={() => setSelectedTransaction(t)}
+                                        >
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                                 {formatDateTime(t.created_at)}
                                             </td>
@@ -189,6 +195,87 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                 </div>
 
             </div>
+
+            {/* --- RECEIPT MODAL --- */}
+            <Modal show={selectedTransaction !== null} onClose={() => setSelectedTransaction(null)} maxWidth="md">
+                {selectedTransaction && (
+                    <div className="p-6">
+                        <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4 dark:border-gray-800">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Detail Struk</h3>
+                                <p className="text-sm text-gray-500">{selectedTransaction.transaction_number}</p>
+                            </div>
+                            <button onClick={() => setSelectedTransaction(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <Icon name="close" />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="text-sm">
+                                <p><span className="text-gray-500 w-24 inline-block">Waktu:</span> <span className="font-medium text-gray-900 dark:text-white">{formatDateTime(selectedTransaction.created_at)}</span></p>
+                                <p><span className="text-gray-500 w-24 inline-block">Pelanggan:</span> <span className="font-medium text-gray-900 dark:text-white">{selectedTransaction.customer_name || 'Umum'}</span></p>
+                            </div>
+
+                            <div className="border-t border-b border-gray-100 py-3 dark:border-gray-800">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Item Terjual</p>
+                                <div className="space-y-2">
+                                    {selectedTransaction.details?.map((d, idx) => (
+                                        <div key={idx} className="flex justify-between text-sm">
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-800 dark:text-gray-200">{d.product_name}</p>
+                                                <p className="text-xs text-gray-500">{formatQty(d.quantity)} x {formatRupiah(d.price)}</p>
+                                            </div>
+                                            <div className="font-medium text-gray-900 dark:text-white text-right">
+                                                {formatRupiah(d.subtotal)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                                <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>{formatRupiah(selectedTransaction.subtotal)}</span>
+                                </div>
+                                {selectedTransaction.discount_amount > 0 && (
+                                    <div className="flex justify-between text-red-500">
+                                        <span>Diskon</span>
+                                        <span>-{formatRupiah(selectedTransaction.discount_amount)}</span>
+                                    </div>
+                                )}
+                                {selectedTransaction.tax_amount > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>Pajak (PPN)</span>
+                                        <span>{formatRupiah(selectedTransaction.tax_amount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between font-bold text-lg text-gray-900 dark:text-white pt-2 border-t border-gray-100 dark:border-gray-800 mt-2">
+                                    <span>Total</span>
+                                    <span>{formatRupiah(selectedTransaction.grand_total)}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-3 rounded-lg dark:bg-white/[0.02]">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pembayaran</p>
+                                {selectedTransaction.payments && selectedTransaction.payments.length > 0 ? (
+                                    selectedTransaction.payments.map((p, idx) => (
+                                        <div key={idx} className="flex justify-between text-sm font-medium text-gray-800 dark:text-gray-200">
+                                            <span className="capitalize">{p.payment_method || p.type}</span>
+                                            <span>{formatRupiah(p.amount)}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex justify-between text-sm font-medium text-gray-800 dark:text-gray-200">
+                                        <span>Belum ada data</span>
+                                        <span>{formatRupiah(0)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </OwnerLayout>
     );
 }
