@@ -148,7 +148,7 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500 dark:text-gray-400">Total Omset</span>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatRupiah(summary.omset)}</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{Number(summary.omset) > 0 ? '+' : ''}{formatRupiah(summary.omset)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500 dark:text-gray-400">Pengeluaran</span>
