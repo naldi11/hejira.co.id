@@ -134,10 +134,10 @@ function TransactionCard({ row, showBranch }) {
 /* ─── Shift Card ─────────────────────────────────────────────────────────── */
 function ShiftCard({ row, showBranch }) {
     const isClosed = row.status === 'closed';
-    const totalOmset = (row.payment_summary?.tunai || 0) + 
-                       (row.payment_summary?.transfer || 0) + 
-                       (row.payment_summary?.kartu_debit || 0) + 
-                       (row.payment_summary?.kartu_kredit || 0);
+    const totalOmset = Number(row.payment_summary?.tunai || 0) + 
+                       Number(row.payment_summary?.transfer || 0) + 
+                       Number(row.payment_summary?.kartu_debit || 0) + 
+                       Number(row.payment_summary?.kartu_kredit || 0);
 
     return (
         <Link 
