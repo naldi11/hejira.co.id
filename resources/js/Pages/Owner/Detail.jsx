@@ -370,11 +370,19 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                             if (filter === 'today' || !filter) {
                                 return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
                             }
-                            if (filter === 'yesterday') {
-                                const d = new Date(); d.setDate(d.getDate() - 1);
-                                return d.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                            if (filter === 'week') {
+                                const d = new Date();
+                                const day = d.getDay();
+                                const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                                const start = new Date(d.setDate(diff));
+                                const end = new Date(start);
+                                end.setDate(end.getDate() + 6);
+                                return `${start.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
                             }
-                            return `Periode: ${filter}`;
+                            if (filter === 'month') {
+                                return new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                            }
+                            return 'Semua Waktu';
                         })();
                         
                         const totalOmsetAll = shiftTotals.tunai + shiftTotals.transfer + shiftTotals.debit + shiftTotals.kredit;
