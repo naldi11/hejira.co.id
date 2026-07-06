@@ -1,7 +1,8 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
+import Swal from 'sweetalert2';
 import { formatRupiah, formatQty } from '@/lib/format';
 
 const route = window.route;
@@ -49,7 +50,7 @@ export default function PosIndex({ products, paymentMethods }) {
 
     const addToCart = (product) => {
         if (product.current_stock <= 0) {
-            alert(`Stok produk "${product.name}" habis. Tidak bisa ditambahkan ke keranjang.`);
+            Swal.fire({ icon: 'error', title: 'Stok Habis', text: `Stok produk "${product.name}" habis. Tidak bisa ditambahkan ke keranjang.` });
             return;
         }
         const existing = cart.find(c => c.product_id === product.id);
@@ -151,9 +152,15 @@ export default function PosIndex({ products, paymentMethods }) {
     };
 
     const checkout = () => {
-        if (cart.length === 0) return alert('Keranjang kosong!');
+        if (cart.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Keranjang kosong!' });
+            return;
+        }
         const paid = isNonCash ? grandTotal : (parseFloat(amountPaid) || 0);
-        if (paid < grandTotal) return alert('Nominal bayar kurang dari grand total!');
+        if (paid < grandTotal) {
+            Swal.fire({ icon: 'warning', title: 'Nominal Kurang', text: 'Nominal bayar kurang dari grand total!' });
+            return;
+        }
 
         setProcessing(true);
         const payload = {
@@ -200,12 +207,14 @@ export default function PosIndex({ products, paymentMethods }) {
                     window.location.href = data.redirect + '?paper_size=' + paperSize;
                 }
             } else {
-                alert(data.error || data.message || 'Gagal memproses transaksi');
+                Swal.fire({ icon: 'error', title: 'Transaksi Gagal', text: data.error || data.message || 'Gagal memproses transaksi' }).then(() => {
+                    if (data.shift_required) window.location.reload();
+                });
             }
         })
         .catch((err) => {
             console.error(err);
-            alert('Error jaringan');
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error jaringan' });
         })
         .finally(() => setProcessing(false));
     };

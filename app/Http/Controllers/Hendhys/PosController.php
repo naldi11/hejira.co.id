@@ -240,7 +240,7 @@ class PosController extends Controller
             abort(403);
         }
 
-        $transaction->load(['details.unit', 'payments.method', 'creator', 'customer']);
+        $transaction->load(['details.unit', 'payments.method', 'creator', 'customer', 'branch']);
         $paperSize = $request->input('paper_size', '58');
         return view('hendhys.pos.receipt', compact('transaction', 'paperSize'));
     }

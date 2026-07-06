@@ -136,9 +136,9 @@
         {{-- Header Brand --}}
         <div class="text-center mb-3">
             <h1 class="font-bold text-center" style="font-size: 14px; letter-spacing: 1px;">HENDHY'S BROWNIES</h1>
-            <p>JL. PASAR VI TEMBUNG</p>
-            <p>PERCUT SEI TUAN</p>
-            <p>Telp: 081213772502 Fax: -</p>
+            <p>{{ $transaction->branch ? strtoupper($transaction->branch->name) : 'PUSAT' }}</p>
+            <p>{{ $transaction->branch ? $transaction->branch->address : 'JL. PASAR VI TEMBUNG, PERCUT SEI TUAN' }}</p>
+            <p>Telp: {{ $transaction->branch ? $transaction->branch->phone : '081213772502' }} Fax: -</p>
         </div>
 
         {{-- Metadata Struk --}}

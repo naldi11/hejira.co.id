@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
+import Swal from 'sweetalert2';
 import { formatRupiah } from '@/lib/format';
 import SearchModal from './SearchModal';
 import PaymentModal from './PaymentModal';
@@ -206,7 +207,10 @@ export default function PosIndex({ products, customers, editTransaction }) {
     const buildItems = () => cart.map((i) => ({ product_id: i.product_id, quantity: i.quantity, price: i.price, discount: Number(i.discount) || 0, total: lineTotal(i) }));
 
     const processTransaction = async () => {
-        if (amountPaid < totals.grand) { alert('Uang pembayaran kurang dari total tagihan.'); return; }
+        if (amountPaid < totals.grand) { 
+            Swal.fire({ icon: 'warning', title: 'Nominal Kurang', text: 'Uang pembayaran kurang dari total tagihan.' }); 
+            return; 
+        }
         setProcessing(true);
         try {
             const payload = {
@@ -225,7 +229,10 @@ export default function PosIndex({ products, customers, editTransaction }) {
             if (data.success) { window.location.href = data.redirect; }
         } catch (err) {
             const r = err.response?.data;
-            alert(r?.error || r?.message || (r?.errors && Object.values(r.errors)[0]?.[0]) || 'Terjadi kesalahan saat memproses transaksi.');
+            const errorMsg = r?.error || r?.message || (r?.errors && Object.values(r.errors)[0]?.[0]) || 'Terjadi kesalahan saat memproses transaksi.';
+            Swal.fire({ icon: 'error', title: 'Transaksi Gagal', text: errorMsg }).then(() => {
+                if (r?.shift_required) window.location.reload();
+            });
             setProcessing(false);
             setShowPayment(false);
         }
@@ -240,11 +247,11 @@ export default function PosIndex({ products, customers, editTransaction }) {
                 customer_id: customerId || null, customer_name: customerName, customer_type: customerType, notes, items: buildItems(),
             }, { headers: { 'X-CSRF-TOKEN': csrf() } });
             if (data.success) {
-                alert(data.message);
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message });
                 setCart([]); setCustomerName(''); setNotes(''); setCustomerId('');
             }
         } catch (err) {
-            alert(err.response?.data?.message || 'Terjadi kesalahan.');
+            Swal.fire({ icon: 'error', title: 'Gagal', text: err.response?.data?.message || 'Terjadi kesalahan.' });
         } finally {
             setProcessing(false);
         }
