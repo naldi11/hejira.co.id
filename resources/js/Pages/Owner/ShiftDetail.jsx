@@ -45,10 +45,10 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <div className="mb-2 flex items-center gap-2">
-                            <Link href={route('owner.dashboard')} className="flex items-center gap-1 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300">
+                            <button onClick={() => window.history.back()} className="flex items-center gap-1 text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300">
                                 <Icon name="arrow_back" className="text-[16px]" />
-                                Kembali ke Dashboard
-                            </Link>
+                                Kembali
+                            </button>
                         </div>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-white">Detail Shift Kasir</h1>
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Rincian performa dan transaksi pada shift terpilih.</p>
