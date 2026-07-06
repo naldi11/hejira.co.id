@@ -155,7 +155,7 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                                 <span className="font-semibold text-rose-500">-{formatRupiah(shift.total_expenses || 0)}</span>
                             </div>
                             <div className="flex items-center justify-between pt-2 mt-1 border-t border-dashed border-gray-200 dark:border-gray-700">
-                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">Estimasi Uang Fisik</span>
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">Sisa</span>
                                 <span className="font-black text-blue-600 dark:text-blue-400">{formatRupiah(shift.expected_cash)}</span>
                             </div>
                         </div>
