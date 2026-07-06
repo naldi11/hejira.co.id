@@ -133,6 +133,14 @@ class PosController extends Controller
 
     public function store(StorePosTransactionRequest $request)
     {
+        $now = now()->timezone('Asia/Jakarta');
+        if ($now->hour >= 0 && $now->hour < 7) {
+            return response()->json([
+                'success' => false, 
+                'error' => 'Sistem Kasir Sedang Tutup! Silahkan Lanjutkan Transaksi Pada Pukul 07:00 WIB.'
+            ], 400);
+        }
+
         try {
             $transactionId = DB::transaction(function () use ($request) {
                 $user = auth()->user();

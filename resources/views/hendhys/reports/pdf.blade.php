@@ -241,7 +241,7 @@
                     <tr>
                         <td style="width: 35%;">PERIODE</td>
                         <td style="width: 5%;">:</td>
-                        <td>{{ $row->opened_at ? $row->opened_at->format('d-m-y') : '-' }} s/d {{ $row->closed_at ? $row->closed_at->format('d-m-y') : '-' }}</td>
+                        <td>{{ $row->opened_at ? $row->opened_at->format('d-m-y H:i') : '-' }} s/d {{ $row->closed_at ? $row->closed_at->format('d-m-y H:i') : '-' }}</td>
                     </tr>
                     <tr>
                         <td>USER</td>

@@ -49,6 +49,11 @@ class PosController extends Controller
      */
     public function store(StorePosTransactionRequest $request)
     {
+        $now = now()->timezone('Asia/Jakarta');
+        if ($now->hour >= 0 && $now->hour < 7) {
+            return response()->json(['error' => 'Sistem Kasir Sedang Tutup! Silahkan Lanjutkan Transaksi Pada Pukul 07:00 WIB.'], 422);
+        }
+
         $data = $request->validated();
 
         foreach ($data['items'] as $item) {
