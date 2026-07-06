@@ -197,19 +197,15 @@ export default function ShiftDetail({ shift, transactions, summary }) {
             </div>
 
             {/* --- RECEIPT MODAL --- */}
-            <Modal show={selectedTransaction !== null} onClose={() => setSelectedTransaction(null)} maxWidth="md">
+            <Modal 
+                show={selectedTransaction !== null} 
+                onClose={() => setSelectedTransaction(null)} 
+                maxWidth="md"
+                title="Detail Struk"
+                subtitle={selectedTransaction?.transaction_number}
+            >
                 {selectedTransaction && (
-                    <div className="p-6">
-                        <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4 dark:border-gray-800">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Detail Struk</h3>
-                                <p className="text-sm text-gray-500">{selectedTransaction.transaction_number}</p>
-                            </div>
-                            <button onClick={() => setSelectedTransaction(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                <Icon name="close" />
-                            </button>
-                        </div>
-                        
+                    <div>
                         <div className="space-y-4">
                             <div className="text-sm">
                                 <p><span className="text-gray-500 w-24 inline-block">Waktu:</span> <span className="font-medium text-gray-900 dark:text-white">{formatDateTime(selectedTransaction.created_at)}</span></p>
