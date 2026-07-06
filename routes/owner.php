@@ -9,6 +9,7 @@ Route::middleware(['auth', 'role:owner'])
 
         Route::get('/dashboard', [\App\Http\Controllers\Owner\DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/detail', [\App\Http\Controllers\Owner\DashboardController::class, 'detail'])->name('dashboard.detail');
+        Route::get('/dashboard/shift/{id}', [\App\Http\Controllers\Owner\DashboardController::class, 'shiftDetail'])->name('dashboard.shift');
 
         // Laporan
         Route::get('/reports', [\App\Http\Controllers\Owner\ReportController::class, 'index'])->name('reports');

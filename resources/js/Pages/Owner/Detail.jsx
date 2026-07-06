@@ -133,24 +133,23 @@ function TransactionCard({ row, showBranch }) {
 
 /* ─── Shift Card ─────────────────────────────────────────────────────────── */
 function ShiftCard({ row, showBranch }) {
-    const [expanded, setExpanded] = useState(false);
     const isClosed = row.status === 'closed';
 
     return (
-        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-amber-200 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-700">
-            <div 
-                onClick={() => setExpanded(!expanded)}
-                className="flex items-start justify-between gap-2 cursor-pointer"
-            >
+        <Link 
+            href={route('owner.dashboard.shift', row.id)}
+            className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-amber-400 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-gray-600"
+        >
+            <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-bold text-slate-800 dark:text-white/90 text-sm">Shift {row.user}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isClosed ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isClosed ? 'bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
                             {isClosed ? 'Selesai' : 'Aktif'}
                         </span>
                     </div>
                     {showBranch && <p className="text-xs text-slate-400 mt-0.5">{row.type_unit}</p>}
-                    <div className="flex gap-4 mt-1">
+                    <div className="flex gap-4 mt-2">
                         <div>
                             <p className="text-[10px] text-slate-400">Buka</p>
                             <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{new Date(row.opened_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
@@ -163,9 +162,11 @@ function ShiftCard({ row, showBranch }) {
                         )}
                     </div>
                 </div>
-                <div className="text-right shrink-0">
-                    <p className="text-[10px] text-slate-400">Expected Cash</p>
-                    <p className="font-black text-emerald-600 dark:text-emerald-400">{formatRupiah(row.expected_cash)}</p>
+                <div className="text-right ml-auto flex flex-col justify-center">
+                    <p className="text-[10px] text-slate-400 dark:text-gray-500">Estimasi Uang di Laci</p>
+                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatRupiah(row.expected_cash)}
+                    </p>
                     {isClosed && (
                         <p className={`text-[11px] font-bold mt-1 ${row.discrepancy === 0 ? 'text-slate-400' : row.discrepancy > 0 ? 'text-blue-500' : 'text-rose-500'}`}>
                             Selisih: {formatRupiah(row.discrepancy)}
@@ -173,46 +174,7 @@ function ShiftCard({ row, showBranch }) {
                     )}
                 </div>
             </div>
-
-            {expanded && (
-                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-gray-800 text-sm">
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Tunai (Cash)</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.tunai)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Transfer</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.transfer)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Kartu Debit</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.kartu_debit)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-slate-500">Kartu Kredit</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{formatRupiah(row.payment_summary?.kartu_kredit)}</span>
-                        </div>
-                        <div className="flex justify-between col-span-2 border-t border-slate-100 dark:border-gray-800 pt-2 mt-1">
-                            <span className="font-bold text-slate-800 dark:text-white">Modal Awal</span>
-                            <span className="font-bold text-amber-600">{formatRupiah(row.starting_cash)}</span>
-                        </div>
-                        {isClosed && (
-                            <div className="flex justify-between col-span-2">
-                                <span className="font-bold text-slate-800 dark:text-white">Uang Aktual di Laci</span>
-                                <span className="font-bold text-slate-800 dark:text-white">{formatRupiah(row.actual_cash)}</span>
-                            </div>
-                        )}
-                        {row.note && (
-                            <div className="col-span-2 mt-2 p-2 bg-slate-50 dark:bg-gray-800 rounded-lg text-xs">
-                                <span className="font-semibold text-slate-600 dark:text-gray-300 block mb-0.5">Catatan Kasir:</span>
-                                <span className="italic text-slate-500 dark:text-gray-400">{row.note}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
+        </Link>
     );
 }
 
@@ -400,11 +362,11 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                 {mode === 'omset' && activeTab === 'shifts' && filteredShifts.length > 0 && (
                     (() => {
                         const shiftTotals = filteredShifts.reduce((acc, shift) => {
-                            acc.expected += shift.expected_cash || 0;
-                            acc.tunai += shift.payment_summary?.tunai || 0;
-                            acc.transfer += shift.payment_summary?.transfer || 0;
-                            acc.debit += shift.payment_summary?.kartu_debit || 0;
-                            acc.kredit += shift.payment_summary?.kartu_kredit || 0;
+                            acc.expected += Number(shift.expected_cash || 0);
+                            acc.tunai += Number(shift.payment_summary?.tunai || 0);
+                            acc.transfer += Number(shift.payment_summary?.transfer || 0);
+                            acc.debit += Number(shift.payment_summary?.kartu_debit || 0);
+                            acc.kredit += Number(shift.payment_summary?.kartu_kredit || 0);
                             return acc;
                         }, { expected: 0, tunai: 0, transfer: 0, debit: 0, kredit: 0 });
 
@@ -416,24 +378,24 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Total Akumulasi Shift</h3>
-                                        <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">Berdasarkan {filteredShifts.length} Shift</p>
+                                        <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">Dari total keseluruhan {filteredShifts.length} riwayat laci</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total Expected</span>
+                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Uang di Laci</span>
                                         <span className="font-black text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.expected)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total Tunai</span>
+                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar Tunai</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.tunai)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total Transfer</span>
+                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar Transfer</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.transfer)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Debit/Kredit</span>
+                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar kredit</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.debit + shiftTotals.kredit)}</span>
                                     </div>
                                 </div>

@@ -65,7 +65,10 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                                     : transactions.data.map((t) => (
                                         <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{t.transaction_number}</td>
-                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.date}</td>
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                                                <div>{t.date}</div>
+                                                <div className="text-xs text-gray-400">{t.time}</div>
+                                            </td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.customer_name}</td>
                                             <td className="px-6 py-4 text-right font-bold text-gray-800 dark:text-white/90">{formatRupiah(t.grand_total)}</td>
                                             <td className="px-6 py-4 text-center"><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'}`}>{t.status}</span></td>

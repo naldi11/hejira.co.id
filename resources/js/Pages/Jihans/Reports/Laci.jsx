@@ -176,7 +176,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                         Uang Modal Awal: <span className="font-semibold text-orange-600 dark:text-orange-400">{formatRupiah(activeShift.starting_cash)}</span>
                                     </p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        Uang Diharapkan (Saat Ini): <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatRupiah(activeShift.expected_cash)}</span>
+                                        Estimasi Uang di Laci: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatRupiah(activeShift.expected_cash)}</span>
                                     </p>
                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2 border-t border-orange-200/50 dark:border-orange-900/30">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -263,11 +263,11 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <th className="px-4 py-3">Tutup Shift</th>
                                     <th className="px-4 py-3 text-center">Status</th>
                                     <th className="px-4 py-3 text-right">Modal Awal</th>
-                                    <th className="px-4 py-3 text-right text-emerald-600">Expected Cash</th>
+                                    <th className="px-4 py-3 text-right text-emerald-600">Uang di Laci</th>
                                     <th className="px-4 py-3 text-right">Transfer</th>
                                     <th className="px-4 py-3 text-right">Debit</th>
                                     <th className="px-4 py-3 text-right text-rose-500">Kredit (Bon)</th>
-                                    <th className="px-4 py-3 text-right font-bold">Actual Cash</th>
+                                    <th className="px-4 py-3 text-right font-bold">Uang Fisik Aktual</th>
                                     <th className="px-4 py-3 text-right">Selisih</th>
                                     <th className="px-4 py-3 text-center">Aksi</th>
                                 </tr>
