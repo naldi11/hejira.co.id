@@ -134,6 +134,10 @@ function TransactionCard({ row, showBranch }) {
 /* ─── Shift Card ─────────────────────────────────────────────────────────── */
 function ShiftCard({ row, showBranch }) {
     const isClosed = row.status === 'closed';
+    const totalOmset = (row.payment_summary?.tunai || 0) + 
+                       (row.payment_summary?.transfer || 0) + 
+                       (row.payment_summary?.kartu_debit || 0) + 
+                       (row.payment_summary?.kartu_kredit || 0);
 
     return (
         <Link 
@@ -149,29 +153,21 @@ function ShiftCard({ row, showBranch }) {
                         </span>
                     </div>
                     {showBranch && <p className="text-xs text-slate-400 mt-0.5">{row.type_unit}</p>}
-                    <div className="flex gap-4 mt-2">
-                        <div>
-                            <p className="text-[10px] text-slate-400">Buka</p>
-                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{new Date(row.opened_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
-                        </div>
-                        {isClosed && (
-                            <div>
-                                <p className="text-[10px] text-slate-400">Tutup</p>
-                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{new Date(row.closed_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</p>
-                            </div>
-                        )}
+                    <div className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                        <Icon name="schedule" className="text-[14px] text-slate-400" />
+                        {new Date(row.opened_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - {isClosed ? new Date(row.closed_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Sekarang'}
                     </div>
                 </div>
-                <div className="text-right ml-auto flex flex-col justify-center">
-                    <p className="text-[10px] text-slate-400 dark:text-gray-500">Estimasi Uang di Laci</p>
-                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatRupiah(row.expected_cash)}
+                <div className="text-right ml-auto flex flex-col justify-between h-full min-h-[50px]">
+                    <p className="text-[11px] font-semibold text-slate-500 dark:text-gray-400">
+                        {new Date(row.opened_at).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
-                    {isClosed && (
-                        <p className={`text-[11px] font-bold mt-1 ${row.discrepancy === 0 ? 'text-slate-400' : row.discrepancy > 0 ? 'text-blue-500' : 'text-rose-500'}`}>
-                            Selisih: {formatRupiah(row.discrepancy)}
+                    <div className="mt-auto pt-2">
+                        <p className="text-[10px] text-slate-400 dark:text-gray-500">Total Omset :</p>
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                            {formatRupiah(totalOmset)}
                         </p>
-                    )}
+                    </div>
                 </div>
             </div>
         </Link>
@@ -370,33 +366,53 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                             return acc;
                         }, { expected: 0, tunai: 0, transfer: 0, debit: 0, kredit: 0 });
 
+                        const filterDateText = (() => {
+                            if (filter === 'today' || !filter) {
+                                return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                            }
+                            if (filter === 'yesterday') {
+                                const d = new Date(); d.setDate(d.getDate() - 1);
+                                return d.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                            }
+                            return `Periode: ${filter}`;
+                        })();
+                        
+                        const totalOmsetAll = shiftTotals.tunai + shiftTotals.transfer + shiftTotals.debit + shiftTotals.kredit;
+
                         return (
                             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-4 shadow-sm">
-                                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-emerald-200/50 dark:border-emerald-800/50">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center">
-                                        <Icon name="account_balance_wallet" className="text-emerald-500 dark:text-emerald-400 text-[18px]" />
+                                <div className="flex justify-between items-start mb-3 pb-3 border-b border-emerald-200/50 dark:border-emerald-800/50">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center">
+                                            <Icon name="account_balance_wallet" className="text-emerald-500 dark:text-emerald-400 text-[18px]" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Total Akumulasi Shift</h3>
+                                            <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">Dari total keseluruhan {filteredShifts.length} riwayat laci</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Total Akumulasi Shift</h3>
-                                        <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">Dari total keseluruhan {filteredShifts.length} riwayat laci</p>
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100/50 dark:bg-emerald-800/30 px-2 py-1 rounded">
+                                            {filterDateText}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Uang di Laci</span>
-                                        <span className="font-black text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.expected)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar Tunai</span>
+                                <div className="flex flex-col gap-2 text-sm">
+                                    <div className="flex justify-between items-center border-b border-emerald-100/50 dark:border-emerald-800/30 pb-2">
+                                        <span className="text-emerald-600/80 dark:text-emerald-400/80 font-medium">Total bayar Tunai :</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.tunai)}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar Transfer</span>
+                                    <div className="flex justify-between items-center border-b border-emerald-100/50 dark:border-emerald-800/30 pb-2">
+                                        <span className="text-emerald-600/80 dark:text-emerald-400/80 font-medium">Total bayar Transfer :</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.transfer)}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-emerald-600/70 dark:text-emerald-400/70">Total bayar kredit</span>
+                                    <div className="flex justify-between items-center border-b border-emerald-100/50 dark:border-emerald-800/30 pb-2">
+                                        <span className="text-emerald-600/80 dark:text-emerald-400/80 font-medium">Total Bayar Kredit :</span>
                                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{formatRupiah(shiftTotals.debit + shiftTotals.kredit)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-1 mt-1">
+                                        <span className="font-bold text-emerald-800 dark:text-emerald-400">Total Omzet :</span>
+                                        <span className="font-black text-lg text-emerald-700 dark:text-emerald-300">{formatRupiah(totalOmsetAll)}</span>
                                     </div>
                                 </div>
                             </div>
