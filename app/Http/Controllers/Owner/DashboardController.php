@@ -608,4 +608,61 @@ class DashboardController extends Controller
             'trends' => $trends
         ]);
     }
+
+    public function shiftDetail($id)
+    {
+        $shift = \App\Models\CashierShift::with(['user', 'branch'])->findOrFail($id);
+        
+        $transactionTable = $shift->entity === 'hendhys' ? 'hendhys_transactions' : 'jihans_transactions';
+        $paymentTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_payments' : 'jihans_transaction_payments';
+        $detailTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_details' : 'jihans_transaction_details';
+
+        $closedAt = $shift->closed_at ?? now();
+
+        $transactions = \Illuminate\Support\Facades\DB::table($transactionTable . ' as t')
+            ->select('t.*')
+            ->where('t.created_by', $shift->user_id)
+            ->where('t.status', '!=', 'cancelled')
+            ->whereBetween('t.created_at', [$shift->opened_at, $closedAt])
+            ->orderBy('t.created_at', 'desc')
+            ->get();
+
+        $trxIds = $transactions->pluck('id')->toArray();
+
+        // Get details
+        $details = \Illuminate\Support\Facades\DB::table($detailTable . ' as d')
+            ->whereIn('transaction_id', $trxIds)
+            ->get();
+
+        // Attach details to transactions
+        $transactions = $transactions->map(function($t) use ($details) {
+            $t->details = $details->where('transaction_id', $t->id)->values();
+            return $t;
+        });
+
+        $payments = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
+            ->leftJoin('master_payment_methods as pm', 'p.payment_method_id', '=', 'pm.id')
+            ->whereIn('p.transaction_id', $trxIds)
+            ->select('p.amount', 'pm.type', 'pm.name as method_name')
+            ->get();
+
+        $tunai = $payments->where('type', 'tunai')->sum('amount');
+        $transfer = $payments->where('type', 'transfer')->sum('amount');
+        $debit = $payments->where('type', 'debit')->sum('amount');
+        $kredit = $payments->where('type', 'kredit')->sum('amount');
+
+        $totalOmset = $transactions->sum('grand_total');
+        
+        return \Inertia\Inertia::render('Owner/ShiftDetail', [
+            'shift' => $shift,
+            'transactions' => $transactions,
+            'summary' => [
+                'omset' => $totalOmset,
+                'tunai' => $tunai,
+                'transfer' => $transfer,
+                'debit' => $debit,
+                'kredit' => $kredit,
+            ]
+        ]);
+    }
 }
