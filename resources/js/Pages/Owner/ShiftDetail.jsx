@@ -122,27 +122,42 @@ export default function ShiftDetail({ shift, transactions, summary }) {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.02]">
-                        <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Pengeluaran Shift</h3>
-                        <div className="space-y-3">
+                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.02] flex flex-col">
+                        <h3 className="text-sm font-medium text-gray-500 mb-4 dark:text-gray-400">Pengeluaran & Kas Fisik</h3>
+                        
+                        <div className="space-y-3 mb-4">
                             {(!shift.expenses_detail || shift.expenses_detail.length === 0) ? (
                                 <p className="text-sm text-gray-400 italic">Tidak ada pengeluaran</p>
                             ) : (
-                                <>
-                                    <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                                        {shift.expenses_detail.map((exp, idx) => (
-                                            <div key={idx} className="flex items-start justify-between text-sm">
-                                                <span className="text-gray-600 dark:text-gray-400 flex-1 pr-2">{exp.description}</span>
-                                                <span className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{formatRupiah(exp.amount)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
-                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Total Pengeluaran</span>
-                                        <span className="font-bold text-rose-500">{formatRupiah(shift.total_expenses)}</span>
-                                    </div>
-                                </>
+                                <div className="space-y-2 max-h-24 overflow-y-auto custom-scrollbar">
+                                    {shift.expenses_detail.map((exp, idx) => (
+                                        <div key={idx} className="flex items-start justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400 flex-1 pr-2">{exp.description}</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{formatRupiah(exp.amount)}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
+                        </div>
+                        
+                        {/* Bagian Perhitungan Kas Fisik (Vertikal) */}
+                        <div className="mt-auto space-y-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Modal Awal</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(shift.starting_cash)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Pemasukan Tunai</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatRupiah(summary.tunai)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-gray-400">Pengeluaran</span>
+                                <span className="font-semibold text-rose-500">-{formatRupiah(shift.total_expenses || 0)}</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 mt-1 border-t border-dashed border-gray-200 dark:border-gray-700">
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">Estimasi Uang Fisik</span>
+                                <span className="font-black text-blue-600 dark:text-blue-400">{formatRupiah(shift.expected_cash)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
