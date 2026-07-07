@@ -89,7 +89,10 @@ class ShiftController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+        $startAt = \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($shift->opened_at)) {
+            $startAt = $previousShift->closed_at;
+        }
 
         // Calculate total cash collected during shift
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';

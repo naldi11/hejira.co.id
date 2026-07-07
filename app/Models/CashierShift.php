@@ -90,7 +90,10 @@ class CashierShift extends Model
             ->orderBy('id', 'desc')
             ->first();
 
-        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($this->opened_at)->startOfDay();
+        $startAt = \Carbon\Carbon::parse($this->opened_at)->startOfDay();
+        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($this->opened_at)) {
+            $startAt = $previousShift->closed_at;
+        }
 
         $summary = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
             ->join($transactionTable . ' as t', 't.id', '=', 'p.transaction_id')
@@ -139,7 +142,10 @@ class CashierShift extends Model
             ->orderBy('id', 'desc')
             ->first();
 
-        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($this->opened_at)->startOfDay();
+        $startAt = \Carbon\Carbon::parse($this->opened_at)->startOfDay();
+        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($this->opened_at)) {
+            $startAt = $previousShift->closed_at;
+        }
 
         $summary = \Illuminate\Support\Facades\DB::table($transactionTable)
             ->where('created_by', $this->user_id)
