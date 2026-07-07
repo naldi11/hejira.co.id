@@ -16,19 +16,14 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
     const [loadingShifts, setLoadingShifts] = useState(false);
 
     useEffect(() => {
-        if (startDate && startDate === endDate) {
-            setLoadingShifts(true);
-            axios.get(`/${entity}/shifts/by-date`, { params: { date: startDate, entity: entity } })
-                .then(res => {
-                    setAvailableShifts(res.data || []);
-                })
-                .catch(err => console.error(err))
-                .finally(() => setLoadingShifts(false));
-        } else {
-            setAvailableShifts([]);
-            setShiftId('');
-        }
-    }, [startDate, endDate, entity]);
+        setLoadingShifts(true);
+        axios.get(`/${entity}/shifts/by-date`, { params: { entity: entity } })
+            .then(res => {
+                setAvailableShifts(res.data || []);
+            })
+            .catch(err => console.error(err))
+            .finally(() => setLoadingShifts(false));
+    }, [entity]);
 
     const handleApply = (e) => {
         e.preventDefault();
@@ -83,11 +78,11 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
                             options={shiftOptions}
                             value={shiftId}
                             onChange={setShiftId}
-                            disabled={!(startDate && startDate === endDate) || loadingShifts}
-                            placeholder={!(startDate && startDate === endDate) ? 'Pilih tanggal yang sama di kolom Dari & Sampai' : (loadingShifts ? 'Memuat...' : 'Semua Shift')}
+                            disabled={loadingShifts}
+                            placeholder={loadingShifts ? 'Memuat...' : 'Semua Shift'}
                             accentColor="orange"
                         />
-                        <p className="mt-1 text-xs text-gray-500">Hanya bisa dipilih jika rentang filter tepat 1 hari.</p>
+                        <p className="mt-1 text-xs text-gray-500">Anda dapat memfilter berdasarkan shift secara mandiri.</p>
                     </div>
                 </div>
 

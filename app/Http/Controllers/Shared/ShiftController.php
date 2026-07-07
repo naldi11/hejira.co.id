@@ -139,14 +139,19 @@ class ShiftController extends Controller
     public function listByDate(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
+            'date' => 'nullable|date',
             'entity' => 'required|in:hendhys,jihans'
         ]);
 
         $user = auth()->user();
         $query = \App\Models\CashierShift::with('user')
-            ->where('entity', $request->entity)
-            ->whereDate('opened_at', $request->date);
+            ->where('entity', $request->entity);
+
+        if ($request->filled('date')) {
+            $query->whereDate('opened_at', $request->date);
+        } else {
+            $query->where('opened_at', '>=', now()->subDays(30));
+        }
 
         if (!$user->hasRole("admin_{$request->entity}") && !$user->hasRole("super_admin_{$request->entity}")) {
             if ($user->branch && $user->branch->type !== 'pusat') {
@@ -156,10 +161,10 @@ class ShiftController extends Controller
             }
         }
 
-        $shifts = $query->orderBy('opened_at', 'asc')->get()->map(function($shift) {
+        $shifts = $query->orderBy('opened_at', 'desc')->take(100)->get()->map(function($shift) {
             return [
                 'id' => $shift->id,
-                'name' => 'Shift ' . \Carbon\Carbon::parse($shift->opened_at)->format('H:i') . ' - ' . ($shift->closed_at ? \Carbon\Carbon::parse($shift->closed_at)->format('H:i') : 'Aktif') . ' (' . ($shift->user->name ?? 'Unknown') . ')'
+                'name' => \Carbon\Carbon::parse($shift->opened_at)->format('d M Y') . ' — Shift ' . \Carbon\Carbon::parse($shift->opened_at)->format('H:i') . ' - ' . ($shift->closed_at ? \Carbon\Carbon::parse($shift->closed_at)->format('H:i') : 'Aktif') . ' (' . ($shift->user->name ?? 'Unknown') . ')'
             ];
         });
 
