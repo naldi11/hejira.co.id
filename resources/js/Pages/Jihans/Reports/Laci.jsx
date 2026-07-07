@@ -7,6 +7,7 @@ import Modal from '@/Components/Modal';
 import Icon from '@/Components/Icon';
 import { formatRupiah } from '@/lib/format';
 import axios from 'axios';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 const route = window.route;
 
@@ -856,18 +857,16 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                         <div className="mb-5 space-y-4">
                             <div>
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Shift</label>
-                                <select
+                                <SearchableSelect
+                                    options={rows.data?.filter(r => r.status === 'closed').map(r => ({
+                                        value: r.id,
+                                        label: `${r.user?.name ?? 'Kasir'} — ${formatDateTime(r.opened_at)} s/d ${formatDateTime(r.closed_at)}`
+                                    }))}
                                     value={exportShiftId}
-                                    onChange={e => setExportShiftId(e.target.value)}
-                                    className="w-full rounded-lg border-gray-200 py-2.5 px-3 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-orange-500 focus:ring-orange-500"
-                                >
-                                    <option value="">-- Pilih Shift --</option>
-                                    {rows.data?.filter(r => r.status === 'closed').map((r, i) => (
-                                        <option key={r.id} value={r.id}>
-                                            {r.user?.name ?? 'Kasir'} — {formatDateTime(r.opened_at)} s/d {formatDateTime(r.closed_at)}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={setExportShiftId}
+                                    placeholder="-- Pilih Shift --"
+                                    accentColor="orange"
+                                />
                             </div>
                             <div>
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Ukuran Kertas</label>

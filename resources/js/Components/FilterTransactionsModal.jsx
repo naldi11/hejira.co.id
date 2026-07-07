@@ -6,6 +6,7 @@ import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export function FilterTransactionsModal({ show, onClose, filters, onApply, entity }) {
     const [startDate, setStartDate] = useState(filters.start_date || filters.date || '');
@@ -17,7 +18,7 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
     useEffect(() => {
         if (startDate && startDate === endDate) {
             setLoadingShifts(true);
-            axios.get(`/${entity}/shifts/by-date`, { params: { date: startDate } })
+            axios.get(`/${entity}/shifts/by-date`, { params: { date: startDate, entity: entity } })
                 .then(res => {
                     setAvailableShifts(res.data || []);
                 })
@@ -40,6 +41,12 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
         setShiftId('');
         onApply({ start_date: '', end_date: '', shift_id: '' });
     };
+
+    const shiftOptions = availableShifts.map(shift => ({
+        value: shift.id,
+        label: shift.name,
+        sublabel: shift.user ? shift.user.name : ''
+    }));
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="md">
@@ -76,17 +83,14 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
                     {startDate && startDate === endDate && (
                         <div>
                             <InputLabel value="Pilih Shift" />
-                            <select 
-                                className="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-amber-500 dark:focus:border-amber-600 focus:ring-amber-500 dark:focus:ring-amber-600 rounded-md shadow-sm"
+                            <SearchableSelect 
+                                options={shiftOptions}
                                 value={shiftId}
-                                onChange={e => setShiftId(e.target.value)}
+                                onChange={setShiftId}
                                 disabled={loadingShifts}
-                            >
-                                <option value="">{loadingShifts ? 'Memuat...' : 'Semua Shift'}</option>
-                                {availableShifts.map(shift => (
-                                    <option key={shift.id} value={shift.id}>{shift.name}</option>
-                                ))}
-                            </select>
+                                placeholder={loadingShifts ? 'Memuat...' : 'Semua Shift'}
+                                accentColor="orange"
+                            />
                             <p className="mt-1 text-xs text-gray-500">Hanya muncul jika rentang 1 hari.</p>
                         </div>
                     )}
