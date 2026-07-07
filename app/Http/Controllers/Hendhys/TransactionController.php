@@ -15,12 +15,10 @@ class TransactionController extends Controller
         $user = auth()->user();
         $query = HendhysTransaction::with(['creator', 'customer'])->orderBy('created_at', 'desc');
 
-        if (!$user->hasRole('admin_hendhys') && !$user->hasRole('super_admin_hendhys')) {
-            if ($user->branch && $user->branch->type !== 'pusat') {
-                $query->where('branch_id', $user->branch_id);
-            } else {
-                $query->whereNull('branch_id');
-            }
+        if ($user->branch && $user->branch->type !== 'pusat') {
+            $query->where('branch_id', $user->branch_id);
+        } else {
+            $query->whereNull('branch_id');
         }
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
