@@ -625,7 +625,10 @@ class DashboardController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        $startAt = $previousShift ? $previousShift->closed_at : \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+        $startAt = \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
+        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($shift->opened_at)) {
+            $startAt = $previousShift->closed_at;
+        }
 
         $transactions = \Illuminate\Support\Facades\DB::table($transactionTable . ' as t')
             ->select('t.*')
