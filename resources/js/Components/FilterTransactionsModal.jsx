@@ -80,20 +80,18 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
                         </div>
                     </div>
 
-                    {startDate && startDate === endDate && (
-                        <div>
-                            <InputLabel value="Pilih Shift" />
-                            <SearchableSelect 
-                                options={shiftOptions}
-                                value={shiftId}
-                                onChange={setShiftId}
-                                disabled={loadingShifts}
-                                placeholder={loadingShifts ? 'Memuat...' : 'Semua Shift'}
-                                accentColor="orange"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">Hanya muncul jika rentang 1 hari.</p>
-                        </div>
-                    )}
+                    <div>
+                        <InputLabel value="Pilih Shift" />
+                        <SearchableSelect 
+                            options={shiftOptions}
+                            value={shiftId}
+                            onChange={setShiftId}
+                            disabled={!(startDate && startDate === endDate) || loadingShifts}
+                            placeholder={!(startDate && startDate === endDate) ? 'Pilih tanggal yang sama di kolom Dari & Sampai' : (loadingShifts ? 'Memuat...' : 'Semua Shift')}
+                            accentColor="orange"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Hanya bisa dipilih jika rentang filter tepat 1 hari.</p>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">
