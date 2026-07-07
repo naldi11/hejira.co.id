@@ -179,7 +179,19 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                         Uang Modal Awal: <span className="font-semibold text-orange-600 dark:text-orange-400">{formatRupiah(activeShift.starting_cash)}</span>
                                     </p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        Estimasi Uang di Laci: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatRupiah(activeShift.expected_cash)}</span>
+                                        Total Omset: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                            {formatRupiah((activeShift.payment_summary?.tunai||0) + (activeShift.payment_summary?.transfer||0) + (activeShift.payment_summary?.kartu_debit||0) + (activeShift.payment_summary?.kartu_kredit||0) + (activeShift.payment_summary?.kredit||0))}
+                                        </span>
+                                    </p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Total Pengeluaran: <span className="font-semibold text-rose-500">
+                                            {formatRupiah(activeShift.total_expenses || 0)}
+                                        </span>
+                                    </p>
+                                    <p className="text-sm text-gray-800 dark:text-gray-200 font-bold mt-1">
+                                        Sisa (Omset - Pengeluaran): <span className="text-blue-600 dark:text-blue-400">
+                                            {formatRupiah(((activeShift.payment_summary?.tunai||0) + (activeShift.payment_summary?.transfer||0) + (activeShift.payment_summary?.kartu_debit||0) + (activeShift.payment_summary?.kartu_kredit||0) + (activeShift.payment_summary?.kredit||0)) - (activeShift.total_expenses || 0))}
+                                        </span>
                                     </p>
                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2 border-t border-orange-200/50 dark:border-orange-900/30">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -266,8 +278,9 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     <th className="px-4 py-3">Tutup Shift</th>
                                     <th className="px-4 py-3 text-center">Status</th>
                                     <th className="px-4 py-3 text-right">Modal Awal</th>
-                                    <th className="px-4 py-4 font-semibold">Uang di Laci</th>
+                                    <th className="px-4 py-4 font-semibold">Total Omset</th>
                                     <th className="px-4 py-4 font-semibold text-center">Total Pengeluaran</th>
+                                    <th className="px-4 py-4 font-semibold text-blue-600">Sisa</th>
                                     <th className="px-4 py-4 font-semibold">Transfer</th>
                                     <th className="px-4 py-4 font-semibold">Debit</th>
                                     <th className="px-4 py-4 font-semibold text-rose-500">Kredit (Bon)</th>
@@ -296,25 +309,40 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                         {isClosed ? 'Selesai' : 'Aktif'}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(r.starting_cash)}</td>
-                                                <td className="px-4 py-4 font-bold text-emerald-600 dark:text-emerald-400">
-                                                    {formatRupiah(r.expected_cash)}
-                                                </td>
-                                                <td className="px-4 py-4 text-center font-medium text-rose-500">
-                                                    {formatRupiah(r.total_expenses ?? 0)}
+                                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(row.starting_cash)}</td>
+                                                {(() => {
+                                                    const omset = (Number(row.payment_summary?.tunai) || 0) + 
+                                                                  (Number(row.payment_summary?.transfer) || 0) + 
+                                                                  (Number(row.payment_summary?.kartu_debit) || 0) + 
+                                                                  (Number(row.payment_summary?.kartu_kredit) || 0) + 
+                                                                  (Number(row.payment_summary?.kredit) || 0);
+                                                    const sisa = omset - (Number(row.total_expenses) || 0);
+                                                    return (
+                                                        <>
+                                                            <td className="px-4 py-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                                                {formatRupiah(omset)}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-center font-medium text-rose-500">
+                                                                {formatRupiah(row.total_expenses || 0)}
+                                                            </td>
+                                                            <td className="px-4 py-4 font-black text-blue-600 dark:text-blue-400">
+                                                                {formatRupiah(sisa)}
+                                                            </td>
+                                                        </>
+                                                    );
+                                                })()}
+                                                <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                                                    {formatRupiah(row.payment_summary?.transfer ?? 0)}
                                                 </td>
                                                 <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                                                    {formatRupiah(r.payment_summary?.transfer ?? 0)}
-                                                </td>
-                                                <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
-                                                    {formatRupiah(r.payment_summary?.kartu_debit ?? 0)}
+                                                    {formatRupiah(row.payment_summary?.kartu_debit ?? 0)}
                                                 </td>
                                                 <td className="px-4 py-4 text-rose-500 font-medium">
-                                                    {formatRupiah(r.payment_summary?.kredit ?? 0)}
+                                                    {formatRupiah(row.payment_summary?.kredit ?? 0)}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button 
-                                                        onClick={() => handleViewDetail(r)}
+                                                        onClick={() => handleViewDetail(row)}
                                                         className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 font-semibold whitespace-nowrap"
                                                     >
                                                         <Icon name="visibility" className="text-[16px]" /> Detail
@@ -626,17 +654,38 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                 </tr>
                                             </tbody>
                                             <tfoot>
-                                                <tr className="bg-gray-50 dark:bg-white/[0.02] font-bold border-t">
-                                                    <td className="p-3">Total Transaksi Omset</td>
-                                                    <td className="p-3 text-right">
-                                                        {formatRupiah(
-                                                            parseFloat(detailData.payment_summary.tunai) +
-                                                            parseFloat(detailData.payment_summary.kartu_debit) +
-                                                            parseFloat(detailData.payment_summary.kartu_kredit) +
-                                                            parseFloat(detailData.payment_summary.kredit)
-                                                        )}
-                                                    </td>
-                                                </tr>
+                                                {(() => {
+                                                    const detailOmset = parseFloat(detailData.payment_summary.tunai || 0) +
+                                                                        parseFloat(detailData.payment_summary.transfer || 0) +
+                                                                        parseFloat(detailData.payment_summary.kartu_debit || 0) +
+                                                                        parseFloat(detailData.payment_summary.kartu_kredit || 0) +
+                                                                        parseFloat(detailData.payment_summary.kredit || 0);
+                                                    const detailPengeluaran = parseFloat(detailData.shift.total_expenses || 0);
+                                                    const detailSisa = detailOmset - detailPengeluaran;
+                                                    
+                                                    return (
+                                                        <>
+                                                            <tr className="bg-gray-50 dark:bg-white/[0.02] font-bold border-t">
+                                                                <td className="p-3">Total Transaksi Omset</td>
+                                                                <td className="p-3 text-right text-emerald-600 dark:text-emerald-400">
+                                                                    {detailOmset > 0 ? '+' : ''}{formatRupiah(detailOmset)}
+                                                                </td>
+                                                            </tr>
+                                                            <tr className="bg-gray-50 dark:bg-white/[0.02] font-bold border-t">
+                                                                <td className="p-3">Total Pengeluaran</td>
+                                                                <td className="p-3 text-right text-rose-500">
+                                                                    {detailPengeluaran > 0 ? '-' : ''}{formatRupiah(detailPengeluaran)}
+                                                                </td>
+                                                            </tr>
+                                                            <tr className="bg-amber-50 dark:bg-amber-900/10 font-bold border-t border-amber-200 dark:border-amber-900/50">
+                                                                <td className="p-3 text-amber-900 dark:text-amber-100">Sisa (Omset - Pengeluaran)</td>
+                                                                <td className="p-3 text-right text-blue-600 dark:text-blue-400 text-lg">
+                                                                    {formatRupiah(detailSisa)}
+                                                                </td>
+                                                            </tr>
+                                                        </>
+                                                    );
+                                                })()}
                                             </tfoot>
                                         </table>
                                     </div>

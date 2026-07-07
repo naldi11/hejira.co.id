@@ -50,19 +50,33 @@ export default function HendhysDashboard({ stats, recentTransactions, lowStocks 
                     {recentTransactions.length === 0 ? (
                         <div className="p-5 text-center text-sm text-gray-500 dark:text-gray-400">Belum ada transaksi</div>
                     ) : (
-                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                            {recentTransactions.map((trx) => (
-                                <div key={trx.id} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/[0.01]">
-                                    <div>
-                                        <p className="font-medium text-gray-800 dark:text-white/90">{trx.transaction_number}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(trx.date)} {trx.time} • {trx.customer_name}</p>
+                        <div className="flex flex-col">
+                            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {recentTransactions.map((trx) => (
+                                    <div key={trx.id} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                        <div>
+                                            <p className="font-medium text-gray-800 dark:text-white/90">{trx.transaction_number}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {formatDate(trx.date)} {trx.time} • {trx.customer_name}
+                                                <br />
+                                                Kasir: <span className="font-medium text-gray-700 dark:text-gray-300">{trx.cashier_name}</span>
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-gray-900 dark:text-white">{formatRupiah(trx.grand_total)}</p>
+                                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-green-700 dark:bg-green-500/10 dark:text-green-400">Paid</span>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-bold text-gray-900 dark:text-white">{formatRupiah(trx.grand_total)}</p>
-                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-green-700 dark:bg-green-500/10 dark:text-green-400">Paid</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            <div className="border-t border-gray-100 p-3 text-center dark:border-gray-800">
+                                <Link 
+                                    href={route('hendhys.transactions.index', { date: new Date().toISOString().split('T')[0] })}
+                                    className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                                >
+                                    Lihat Semua Transaksi Hari Ini →
+                                </Link>
+                            </div>
                         </div>
                     )}
                 </div>
