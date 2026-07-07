@@ -53,9 +53,6 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
             <form onSubmit={handleApply} className="p-6">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filter Transaksi</h2>
-                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-500">
-                        <Icon name="close" className="text-xl" />
-                    </button>
                 </div>
 
                 <div className="space-y-4">
