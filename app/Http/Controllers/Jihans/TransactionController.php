@@ -13,16 +13,40 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $transactions = JihansTransaction::with(['creator', 'customer'])
-            ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
-                ->where('transaction_number', 'like', "%{$request->search}%")
-                ->orWhere('customer_name', 'like', "%{$request->search}%")))
-            ->orderByDesc('created_at')
-            ->paginate(20)->withQueryString();
+        $query = JihansTransaction::with(['creator', 'customer'])->orderBy('created_at', 'desc');
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('created_at', [
+                \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                \Carbon\Carbon::parse($request->end_date)->endOfDay()
+            ]);
+        } elseif ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->filled('shift_id')) {
+            $shift = \App\Models\CashierShift::find($request->shift_id);
+            if ($shift) {
+                $query->whereBetween('created_at', [
+                    $shift->opened_at,
+                    $shift->closed_at ?? now()
+                ]);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('transaction_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $transactions = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Jihans/Transactions/Index', [
             'transactions' => TransactionResource::collection($transactions),
-            'filters'      => $request->only('search'),
+            'filters'      => $request->only(['search', 'date', 'start_date', 'end_date', 'shift_id']),
         ]);
     }
 

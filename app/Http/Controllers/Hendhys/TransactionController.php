@@ -23,8 +23,23 @@ class TransactionController extends Controller
             }
         }
 
-        if ($request->filled('date')) {
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('created_at', [
+                \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                \Carbon\Carbon::parse($request->end_date)->endOfDay()
+            ]);
+        } elseif ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->filled('shift_id')) {
+            $shift = \App\Models\CashierShift::find($request->shift_id);
+            if ($shift) {
+                $query->whereBetween('created_at', [
+                    $shift->opened_at,
+                    $shift->closed_at ?? now()
+                ]);
+            }
         }
 
         if ($request->filled('search')) {
@@ -39,7 +54,7 @@ class TransactionController extends Controller
 
         return Inertia::render('Hendhys/Transactions/Index', [
             'transactions' => HendhysTransactionResource::collection($transactions),
-            'filters'      => $request->only('search'),
+            'filters'      => $request->only(['search', 'date', 'start_date', 'end_date', 'shift_id']),
         ]);
     }
 

@@ -31,6 +31,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
             Route::post('/shifts/open', [\App\Http\Controllers\Shared\ShiftController::class, 'open'])->name('shifts.open');
             Route::post('/shifts/close', [\App\Http\Controllers\Shared\ShiftController::class, 'close'])->name('shifts.close');
             Route::get('/shifts/status', [\App\Http\Controllers\Shared\ShiftController::class, 'status'])->name('shifts.status');
+            Route::get('/shifts/by-date', [\App\Http\Controllers\Shared\ShiftController::class, 'listByDate'])->name('shifts.by-date');
             Route::get('/shifts/{shift}/details', [\App\Http\Controllers\Shared\ShiftController::class, 'show'])->name('shifts.details');
             
             // PDF Export route (accessible by Kasir & Admin)

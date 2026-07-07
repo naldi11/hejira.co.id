@@ -4,8 +4,10 @@ import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
+import StatusBadge from '@/Components/StatusBadge';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatRupiah } from '@/lib/format';
+import { FilterTransactionsModal } from '@/Components/FilterTransactionsModal';
 
 const route = window.route;
 
@@ -18,12 +20,32 @@ function dateParts(iso) {
 export default function JihansTransactionsIndex({ transactions, filters }) {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState(filters.search ?? '');
+    const [showFilterModal, setShowFilterModal] = useState(false);
+
+    const hasActiveFilters = !!(filters.start_date || filters.end_date || filters.shift_id);
 
     const reload = (e) => {
         e?.preventDefault();
         router.get(route('jihans.transactions.index'),
-            { search: search || undefined },
-            { preserveState: true, preserveScroll: true, replace: true, only: ['transactions', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+            { 
+                search: search || undefined,
+                start_date: filters.start_date || undefined,
+                end_date: filters.end_date || undefined,
+                shift_id: filters.shift_id || undefined
+            },
+            { preserveState: true, preserveScroll: true, replace: true, only: ['transactions', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) }
+        );
+    };
+
+    const handleApplyFilter = (newFilters) => {
+        setShowFilterModal(false);
+        router.get(route('jihans.transactions.index'),
+            { 
+                search: search || undefined,
+                ...newFilters
+            },
+            { preserveState: true, preserveScroll: true, replace: true, only: ['transactions', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) }
+        );
     };
 
     return (
@@ -53,14 +75,32 @@ export default function JihansTransactionsIndex({ transactions, filters }) {
                         <button type="submit" className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                             Cari
                         </button>
-                        {filters.search && (
-                            <Link href={route('jihans.transactions.index')} className="rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 transition-colors">
+                        <button 
+                            type="button" 
+                            onClick={() => setShowFilterModal(true)}
+                            className={`relative flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium border ${hasActiveFilters ? 'border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.02]'}`}
+                        >
+                            <Icon name="filter_list" className="mr-1 text-[18px]" /> Filter
+                            {hasActiveFilters && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-orange-500"></span>
+                            )}
+                        </button>
+                        {(search || hasActiveFilters) && (
+                            <Link href={route('jihans.transactions.index')} className="flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 transition-colors">
                                 Reset
                             </Link>
                         )}
                     </form>
                 </div>
             </div>
+
+            <FilterTransactionsModal 
+                show={showFilterModal} 
+                onClose={() => setShowFilterModal(false)}
+                filters={filters}
+                onApply={handleApplyFilter}
+                entity="jihans"
+            />
 
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="custom-scrollbar overflow-x-auto">

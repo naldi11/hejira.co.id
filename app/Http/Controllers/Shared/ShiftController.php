@@ -134,6 +134,39 @@ class ShiftController extends Controller
     }
 
     /**
+     * List shifts by date for frontend dropdowns
+     */
+    public function listByDate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'entity' => 'required|in:hendhys,jihans'
+        ]);
+
+        $user = auth()->user();
+        $query = \App\Models\CashierShift::with('user')
+            ->where('entity', $request->entity)
+            ->whereDate('opened_at', $request->date);
+
+        if (!$user->hasRole("admin_{$request->entity}") && !$user->hasRole("super_admin_{$request->entity}")) {
+            if ($user->branch && $user->branch->type !== 'pusat') {
+                $query->where('branch_id', $user->branch_id);
+            } else {
+                $query->whereNull('branch_id');
+            }
+        }
+
+        $shifts = $query->orderBy('opened_at', 'asc')->get()->map(function($shift) {
+            return [
+                'id' => $shift->id,
+                'name' => 'Shift ' . \Carbon\Carbon::parse($shift->opened_at)->format('H:i') . ' - ' . ($shift->closed_at ? \Carbon\Carbon::parse($shift->closed_at)->format('H:i') : 'Aktif') . ' (' . ($shift->user->name ?? 'Unknown') . ')'
+            ];
+        });
+
+        return response()->json($shifts);
+    }
+
+    /**
      * Get details for a specific cashier shift
      */
     public function show(CashierShift $shift)
