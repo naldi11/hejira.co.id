@@ -87,8 +87,8 @@ export default function HendhysLayout({ pageTitle, children }) {
             icon: <Icon name="local_shipping" className="text-[22px]" />,
             subItems: [
                 { name: 'Request Cabang', path: route('hendhys.branch-requests.index') },
-                { name: 'Distribusi ke Cabang', path: route('hendhys.transfer-to-branch.index') },
-                { name: 'Return dari Cabang', path: route('hendhys.returns.index') },
+                { name: 'Distribusi ke Cabang / Jihans', path: route('hendhys.transfer-to-branch.index') },
+                { name: 'Return dari Cabang / Jihans', path: route('hendhys.returns.index') },
             ],
         });
         navItems.push({
