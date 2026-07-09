@@ -24,10 +24,10 @@ class TransferFromHendhysController extends Controller
 
     public function index(Request $request)
     {
-        $user = auth()->user();
-
         $q = HendhysTransferToBranch::with(['branch', 'creator', 'receiver'])
-            ->where('branch_id', $user->branch_id);
+            ->whereHas('branch', function ($query) {
+                $query->where('entity', 'jihans');
+            });
 
         if ($status = $request->status) {
             $q->where('status', $status);
@@ -46,12 +46,12 @@ class TransferFromHendhysController extends Controller
 
     public function show(HendhysTransferToBranch $transferFromHendhy)
     {
-        $user = auth()->user();
-        if ($transferFromHendhy->branch_id !== $user->branch_id) {
+        $transferFromHendhy->load('branch');
+        if ($transferFromHendhy->branch->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 
-        $transferFromHendhy->load(['branch', 'creator', 'receiver', 'details.product', 'details.unit', 'photos']);
+        $transferFromHendhy->load(['creator', 'receiver', 'details.product', 'details.unit', 'photos']);
 
         return Inertia::render('Jihans/TransferFromHendhys/Show', [
             'transfer' => new HendhysTransferToBranchResource($transferFromHendhy),
@@ -60,9 +60,8 @@ class TransferFromHendhysController extends Controller
 
     public function showReceiveForm(HendhysTransferToBranch $transferFromHendhy)
     {
-        $user = auth()->user();
-
-        if ($transferFromHendhy->branch_id !== $user->branch_id) {
+        $transferFromHendhy->load('branch');
+        if ($transferFromHendhy->branch->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
         if ($transferFromHendhy->status !== 'sent') {
@@ -70,7 +69,7 @@ class TransferFromHendhysController extends Controller
                 ->with('error', 'Transfer ini sudah diproses sebelumnya.');
         }
 
-        $transferFromHendhy->load(['branch', 'creator', 'details.product', 'details.unit']);
+        $transferFromHendhy->load(['creator', 'details.product', 'details.unit']);
 
         return Inertia::render('Jihans/TransferFromHendhys/Receive', [
             'transfer' => new HendhysTransferToBranchResource($transferFromHendhy),
@@ -81,7 +80,8 @@ class TransferFromHendhysController extends Controller
     {
         $user = auth()->user();
 
-        if ($transferFromHendhy->branch_id !== $user->branch_id) {
+        $transferFromHendhy->load('branch');
+        if ($transferFromHendhy->branch->entity !== 'jihans') {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
         if ($transferFromHendhy->status !== 'sent') {
@@ -210,12 +210,12 @@ class TransferFromHendhysController extends Controller
 
     public function printBast(HendhysTransferToBranch $transferFromHendhy)
     {
-        $user = auth()->user();
-        if ($transferFromHendhy->branch_id !== $user->branch_id) {
+        $transferFromHendhy->load('branch');
+        if ($transferFromHendhy->branch->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 
-        $transferFromHendhy->load(['branch', 'creator', 'receiver', 'details.product', 'details.unit', 'photos']);
+        $transferFromHendhy->load(['creator', 'receiver', 'details.product', 'details.unit', 'photos']);
 
         // We can reuse the Hendhys print view since it is the exact same structure
         return view('hendhys.transfer-to-branch.print', ['transferToBranch' => $transferFromHendhy]);

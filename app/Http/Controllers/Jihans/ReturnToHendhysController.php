@@ -24,9 +24,10 @@ class ReturnToHendhysController extends Controller
 
     public function index(Request $request)
     {
-        $user = auth()->user();
         $q = HendhysReturnFromBranch::with(['branch', 'creator', 'receiver'])
-            ->where('branch_id', $user->branch_id);
+            ->whereHas('branch', function ($query) {
+                $query->where('entity', 'jihans');
+            });
 
         if ($status = $request->status) {
             $q->where('status', $status);
@@ -86,9 +87,11 @@ class ReturnToHendhysController extends Controller
 
         try {
             DB::transaction(function () use ($request, $user) {
+                $branchId = $user->branch_id ?? \App\Models\Branch::where('entity', 'jihans')->first()->id;
+
                 $ret = HendhysReturnFromBranch::create([
                     'return_number' => $this->numbers->generateYearly('RET-HND', 'hendhys_returns_from_branch', 'return_number'),
-                    'branch_id' => $user->branch_id,
+                    'branch_id' => $branchId,
                     'date' => $request->date,
                     'status' => 'sent',
                     'notes' => $request->notes,
@@ -133,12 +136,12 @@ class ReturnToHendhysController extends Controller
 
     public function show(HendhysReturnFromBranch $returnsToHendhy)
     {
-        $user = auth()->user();
-        if ($returnsToHendhy->branch_id !== $user->branch_id) {
+        $returnsToHendhy->load('branch');
+        if ($returnsToHendhy->branch->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 
-        $returnsToHendhy->load(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
+        $returnsToHendhy->load(['creator', 'receiver', 'details.product', 'details.unit']);
 
         return Inertia::render('Jihans/ReturnsToHendhys/Show', [
             'return' => new HendhysReturnResource($returnsToHendhy),
