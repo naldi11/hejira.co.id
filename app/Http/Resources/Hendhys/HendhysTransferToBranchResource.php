@@ -16,7 +16,7 @@ class HendhysTransferToBranchResource extends JsonResource
         return [
             'id'              => $this->id,
             'transfer_number' => $this->transfer_number,
-            'date'            => $this->date,
+            'date'            => $this->created_at ? $this->created_at->isoFormat('D MMMM YYYY, HH:mm') : \Carbon\Carbon::parse($this->date)->isoFormat('D MMMM YYYY'),
             'status'          => $this->status,
             'notes'           => $this->notes,
             'branch'          => $this->whenLoaded('branch', fn () => $this->branch?->name),

@@ -20,7 +20,7 @@ class TransferOutResource extends JsonResource
             'id'              => $this->id,
             'transfer_number' => $this->transfer_number,
             'status'          => $this->status,
-            'date'            => $this->date,
+            'date'            => $this->created_at ? $this->created_at->isoFormat('D MMMM YYYY, HH:mm') : \Carbon\Carbon::parse($this->date)->isoFormat('D MMMM YYYY'),
             'to_entity'       => $this->to_entity,
             'branch'          => $this->whenLoaded('branch', fn () => $this->branch?->name),
             'creator'         => $this->whenLoaded('creator', fn () => $this->creator?->name),
