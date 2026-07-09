@@ -118,7 +118,7 @@ class HandleInertiaRequests extends Middleware
                     }
 
                     if ($isAdminJihans || $isOwner) {
-                        // 1. Incoming transfers in transit
+                        // 1. Incoming transfers from Gudang in transit
                         $transitCount = \App\Models\TransferOut::where('to_entity', 'jihans')->where('status', 'sent')->count();
                         if ($transitCount > 0) {
                             $items[] = [
@@ -126,6 +126,23 @@ class HandleInertiaRequests extends Middleware
                                 'title' => 'Pengiriman Gudang Tiba',
                                 'message' => "Ada {$transitCount} pengiriman dalam perjalanan dari Gudang Utama. Segera konfirmasi.",
                                 'path' => '/jihans/transfer-requests',
+                                'icon' => 'local_shipping',
+                                'type' => 'info',
+                                'time' => 'Baru saja'
+                            ];
+                        }
+
+                        // 2. Incoming transfers from Hendhys Pusat in transit
+                        $hendhysTransitCount = \App\Models\HendhysTransferToBranch::whereHas('branch', function ($query) {
+                            $query->where('entity', 'jihans');
+                        })->where('status', 'sent')->count();
+
+                        if ($hendhysTransitCount > 0) {
+                            $items[] = [
+                                'id' => 'jihans_hendhys_transit',
+                                'title' => 'Pengiriman Hendhys Pusat Tiba',
+                                'message' => "Ada {$hendhysTransitCount} pengiriman dalam perjalanan dari Hendhys Pusat. Segera konfirmasi.",
+                                'path' => '/jihans/transfer-from-hendhys',
                                 'icon' => 'local_shipping',
                                 'type' => 'info',
                                 'time' => 'Baru saja'
