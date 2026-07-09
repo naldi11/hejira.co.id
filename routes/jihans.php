@@ -112,5 +112,14 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
 
         Route::resource('returns-to-gudang', GudangReturnController::class)->only(['index', 'create', 'store', 'show']);
 
+        // Transfer dari Hendhys Pusat
+        Route::resource('transfer-from-hendhys', \App\Http\Controllers\Jihans\TransferFromHendhysController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+        Route::get('transfer-from-hendhys/{transfer_from_hendhy}/receive', [\App\Http\Controllers\Jihans\TransferFromHendhysController::class, 'showReceiveForm'])->name('transfer-from-hendhys.receive-form');
+        Route::post('transfer-from-hendhys/{transfer_from_hendhy}/receive', [\App\Http\Controllers\Jihans\TransferFromHendhysController::class, 'receive'])->name('transfer-from-hendhys.receive');
+        Route::get('transfer-from-hendhys/{transfer_from_hendhy}/bast', [\App\Http\Controllers\Jihans\TransferFromHendhysController::class, 'printBast'])->name('transfer-from-hendhys.bast');
+
+        // Retur ke Hendhys Pusat
+        Route::resource('returns-to-hendhys', \App\Http\Controllers\Jihans\ReturnToHendhysController::class)->only(['index', 'create', 'store', 'show']);
+
     });
 

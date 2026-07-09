@@ -312,7 +312,11 @@ class TransferToBranchController extends Controller
         }
 
         // Fitur: Distribusi Manual tanpa request.
-        $branches = \App\Models\Branch::where('type', 'cabang')->where('is_active', true)->orderBy('name')->get()
+        $branches = \App\Models\Branch::where('type', 'cabang')
+            ->whereIn('entity', ['hendhys', 'jihans'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
             ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]);
 
         $products = Product::where('status', 'active')
@@ -652,15 +656,32 @@ class TransferToBranchController extends Controller
                     ]);
 
                     if ($qty > 0) {
-                        $this->stockService->creditHendhys(
-                            $detail->product_id,
-                            $detail->unit_id,
-                            $qty,
-                            $transferToBranch->branch_id,
-                            'receive_from_pusat',
-                            $transferToBranch->id,
-                            $user->id
-                        );
+                        $isJihans = false;
+                        $branch = \App\Models\Branch::find($transferToBranch->branch_id);
+                        if ($branch && $branch->entity === 'jihans') {
+                            $isJihans = true;
+                        }
+
+                        if ($isJihans) {
+                            $this->stockService->creditJihansRetail(
+                                $detail->product_id,
+                                $detail->unit_id,
+                                $qty,
+                                'receive_from_hendhys',
+                                $transferToBranch->id,
+                                $user->id
+                            );
+                        } else {
+                            $this->stockService->creditHendhys(
+                                $detail->product_id,
+                                $detail->unit_id,
+                                $qty,
+                                $transferToBranch->branch_id,
+                                'receive_from_pusat',
+                                $transferToBranch->id,
+                                $user->id
+                            );
+                        }
                     }
                 }
 

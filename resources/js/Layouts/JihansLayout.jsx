@@ -64,6 +64,8 @@ export default function JihansLayout({ pageTitle, children }) {
     if (isKasir || isAdmin) {
         inventorySubItems.push({ name: 'Request ke Gudang', path: route('jihans.transfer-requests.index') });
         inventorySubItems.push({ name: 'Return ke Gudang', path: route('jihans.returns-to-gudang.index') });
+        inventorySubItems.push({ name: 'Terima dari Hendhys', path: route('jihans.transfer-from-hendhys.index') });
+        inventorySubItems.push({ name: 'Retur ke Hendhys', path: route('jihans.returns-to-hendhys.index') });
     }
 
     navItems.push({
