@@ -292,15 +292,15 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 {rows.data?.length === 0 ? (
                                     <EmptyState colSpan={12} icon="assessment" message="Belum ada riwayat shift laci kasir." />
                                 ) : (
-                                    rows.data?.map((r, i) => {
-                                        const isClosed = r.status === 'closed';
-                                        const hasDiscrepancy = isClosed && r.discrepancy !== 0;
+                                    rows.data?.map((row, i) => {
+                                        const isClosed = row.status === 'closed';
+                                        const hasDiscrepancy = isClosed && row.discrepancy !== 0;
 
                                         return (
                                             <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
-                                                <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{r.user?.name ?? 'Sistem'}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(r.opened_at)}</td>
-                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{isClosed ? formatDateTime(r.closed_at) : '-'}</td>
+                                                <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.user?.name ?? 'Sistem'}</td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(row.opened_at)}</td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{isClosed ? formatDateTime(row.closed_at) : '-'}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
                                                         isClosed 
