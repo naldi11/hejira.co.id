@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -15,10 +15,74 @@ import Barcode from 'react-barcode';
 const Layouts = { GudangLayout, JihansLayout, HendhysLayout, OwnerLayout };
 const route = window.route;
 
+const PAPER_CONFIGS = {
+    'thermal-40x30': {
+        name: '🏷️ Direct Thermal 40 × 30 mm (Standard Barcode Label)',
+        pageStyle: '@page { size: 40mm 30mm; margin: 0; }',
+        labelClass: 'w-[40mm] h-[30mm] p-1 flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        barcodeWidth: 1.0,
+        barcodeHeight: 22,
+        fontSize: 9,
+        nameClass: 'text-[9px] font-bold leading-tight truncate w-full text-black',
+        priceClass: 'text-[9px] font-bold text-black',
+        codeClass: 'font-mono text-[8px] tracking-tight text-black',
+        isThermalSingle: true,
+    },
+    'thermal-50x20': {
+        name: '🏷️ Direct Thermal 50 × 20 mm (Retail Medium Label)',
+        pageStyle: '@page { size: 50mm 20mm; margin: 0; }',
+        labelClass: 'w-[50mm] h-[20mm] px-1 py-[2px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        barcodeWidth: 1.1,
+        barcodeHeight: 18,
+        fontSize: 8,
+        nameClass: 'text-[8px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[8px] font-bold text-black',
+        codeClass: 'font-mono text-[7px] tracking-tight text-black',
+        isThermalSingle: true,
+    },
+    'thermal-33x19': {
+        name: '🏷️ Direct Thermal 33 × 19 mm (Small Sticker Minimarket)',
+        pageStyle: '@page { size: 33mm 19mm; margin: 0; }',
+        labelClass: 'w-[33mm] h-[19mm] px-[2px] py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        barcodeWidth: 0.85,
+        barcodeHeight: 16,
+        fontSize: 7,
+        nameClass: 'text-[7px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[7px] font-bold text-black',
+        codeClass: 'font-mono text-[6px] tracking-tight text-black',
+        isThermalSingle: true,
+    },
+    'thermal-100x50': {
+        name: '📦 Direct Thermal 100 × 50 mm (Shipping / Box Label)',
+        pageStyle: '@page { size: 100mm 50mm; margin: 0; }',
+        labelClass: 'w-[100mm] h-[50mm] p-3 flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        barcodeWidth: 1.8,
+        barcodeHeight: 48,
+        fontSize: 12,
+        nameClass: 'text-sm font-bold leading-tight truncate w-full text-black',
+        priceClass: 'text-xs font-bold text-black',
+        codeClass: 'font-mono text-xs tracking-tight text-black',
+        isThermalSingle: true,
+    },
+    'a4-grid': {
+        name: '📄 Kertas A4 Grid (5 Kolom - Printer Biasa / Inkjet)',
+        pageStyle: '@page { size: A4 portrait; margin: 5mm; }',
+        labelClass: 'flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2.5 text-center print:border-solid print:border-gray-200 bg-white',
+        barcodeWidth: 1.1,
+        barcodeHeight: 36,
+        fontSize: 10,
+        nameClass: 'mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black',
+        priceClass: 'text-xs font-bold text-gray-800 print:text-black',
+        codeClass: 'font-mono text-[10px] tracking-tight text-gray-800 print:text-black',
+        isThermalSingle: false,
+    }
+};
+
 export default function QrPrint({ products, filters, layout = 'GudangLayout', routePrefix = 'master.' }) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [paperType, setPaperType] = useState('thermal-40x30');
     const [form, setForm] = useState({ 
         search: filters.search ?? '', 
         status: filters.status ?? '',
@@ -59,7 +123,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
             if (next[id]) {
                 delete next[id];
             } else {
-                next[id] = 1; // default qty 1
+                next[id] = 1;
             }
             return next;
         });
@@ -68,7 +132,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
     const handleQtyChange = (id, val) => {
         const qty = parseInt(val, 10);
         setSelected(prev => {
-            if (!prev[id]) return prev; // Must be selected first
+            if (!prev[id]) return prev;
             return {
                 ...prev,
                 [id]: isNaN(qty) || qty < 1 ? 1 : qty
@@ -81,7 +145,6 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
     const selectedCount = Object.keys(selected).length;
     const totalQty = Object.values(selected).reduce((acc, curr) => acc + curr, 0);
 
-    // Prepare labels to render in preview
     const labelsToPrint = useMemo(() => {
         const labels = [];
         Object.entries(selected).forEach(([id, qty]) => {
@@ -94,6 +157,8 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
         });
         return labels;
     }, [selected, products.data]);
+
+    const activeConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-40x30'];
 
     return (
         <Layout title="Cetak Label Barcode" pageTitle="Master Data — Cetak Label">
@@ -118,9 +183,11 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                         .print-controls {
                             display: none !important;
                         }
-                        @page {
-                            margin: 5mm; 
+                        .page-break-after-always {
+                            page-break-after: always;
+                            break-after: page;
                         }
+                        ${activeConfig.pageStyle}
                     }
                 `}</style>
             </Head>
@@ -253,43 +320,87 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
             {showPreview && (
                 <div className="fixed inset-0 z-[100] flex flex-col bg-gray-100/95 backdrop-blur-sm dark:bg-gray-950/95">
                     {/* Top Control Bar (Hidden in Print) */}
-                    <div className="print-controls flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <div className="print-controls flex flex-wrap h-auto min-h-16 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                         <div className="flex items-center gap-4">
                             <Button variant="secondary" onClick={() => setShowPreview(false)} startIcon={<Icon name="arrow_back" />}>
                                 Kembali
                             </Button>
-                            <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Print Preview ({totalQty} Label)</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Preview ({totalQty} Label)</h3>
                         </div>
-                        <Button onClick={() => window.print()} startIcon={<Icon name="print" />}>
-                            Cetak Sekarang
-                        </Button>
+
+                        {/* Paper & Label Type Selector */}
+                        <div className="flex items-center gap-3">
+                            <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                                <Icon name="settings_overscan" className="text-[18px]" />
+                                Ukuran Kertas & Stiker Label:
+                            </label>
+                            <select 
+                                value={paperType} 
+                                onChange={(e) => setPaperType(e.target.value)}
+                                className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 shadow-xs outline-hidden transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            >
+                                {Object.entries(PAPER_CONFIGS).map(([key, cfg]) => (
+                                    <option key={key} value={key}>{cfg.name}</option>
+                                ))}
+                            </select>
+                            <Button onClick={() => window.print()} startIcon={<Icon name="print" />}>
+                                Cetak Sekarang
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Preview Area (Visible in Print) */}
                     <div className="flex-1 overflow-auto p-4 md:p-8">
-                        <div id="print-area" className="mx-auto max-w-5xl bg-white p-4 sm:p-8 shadow-md" style={{ minHeight: '297mm' }}>
-                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                                {labelsToPrint.map((label, idx) => (
-                                    <div key={idx} className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-3 text-center print:border-solid print:border-gray-200">
-                                        <div className="mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black">
-                                            {label.name}
+                        <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
+                            {activeConfig.isThermalSingle ? (
+                                /* Single Thermal Label Continuous Stream */
+                                <div className="flex flex-col items-center gap-2">
+                                    {labelsToPrint.map((label, idx) => (
+                                        <div key={idx} className={activeConfig.labelClass}>
+                                            <div className={activeConfig.nameClass}>
+                                                {label.name}
+                                            </div>
+                                            <Barcode 
+                                                value={label.barcode || label.code} 
+                                                width={activeConfig.barcodeWidth} 
+                                                height={activeConfig.barcodeHeight} 
+                                                fontSize={activeConfig.fontSize}
+                                                margin={0}
+                                                displayValue={false}
+                                                background="transparent"
+                                            />
+                                            <div className="mt-0.5 flex w-full items-center justify-between px-1">
+                                                <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
+                                                <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                            </div>
                                         </div>
-                                        <Barcode 
-                                            value={label.barcode || label.code} 
-                                            width={1.2} 
-                                            height={40} 
-                                            fontSize={11}
-                                            margin={0}
-                                            displayValue={false}
-                                            background="transparent"
-                                        />
-                                        <div className="mt-1 flex w-full items-center justify-between px-1 text-xs font-bold text-gray-800 print:text-black">
-                                            <span className="font-mono text-[10px] tracking-tight">{label.barcode || label.code}</span>
-                                            <span>{formatRupiah(label.selling_price)}</span>
+                                    ))}
+                                </div>
+                            ) : (
+                                /* Multi-column Grid Layout (e.g. A4 Sticker Paper) */
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                                    {labelsToPrint.map((label, idx) => (
+                                        <div key={idx} className={activeConfig.labelClass}>
+                                            <div className={activeConfig.nameClass}>
+                                                {label.name}
+                                            </div>
+                                            <Barcode 
+                                                value={label.barcode || label.code} 
+                                                width={activeConfig.barcodeWidth} 
+                                                height={activeConfig.barcodeHeight} 
+                                                fontSize={activeConfig.fontSize}
+                                                margin={0}
+                                                displayValue={false}
+                                                background="transparent"
+                                            />
+                                            <div className="mt-1 flex w-full items-center justify-between px-1">
+                                                <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
+                                                <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
