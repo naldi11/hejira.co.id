@@ -18,47 +18,47 @@ const route = window.route;
 const PAPER_CONFIGS = {
     'thermal-33x15-3line': {
         name: '🏷️ Codeshop / Thermal 33 × 15 mm (3 Line / 3 Kolom Roll)',
-        pageStyle: '@page { size: 104mm 15mm; margin: 0; }',
-        gridClass: 'grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[15mm] overflow-hidden page-break-after-always bg-white items-center',
-        labelClass: 'w-[33mm] h-[15mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white',
-        barcodeWidth: 0.75,
-        barcodeHeight: 13,
+        pageStyle: '@page { size: 104mm 15mm; margin: 0 !important; }',
+        gridClass: 'grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[14.5mm] max-h-[14.5mm] overflow-hidden page-break-after-always break-inside-avoid bg-white items-center box-border',
+        labelClass: 'w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid',
+        barcodeWidth: 0.7,
+        barcodeHeight: 10,
         fontSize: 6,
-        nameClass: 'text-[6.5px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[6.5px] font-bold text-black',
-        codeClass: 'font-mono text-[5.5px] tracking-tighter text-black',
+        nameClass: 'text-[6px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[6px] font-bold text-black leading-none',
+        codeClass: 'font-mono text-[5px] tracking-tighter text-black leading-none',
         is3Line: true,
     },
     'thermal-33x15-1line': {
         name: '🏷️ Direct Thermal 33 × 15 mm (1 Line / Single Label)',
-        pageStyle: '@page { size: 33mm 15mm; margin: 0; }',
-        labelClass: 'w-[33mm] h-[15mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
-        barcodeWidth: 0.75,
-        barcodeHeight: 13,
+        pageStyle: '@page { size: 33mm 15mm; margin: 0 !important; }',
+        labelClass: 'w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        barcodeWidth: 0.7,
+        barcodeHeight: 10,
         fontSize: 6,
-        nameClass: 'text-[6.5px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[6.5px] font-bold text-black',
-        codeClass: 'font-mono text-[5.5px] tracking-tighter text-black',
+        nameClass: 'text-[6px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[6px] font-bold text-black leading-none',
+        codeClass: 'font-mono text-[5px] tracking-tighter text-black leading-none',
         isThermalSingle: true,
     },
     'thermal-40x30': {
         name: '🏷️ Direct Thermal 40 × 30 mm (Standard Barcode Label)',
-        pageStyle: '@page { size: 40mm 30mm; margin: 0; }',
-        labelClass: 'w-[40mm] h-[30mm] p-1 flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
-        barcodeWidth: 1.0,
-        barcodeHeight: 22,
-        fontSize: 9,
-        nameClass: 'text-[9px] font-bold leading-tight truncate w-full text-black',
-        priceClass: 'text-[9px] font-bold text-black',
-        codeClass: 'font-mono text-[8px] tracking-tight text-black',
+        pageStyle: '@page { size: 40mm 30mm; margin: 0 !important; }',
+        labelClass: 'w-[40mm] h-[29.5mm] max-h-[29.5mm] p-1 flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        barcodeWidth: 0.95,
+        barcodeHeight: 20,
+        fontSize: 8,
+        nameClass: 'text-[8.5px] font-bold leading-tight truncate w-full text-black',
+        priceClass: 'text-[8.5px] font-bold text-black',
+        codeClass: 'font-mono text-[7.5px] tracking-tight text-black',
         isThermalSingle: true,
     },
     'thermal-50x20': {
         name: '🏷️ Direct Thermal 50 × 20 mm (Retail Medium Label)',
-        pageStyle: '@page { size: 50mm 20mm; margin: 0; }',
-        labelClass: 'w-[50mm] h-[20mm] px-1 py-[2px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
-        barcodeWidth: 1.1,
-        barcodeHeight: 18,
+        pageStyle: '@page { size: 50mm 20mm; margin: 0 !important; }',
+        labelClass: 'w-[50mm] h-[19.5mm] max-h-[19.5mm] px-1 py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        barcodeWidth: 1.05,
+        barcodeHeight: 16,
         fontSize: 8,
         nameClass: 'text-[8px] font-bold leading-none truncate w-full text-black',
         priceClass: 'text-[8px] font-bold text-black',
@@ -67,10 +67,10 @@ const PAPER_CONFIGS = {
     },
     'thermal-33x19': {
         name: '🏷️ Direct Thermal 33 × 19 mm (Small Sticker Minimarket)',
-        pageStyle: '@page { size: 33mm 19mm; margin: 0; }',
-        labelClass: 'w-[33mm] h-[19mm] px-[2px] py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
-        barcodeWidth: 0.85,
-        barcodeHeight: 16,
+        pageStyle: '@page { size: 33mm 19mm; margin: 0 !important; }',
+        labelClass: 'w-[33mm] h-[18.5mm] max-h-[18.5mm] px-[2px] py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        barcodeWidth: 0.8,
+        barcodeHeight: 14,
         fontSize: 7,
         nameClass: 'text-[7px] font-bold leading-none truncate w-full text-black',
         priceClass: 'text-[7px] font-bold text-black',
@@ -79,10 +79,10 @@ const PAPER_CONFIGS = {
     },
     'thermal-100x50': {
         name: '📦 Direct Thermal 100 × 50 mm (Shipping / Box Label)',
-        pageStyle: '@page { size: 100mm 50mm; margin: 0; }',
-        labelClass: 'w-[100mm] h-[50mm] p-3 flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        pageStyle: '@page { size: 100mm 50mm; margin: 0 !important; }',
+        labelClass: 'w-[100mm] h-[49.5mm] max-h-[49.5mm] p-3 flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
         barcodeWidth: 1.8,
-        barcodeHeight: 48,
+        barcodeHeight: 46,
         fontSize: 12,
         nameClass: 'text-sm font-bold leading-tight truncate w-full text-black',
         priceClass: 'text-xs font-bold text-black',
@@ -92,9 +92,9 @@ const PAPER_CONFIGS = {
     'a4-grid': {
         name: '📄 Kertas A4 Grid (5 Kolom - Printer Biasa / Inkjet)',
         pageStyle: '@page { size: A4 portrait; margin: 5mm; }',
-        labelClass: 'flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2.5 text-center print:border-solid print:border-gray-200 bg-white',
+        labelClass: 'flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2 text-center print:border-solid print:border-gray-200 bg-white break-inside-avoid',
         barcodeWidth: 1.1,
-        barcodeHeight: 36,
+        barcodeHeight: 32,
         fontSize: 10,
         nameClass: 'mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black',
         priceClass: 'text-xs font-bold text-gray-800 print:text-black',
@@ -210,6 +210,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                             margin: 0 !important;
                             padding: 0 !important;
                             overflow: visible !important;
+                            height: auto !important;
                         }
                         #print-modal-overlay {
                             position: static !important;
@@ -225,10 +226,16 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                             margin: 0 !important;
                             padding: 0 !important;
                             box-shadow: none !important;
+                            width: auto !important;
+                            height: auto !important;
                         }
                         .page-break-after-always {
                             page-break-after: always !important;
                             break-after: page !important;
+                        }
+                        .break-inside-avoid {
+                            break-inside: avoid !important;
+                            page-break-inside: avoid !important;
                         }
                         ${activeConfig.pageStyle}
                     }
@@ -395,6 +402,14 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                         </div>
                     </div>
 
+                    {/* Helper Print Tip Banner (Hidden in Print) */}
+                    <div className="print-controls bg-amber-50 px-6 py-2 border-b border-amber-200 text-xs font-medium text-amber-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Icon name="info" className="text-[16px] text-amber-600" />
+                            <span><strong>Tips Cetak Thermal:</strong> Di jendela print browser, ubah <strong>Margins</strong> menjadi <strong>"None" / "Tanpa Margin"</strong> agar label stiker pas 100% dan tidak terpotong.</span>
+                        </div>
+                    </div>
+
                     {/* Preview Area (Visible in Print) */}
                     <div className="flex-1 overflow-auto p-4 md:p-8">
                         <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.is3Line ? 'w-auto max-w-[106mm]' : activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
@@ -406,7 +421,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                             {[0, 1, 2].map((cIdx) => {
                                                 const label = row[cIdx];
                                                 if (!label) {
-                                                    return <div key={cIdx} className="w-[33mm] h-[15mm]" />; // Empty spacer
+                                                    return <div key={cIdx} className="w-[33mm] h-[14.5mm]" />;
                                                 }
                                                 return (
                                                     <div key={cIdx} className={activeConfig.labelClass}>
