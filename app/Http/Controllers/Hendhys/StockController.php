@@ -16,7 +16,7 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
         $lowStockOnly = $request->low_stock === '1';
 
         if ($isPusat) {
@@ -138,7 +138,7 @@ class StockController extends Controller
     public function movements(Request $request)
     {
         $user = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
         $q = HendhysStockMovement::with(['product', 'creator']);
 
         // Filter pergerakan berdasarkan branch

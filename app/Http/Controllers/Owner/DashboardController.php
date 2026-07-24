@@ -281,7 +281,7 @@ class DashboardController extends Controller
             if ($filter === 'today') {
                 $q->whereDate('date', today());
             } elseif ($filter === 'week') {
-                $q->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+                $q->whereBetween('date', [now()->copy()->startOfWeek(), now()->copy()->endOfWeek()]);
             } elseif ($filter === 'month') {
                 $q->whereMonth('date', now()->month)->whereYear('date', now()->year);
             } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
@@ -416,7 +416,7 @@ class DashboardController extends Controller
                 if ($filter === 'today') {
                     $q->whereDate('opened_at', today());
                 } elseif ($filter === 'week') {
-                    $q->whereBetween('opened_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    $q->whereBetween('opened_at', [now()->copy()->startOfWeek(), now()->copy()->endOfWeek()]);
                 } elseif ($filter === 'month') {
                     $q->whereMonth('opened_at', now()->month)->whereYear('opened_at', now()->year);
                 } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
@@ -466,12 +466,12 @@ class DashboardController extends Controller
                 };
             } elseif ($filter === 'week') {
                 $days = collect();
-                $start = now()->startOfWeek();
+                $start = now()->copy()->startOfWeek();
                 for ($i = 0; $i < 7; $i++) {
                     $days->push($start->copy()->addDays($i)->format('Y-m-d'));
                 }
                 $trendQueryCallback = function($q) use ($start) {
-                    return $q->whereBetween('date', [$start, now()->endOfWeek()])
+                    return $q->whereBetween('date', [$start->copy(), now()->copy()->endOfWeek()])
                              ->selectRaw('date, SUM(grand_total) as total')
                              ->groupBy('date')
                              ->pluck('total', 'date');

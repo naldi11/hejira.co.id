@@ -35,4 +35,13 @@ Route::middleware('auth')->group(function() {
 
 require __DIR__.'/auth.php';
 
-Route::get('/flush-opcache', function() { if(function_exists('opcache_reset')){ opcache_reset(); return 'OK'; } return 'NO'; });
+Route::get('/flush-opcache', function() {
+    if (!auth()->check() || !auth()->user()->hasRole('owner')) {
+        abort(403, 'Unauthorized action.');
+    }
+    if (function_exists('opcache_reset')) {
+        opcache_reset();
+        return 'OK';
+    }
+    return 'NO';
+});

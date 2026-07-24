@@ -71,7 +71,7 @@ class TransferToBranchController extends Controller
             'transfers'       => HendhysTransferToBranchResource::collection($transfers),
             'gudangTransfers' => TransferOutResource::collection($gudangTransfers),
             'filters'         => $request->only('search', 'status'),
-            'isPusat'         => $user->branch->type === 'pusat',
+            'isPusat'         => !$user->branch || $user->branch->type === 'pusat',
         ]);
     }
 
@@ -85,7 +85,7 @@ class TransferToBranchController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        if ($user->branch->type === 'cabang' && $transferOut->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $transferOut->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -104,7 +104,7 @@ class TransferToBranchController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        if ($user->branch->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
+        if ($user->branch?->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
 
@@ -128,7 +128,7 @@ class TransferToBranchController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        if ($user->branch->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
+        if ($user->branch?->type !== 'cabang' || $transferOut->branch_id !== $user->branch_id) {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
 
@@ -279,7 +279,7 @@ class TransferToBranchController extends Controller
 
     public function create(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
+        if (auth()->user()->branch && auth()->user()->branch->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat melakukan transfer barang ke cabang.');
         }
         if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
@@ -343,7 +343,7 @@ class TransferToBranchController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
+        if (auth()->user()->branch && auth()->user()->branch->type !== 'pusat') {
             abort(403, 'Akses ditolak.');
         }
         if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
@@ -462,7 +462,7 @@ class TransferToBranchController extends Controller
     public function show(HendhysTransferToBranch $transferToBranch)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -477,7 +477,7 @@ class TransferToBranchController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->branch->type !== 'cabang') {
+        if ($user->branch?->type !== 'cabang') {
             abort(403, 'Hanya cabang yang dapat mengakses halaman ini.');
         }
         if ($transferToBranch->branch_id !== $user->branch_id) {
@@ -499,7 +499,7 @@ class TransferToBranchController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->branch->type !== 'cabang' || $transferToBranch->branch_id !== $user->branch_id) {
+        if ($user->branch?->type !== 'cabang' || $transferToBranch->branch_id !== $user->branch_id) {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
         if ($transferToBranch->status !== 'sent') {
@@ -635,7 +635,7 @@ class TransferToBranchController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->branch->type !== 'pusat') {
+        if ($user->branch && $user->branch->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat melakukan konfirmasi paksa.');
         }
 
@@ -705,7 +705,7 @@ class TransferToBranchController extends Controller
     {
         // ⏭️ Print tetap Blade
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $transferToBranch->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 

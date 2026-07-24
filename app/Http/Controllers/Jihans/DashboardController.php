@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Jihans;
 
 use App\Http\Controllers\Controller;
 use App\Models\JihansPendingTransaction;
-use App\Models\JihansProduction;
+use App\Models\JihansProductionSession;
 use App\Models\JihansTransaction;
 use App\Models\Product;
 use App\Models\TransferRequest;
@@ -39,7 +39,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Jihans/Dashboard', [
             'stats' => [
-                'produksi_hari_ini' => JihansProduction::whereDate('date', now())->count(),
+                'produksi_hari_ini' => JihansProductionSession::where('type', 'aktual')->whereDate('date', now())->count(),
                 'omset_hari_ini'    => (float) JihansTransaction::whereDate('date', now())->where('status', 'paid')->sum('grand_total'),
                 'pending_count'     => JihansPendingTransaction::count(),
                 'request_pending'   => TransferRequest::where('from_entity', 'jihans')->where('status', 'pending')->count(),

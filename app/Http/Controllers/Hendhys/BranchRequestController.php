@@ -46,7 +46,7 @@ class BranchRequestController extends Controller
     public function create()
     {
         // Hanya cabang yang bisa buat request ke pusat
-        if (auth()->user()->branch->type !== 'cabang') {
+        if (auth()->user()->branch?->type !== 'cabang') {
             abort(403, 'Hanya Cabang yang dapat membuat request stok ke Pusat.');
         }
 
@@ -67,7 +67,7 @@ class BranchRequestController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->branch->type !== 'cabang') {
+        if (auth()->user()->branch?->type !== 'cabang') {
             abort(403, 'Hanya Cabang yang dapat membuat request stok ke Pusat.');
         }
 

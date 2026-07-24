@@ -21,12 +21,17 @@ class ProductionController extends Controller
         private StockService $stockService
     ) {}
 
-    public function index(Request $request)
+    private function checkPusat(): void
     {
-        // Pastikan hanya Pusat yang bisa akses
-        if (auth()->user()->branch->type !== 'pusat') {
+        $user = auth()->user();
+        if ($user->branch && $user->branch->type !== 'pusat') {
             abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
         }
+    }
+
+    public function index(Request $request)
+    {
+        $this->checkPusat();
 
         $q = HendhysProduction::with(['creator', 'details.product', 'details.unit']);
 
@@ -65,9 +70,7 @@ class ProductionController extends Controller
 
     public function create(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
-        }
+        $this->checkPusat();
 
         $predictionId = $request->query('prediction_id');
         $targetDate = $request->query('date', date('Y-m-d'));
@@ -97,9 +100,7 @@ class ProductionController extends Controller
 
     public function createPrediksi()
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
-        }
+        $this->checkPusat();
 
         return Inertia::render('Hendhys/Productions/Form', [
             'products'   => $this->getProductionProducts(),
@@ -112,9 +113,7 @@ class ProductionController extends Controller
 
     public function storePrediksi(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         $request->validate([
             'date' => 'required|date',
@@ -155,9 +154,7 @@ class ProductionController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         $request->validate([
             'date' => 'required|date',
@@ -228,9 +225,7 @@ class ProductionController extends Controller
 
     public function editPrediksi(HendhysProduction $production)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         if (!$production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('hendhys.productions.index')->withErrors('Sesi ini bukan prediksi atau sudah diaktualisasi.');
@@ -251,9 +246,7 @@ class ProductionController extends Controller
 
     public function updatePrediksi(Request $request, HendhysProduction $production)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         if (!$production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('hendhys.productions.index')->withErrors('Sesi ini tidak bisa diedit.');
@@ -292,9 +285,7 @@ class ProductionController extends Controller
 
     public function destroyPrediksi(HendhysProduction $production)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         if (!$production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('hendhys.productions.index')->withErrors('Sesi ini tidak bisa dihapus.');
@@ -314,9 +305,7 @@ class ProductionController extends Controller
 
     public function show(HendhysProduction $production)
     {
-        if (auth()->user()->branch->type !== 'pusat') {
-            abort(403, 'Akses ditolak.');
-        }
+        $this->checkPusat();
 
         $production->load(['creator', 'details.product', 'details.unit']);
 

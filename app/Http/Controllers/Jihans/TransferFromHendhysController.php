@@ -47,7 +47,7 @@ class TransferFromHendhysController extends Controller
     public function show(HendhysTransferToBranch $transferFromHendhy)
     {
         $transferFromHendhy->load('branch');
-        if ($transferFromHendhy->branch->entity !== 'jihans') {
+        if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 
@@ -61,7 +61,7 @@ class TransferFromHendhysController extends Controller
     public function showReceiveForm(HendhysTransferToBranch $transferFromHendhy)
     {
         $transferFromHendhy->load('branch');
-        if ($transferFromHendhy->branch->entity !== 'jihans') {
+        if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
         if ($transferFromHendhy->status !== 'sent') {
@@ -81,7 +81,7 @@ class TransferFromHendhysController extends Controller
         $user = auth()->user();
 
         $transferFromHendhy->load('branch');
-        if ($transferFromHendhy->branch->entity !== 'jihans') {
+        if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
         if ($transferFromHendhy->status !== 'sent') {
@@ -211,7 +211,7 @@ class TransferFromHendhysController extends Controller
     public function printBast(HendhysTransferToBranch $transferFromHendhy)
     {
         $transferFromHendhy->load('branch');
-        if ($transferFromHendhy->branch->entity !== 'jihans') {
+        if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 

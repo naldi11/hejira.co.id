@@ -48,7 +48,7 @@ class GudangReturnController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
 
         if ($isPusat) {
             $products = Product::where('status', 'active')
@@ -86,7 +86,7 @@ class GudangReturnController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
 
         $request->validate([
             'date' => 'required|date',

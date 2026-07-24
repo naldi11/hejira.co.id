@@ -37,6 +37,7 @@ class StockService
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
+        $stock = JihansGudangStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
         $before = (int) $stock->quantity;
         $after  = $before + $qty;
@@ -69,6 +70,7 @@ class StockService
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
         );
+        $stock = JihansGudangStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
         $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
@@ -199,6 +201,7 @@ class StockService
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
+        $stock = JihansRetailStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
         $before = (int) $stock->quantity;
         $after  = $before + $qty;
@@ -213,6 +216,7 @@ class StockService
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
         );
+        $stock = JihansRetailStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
         $before = (int) $stock->quantity;
         $after  = max(0, $before - $qty);
@@ -278,11 +282,13 @@ class StockService
                 ['branch_id' => $branchId, 'product_id' => $productId],
                 ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
             );
+            $stock = HendhysStockBranch::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         } else {
             $stock = HendhysStockPusat::firstOrCreate(
                 ['product_id' => $productId],
                 ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
             );
+            $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
         $before = (int) $stock->quantity;
@@ -307,11 +313,13 @@ class StockService
                 ['branch_id' => $branchId, 'product_id' => $productId],
                 ['quantity' => 0, 'quantity_return' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
             );
+            $stock = HendhysStockBranch::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         } else {
             $stock = HendhysStockPusat::firstOrCreate(
                 ['product_id' => $productId],
                 ['quantity' => 0, 'quantity_return' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
             );
+            $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
         $before = (float) $stock->quantity_return;
@@ -337,11 +345,13 @@ class StockService
                 ['branch_id' => $branchId, 'product_id' => $productId],
                 ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
             );
+            $stock = HendhysStockBranch::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         } else {
             $stock = HendhysStockPusat::firstOrCreate(
                 ['product_id' => $productId],
                 ['quantity' => 0, 'unit_id' => \App\Models\Product::find($productId)?->unit_id ?? 1, 'last_updated' => now()]
             );
+            $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
         $before = (int) $stock->quantity;

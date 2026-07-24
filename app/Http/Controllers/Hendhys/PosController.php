@@ -28,7 +28,8 @@ class PosController extends Controller
         
         $q = Product::where('status', 'active')->visibleInHendhys();
 
-        if ($user->branch->type === 'pusat') {
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
+        if ($isPusat) {
             $q->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
               ->select('master_products.*', DB::raw('COALESCE(hendhys_stock_pusat.quantity, 0) as current_stock'));
         } else {
@@ -96,7 +97,7 @@ class PosController extends Controller
         $user = auth()->user();
         $query = \App\Models\HendhysPendingTransaction::with('details');
 
-        if ($user->branch->type === 'cabang') {
+        if ($user->branch?->type === 'cabang') {
             $query->where('branch_id', $user->branch_id);
         } else {
             $query->whereNull('branch_id');

@@ -361,11 +361,11 @@ class ProductionController extends Controller
             $dateFrom = Carbon::today()->startOfDay();
             $dateTo   = Carbon::today()->endOfDay();
         } elseif ($periode === 'minggu') {
-            $dateFrom = Carbon::now()->startOfWeek();
-            $dateTo   = Carbon::now()->endOfWeek();
+            $dateFrom = Carbon::now()->copy()->startOfWeek();
+            $dateTo   = Carbon::now()->copy()->endOfWeek();
         } elseif ($periode === 'bulan') {
-            $dateFrom = Carbon::now()->startOfMonth();
-            $dateTo   = Carbon::now()->endOfMonth();
+            $dateFrom = Carbon::now()->copy()->startOfMonth();
+            $dateTo   = Carbon::now()->copy()->endOfMonth();
         } else {
             $dateFrom = $request->date_from ? Carbon::parse($request->date_from)->startOfDay() : null;
             $dateTo   = $request->date_to ? Carbon::parse($request->date_to)->endOfDay() : null;
@@ -391,6 +391,62 @@ class ProductionController extends Controller
             'productTotals' => $productTotals,
             'filters' => $request->only('date_from', 'date_to', 'periode'),
             'noFilter' => $noFilter,
+        ]);
+    }
+
+    public function exportRecap(Request $request)
+    {
+        $periode = $request->periode;
+        if ($periode === 'hari') {
+            $dateFrom = Carbon::today()->startOfDay();
+            $dateTo   = Carbon::today()->endOfDay();
+        } elseif ($periode === 'minggu') {
+            $dateFrom = Carbon::now()->copy()->startOfWeek();
+            $dateTo   = Carbon::now()->copy()->endOfWeek();
+        } elseif ($periode === 'bulan') {
+            $dateFrom = Carbon::now()->copy()->startOfMonth();
+            $dateTo   = Carbon::now()->copy()->endOfMonth();
+        } else {
+            $dateFrom = $request->date_from ? Carbon::parse($request->date_from)->startOfDay() : null;
+            $dateTo   = $request->date_to ? Carbon::parse($request->date_to)->endOfDay() : null;
+        }
+
+        $query = JihansProductionSessionDetail::query()
+            ->join('jihans_production_sessions', 'jihans_production_sessions.id', '=', 'jihans_production_session_details.session_id')
+            ->join('master_products', 'master_products.id', '=', 'jihans_production_session_details.product_id')
+            ->where('jihans_production_sessions.type', 'aktual');
+
+        if ($dateFrom) $query->where('jihans_production_sessions.date', '>=', $dateFrom);
+        if ($dateTo)   $query->where('jihans_production_sessions.date', '<=', $dateTo);
+
+        $productTotals = $query->selectRaw('
+                master_products.name as product_name,
+                SUM(jihans_production_session_details.quantity) as total_qty
+            ')
+            ->groupBy('master_products.id', 'master_products.name')
+            ->orderBy('master_products.name')
+            ->get();
+
+        $filename = 'recap_produksi_jihans_' . date('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($productTotals) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM
+            fputcsv($file, ['Nama Produk', 'Total Jumlah Produksi']);
+
+            foreach ($productTotals as $row) {
+                fputcsv($file, [$row->product_name, (float) $row->total_qty]);
+            }
+            fclose($file);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function printFaktur(JihansProductionSession $production)
+    {
+        $production->load(['details.karyawan', 'details.product', 'creator']);
+        return Inertia::render('Jihans/Production/Show', [
+            'production' => $production,
+            'autoPrint' => true
         ]);
     }
 }

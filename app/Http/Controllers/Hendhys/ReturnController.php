@@ -48,7 +48,7 @@ class ReturnController extends Controller
 
     public function create()
     {
-        if (auth()->user()->branch->type !== 'cabang') {
+        if (auth()->user()->branch?->type !== 'cabang') {
             abort(403, 'Hanya Cabang yang dapat membuat retur barang.');
         }
 
