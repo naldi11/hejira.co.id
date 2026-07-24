@@ -242,26 +242,93 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                         </div>
                     </div>
                     {mode === 'omset' && (
-                        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-gray-900/50 self-start sm:self-auto overflow-x-auto">
-                            {[
-                                { id: 'all', label: 'Semua' },
-                                { id: 'today', label: 'Hari Ini' },
-                                { id: 'week', label: 'Minggu Ini' },
-                                { id: 'month', label: 'Bulan Ini' }
-                            ].map(f => (
-                                <button
-                                    key={f.id}
-                                    onClick={() => handleFilterChange(f.id)}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition ${
-                                        filter === f.id
+                        <>
+                            {/* Desktop Filter */}
+                            <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-gray-900/50 self-start">
+                                {[
+                                    { id: 'all', label: 'Semua' },
+                                    { id: 'today', label: 'Hari Ini' },
+                                    { id: 'week', label: 'Minggu Ini' },
+                                    { id: 'month', label: 'Bulan Ini' }
+                                ].map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => handleFilterChange(f.id)}
+                                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition shrink-0 ${
+                                            filter === f.id
+                                                ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400'
+                                                : 'text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                        }`}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
+                                <div className="relative flex items-center shrink-0">
+                                    <label className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition cursor-pointer ${
+                                        filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)
                                             ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400'
                                             : 'text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                    }`}
+                                    }`}>
+                                        <Icon name="calendar_today" className="text-[14px]" />
+                                        {filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)
+                                            ? new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            : 'Pilih Tanggal'}
+                                        <input
+                                            type="date"
+                                            value={filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) ? filter : ''}
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    handleFilterChange(e.target.value);
+                                                }
+                                            }}
+                                            onClick={(e) => {
+                                                try { e.target.showPicker(); } catch (err) {}
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Mobile Filter Dropdown */}
+                            <div className="sm:hidden flex w-full items-center gap-2">
+                                <select
+                                    value={filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) ? filter : filter}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            handleFilterChange(e.target.value);
+                                        }
+                                    }}
+                                    className="flex-1 rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-semibold text-slate-700 focus:border-blue-500 focus:ring-blue-500 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-500"
                                 >
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
+                                    <option value="all">Semua Waktu</option>
+                                    <option value="today">Hari Ini</option>
+                                    <option value="week">Minggu Ini</option>
+                                    <option value="month">Bulan Ini</option>
+                                    {filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) && (
+                                        <option value={filter}>
+                                            {new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                        </option>
+                                    )}
+                                </select>
+                                <div className="relative shrink-0 flex items-center justify-center w-[42px] h-[42px] bg-slate-50 border border-slate-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700 transition hover:bg-slate-100 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400">
+                                    <Icon name="calendar_month" className="text-[20px]" />
+                                    <input
+                                        type="date"
+                                        value={filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) ? filter : ''}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                handleFilterChange(e.target.value);
+                                            }
+                                        }}
+                                        onClick={(e) => {
+                                            try { e.target.showPicker(); } catch (err) {}
+                                        }}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+                        </>
                     )}
                 </div>
 
@@ -270,10 +337,10 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                         <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
                             <Icon name="trending_up" className="text-blue-500" /> Tren Omset 
-                            {filter === 'today' ? ' (Hari Ini)' : filter === 'week' ? ' (Minggu Ini)' : filter === 'month' ? ' (Bulan Ini)' : ' (Tahun Ini)'}
+                            {filter === 'today' ? ' (Hari Ini)' : filter === 'week' ? ' (Minggu Ini)' : filter === 'month' ? ' (Bulan Ini)' : (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) ? ` (${new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })})` : ' (Tahun Ini)'}
                         </h3>
                         <div className="w-full">
-                            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto overflow-visible">
+                            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto">
                                 <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
                                 <line x1="20" y1={chartHeight / 2} x2={chartWidth - 20} y2={chartHeight / 2} stroke="#f1f5f9" strokeDasharray="3" />
                                 <line x1="20" y1={chartHeight - 10} x2={chartWidth - 20} y2={chartHeight - 10} stroke="#cbd5e1" />
@@ -381,6 +448,9 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                             }
                             if (filter === 'month') {
                                 return new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                            }
+                            if (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                return new Date(filter).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
                             }
                             return 'Semua Waktu';
                         })();

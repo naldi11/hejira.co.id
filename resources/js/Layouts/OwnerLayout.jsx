@@ -16,6 +16,11 @@ export default function OwnerLayout({ pageTitle, children }) {
             name: "Laporan Data",
             icon: <Icon name="assessment" className="text-[22px]" />,
             path: route('owner.reports')
+        },
+        {
+            name: "Cetak Label QR",
+            icon: <Icon name="qr_code_scanner" className="text-[22px]" />,
+            path: route('products.qr')
         }
 
     ];

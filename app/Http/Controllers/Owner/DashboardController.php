@@ -284,6 +284,8 @@ class DashboardController extends Controller
                 $q->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
             } elseif ($filter === 'month') {
                 $q->whereMonth('date', now()->month)->whereYear('date', now()->year);
+            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+                $q->whereDate('date', $filter);
             }
         };
 
@@ -417,6 +419,8 @@ class DashboardController extends Controller
                     $q->whereBetween('opened_at', [now()->startOfWeek(), now()->endOfWeek()]);
                 } elseif ($filter === 'month') {
                     $q->whereMonth('opened_at', now()->month)->whereYear('opened_at', now()->year);
+                } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+                    $q->whereDate('opened_at', $filter);
                 }
             };
 
@@ -442,13 +446,14 @@ class DashboardController extends Controller
             $trendQueryCallback = null;
             $mapTrends = null;
 
-            if ($filter === 'today') {
+            if ($filter === 'today' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+                $targetDate = $filter === 'today' ? today() : Carbon::parse($filter);
                 $hours = collect();
                 for ($i = 8; $i <= 22; $i++) {
                     $hours->push(sprintf('%02d:00', $i));
                 }
-                $trendQueryCallback = function($q) {
-                    return $q->whereDate('date', today())
+                $trendQueryCallback = function($q) use ($targetDate) {
+                    return $q->whereDate('date', $targetDate)
                              ->selectRaw('HOUR(created_at) as h, SUM(grand_total) as total')
                              ->groupBy('h')
                              ->pluck('total', 'h');

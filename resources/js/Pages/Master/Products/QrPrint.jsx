@@ -1,0 +1,299 @@
+import { Head, Link, router } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
+import GudangLayout from '@/Layouts/GudangLayout';
+import JihansLayout from '@/Layouts/JihansLayout';
+import HendhysLayout from '@/Layouts/HendhysLayout';
+import OwnerLayout from '@/Layouts/OwnerLayout';
+import Icon from '@/Components/Icon';
+import Pagination from '@/Components/Pagination';
+import EmptyState from '@/Components/EmptyState';
+import { SkeletonTableRows } from '@/Components/Skeleton';
+import { formatRupiah } from '@/lib/format';
+import Button from '@/Components/ui/button/Button';
+import Barcode from 'react-barcode';
+
+const Layouts = { GudangLayout, JihansLayout, HendhysLayout, OwnerLayout };
+const route = window.route;
+
+export default function QrPrint({ products, filters, layout = 'GudangLayout', routePrefix = 'master.' }) {
+    const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
+    const [loading, setLoading] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+    const [form, setForm] = useState({ 
+        search: filters.search ?? '', 
+        status: filters.status ?? '',
+        per_page: filters.per_page ?? '50'
+    });
+    
+    // State to hold selected products and their quantities: { [productId]: qty }
+    const [selected, setSelected] = useState({});
+
+    const hasFilter = form.search || form.status || (form.per_page !== '50');
+
+    const reload = (e) => {
+        e?.preventDefault();
+        router.get(route(routePrefix + 'products.qr'),
+            { search: form.search || undefined, status: form.status || undefined, per_page: form.per_page || undefined },
+            { preserveState: true, preserveScroll: true, replace: true, only: ['products', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+    };
+
+    const isAllSelected = products.data.length > 0 && products.data.every(p => !!selected[p.id]);
+
+    const handleSelectAllToggle = () => {
+        if (isAllSelected) {
+            const next = { ...selected };
+            products.data.forEach(p => delete next[p.id]);
+            setSelected(next);
+        } else {
+            const next = { ...selected };
+            products.data.forEach(p => {
+                if (!next[p.id]) next[p.id] = 1;
+            });
+            setSelected(next);
+        }
+    };
+
+    const handleSelectToggle = (id) => {
+        setSelected(prev => {
+            const next = { ...prev };
+            if (next[id]) {
+                delete next[id];
+            } else {
+                next[id] = 1; // default qty 1
+            }
+            return next;
+        });
+    };
+
+    const handleQtyChange = (id, val) => {
+        const qty = parseInt(val, 10);
+        setSelected(prev => {
+            if (!prev[id]) return prev; // Must be selected first
+            return {
+                ...prev,
+                [id]: isNaN(qty) || qty < 1 ? 1 : qty
+            };
+        });
+    };
+
+    const selectClass = 'h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-850 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
+
+    const selectedCount = Object.keys(selected).length;
+    const totalQty = Object.values(selected).reduce((acc, curr) => acc + curr, 0);
+
+    // Prepare labels to render in preview
+    const labelsToPrint = useMemo(() => {
+        const labels = [];
+        Object.entries(selected).forEach(([id, qty]) => {
+            const product = products.data.find(p => p.id === parseInt(id, 10));
+            if (product) {
+                for (let i = 0; i < qty; i++) {
+                    labels.push(product);
+                }
+            }
+        });
+        return labels;
+    }, [selected, products.data]);
+
+    return (
+        <Layout title="Cetak Label Barcode" pageTitle="Master Data — Cetak Label">
+            <Head title="Cetak Label Barcode">
+                <style>{`
+                    @media print {
+                        body * {
+                            visibility: hidden;
+                        }
+                        #print-area, #print-area * {
+                            visibility: visible;
+                        }
+                        #print-area {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            padding: 0;
+                            margin: 0;
+                            background: white;
+                        }
+                        .print-controls {
+                            display: none !important;
+                        }
+                        @page {
+                            margin: 5mm; 
+                        }
+                    }
+                `}</style>
+            </Head>
+
+            <div className="space-y-6">
+                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                    <div>
+                        <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Cetak Label Barcode</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Pilih produk dan tentukan jumlah label yang ingin dicetak</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            onClick={() => setShowPreview(true)} 
+                            disabled={selectedCount === 0} 
+                            startIcon={<Icon name="visibility" className="text-[18px]" />}
+                        >
+                            Preview {totalQty} Label ({selectedCount} Produk)
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
+                    <div className="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <form onSubmit={reload} className="flex flex-wrap items-center gap-4">
+                            <div className="relative min-w-[280px] flex-1">
+                                <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-gray-400" />
+                                <input type="text" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} placeholder="Cari nama, kode, atau barcode..."
+                                    className="w-full h-11 rounded-lg border border-gray-300 bg-transparent pl-11 pr-4 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800" />
+                            </div>
+                            <select value={form.per_page} onChange={(e) => setForm({ ...form, per_page: e.target.value })} className={selectClass}>
+                                <option value="20">20 / Halaman</option>
+                                <option value="50">50 / Halaman</option>
+                                <option value="100">100 / Halaman</option>
+                                <option value="200">200 / Halaman</option>
+                            </select>
+                            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={selectClass}>
+                                <option value="">Semua Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="discontinued">Discontinued</option>
+                            </select>
+                            <Button type="submit" size="sm">Terapkan</Button>
+                            {hasFilter && <Link href={route(routePrefix + 'products.qr')} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"><Icon name="refresh" /></Link>}
+                        </form>
+                    </div>
+
+                    <div className="custom-scrollbar overflow-x-auto">
+                        <table className="w-full border-collapse text-left">
+                            <thead>
+                                <tr className="border-b border-gray-150 bg-gray-50/50 text-xs font-bold text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400 tracking-wider">
+                                    <th className="px-6 py-4.5 w-12 text-center">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAllToggle}
+                                            className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer dark:border-gray-700 dark:bg-gray-900" 
+                                        />
+                                    </th>
+                                    <th className="px-6 py-4.5 w-32 text-center">Jumlah Cetak</th>
+                                    <th className="px-6 py-4.5">Produk</th>
+                                    <th className="px-6 py-4.5">Kode/Barcode</th>
+                                    <th className="px-6 py-4.5 text-right">Harga Jual</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {loading ? <SkeletonTableRows rows={8} columns={5} />
+                                    : products.data.length === 0 ? <EmptyState colSpan={5} icon="barcode_scanner" message="Tidak ada data produk." />
+                                    : products.data.map((p) => {
+                                        const isSelected = !!selected[p.id];
+                                        return (
+                                        <tr key={p.id} className={`group transition-colors ${isSelected ? 'bg-brand-50/50 dark:bg-brand-900/10' : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.01]'}`}>
+                                            <td className="px-6 py-4.5 text-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={isSelected}
+                                                    onChange={() => handleSelectToggle(p.id)}
+                                                    className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 cursor-pointer dark:border-gray-700 dark:bg-gray-900" 
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4.5 text-center">
+                                                <input 
+                                                    type="number" 
+                                                    min="1"
+                                                    max="100"
+                                                    disabled={!isSelected}
+                                                    value={isSelected ? selected[p.id] : ''}
+                                                    onChange={(e) => handleQtyChange(p.id, e.target.value)}
+                                                    className={`w-20 text-center rounded-lg border-gray-300 py-2 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white ${!isSelected && 'bg-gray-100 opacity-50 dark:bg-gray-800'}`}
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4.5">
+                                                <div className="flex items-center gap-3">
+                                                    {p.image_url && (
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500">
+                                                            <img src={p.image_url} alt="" className="h-full w-full object-cover" />
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm font-bold text-gray-800 dark:text-white/90">{p.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4.5">
+                                                <div className="flex flex-col">
+                                                    {p.barcode || p.code ? (
+                                                        <Barcode 
+                                                            value={p.barcode || p.code} 
+                                                            width={1} 
+                                                            height={24} 
+                                                            fontSize={10}
+                                                            margin={0}
+                                                            displayValue={true}
+                                                            background="transparent"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-gray-400">-</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4.5 text-right text-xs font-bold tabular-nums text-gray-800 dark:text-white/90">
+                                                {formatRupiah(p.selling_price)}
+                                            </td>
+                                        </tr>
+                                    )})}
+                            </tbody>
+                        </table>
+                    </div>
+                    {products.meta?.links && <div className="border-t border-gray-150 p-5 dark:border-gray-800"><Pagination links={products.meta.links} /></div>}
+                </div>
+            </div>
+
+            {/* Print Preview Modal / Overlay */}
+            {showPreview && (
+                <div className="fixed inset-0 z-[100] flex flex-col bg-gray-100/95 backdrop-blur-sm dark:bg-gray-950/95">
+                    {/* Top Control Bar (Hidden in Print) */}
+                    <div className="print-controls flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                        <div className="flex items-center gap-4">
+                            <Button variant="secondary" onClick={() => setShowPreview(false)} startIcon={<Icon name="arrow_back" />}>
+                                Kembali
+                            </Button>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Print Preview ({totalQty} Label)</h3>
+                        </div>
+                        <Button onClick={() => window.print()} startIcon={<Icon name="print" />}>
+                            Cetak Sekarang
+                        </Button>
+                    </div>
+
+                    {/* Preview Area (Visible in Print) */}
+                    <div className="flex-1 overflow-auto p-4 md:p-8">
+                        <div id="print-area" className="mx-auto max-w-5xl bg-white p-4 sm:p-8 shadow-md" style={{ minHeight: '297mm' }}>
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                                {labelsToPrint.map((label, idx) => (
+                                    <div key={idx} className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-3 text-center print:border-solid print:border-gray-200">
+                                        <div className="mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black">
+                                            {label.name}
+                                        </div>
+                                        <Barcode 
+                                            value={label.barcode || label.code} 
+                                            width={1.2} 
+                                            height={40} 
+                                            fontSize={11}
+                                            margin={0}
+                                            displayValue={false}
+                                            background="transparent"
+                                        />
+                                        <div className="mt-1 flex w-full items-center justify-between px-1 text-xs font-bold text-gray-800 print:text-black">
+                                            <span className="font-mono text-[10px] tracking-tight">{label.barcode || label.code}</span>
+                                            <span>{formatRupiah(label.selling_price)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </Layout>
+    );
+}

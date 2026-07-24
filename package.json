@@ -28,6 +28,7 @@
         "@tailwindcss/postcss": "^4.3.0",
         "clsx": "^2.1.1",
         "react": "^19.2.7",
+        "react-barcode": "^1.6.1",
         "react-dom": "^19.2.7",
         "sweetalert2": "^11.26.25",
         "tailwind-merge": "^3.6.0",

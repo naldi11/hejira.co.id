@@ -74,6 +74,12 @@ export default function JihansLayout({ pageTitle, children }) {
         subItems: inventorySubItems,
     });
 
+    navItems.push({
+        name: "Cetak Label QR",
+        icon: <Icon name="qr_code_scanner" className="text-[22px]" />,
+        path: route('products.qr'),
+    });
+
     if (isAdmin) {
         navItems.push({
             name: 'Master Data',

@@ -28,6 +28,9 @@ Route::middleware('auth')->group(function() {
     Route::get('/api/notifications/counts', [\App\Http\Controllers\Api\NotificationController::class, 'getCounts'])->name('api.notifications.counts');
     Route::get('/select-branch', [\App\Http\Controllers\Auth\BranchSelectionController::class, 'show'])->name('select-branch');
     Route::post('/select-branch', [\App\Http\Controllers\Auth\BranchSelectionController::class, 'select'])->name('select-branch.post');
+
+    // Shared QR Label Printing
+    Route::get('/qr/products', [\App\Http\Controllers\Master\ProductQrController::class, 'index'])->name('products.qr');
 });
 
 require __DIR__.'/auth.php';

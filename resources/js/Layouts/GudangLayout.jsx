@@ -25,6 +25,11 @@ export default function GudangLayout({ title, pageTitle, children }) {
             ]
         },
         {
+            name: "Cetak Label QR",
+            icon: <Icon name="qr_code_scanner" className="text-[22px]" />,
+            path: route('products.qr')
+        },
+        {
             name: "Inventori",
             icon: <Icon name="inventory" className="text-[22px]" />,
             subItems: [

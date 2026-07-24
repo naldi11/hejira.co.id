@@ -17,6 +17,18 @@ trait ScopesMasterData
         } elseif (str_contains($prefix, 'jihans')) {
             return ['scope' => 'jihans', 'layout' => 'JihansLayout', 'route' => 'jihans.master.'];
         }
+        if ($request->route()->getName() === 'products.qr') {
+            $user = auth()->user();
+            if ($user->hasRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'])) {
+                return ['scope' => 'hendhys', 'layout' => 'HendhysLayout', 'route' => ''];
+            } elseif ($user->hasRole(['kasir_jihans', 'admin_jihans', 'super_admin_jihans'])) {
+                return ['scope' => 'jihans', 'layout' => 'JihansLayout', 'route' => ''];
+            } elseif ($user->hasRole('owner')) {
+                return ['scope' => 'owner', 'layout' => 'OwnerLayout', 'route' => ''];
+            }
+            return ['scope' => 'gudang', 'layout' => 'GudangLayout', 'route' => ''];
+        }
+
         return ['scope' => 'gudang', 'layout' => 'GudangLayout', 'route' => 'master.'];
     }
 
