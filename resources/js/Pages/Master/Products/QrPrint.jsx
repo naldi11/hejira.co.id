@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -18,87 +18,51 @@ const route = window.route;
 const PAPER_CONFIGS = {
     'thermal-33x15-3line': {
         name: '🏷️ Codeshop / Thermal 33 × 15 mm (3 Line / 3 Kolom Roll)',
-        pageStyle: '@page { size: 104mm 15mm; margin: 0 !important; }',
-        gridClass: 'grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[14.5mm] max-h-[14.5mm] overflow-hidden page-break-after-always break-inside-avoid bg-white items-center box-border',
-        labelClass: 'w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid',
+        pageSize: '104mm 15mm',
         barcodeWidth: 0.7,
         barcodeHeight: 10,
-        fontSize: 6,
-        nameClass: 'text-[6px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[6px] font-bold text-black leading-none',
-        codeClass: 'font-mono text-[5px] tracking-tighter text-black leading-none',
         is3Line: true,
     },
     'thermal-33x15-1line': {
         name: '🏷️ Direct Thermal 33 × 15 mm (1 Line / Single Label)',
-        pageStyle: '@page { size: 33mm 15mm; margin: 0 !important; }',
-        labelClass: 'w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        pageSize: '33mm 15mm',
         barcodeWidth: 0.7,
         barcodeHeight: 10,
-        fontSize: 6,
-        nameClass: 'text-[6px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[6px] font-bold text-black leading-none',
-        codeClass: 'font-mono text-[5px] tracking-tighter text-black leading-none',
         isThermalSingle: true,
     },
     'thermal-40x30': {
         name: '🏷️ Direct Thermal 40 × 30 mm (Standard Barcode Label)',
-        pageStyle: '@page { size: 40mm 30mm; margin: 0 !important; }',
-        labelClass: 'w-[40mm] h-[29.5mm] max-h-[29.5mm] p-1 flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        pageSize: '40mm 30mm',
         barcodeWidth: 0.95,
-        barcodeHeight: 20,
-        fontSize: 8,
-        nameClass: 'text-[8.5px] font-bold leading-tight truncate w-full text-black',
-        priceClass: 'text-[8.5px] font-bold text-black',
-        codeClass: 'font-mono text-[7.5px] tracking-tight text-black',
+        barcodeHeight: 18,
         isThermalSingle: true,
     },
     'thermal-50x20': {
         name: '🏷️ Direct Thermal 50 × 20 mm (Retail Medium Label)',
-        pageStyle: '@page { size: 50mm 20mm; margin: 0 !important; }',
-        labelClass: 'w-[50mm] h-[19.5mm] max-h-[19.5mm] px-1 py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        pageSize: '50mm 20mm',
         barcodeWidth: 1.05,
         barcodeHeight: 16,
-        fontSize: 8,
-        nameClass: 'text-[8px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[8px] font-bold text-black',
-        codeClass: 'font-mono text-[7px] tracking-tight text-black',
         isThermalSingle: true,
     },
     'thermal-33x19': {
         name: '🏷️ Direct Thermal 33 × 19 mm (Small Sticker Minimarket)',
-        pageStyle: '@page { size: 33mm 19mm; margin: 0 !important; }',
-        labelClass: 'w-[33mm] h-[18.5mm] max-h-[18.5mm] px-[2px] py-[1px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        pageSize: '33mm 19mm',
         barcodeWidth: 0.8,
         barcodeHeight: 14,
-        fontSize: 7,
-        nameClass: 'text-[7px] font-bold leading-none truncate w-full text-black',
-        priceClass: 'text-[7px] font-bold text-black',
-        codeClass: 'font-mono text-[6px] tracking-tight text-black',
         isThermalSingle: true,
     },
     'thermal-100x50': {
         name: '📦 Direct Thermal 100 × 50 mm (Shipping / Box Label)',
-        pageStyle: '@page { size: 100mm 50mm; margin: 0 !important; }',
-        labelClass: 'w-[100mm] h-[49.5mm] max-h-[49.5mm] p-3 flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white',
+        pageSize: '100mm 50mm',
         barcodeWidth: 1.8,
-        barcodeHeight: 46,
-        fontSize: 12,
-        nameClass: 'text-sm font-bold leading-tight truncate w-full text-black',
-        priceClass: 'text-xs font-bold text-black',
-        codeClass: 'font-mono text-xs tracking-tight text-black',
+        barcodeHeight: 44,
         isThermalSingle: true,
     },
     'a4-grid': {
         name: '📄 Kertas A4 Grid (5 Kolom - Printer Biasa / Inkjet)',
-        pageStyle: '@page { size: A4 portrait; margin: 5mm; }',
-        labelClass: 'flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2 text-center print:border-solid print:border-gray-200 bg-white break-inside-avoid',
+        pageSize: 'A4 portrait',
         barcodeWidth: 1.1,
         barcodeHeight: 32,
-        fontSize: 10,
-        nameClass: 'mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black',
-        priceClass: 'text-xs font-bold text-gray-800 print:text-black',
-        codeClass: 'font-mono text-[10px] tracking-tight text-gray-800 print:text-black',
         isThermalSingle: false,
     }
 };
@@ -194,53 +158,62 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
 
     const activeConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-33x15-3line'];
 
+    // Inject dynamic @page size into document.head so Chrome print engine reads it globally
+    useEffect(() => {
+        let styleEl = document.getElementById('dynamic-print-paper-style');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'dynamic-print-paper-style';
+            document.head.appendChild(styleEl);
+        }
+        styleEl.innerHTML = `
+            @media print {
+                @page {
+                    size: ${activeConfig.pageSize} !important;
+                    margin: 0 !important;
+                }
+                body, html {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    background: white !important;
+                }
+                .no-print {
+                    display: none !important;
+                }
+                .print-controls {
+                    display: none !important;
+                }
+                #print-modal-overlay {
+                    position: static !important;
+                    background: white !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    width: 100% !important;
+                    height: auto !important;
+                }
+                #print-area {
+                    position: static !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    box-shadow: none !important;
+                    width: 100% !important;
+                    background: white !important;
+                }
+                .page-break-after-always {
+                    page-break-after: always !important;
+                    break-after: page !important;
+                }
+                .break-inside-avoid {
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                }
+            }
+        `;
+    }, [paperType, activeConfig.pageSize]);
+
     return (
         <Layout title="Cetak Label Barcode" pageTitle="Master Data — Cetak Label">
-            <Head title="Cetak Label Barcode">
-                <style>{`
-                    @media print {
-                        .no-print, .no-print * {
-                            display: none !important;
-                        }
-                        .print-controls {
-                            display: none !important;
-                        }
-                        html, body {
-                            background: white !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
-                            overflow: visible !important;
-                            height: auto !important;
-                        }
-                        #print-modal-overlay {
-                            position: static !important;
-                            background: white !important;
-                            padding: 0 !important;
-                            margin: 0 !important;
-                            overflow: visible !important;
-                            width: auto !important;
-                            height: auto !important;
-                        }
-                        #print-area {
-                            position: static !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
-                            box-shadow: none !important;
-                            width: auto !important;
-                            height: auto !important;
-                        }
-                        .page-break-after-always {
-                            page-break-after: always !important;
-                            break-after: page !important;
-                        }
-                        .break-inside-avoid {
-                            break-inside: avoid !important;
-                            page-break-inside: avoid !important;
-                        }
-                        ${activeConfig.pageStyle}
-                    }
-                `}</style>
-            </Head>
+            <Head title="Cetak Label Barcode" />
 
             <div className="space-y-6 no-print">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -406,7 +379,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                     <div className="print-controls bg-amber-50 px-6 py-2 border-b border-amber-200 text-xs font-medium text-amber-800 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Icon name="info" className="text-[16px] text-amber-600" />
-                            <span><strong>Tips Cetak Thermal:</strong> Di jendela print browser, ubah <strong>Margins</strong> menjadi <strong>"None" / "Tanpa Margin"</strong> agar label stiker pas 100% dan tidak terpotong.</span>
+                            <span><strong>Tips Cetak Thermal:</strong> Di jendela print browser, pasang <strong>Margins: "None"</strong> &amp; <strong>Paper Size / Destination</strong> pilih Printer Thermal Barcode Anda (atau Custom 104x15mm).</span>
                         </div>
                     </div>
 
@@ -415,31 +388,40 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                         <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.is3Line ? 'w-auto max-w-[106mm]' : activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
                             {activeConfig.is3Line ? (
                                 /* 3-Line Roll (e.g. 33x15mm 3 Kolom per Baris Roll) */
-                                <div className="flex flex-col gap-[2mm] items-center">
+                                <div className="flex flex-col items-center print:gap-0 gap-4">
                                     {labelRows3Line.map((row, rIdx) => (
-                                        <div key={rIdx} className={activeConfig.gridClass}>
+                                        <div 
+                                            key={rIdx} 
+                                            className="grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[14.5mm] max-h-[14.5mm] overflow-hidden page-break-after-always break-inside-avoid bg-white items-center box-border print:m-0 print:p-0"
+                                            style={{ pageBreakAfter: 'always', breakAfter: 'page', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                                        >
                                             {[0, 1, 2].map((cIdx) => {
                                                 const label = row[cIdx];
                                                 if (!label) {
                                                     return <div key={cIdx} className="w-[33mm] h-[14.5mm]" />;
                                                 }
                                                 return (
-                                                    <div key={cIdx} className={activeConfig.labelClass}>
-                                                        <div className={activeConfig.nameClass}>
+                                                    <div 
+                                                        key={cIdx} 
+                                                        className="w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid"
+                                                        style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                                                    >
+                                                        <div className="text-[6.5px] font-bold leading-none truncate w-full text-black h-[3mm] flex items-center justify-center">
                                                             {label.name}
                                                         </div>
-                                                        <Barcode 
-                                                            value={label.barcode || label.code} 
-                                                            width={activeConfig.barcodeWidth} 
-                                                            height={activeConfig.barcodeHeight} 
-                                                            fontSize={activeConfig.fontSize}
-                                                            margin={0}
-                                                            displayValue={false}
-                                                            background="transparent"
-                                                        />
-                                                        <div className="flex w-full items-center justify-between px-0.5">
-                                                            <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
-                                                            <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                                        <div className="flex items-center justify-center overflow-hidden h-[7.5mm] max-h-[7.5mm] w-full">
+                                                            <Barcode 
+                                                                value={label.barcode || label.code} 
+                                                                width={activeConfig.barcodeWidth} 
+                                                                height={activeConfig.barcodeHeight} 
+                                                                margin={0}
+                                                                displayValue={false}
+                                                                background="transparent"
+                                                            />
+                                                        </div>
+                                                        <div className="flex w-full items-center justify-between px-0.5 h-[3mm] leading-none">
+                                                            <span className="font-mono text-[5.5px] tracking-tighter text-black leading-none">{label.barcode || label.code}</span>
+                                                            <span className="text-[6px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                                         </div>
                                                     </div>
                                                 );
@@ -449,24 +431,37 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                 </div>
                             ) : activeConfig.isThermalSingle ? (
                                 /* Single Thermal Label Continuous Stream */
-                                <div className="flex flex-col items-center gap-2">
+                                <div className="flex flex-col items-center print:gap-0 gap-2">
                                     {labelsToPrint.map((label, idx) => (
-                                        <div key={idx} className={activeConfig.labelClass}>
-                                            <div className={activeConfig.nameClass}>
+                                        <div 
+                                            key={idx} 
+                                            className="px-1 py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white print:m-0"
+                                            style={{ 
+                                                width: activeConfig.pageSize.split(' ')[0], 
+                                                height: `calc(${activeConfig.pageSize.split(' ')[1]} - 0.5mm)`,
+                                                maxHeight: `calc(${activeConfig.pageSize.split(' ')[1]} - 0.5mm)`,
+                                                pageBreakAfter: 'always', 
+                                                breakAfter: 'page',
+                                                pageBreakInside: 'avoid', 
+                                                breakInside: 'avoid'
+                                            }}
+                                        >
+                                            <div className="text-[8px] font-bold leading-none truncate w-full text-black">
                                                 {label.name}
                                             </div>
-                                            <Barcode 
-                                                value={label.barcode || label.code} 
-                                                width={activeConfig.barcodeWidth} 
-                                                height={activeConfig.barcodeHeight} 
-                                                fontSize={activeConfig.fontSize}
-                                                margin={0}
-                                                displayValue={false}
-                                                background="transparent"
-                                            />
-                                            <div className="mt-0.5 flex w-full items-center justify-between px-1">
-                                                <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
-                                                <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                            <div className="flex items-center justify-center overflow-hidden w-full my-0.5">
+                                                <Barcode 
+                                                    value={label.barcode || label.code} 
+                                                    width={activeConfig.barcodeWidth} 
+                                                    height={activeConfig.barcodeHeight} 
+                                                    margin={0}
+                                                    displayValue={false}
+                                                    background="transparent"
+                                                />
+                                            </div>
+                                            <div className="flex w-full items-center justify-between px-1 leading-none">
+                                                <span className="font-mono text-[7px] tracking-tight text-black leading-none">{label.barcode || label.code}</span>
+                                                <span className="text-[7.5px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                             </div>
                                         </div>
                                     ))}
@@ -475,22 +470,21 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                 /* Multi-column Grid Layout (e.g. A4 Sticker Paper) */
                                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                                     {labelsToPrint.map((label, idx) => (
-                                        <div key={idx} className={activeConfig.labelClass}>
-                                            <div className={activeConfig.nameClass}>
+                                        <div key={idx} className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2 text-center print:border-solid print:border-gray-200 bg-white break-inside-avoid">
+                                            <div className="mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black">
                                                 {label.name}
                                             </div>
                                             <Barcode 
                                                 value={label.barcode || label.code} 
                                                 width={activeConfig.barcodeWidth} 
                                                 height={activeConfig.barcodeHeight} 
-                                                fontSize={activeConfig.fontSize}
                                                 margin={0}
                                                 displayValue={false}
                                                 background="transparent"
                                             />
                                             <div className="mt-1 flex w-full items-center justify-between px-1">
-                                                <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
-                                                <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                                <span className="font-mono text-[10px] tracking-tight text-gray-800 print:text-black">{label.barcode || label.code}</span>
+                                                <span className="text-xs font-bold text-gray-800 print:text-black">{formatRupiah(label.selling_price)}</span>
                                             </div>
                                         </div>
                                     ))}
