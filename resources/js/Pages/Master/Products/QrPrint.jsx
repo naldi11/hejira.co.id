@@ -16,6 +16,31 @@ const Layouts = { GudangLayout, JihansLayout, HendhysLayout, OwnerLayout };
 const route = window.route;
 
 const PAPER_CONFIGS = {
+    'thermal-33x15-3line': {
+        name: '🏷️ Codeshop / Thermal 33 × 15 mm (3 Line / 3 Kolom Roll)',
+        pageStyle: '@page { size: 104mm 15mm; margin: 0; }',
+        gridClass: 'grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[15mm] overflow-hidden page-break-after-always bg-white items-center',
+        labelClass: 'w-[33mm] h-[15mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white',
+        barcodeWidth: 0.75,
+        barcodeHeight: 13,
+        fontSize: 6,
+        nameClass: 'text-[6.5px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[6.5px] font-bold text-black',
+        codeClass: 'font-mono text-[5.5px] tracking-tighter text-black',
+        is3Line: true,
+    },
+    'thermal-33x15-1line': {
+        name: '🏷️ Direct Thermal 33 × 15 mm (1 Line / Single Label)',
+        pageStyle: '@page { size: 33mm 15mm; margin: 0; }',
+        labelClass: 'w-[33mm] h-[15mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always overflow-hidden bg-white',
+        barcodeWidth: 0.75,
+        barcodeHeight: 13,
+        fontSize: 6,
+        nameClass: 'text-[6.5px] font-bold leading-none truncate w-full text-black',
+        priceClass: 'text-[6.5px] font-bold text-black',
+        codeClass: 'font-mono text-[5.5px] tracking-tighter text-black',
+        isThermalSingle: true,
+    },
     'thermal-40x30': {
         name: '🏷️ Direct Thermal 40 × 30 mm (Standard Barcode Label)',
         pageStyle: '@page { size: 40mm 30mm; margin: 0; }',
@@ -82,7 +107,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-    const [paperType, setPaperType] = useState('thermal-40x30');
+    const [paperType, setPaperType] = useState('thermal-33x15-3line');
     const [form, setForm] = useState({ 
         search: filters.search ?? '', 
         status: filters.status ?? '',
@@ -158,7 +183,16 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
         return labels;
     }, [selected, products.data]);
 
-    const activeConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-40x30'];
+    // Grouping for 3-Line roll paper
+    const labelRows3Line = useMemo(() => {
+        const rows = [];
+        for (let i = 0; i < labelsToPrint.length; i += 3) {
+            rows.push(labelsToPrint.slice(i, i + 3));
+        }
+        return rows;
+    }, [labelsToPrint]);
+
+    const activeConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-33x15-3line'];
 
     return (
         <Layout title="Cetak Label Barcode" pageTitle="Master Data — Cetak Label">
@@ -351,8 +385,42 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
 
                     {/* Preview Area (Visible in Print) */}
                     <div className="flex-1 overflow-auto p-4 md:p-8">
-                        <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
-                            {activeConfig.isThermalSingle ? (
+                        <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.is3Line ? 'w-auto max-w-[106mm]' : activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
+                            {activeConfig.is3Line ? (
+                                /* 3-Line Roll (e.g. 33x15mm 3 Kolom per Baris Roll) */
+                                <div className="flex flex-col gap-[2mm] items-center">
+                                    {labelRows3Line.map((row, rIdx) => (
+                                        <div key={rIdx} className={activeConfig.gridClass}>
+                                            {[0, 1, 2].map((cIdx) => {
+                                                const label = row[cIdx];
+                                                if (!label) {
+                                                    return <div key={cIdx} className="w-[33mm] h-[15mm]" />; // Empty spacer
+                                                }
+                                                return (
+                                                    <div key={cIdx} className={activeConfig.labelClass}>
+                                                        <div className={activeConfig.nameClass}>
+                                                            {label.name}
+                                                        </div>
+                                                        <Barcode 
+                                                            value={label.barcode || label.code} 
+                                                            width={activeConfig.barcodeWidth} 
+                                                            height={activeConfig.barcodeHeight} 
+                                                            fontSize={activeConfig.fontSize}
+                                                            margin={0}
+                                                            displayValue={false}
+                                                            background="transparent"
+                                                        />
+                                                        <div className="flex w-full items-center justify-between px-0.5">
+                                                            <span className={activeConfig.codeClass}>{label.barcode || label.code}</span>
+                                                            <span className={activeConfig.priceClass}>{formatRupiah(label.selling_price)}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : activeConfig.isThermalSingle ? (
                                 /* Single Thermal Label Continuous Stream */
                                 <div className="flex flex-col items-center gap-2">
                                     {labelsToPrint.map((label, idx) => (
