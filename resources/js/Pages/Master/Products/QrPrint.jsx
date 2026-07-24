@@ -199,34 +199,43 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
             <Head title="Cetak Label Barcode">
                 <style>{`
                     @media print {
-                        body * {
-                            visibility: hidden;
-                        }
-                        #print-area, #print-area * {
-                            visibility: visible;
-                        }
-                        #print-area {
-                            position: absolute;
-                            left: 0;
-                            top: 0;
-                            width: 100%;
-                            padding: 0;
-                            margin: 0;
-                            background: white;
+                        .no-print, .no-print * {
+                            display: none !important;
                         }
                         .print-controls {
                             display: none !important;
                         }
+                        html, body {
+                            background: white !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            overflow: visible !important;
+                        }
+                        #print-modal-overlay {
+                            position: static !important;
+                            background: white !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
+                            overflow: visible !important;
+                            width: auto !important;
+                            height: auto !important;
+                        }
+                        #print-area {
+                            position: static !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            box-shadow: none !important;
+                        }
                         .page-break-after-always {
-                            page-break-after: always;
-                            break-after: page;
+                            page-break-after: always !important;
+                            break-after: page !important;
                         }
                         ${activeConfig.pageStyle}
                     }
                 `}</style>
             </Head>
 
-            <div className="space-y-6">
+            <div className="space-y-6 no-print">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Cetak Label Barcode</h2>
@@ -256,6 +265,9 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                 <option value="50">50 / Halaman</option>
                                 <option value="100">100 / Halaman</option>
                                 <option value="200">200 / Halaman</option>
+                                <option value="500">500 / Halaman</option>
+                                <option value="1000">1000 / Halaman</option>
+                                <option value="all">Semua Produk (Tanpa Batas)</option>
                             </select>
                             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={selectClass}>
                                 <option value="">Semua Status</option>
@@ -304,7 +316,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                                 <input 
                                                     type="number" 
                                                     min="1"
-                                                    max="100"
+                                                    max="1000"
                                                     disabled={!isSelected}
                                                     value={isSelected ? selected[p.id] : ''}
                                                     onChange={(e) => handleQtyChange(p.id, e.target.value)}
@@ -352,7 +364,7 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
 
             {/* Print Preview Modal / Overlay */}
             {showPreview && (
-                <div className="fixed inset-0 z-[100] flex flex-col bg-gray-100/95 backdrop-blur-sm dark:bg-gray-950/95">
+                <div id="print-modal-overlay" className="fixed inset-0 z-[100] flex flex-col bg-gray-100/95 backdrop-blur-sm dark:bg-gray-950/95">
                     {/* Top Control Bar (Hidden in Print) */}
                     <div className="print-controls flex flex-wrap h-auto min-h-16 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                         <div className="flex items-center gap-4">

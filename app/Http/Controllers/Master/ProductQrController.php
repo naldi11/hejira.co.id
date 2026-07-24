@@ -42,7 +42,14 @@ class ProductQrController extends Controller
             $q->where('status', $request->status);
         }
 
-        $perPage = $request->input('per_page', 50);
+        $perPageInput = $request->input('per_page', 50);
+        if ($perPageInput === 'all') {
+            $perPage = 10000;
+        } else {
+            $perPage = (int) $perPageInput;
+            if ($perPage <= 0) $perPage = 50;
+        }
+
         $products = $q->orderBy('name')->paginate($perPage)->withQueryString();
 
         return Inertia::render('Master/Products/QrPrint', [
