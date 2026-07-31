@@ -152,6 +152,7 @@ export default function PosIndex({ products, paymentMethods }) {
     };
 
     const checkout = () => {
+        if (processing) return;
         if (cart.length === 0) {
             Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Keranjang kosong!' });
             return;

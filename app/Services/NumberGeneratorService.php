@@ -8,37 +8,65 @@ class NumberGeneratorService
 {
     public function generate(string $prefix, string $table, string $column): string
     {
-        $like = $prefix . '-%';
+        $prefixDash = $prefix . '-';
+        $like = $prefixDash . '%';
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
             ->orderByRaw("LENGTH($column) DESC")
             ->orderBy($column, 'desc')
+            ->lockForUpdate()
             ->value($column);
 
-        $next = $last
-            ? (int) substr($last, strlen($prefix) + 1) + 1
-            : 1;
+        if ($last) {
+            $numberPart = substr($last, strlen($prefixDash));
+            $next = (int) $numberPart + 1;
+        } else {
+            $next = 1;
+        }
 
-        return $prefix . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+        do {
+            $padLength = max(4, strlen((string)$next));
+            $candidate = $prefixDash . str_pad($next, $padLength, '0', STR_PAD_LEFT);
+            $exists = DB::table($table)->where($column, $candidate)->exists();
+            if ($exists) {
+                $next++;
+            }
+        } while ($exists);
+
+        return $candidate;
     }
 
     // Yearly format: PREFIX-YYYY-NNNN (e.g. GDG-PO-20260001)
     public function generateYearly(string $prefix, string $table, string $column): string
     {
         $year = now()->format('Y');
-        $like = $prefix . '-' . $year . '%';
+        $prefixYear = $prefix . '-' . $year;
+        $like = $prefixYear . '%';
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
             ->orderByRaw("LENGTH($column) DESC")
             ->orderBy($column, 'desc')
+            ->lockForUpdate()
             ->value($column);
 
-        $next = $last
-            ? (int) substr($last, -4) + 1
-            : 1;
+        if ($last) {
+            $numberPart = substr($last, strlen($prefixYear));
+            $next = (int) $numberPart + 1;
+        } else {
+            $next = 1;
+        }
 
-        return $prefix . '-' . $year . str_pad($next, 4, '0', STR_PAD_LEFT);
+        do {
+            $padLength = max(4, strlen((string)$next));
+            $candidate = $prefixYear . str_pad($next, $padLength, '0', STR_PAD_LEFT);
+            $exists = DB::table($table)->where($column, $candidate)->exists();
+            if ($exists) {
+                $next++;
+            }
+        } while ($exists);
+
+        return $candidate;
     }
 }

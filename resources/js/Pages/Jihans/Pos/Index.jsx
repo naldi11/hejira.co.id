@@ -207,6 +207,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
     const buildItems = () => cart.map((i) => ({ product_id: i.product_id, quantity: i.quantity, price: i.price, discount: Number(i.discount) || 0, total: lineTotal(i) }));
 
     const processTransaction = async () => {
+        if (processing) return;
         if (amountPaid < totals.grand) { 
             Swal.fire({ icon: 'warning', title: 'Nominal Kurang', text: 'Uang pembayaran kurang dari total tagihan.' }); 
             return; 
