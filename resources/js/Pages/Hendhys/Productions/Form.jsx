@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useState, useEffect } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -137,19 +138,7 @@ export default function ProductionsForm({ products, units, type = 'aktual', form
                                     </div>
                                     <div className="w-32">
                                         <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Satuan</label>
-                                        <select 
-                                            value={item.unit_id} 
-                                            onChange={(e) => updateItem(i, 'unit_id', e.target.value)} 
-                                            className={fieldClass}
-                                            required
-                                        >
-                                            <option value="" className="dark:bg-gray-800">—</option>
-                                            {units.map((u) => (
-                                                <option key={u.id} value={u.id} className="dark:bg-gray-800">
-                                                    {u.abbreviation}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <SelectField options={units.map((u) => ({ value: u.id, label: u.abbreviation }))} value={item.unit_id} onChange={(v) => updateItem(i, 'unit_id', v)} placeholder="—" required />
                                         {errors[`items.${i}.unit_id`] && (
                                             <p className="mt-1 text-xs text-red-500">{errors[`items.${i}.unit_id`]}</p>
                                         )}

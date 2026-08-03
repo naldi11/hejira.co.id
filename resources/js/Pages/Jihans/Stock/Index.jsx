@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
@@ -76,18 +77,7 @@ export default function JihansStockIndex({ stocks, filters }) {
                                     className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 py-2 pl-9 pr-4 text-sm text-gray-850 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                                 />
                             </div>
-                            <select
-                                value={form.jenis}
-                                onChange={(e) => setForm({ ...form, jenis: e.target.value })}
-                                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 py-2 px-3 text-sm text-gray-850 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 capitalize"
-                            >
-                                <option value="" className="dark:bg-gray-800">Semua Jenis</option>
-                                {JENIS.map((j) => (
-                                    <option key={j} value={j} className="dark:bg-gray-800">
-                                        {j.replace('_', ' ')}
-                                    </option>
-                                ))}
-                            </select>
+                            <SelectField options={JENIS.map((j) => ({ value: j, label: j.replace('_', ' ') }))} value={form.jenis} onChange={(v) => setForm({ ...form, jenis: v })} placeholder="Semua Jenis" />
                             <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-4 py-2 text-sm text-gray-750 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-800">
                                 <input
                                     type="checkbox"

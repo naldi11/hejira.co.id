@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -116,18 +117,13 @@ export default function UserForm({ branches, roles, entity_roles = {}, user = nu
                             <div className="space-y-5 p-6">
                                 <div>
                                     <label className={labelClass}>Entitas Bisnis <span className="text-rose-500">*</span></label>
-                                    <select required value={data.entity} onChange={(e) => handleEntityChange(e.target.value)} className={inputClass}>
-                                        {ENTITIES.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
-                                    </select>
+                                    <SelectField options={ENTITIES.map((e) => ({ value: e.value, label: e.label }))} value={data.entity} onChange={(v) => handleEntityChange(v)} required />
                                     {err('entity')}
                                 </div>
 
                                 <div>
                                     <label className={labelClass}>Cabang Penempatan</label>
-                                    <select value={data.branch_id ?? ''} onChange={(e) => setData('branch_id', e.target.value)} className={inputClass}>
-                                        <option value="">Tidak Terikat Cabang</option>
-                                        {filteredBranches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                    </select>
+                                    <SelectField options={filteredBranches.map((b) => ({ value: b.id, label: b.name }))} value={data.branch_id ?? ''} onChange={(v) => setData('branch_id', v)} placeholder="Tidak Terikat Cabang" />
                                     {err('branch_id')}
                                 </div>
 

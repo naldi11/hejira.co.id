@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import GuestLayout from '@/Layouts/GuestLayout';
 import Button from '@/Components/ui/button/Button';
 import Icon from '@/Components/Icon';
@@ -40,19 +41,7 @@ export default function SelectBranch({ branches, current_branch_id = null }) {
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 Cabang Penempatan
                             </label>
-                            <select
-                                required
-                                value={data.branch_id}
-                                onChange={(e) => setData('branch_id', e.target.value)}
-                                className={inputClass}
-                            >
-                                <option value="">-- Pilih Cabang --</option>
-                                {branches.map((b) => (
-                                    <option key={b.id} value={b.id}>
-                                        {b.name} ({b.type === 'pusat' ? 'Produksi' : 'Cabang'})
-                                    </option>
-                                ))}
-                            </select>
+                            <SelectField options={branches.map((b) => ({ value: b.id, label: `${b.name} (${b.type === 'pusat' ? 'Produksi' : 'Cabang'})` }))} value={data.branch_id} onChange={(v) => setData('branch_id', v)} placeholder="-- Pilih Cabang --" required />
                             {errors.branch_id && (
                                 <p className="mt-2 text-xs font-semibold text-rose-500">
                                     {errors.branch_id}

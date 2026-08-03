@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -104,16 +105,9 @@ export default function UsersIndex({
                                 />
                             </div>
 
-                            <select value={role} onChange={(e) => { setRole(e.target.value); applyFilter({ role: e.target.value || undefined }); }} className={selectCls}>
-                                <option value="">Semua Role</option>
-                                {roleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
-                            </select>
+                            <SelectField options={roleOptions.map((r) => ({ value: r, label: r }))} value={role} onChange={(v) => { setRole(v); applyFilter({ role: v || undefined }); }} placeholder="Semua Role" />
 
-                            <select value={branchId} onChange={(e) => { setBranchId(e.target.value); applyFilter({ branch_id: e.target.value || undefined }); }} className={selectCls}>
-                                <option value="">Semua Cabang</option>
-                                <option value="none">— Tanpa Cabang —</option>
-                                {branchOptions.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                            </select>
+                            <SelectField options={branchOptions.map((b) => ({ value: b.id, label: b.name }))} value={branchId} onChange={(v) => { setBranchId(v); applyFilter({ branch_id: v || undefined }); }} placeholder="Semua Cabang" />
 
                             <select value={status} onChange={(e) => { setStatus(e.target.value); applyFilter({ status: e.target.value || undefined }); }} className={selectCls}>
                                 <option value="">Semua Status</option>

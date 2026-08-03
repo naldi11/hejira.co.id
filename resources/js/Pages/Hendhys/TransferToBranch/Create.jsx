@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import { formatQty } from '@/lib/format';
@@ -78,17 +79,13 @@ export default function TransferToBranchCreate({ branches, products, branchReque
                                     <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Cabang Tujuan <span className="text-red-500">*</span>
                                     </label>
-                                    <select
+                                    <SelectField
                                         required
+                                        options={(branches ?? []).map((b) => ({ value: b.id, label: b.name }))}
                                         value={data.branch_id}
-                                        onChange={(e) => setData('branch_id', e.target.value)}
-                                        className={fieldClass}
-                                    >
-                                        <option value="" className="dark:bg-gray-800">-- Pilih Cabang --</option>
-                                        {branches?.map(b => (
-                                            <option key={b.id} value={b.id} className="dark:bg-gray-800">{b.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(v) => setData('branch_id', v)}
+                                        placeholder="-- Pilih Cabang --"
+                                    />
                                     {errors.branch_id && <p className="mt-1 text-xs text-red-500">{errors.branch_id}</p>}
                                 </div>
                             )}
@@ -168,19 +165,13 @@ export default function TransferToBranchCreate({ branches, products, branchReque
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <select
+                                                    <SelectField
                                                         required
+                                                        options={(products ?? []).map((p) => ({ value: p.id, label: `${p.name} (stok: ${formatQty(p.current_stock)})` }))}
                                                         value={item.product_id}
-                                                        onChange={(e) => onProductChange(i, e.target.value)}
-                                                        className={fieldClass}
-                                                    >
-                                                        <option value="" className="dark:bg-gray-800">-- Pilih Produk --</option>
-                                                        {products?.map(p => (
-                                                            <option key={p.id} value={p.id} className="dark:bg-gray-800">
-                                                                {p.name} (stok: {formatQty(p.current_stock)})
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                        onChange={(v) => onProductChange(i, v)}
+                                                        placeholder="-- Pilih Produk --"
+                                                    />
                                                 )}
                                             </td>
 

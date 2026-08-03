@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
 import { formatRupiah } from '@/lib/format';
@@ -79,18 +80,6 @@ export default function PurchaseOrderForm({ suppliers, products, units, po = nul
         <GudangLayout title={isEdit ? `Edit PO ${po.po_number}` : 'Buat Purchase Order'} pageTitle={isEdit ? `Edit PO ${po.po_number}` : 'Buat Purchase Order Baru'}>
             <Head title={isEdit ? 'Edit PO' : 'Buat PO'} />
 
-            <datalist id="suppliers-list">
-                {suppliers.map((s) => (
-                    <option key={s.id} value={s.name} />
-                ))}
-            </datalist>
-
-            <datalist id="products-list">
-                {products.map((p) => (
-                    <option key={p.id} value={`${p.name} (${p.code})`} />
-                ))}
-            </datalist>
-
             <form onSubmit={submit} className="space-y-6">
                 <Link href={route('gudang.po.index')} className="group inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
                     <Icon name="arrow_back" className="text-[18px] transition-transform group-hover:-translate-x-1" /> Kembali ke Daftar PO
@@ -116,14 +105,12 @@ export default function PurchaseOrderForm({ suppliers, products, units, po = nul
                     <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
                         <div>
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Supplier / Vendor <span className="text-rose-500">*</span></label>
-                            <input
-                                type="text"
-                                list="suppliers-list"
+                            <SelectField
+                                options={suppliers.map((s) => ({ value: s.name, label: s.name }))}
                                 value={data.supplier_search_text ?? ''}
-                                onChange={(e) => onSupplierInputChange(e.target.value)}
+                                onChange={(v) => onSupplierInputChange(v)}
                                 placeholder="Cari & pilih supplier..."
                                 required
-                                className={inputClass}
                             />
                         </div>
                         <div>
@@ -168,14 +155,12 @@ export default function PurchaseOrderForm({ suppliers, products, units, po = nul
                                     {data.items.map((item, i) => (
                                         <tr key={i} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-3">
-                                                <input 
-                                                    type="text" 
-                                                    list="products-list"
-                                                    value={item.search_text ?? ''} 
-                                                    onChange={(e) => onProductInputChange(i, e.target.value)} 
+                                                <SelectField
+                                                    options={products.map((p) => ({ value: `${p.name} (${p.code})`, label: `${p.name} (${p.code})` }))}
+                                                    value={item.search_text ?? ''}
+                                                    onChange={(v) => onProductInputChange(i, v)}
                                                     placeholder="Cari & pilih produk..."
-                                                    required 
-                                                    className="w-full h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-850 outline-hidden focus:border-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50" 
+                                                    required
                                                 />
                                             </td>
                                             <td className="px-4 py-3">

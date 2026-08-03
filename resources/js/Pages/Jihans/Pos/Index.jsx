@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useEffect, useMemo, useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
@@ -307,10 +308,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
 
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Pelanggan</label>
-                            <select value={customerId} onChange={(e) => onCustomerChange(e.target.value)} className={inputCls}>
-                                <option value="">— Pelanggan Umum —</option>
-                                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` | ${c.phone}` : ''}</option>)}
-                            </select>
+                            <SelectField options={customers.map((c) => ({ value: c.id, label: c.name + (c.phone ? ` | ${c.phone}` : '') }))} value={customerId} onChange={(v) => onCustomerChange(v)} placeholder="— Pelanggan Umum —" />
 
                             {!customerId && <>
                                 <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Nama Manual</label>

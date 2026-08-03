@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -44,11 +45,7 @@ export default function HendhysStockMovements({ movements, branches, products, i
                                     className="w-full rounded-lg border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white" />
                             </div>
                             {isPusat && (
-                                <select value={form.branch_id} onChange={(e) => setForm({ ...form, branch_id: e.target.value })} className="rounded-lg border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white">
-                                    <option value="">Semua Lokasi</option>
-                                    <option value="pusat">Gudang Hendhys</option>
-                                    {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                </select>
+                                <SelectField options={branches.map((b) => ({ value: b.id, label: b.name }))} value={form.branch_id} onChange={(v) => setForm({ ...form, branch_id: v })} placeholder="Semua Lokasi" />
                             )}
                             <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="rounded-lg border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white">
                                 <option value="">Semua Tipe</option>

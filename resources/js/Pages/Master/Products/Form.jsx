@@ -15,6 +15,8 @@ const VISIBILITY = [
     { key: 'visible_hendhys', label: 'Hendhys', icon: 'cake' },
 ];
 
+import SelectField from '@/Components/SelectField';
+
 export default function ProductForm({ categories, units, brands, product = null , layout = 'GudangLayout', routePrefix = 'master.'}) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const p = product?.data ?? product;
@@ -151,6 +153,10 @@ export default function ProductForm({ categories, units, brands, product = null 
         post(isEdit ? route(routePrefix + 'products.update', p.id) : route(routePrefix + 'products.store'), { forceFormData: true });
     };
 
+    // datalist lama memakai NAMA sebagai nilai dan boleh diketik baru, jadi
+    // bentuk opsi & payload ke server sengaja dipertahankan sama.
+    const toOpts = (arr) => (arr ?? []).map((x) => ({ value: x.name ?? x, label: x.name ?? x }));
+
     const inputClass = 'w-full h-11 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
     const areaClass = 'w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-855 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800 resize-none';
     const labelClass = 'mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400';
@@ -159,10 +165,6 @@ export default function ProductForm({ categories, units, brands, product = null 
     return (
         <Layout title={isEdit ? 'Edit Produk' : 'Tambah Produk'} pageTitle="Master Data — Produk">
             <Head title={isEdit ? 'Edit Produk' : 'Tambah Produk'} />
-
-            <datalist id="categories-list">{categories.map((c) => <option key={c.id ?? (c.name ?? c)} value={c.name ?? c} />)}</datalist>
-            <datalist id="units-list">{units.map((u) => <option key={u.id ?? (u.name ?? u)} value={u.name ?? u} />)}</datalist>
-            <datalist id="brands-list">{brands.map((b) => <option key={b.id ?? (b.name ?? b)} value={b.name ?? b} />)}</datalist>
 
             <form onSubmit={submit} className="w-full space-y-6 pb-20">
 
@@ -192,17 +194,23 @@ export default function ProductForm({ categories, units, brands, product = null 
                                 </div>
                                 <div>
                                     <label className={labelClass}>Kategori <span className="text-rose-500">*</span></label>
-                                    <input list="categories-list" required value={data.category_id} onChange={(e) => setData('category_id', e.target.value)} placeholder="Pilih atau ketik baru..." className={inputClass} />
+                                    <SelectField creatable options={toOpts(categories)} value={data.category_id}
+                                        onChange={(v) => setData('category_id', v)}
+                                        placeholder="Pilih atau ketik kategori baru..." />
                                     {err('category_id')}
                                 </div>
                                 <div>
                                     <label className={labelClass}>Satuan <span className="text-rose-500">*</span></label>
-                                    <input list="units-list" required value={data.unit_id} onChange={(e) => setData('unit_id', e.target.value)} placeholder="Pilih atau ketik baru..." className={inputClass} />
+                                    <SelectField creatable options={toOpts(units)} value={data.unit_id}
+                                        onChange={(v) => setData('unit_id', v)}
+                                        placeholder="Pilih atau ketik satuan baru..." />
                                     {err('unit_id')}
                                 </div>
                                 <div>
                                     <label className={labelClass}>Brand / Merek</label>
-                                    <input list="brands-list" value={data.brand_id} onChange={(e) => setData('brand_id', e.target.value)} placeholder="Opsional..." className={inputClass} />
+                                    <SelectField creatable options={toOpts(brands)} value={data.brand_id}
+                                        onChange={(v) => setData('brand_id', v)}
+                                        placeholder="Opsional..." />
                                     {err('brand_id')}
                                 </div>
                                 <div>

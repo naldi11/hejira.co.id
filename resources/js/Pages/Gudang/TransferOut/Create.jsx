@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
 import Button from '@/Components/ui/button/Button';
@@ -96,10 +97,7 @@ export default function TransferOutCreate({ products, branches, transferRequest 
                                         {transferRequest.branch ?? '-'}
                                     </div>
                                 ) : (
-                                    <select value={data.branch_id} onChange={(e) => setData('branch_id', e.target.value)} required className={selectClass}>
-                                        <option value="">Pilih Cabang</option>
-                                        {branches.map((b) => <option key={b.id} value={b.id}>{b.name} ({b.type})</option>)}
-                                    </select>
+                                    <SelectField options={branches.map((b) => ({ value: b.id, label: `${b.name} (${b.type})` }))} value={data.branch_id} onChange={(v) => setData('branch_id', v)} placeholder="Pilih Cabang" required />
                                 )}
                                 {errors.branch_id && <p className="mt-1.5 text-xs font-bold text-rose-600 dark:text-rose-455">{errors.branch_id}</p>}
                             </div>
@@ -157,10 +155,7 @@ export default function TransferOutCreate({ products, branches, transferRequest 
                                                     {fromRequest ? (
                                                         <div className="text-sm font-semibold text-gray-850 dark:text-white/90">{item.product_name}</div>
                                                     ) : (
-                                                        <select value={item.product_id} onChange={(e) => onProductChange(i, e.target.value)} required className={cellSelect}>
-                                                            <option value="">Pilih produk...</option>
-                                                            {products.map((p) => <option key={p.id} value={p.id}>{p.name} (Stok: {p.stock})</option>)}
-                                                        </select>
+                                                        <SelectField options={products.map((p) => ({ value: p.id, label: `${p.name} (Stok: ${p.stock})` }))} value={item.product_id} onChange={(v) => onProductChange(i, v)} placeholder="Pilih produk..." required />
                                                     )}
                                                 </td>
                                                 {fromRequest && (

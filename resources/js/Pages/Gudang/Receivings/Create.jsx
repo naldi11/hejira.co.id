@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useEffect, useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
@@ -202,17 +203,11 @@ export default function ReceivingCreate({ suppliers, products, purchaseOrders, s
                     <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-3">
                         <div>
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Referensi PO <span className="font-normal normal-case text-gray-400">(opsional)</span></label>
-                            <select value={data.po_id} onChange={(e) => onPoChange(e.target.value)} className={selectClass}>
-                                <option value="">— Input Manual (Tanpa PO) —</option>
-                                {purchaseOrders.map((po) => <option key={po.id} value={po.id}>{po.po_number} — {po.supplier}</option>)}
-                            </select>
+                            <SelectField options={purchaseOrders.map((po) => ({ value: po.id, label: `${po.po_number} — ${po.supplier}` }))} value={data.po_id} onChange={(v) => onPoChange(v)} placeholder="— Input Manual (Tanpa PO) —" />
                         </div>
                         <div>
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Supplier <span className="text-rose-500">*</span></label>
-                            <select value={data.supplier_id} onChange={(e) => setData('supplier_id', e.target.value)} required disabled={fromPo} className={`${selectClass} disabled:opacity-60`}>
-                                <option value="">Pilih supplier...</option>
-                                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+                            <SelectField options={suppliers.map((s) => ({ value: s.id, label: s.name }))} value={data.supplier_id} onChange={(v) => setData('supplier_id', v)} placeholder="Pilih supplier..." required isDisabled={fromPo} />
                         </div>
                         <div>
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tanggal Terima <span className="text-rose-500">*</span></label>
@@ -272,10 +267,7 @@ export default function ReceivingCreate({ suppliers, products, purchaseOrders, s
                                                 {fromPo ? (
                                                     <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{item.product_name}</p>
                                                 ) : (
-                                                    <select value={item.product_id} onChange={(e) => onProductChange(i, e.target.value)} required className={cellSelect}>
-                                                        <option value="">Pilih produk...</option>
-                                                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                                    </select>
+                                                    <SelectField options={products.map((p) => ({ value: p.id, label: p.name }))} value={item.product_id} onChange={(v) => onProductChange(i, v)} placeholder="Pilih produk..." required />
                                                 )}
                                             </td>
                                             {fromPo && <td className="px-4 py-4 text-center text-sm font-bold tabular-nums text-gray-400 dark:text-gray-500">{item.ordered_qty} {item.unit_name}</td>}

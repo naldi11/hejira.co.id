@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 import { formatQty } from '@/lib/format';
@@ -77,10 +78,7 @@ export default function JihansReturnsCreate({ products, units }) {
                                         return (
                                             <tr key={i} className="hover:bg-gray-50/20 dark:hover:bg-white/[0.005]">
                                                 <td className="px-3 py-3">
-                                                    <select required value={item.product_id} onChange={(e) => onProduct(i, e.target.value)} className={field}>
-                                                        <option value="" className="dark:bg-gray-800">-- Pilih --</option>
-                                                        {products.map((p) => <option key={p.id} value={p.id} className="dark:bg-gray-800">{p.name} ({p.code})</option>)}
-                                                    </select>
+                                                    <SelectField options={products.map((p) => ({ value: p.id, label: `${p.name} (${p.code})` }))} value={item.product_id} onChange={(v) => onProduct(i, v)} placeholder="-- Pilih --" required />
                                                 </td>
                                                 <td className="px-3 py-3 text-center">
                                                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${over ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
@@ -101,9 +99,7 @@ export default function JihansReturnsCreate({ products, units }) {
                                                     />
                                                 </td>
                                                 <td className="px-3 py-3">
-                                                    <select required value={item.condition} onChange={(e) => setItem(i, { condition: e.target.value })} className={field}>
-                                                        {CONDITIONS.map((c) => <option key={c} value={c} className="dark:bg-gray-800">{c}</option>)}
-                                                    </select>
+                                                    <SelectField options={CONDITIONS.map((c) => ({ value: c, label: c }))} value={item.condition} onChange={(v) => setItem(i, { condition: v })} required />
                                                 </td>
                                                 <td className="px-3 py-3">
                                                     <input type="text" value={item.notes} onChange={(e) => setItem(i, { notes: e.target.value })} className={field} placeholder="Opsional" />

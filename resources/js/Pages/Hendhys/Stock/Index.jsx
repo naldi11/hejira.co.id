@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -263,14 +264,7 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                         {/* Branch Filter Card */}
                         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
                             <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
-                                <select 
-                                    value={form.branch_id} 
-                                    onChange={(e) => setForm({ ...form, branch_id: e.target.value })} 
-                                    className="h-11 rounded-lg border border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white"
-                                >
-                                    <option value="">Semua Cabang</option>
-                                    {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                </select>
+                                <SelectField options={branches.map((b) => ({ value: b.id, label: b.name }))} value={form.branch_id} onChange={(v) => setForm({ ...form, branch_id: v })} placeholder="Semua Cabang" />
                                 <button type="submit" className="h-11 rounded-xl bg-amber-600 px-6 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-700 transition-all">Filter Cabang</button>
                             </form>
                         </div>
