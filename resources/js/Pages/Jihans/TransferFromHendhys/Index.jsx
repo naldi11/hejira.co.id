@@ -29,8 +29,8 @@ export default function TransferFromHendhysIndex({ transfers, filters }) {
     };
 
     return (
-        <JihansLayout pageTitle="Penerimaan dari Hendhys Pusat">
-            <Head title="Penerimaan dari Hendhys Pusat" />
+        <JihansLayout pageTitle="Penerimaan dari Gudang Hendhys">
+            <Head title="Penerimaan dari Gudang Hendhys" />
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Penerimaan dari Hendhys</h2>
@@ -79,13 +79,13 @@ export default function TransferFromHendhysIndex({ transfers, filters }) {
                                 {loading ? (
                                     <SkeletonTableRows rows={6} columns={5} />
                                 ) : transfers.data.length === 0 ? (
-                                    <EmptyState colSpan={5} icon="local_shipping" message="Belum ada transfer dari Hendhys Pusat." />
+                                    <EmptyState colSpan={5} icon="local_shipping" message="Belum ada transfer dari Gudang Hendhys." />
                                 ) : (
                                     transfers.data.map((t) => (
                                         <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{t.transfer_number}</td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.date}</td>
-                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.creator ?? 'Hendhys Pusat'}</td>
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.creator ?? 'Gudang Hendhys'}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'sent' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400'}`}>
                                                     {t.status === 'sent' ? 'Dikirim' : 'Diterima'}

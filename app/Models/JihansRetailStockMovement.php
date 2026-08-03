@@ -24,6 +24,19 @@ class JihansRetailStockMovement extends Model
         'created_at',
     ];
 
+    // Disamakan dengan JihansGudangStockMovement. Tanpa cast ini `created_at`
+    // dikembalikan sebagai string mentah (karena $timestamps = false), sehingga
+    // pemanggil yang memperlakukannya sebagai Carbon akan error.
+    protected function casts(): array
+    {
+        return [
+            'quantity'        => 'integer',
+            'quantity_before' => 'integer',
+            'quantity_after'  => 'integer',
+            'created_at'      => 'datetime',
+        ];
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(JihansProduct::class);

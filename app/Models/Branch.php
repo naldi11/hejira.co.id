@@ -9,7 +9,10 @@ class Branch extends Model
 {
     protected $table = 'master_branches';
 
-    protected $fillable = ['code', 'name', 'type', 'address', 'phone', 'is_active'];
+    // 'entity' wajib ada di sini: BranchSelectionController & dashboard Owner
+    // menyaring cabang lewat kolom ini. Tanpa fillable, Branch::create()/update()
+    // membuangnya diam-diam dan cabang baru tersimpan dengan entity NULL.
+    protected $fillable = ['code', 'name', 'type', 'entity', 'address', 'phone', 'is_active'];
 
     protected function casts(): array
     {

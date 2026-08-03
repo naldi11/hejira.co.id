@@ -14,8 +14,13 @@ export default function JihansPendingIndex({ pendings, filters }) {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState(filters.search ?? '');
 
-    // Resume a held transaction: load its cart into localStorage, remove the hold,
-    // then open the POS (which reads `jihans_resume_cart` on mount).
+    // Lanjutkan transaksi tertahan: muat keranjangnya ke localStorage lalu buka POS.
+    //
+    // Pendingnya SENGAJA tidak dihapus di sini. Dulu ia dihapus lebih dulu, padahal
+    // keranjangnya cuma ada di localStorage — kalau kasir menyegarkan halaman POS
+    // atau menutup browser sebelum checkout, transaksi itu hilang permanen.
+    // Sekarang penghapusan dilakukan server saat penjualannya benar-benar tersimpan
+    // (lihat pending_id di Jihans\PosController::store).
     const resume = async (p) => {
         try {
             const { data } = await axios.get(route('jihans.pending.show', p.id));
@@ -31,10 +36,10 @@ export default function JihansPendingIndex({ pendings, filters }) {
                 max_stock: 999999,
             }));
             localStorage.setItem('jihans_resume_cart', JSON.stringify({
+                pendingId: p.id,
                 items, customerId: data.customer_id ?? '', customerName: data.customer_name ?? '',
                 customerType: data.customer_type ?? 'Pelanggan Retail', notes: data.notes ?? '',
             }));
-            await axios.delete(route('jihans.pending.destroy', p.id), { headers: { Accept: 'application/json' } });
             window.location.href = route('jihans.pos.index');
         } catch {
             alert('Gagal memuat transaksi pending.');

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Hendhys;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Hendhys\HendhysPendingResource;
-use App\Models\Customer;
 use App\Models\HendhysPendingDetail;
 use App\Models\HendhysPendingTransaction;
 use App\Services\NumberGeneratorService;
@@ -21,7 +20,7 @@ class PendingController extends Controller
         $user = auth()->user();
         $q = HendhysPendingTransaction::with(['creator', 'customer'])->withCount('details');
 
-        if ($user->branch->type === 'cabang') {
+        if ($user->branch?->type === 'cabang') {
             $q->where('branch_id', $user->branch_id);
         } else {
             $q->whereNull('branch_id');
@@ -56,7 +55,7 @@ class PendingController extends Controller
         try {
             DB::transaction(function () use ($request) {
                 $user = auth()->user();
-                $branchId = $user->branch->type === 'cabang' ? $user->branch_id : null;
+                $branchId = $user->branch?->type === 'cabang' ? $user->branch_id : null;
 
                 $pending = HendhysPendingTransaction::create([
                     'pending_number' => $this->numbers->generateYearly('HPND', 'hendhys_pending_transactions', 'pending_number'),
@@ -101,10 +100,10 @@ class PendingController extends Controller
     public function show(HendhysPendingTransaction $pending)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $pending->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $pending->branch_id !== $user->branch_id) {
             abort(403);
         }
-        if ($user->branch->type === 'pusat' && $pending->branch_id !== null) {
+        if ((!$user->branch || $user->branch->type === 'pusat') && $pending->branch_id !== null) {
             abort(403);
         }
 
@@ -115,15 +114,17 @@ class PendingController extends Controller
     public function destroy(HendhysPendingTransaction $pending)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $pending->branch_id !== $user->branch_id) {
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
+        if (!$isPusat && $pending->branch_id !== $user->branch_id) {
             abort(403);
         }
-        if ($user->branch->type === 'pusat' && $pending->branch_id !== null) {
+        if ($isPusat && $pending->branch_id !== null) {
             abort(403);
         }
 
-        $pending->delete(); // Details are cascade deleted if configured, otherwise handled by DB constraints or we can manually delete
-        DB::table('hendhys_pending_details')->where('pending_id', $pending->id)->delete();
+        // Baris detail ikut terhapus lewat cascadeOnDelete pada foreign key
+        // pending_id (lihat migration create_hendhys_pending_details_table).
+        $pending->delete();
 
         return redirect()->route('hendhys.pending.index')
             ->with('success', 'Transaksi pending berhasil dihapus.');

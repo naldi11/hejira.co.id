@@ -17,6 +17,7 @@ export default function BranchForm({ branch = null, layout = 'GudangLayout', rou
     const { data, setData, post, put, processing, errors } = useForm({
         code: b?.code ?? '',
         type: b?.type ?? 'cabang',
+        entity: b?.entity ?? 'hendhys',
         name: b?.name ?? '',
         phone: b?.phone ?? '',
         address: b?.address ?? '',
@@ -55,6 +56,16 @@ export default function BranchForm({ branch = null, layout = 'GudangLayout', rou
                                     <option value="pusat">Kantor Pusat / Gudang</option>
                                 </select>
                                 {err('type')}
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className={labelClass}>Unit Bisnis <span className="text-rose-500">*</span></label>
+                                <select required value={data.entity} onChange={(e) => setData('entity', e.target.value)} className={inputClass}>
+                                    <option value="hendhys">Hendhys Brownies</option>
+                                    <option value="jihans">Jihan's</option>
+                                    <option value="gudang">Gudang Pusat</option>
+                                </select>
+                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Menentukan modul mana yang dapat mengakses cabang ini.</p>
+                                {err('entity')}
                             </div>
                             <div className="md:col-span-2">
                                 <label className={labelClass}>Nama Cabang <span className="text-rose-500">*</span></label>

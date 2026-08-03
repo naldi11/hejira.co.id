@@ -35,8 +35,8 @@ class GudangReturnResource extends JsonResource
                 'id'                => $d->id,
                 'product'           => $d->product?->name ?? '-',
                 'unit'              => $d->unit?->abbreviation ?? 'PCS',
-                'quantity'          => (float) $d->quantity,
-                'received_quantity' => $d->received_quantity !== null ? (float) $d->received_quantity : null,
+                'quantity'          => (int) $d->quantity,
+                'received_quantity' => $d->received_quantity !== null ? (int) $d->received_quantity : null,
                 'condition'         => $d->condition,
             ])),
         ];

@@ -16,6 +16,21 @@ class HendhysStockMovement extends Model
         'source', 'reference_id', 'notes', 'created_by'
     ];
 
+    /**
+     * Kuantitas stok WAJIB integer; hanya nilai uang yang desimal.
+     * Kolom DB masih decimal(15,3) karena alasan historis, sehingga tanpa cast
+     * Eloquent mengembalikan string seperti "5.000" dan perhitungan di PHP
+     * jadi rawan galat pembulatan.
+     */
+    protected function casts(): array
+    {
+        return [
+            'quantity'          => 'integer',
+            'quantity_before'   => 'integer',
+            'quantity_after'    => 'integer',
+        ];
+    }
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

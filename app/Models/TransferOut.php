@@ -33,15 +33,4 @@ class TransferOut extends Model
     public function photos(): HasMany     { return $this->hasMany(TransferOutPhoto::class, 'transfer_id'); }
     public function receiptConfirmation(): MorphOne { return $this->morphOne(ReceiptConfirmation::class, 'receiptable'); }
 
-    public function isPending(): bool    { return $this->status === 'sent'; }
-    public function isReceived(): bool   { return $this->status === 'received'; }
-
-    public function getToEntityLabelAttribute(): string
-    {
-        return match($this->to_entity) {
-            'jihans'  => "Jihan's Food",
-            'hendhys' => $this->branch ? "Hendhys — {$this->branch->name}" : 'Hendhys Brownies',
-            default   => $this->to_entity,
-        };
-    }
 }

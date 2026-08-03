@@ -17,9 +17,9 @@ class MasterDataTest extends TestCase
 
     private function adminGudang(): User
     {
-        Role::findOrCreate('admin_gudang', 'web');
+        Role::findOrCreate('super_admin', 'web');
         $user = User::factory()->create(['entity' => 'gudang']);
-        $user->assignRole('admin_gudang');
+        $user->assignRole('super_admin');
 
         return $user;
     }

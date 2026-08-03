@@ -24,7 +24,7 @@ return new class extends Migration
 
         // Change payment_method to nullable (raw statement since doctrine/dbal is not installed).
         // ENUM MODIFY is MySQL-only; sqlite (used in tests) stores enums as TEXT, so skip there.
-        if (DB::connection()->getDriverName() !== 'sqlite') {
+        if (DB::connection()->getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE `jihans_transaction_payments` MODIFY `payment_method` ENUM('cash','transfer') NULL");
             DB::statement("ALTER TABLE `hendhys_transaction_payments` MODIFY `payment_method` ENUM('cash','transfer') NULL");
         }
@@ -46,7 +46,7 @@ return new class extends Migration
         });
 
         // Clean NULLs before restoring NOT NULL constraint. ENUM MODIFY is MySQL-only.
-        if (DB::connection()->getDriverName() !== 'sqlite') {
+        if (DB::connection()->getDriverName() === 'mysql') {
             DB::statement("UPDATE `jihans_transaction_payments` SET `payment_method` = 'cash' WHERE `payment_method` IS NULL");
             DB::statement("ALTER TABLE `jihans_transaction_payments` MODIFY `payment_method` ENUM('cash','transfer') NOT NULL");
 

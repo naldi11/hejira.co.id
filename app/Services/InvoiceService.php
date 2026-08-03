@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\JihansTransaction;
 use App\Models\HendhysTransaction;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
 
 class InvoiceService
 {
@@ -23,6 +22,11 @@ class InvoiceService
         return $pdf->output();
     }
 
+    /**
+     * Padanan Hendhys dari generateJihansInvoice(). View-nya sudah ada
+     * (resources/views/invoices/hendhys.blade.php) namun belum dipasang ke route
+     * mana pun — dipertahankan agar kedua unit bisnis punya kemampuan yang setara.
+     */
     public function generateHendhysInvoice(HendhysTransaction $transaction, bool $stream = true)
     {
         $transaction->load(['details.product', 'creator', 'customer', 'branch']);
@@ -35,11 +39,5 @@ class InvoiceService
         }
 
         return $pdf->output();
-    }
-
-    public function saveInvoiceToStorage($pdfOutput, string $filename)
-    {
-        Storage::put('invoices/' . $filename, $pdfOutput);
-        return 'invoices/' . $filename;
     }
 }

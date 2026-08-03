@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\Hendhys;
 
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Hendhys\StorePosTransactionRequest;
+use App\Models\HendhysStockBranch;
+use App\Models\HendhysStockPusat;
 use App\Models\Product;
 use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
 use App\Models\HendhysTransactionPayment;
+use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
-use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -19,7 +22,8 @@ class PosController extends Controller
 {
     public function __construct(
         private NumberGeneratorService $numbers,
-        private StockService $stockService
+        private StockService $stockService,
+        private ActivityLogService $logger
     ) {}
 
     public function index()
@@ -53,7 +57,7 @@ class PosController extends Controller
                 'price'         => (float) $p->selling_price,
                 'unit_id'       => $p->unit_id,
                 'unit'          => $p->unit?->abbreviation ?? 'PCS',
-                'current_stock' => (float) $p->current_stock,
+                'current_stock' => (int) $p->current_stock,
                 'photo'         => $p->image ? \Illuminate\Support\Facades\Storage::url($p->image) : null,
                 'tiered_prices' => $p->tieredPrices->map(fn ($tp) => [
                     'min_qty' => (int) $tp->min_qty,
@@ -82,38 +86,6 @@ class PosController extends Controller
         ]);
     }
 
-    public function checkout()
-    {
-        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
-            ->whereIn('entity_scope', ['hendhys', 'all'])
-            ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'account_number', 'account_name', 'image']);
-
-        return view('hendhys.pos.checkout', compact('paymentMethods'));
-    }
-
-    public function heldStock()
-    {
-        $user = auth()->user();
-        $query = \App\Models\HendhysPendingTransaction::with('details');
-
-        if ($user->branch?->type === 'cabang') {
-            $query->where('branch_id', $user->branch_id);
-        } else {
-            $query->whereNull('branch_id');
-        }
-
-        $heldQty = [];
-        foreach ($query->get() as $pending) {
-            foreach ($pending->details as $detail) {
-                $pid = $detail->product_id;
-                $heldQty[$pid] = ($heldQty[$pid] ?? 0) + (int) $detail->quantity;
-            }
-        }
-
-        return response()->json($heldQty);
-    }
-
     public function customerSearch(Request $request)
     {
         $q = $request->get('q', '');
@@ -132,20 +104,129 @@ class PosController extends Controller
         return response()->json($customers);
     }
 
+    /**
+     * Hitung ulang harga & total di sisi server.
+     *
+     * Sebelumnya `subtotal`, `grand_total`, dan `total` per item disimpan persis
+     * seperti kiriman klien tanpa diperiksa. Payload yang dimanipulasi bisa
+     * mencatat omzet nyaris nol padahal stok tetap terpotong penuh.
+     *
+     * Di POS Hendhys harga TIDAK bisa diubah kasir (tidak ada input harga di UI),
+     * jadi harga DB adalah otoritas. Rumusnya mengikuti getPrice() di
+     * resources/js/Pages/Hendhys/Pos/Index.jsx: harga bertingkat dengan min_qty
+     * terbesar yang masih <= qty, kalau tidak ada pakai selling_price.
+     *
+     * @return array{items: array, subtotal: float, grand_total: float}
+     */
+    private function recalculateTotals(StorePosTransactionRequest $request): array
+    {
+        $products = Product::with('tieredPrices')
+            ->whereIn('id', collect($request->items)->pluck('product_id'))
+            ->get()
+            ->keyBy('id');
+
+        $items    = [];
+        $subtotal = 0.0;
+
+        foreach ($request->items as $item) {
+            $product = $products[$item['product_id']] ?? null;
+            if (!$product) {
+                throw new \RuntimeException("Produk dengan ID {$item['product_id']} tidak ditemukan.");
+            }
+
+            $qty   = (int) $item['quantity'];
+            $price = (float) $product->selling_price;
+
+            $tier = $product->tieredPrices
+                ->filter(fn ($t) => $qty >= (int) $t->min_qty)
+                ->sortByDesc(fn ($t) => (int) $t->min_qty)
+                ->first();
+            if ($tier) {
+                $price = (float) $tier->price;
+            }
+
+            $total     = $price * $qty;
+            $subtotal += $total;
+
+            $items[] = [
+                'product_id'   => (int) $item['product_id'],
+                'product_name' => $product->name,
+                'unit_id'      => $product->unit_id,
+                'quantity'     => $qty,
+                'price'        => $price,
+                'discount'     => 0,
+                'total'        => $total,
+            ];
+        }
+
+        $discount   = (float) ($request->discount_amount ?? 0);
+        $tax        = (float) ($request->tax_amount ?? 0);
+        $otherCosts = (float) ($request->other_costs ?? 0);
+        $grandTotal = max(0, $subtotal - $discount + $tax + $otherCosts);
+
+        return ['items' => $items, 'subtotal' => $subtotal, 'grand_total' => $grandTotal];
+    }
+
     public function store(StorePosTransactionRequest $request)
     {
         $now = now()->timezone('Asia/Jakarta');
         if ($now->hour >= 0 && $now->hour < 7) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'error' => 'Sistem Kasir Sedang Tutup! Silahkan Lanjutkan Transaksi Pada Pukul 07:00 WIB.'
             ], 400);
         }
 
+        $computed = $this->recalculateTotals($request);
+
+        // Tolak (bukan diam-diam menimpa) bila total kiriman klien menyimpang:
+        // kasir harus melihat error, bukan struk dengan angka berbeda dari yang
+        // ditampilkan saat transaksi. Toleransi Rp 1 untuk galat pembulatan.
+        if (abs($computed['grand_total'] - (float) $request->grand_total) > 1.0) {
+            return response()->json([
+                'success' => false,
+                'error'   => sprintf(
+                    'Total transaksi tidak cocok dengan harga master (server: %s, dikirim: %s). Muat ulang halaman POS lalu ulangi.',
+                    number_format($computed['grand_total'], 0, ',', '.'),
+                    number_format((float) $request->grand_total, 0, ',', '.')
+                ),
+            ], 422);
+        }
+
         try {
-            $transactionId = DB::transaction(function () use ($request) {
+            $transaction = DB::transaction(function () use ($request, $computed) {
                 $user = auth()->user();
-                $branchId = $user->branch->type === 'cabang' ? $user->branch_id : null;
+                $branchId = $user->branch?->type === 'cabang' ? $user->branch_id : null;
+
+                // Validasi ketersediaan stok SEBELUM transaksi ditulis, supaya kasir
+                // mendapat pesan yang jelas alih-alih penjualan lolos diam-diam.
+                // (StockService tetap menjadi penjaga terakhir dengan lockForUpdate.)
+                //
+                // Kuantitas dijumlahkan per produk lebih dulu: satu produk bisa muncul
+                // di dua baris keranjang, dan mengecek tiap baris sendiri-sendiri akan
+                // meloloskan total yang melebihi stok.
+                $neededPerProduct = [];
+                foreach ($computed['items'] as $item) {
+                    $neededPerProduct[$item['product_id']] =
+                        ($neededPerProduct[$item['product_id']] ?? 0) + $item['quantity'];
+                }
+
+                foreach ($neededPerProduct as $productId => $needed) {
+                    $available = $branchId
+                        ? (int) (HendhysStockBranch::where('branch_id', $branchId)
+                            ->where('product_id', $productId)->value('quantity') ?? 0)
+                        : (int) (HendhysStockPusat::where('product_id', $productId)
+                            ->value('quantity') ?? 0);
+
+                    if ($needed > $available) {
+                        throw new InsufficientStockException(
+                            (int) $productId,
+                            $needed,
+                            $available,
+                            $branchId ? 'stok cabang Hendhys' : 'stok pusat Hendhys'
+                        );
+                    }
+                }
 
                 $transaction = HendhysTransaction::create([
                     'transaction_number' => $this->numbers->generateYearly('HTRX', 'hendhys_transactions', 'transaction_number'),
@@ -156,28 +237,27 @@ class PosController extends Controller
                     'customer_name' => $request->customer_name,
                     'customer_phone' => $request->customer_phone,
                     'customer_type' => $request->customer_type ?? 'Pelanggan Individual',
-                    'subtotal' => $request->subtotal,
+                    // Nilai uang diambil dari hasil hitung server, bukan kiriman klien.
+                    'subtotal' => $computed['subtotal'],
                     'discount_amount' => $request->discount_amount ?? 0,
                     'ppn_type' => $request->ppn_type ?? 'none',
                     'tax_amount' => $request->tax_amount ?? 0,
                     'other_costs' => $request->other_costs ?? 0,
-                    'grand_total' => $request->grand_total,
+                    'grand_total' => $computed['grand_total'],
                     'status' => 'paid',
                     'notes' => $request->notes,
                     'created_by' => $user->id
                 ]);
 
-                foreach ($request->items as $item) {
-                    $product = Product::find($item['product_id']);
-                    
+                foreach ($computed['items'] as $item) {
                     HendhysTransactionDetail::create([
                         'transaction_id' => $transaction->id,
                         'product_id' => $item['product_id'],
-                        'product_name' => $product->name,
+                        'product_name' => $item['product_name'],
                         'quantity' => $item['quantity'],
-                        'unit_id' => $product->unit_id,
+                        'unit_id' => $item['unit_id'],
                         'price' => $item['price'],
-                        'discount_amount' => $item['discount'] ?? 0,
+                        'discount_amount' => $item['discount'],
                         'total' => $item['total']
                     ]);
 
@@ -223,15 +303,37 @@ class PosController extends Controller
                 ]);
 
 
-                return $transaction->id;
+                // Hapus transaksi tertahan HANYA setelah penjualannya tersimpan.
+                if ($request->filled('pending_id')) {
+                    \App\Models\HendhysPendingTransaction::whereKey($request->pending_id)->delete();
+                }
+
+                return $transaction;
             });
+
+            // Penjualan adalah aksi paling perlu diaudit; sebelumnya POS Hendhys
+            // sama sekali tidak tercatat di activity log (POS Jihans sudah).
+            $this->logger->log(
+                'create',
+                'hendhys_pos',
+                "Transaksi POS {$transaction->transaction_number} sebesar {$transaction->grand_total}",
+                $transaction
+            );
 
             return response()->json([
                 'success' => true,
-                'redirect' => route('hendhys.pos.receipt', $transactionId)
+                'redirect' => route('hendhys.pos.receipt', $transaction->id)
             ]);
 
-        } catch (\Exception $e) {
+        } catch (InsufficientStockException $e) {
+            // Stok kurang = kesalahan input kasir (422), bukan error server.
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 422);
+        } catch (\Throwable $e) {
+            report($e);
+
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memproses transaksi: ' . $e->getMessage()
@@ -242,10 +344,12 @@ class PosController extends Controller
     public function receipt(\Illuminate\Http\Request $request, HendhysTransaction $transaction)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $transaction->branch_id !== $user->branch_id) {
+        // User tanpa branch diperlakukan sebagai pusat (konsisten dengan index()).
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
+        if (!$isPusat && $transaction->branch_id !== $user->branch_id) {
             abort(403);
         }
-        if ($user->branch->type === 'pusat' && $transaction->branch_id !== null) {
+        if ($isPusat && $transaction->branch_id !== null) {
             abort(403);
         }
 

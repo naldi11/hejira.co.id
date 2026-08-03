@@ -50,6 +50,43 @@ class CashierShift extends Model
     }
 
     /**
+     * Awal periode shift ini.
+     *
+     * Aturannya: mulai dari awal hari saat shift dibuka, KECUALI ada shift
+     * sebelumnya (kasir & cabang yang sama) yang sudah ditutup di hari yang sama —
+     * maka periode dimulai tepat saat shift sebelumnya ditutup.
+     *
+     * Penting: shift sebelumnya yang masih terbuka (closed_at = NULL) harus
+     * diabaikan. Carbon::parse(null) mengembalikan waktu SEKARANG, bukan null,
+     * sehingga versi lama bisa lolos cek isSameDay() lalu menetapkan
+     * $startAt = null — dan `whereBetween('created_at', [null, ...])` tidak pernah
+     * cocok dengan baris apa pun, membuat ringkasan kas shift jadi nol semua.
+     */
+    public function periodStart(): \Carbon\Carbon
+    {
+        $openedAt = \Carbon\Carbon::parse($this->opened_at);
+
+        $previousShift = self::where('user_id', $this->user_id)
+            ->where('branch_id', $this->branch_id)
+            ->where('id', '<', $this->id)
+            ->whereNotNull('closed_at')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($openedAt)) {
+            return \Carbon\Carbon::parse($previousShift->closed_at);
+        }
+
+        return $openedAt->copy()->startOfDay();
+    }
+
+    /** Akhir periode shift: waktu tutup, atau sekarang bila shift masih berjalan. */
+    public function periodEnd(): \Carbon\Carbon
+    {
+        return $this->closed_at ? \Carbon\Carbon::parse($this->closed_at) : now();
+    }
+
+    /**
      * Calculate live expected cash so far for active shift
      */
     public function calculateExpectedCashSoFar(): int
@@ -82,18 +119,8 @@ class CashierShift extends Model
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
         $hasPtypeCol = ($entity === 'hendhys');
 
-        $closedAt = $this->closed_at ?? now();
-        
-        $previousShift = self::where('user_id', $this->user_id)
-            ->where('branch_id', $this->branch_id)
-            ->where('id', '<', $this->id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $startAt = \Carbon\Carbon::parse($this->opened_at)->startOfDay();
-        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($this->opened_at)) {
-            $startAt = $previousShift->closed_at;
-        }
+        $closedAt = $this->periodEnd();
+        $startAt  = $this->periodStart();
 
         $summary = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
             ->join($transactionTable . ' as t', 't.id', '=', 'p.transaction_id')
@@ -134,18 +161,8 @@ class CashierShift extends Model
         $entity = $this->entity;
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
 
-        $closedAt = $this->closed_at ?? now();
-
-        $previousShift = self::where('user_id', $this->user_id)
-            ->where('branch_id', $this->branch_id)
-            ->where('id', '<', $this->id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $startAt = \Carbon\Carbon::parse($this->opened_at)->startOfDay();
-        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($this->opened_at)) {
-            $startAt = $previousShift->closed_at;
-        }
+        $closedAt = $this->periodEnd();
+        $startAt  = $this->periodStart();
 
         $summary = \Illuminate\Support\Facades\DB::table($transactionTable)
             ->where('created_by', $this->user_id)

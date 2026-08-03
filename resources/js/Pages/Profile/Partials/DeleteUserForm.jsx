@@ -55,14 +55,16 @@ export default function DeleteUserForm({ className = '' }) {
                         <InputError message={errors.password} className="mt-2" />
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            type="button"
+                            variant="outline"
                             size="sm"
                             onClick={close}
                         >
                             Batal
                         </Button>
-                        <Button 
+                        <Button
+                            type="submit"
                             disabled={processing}
                             className="bg-error-600 text-white hover:bg-error-700 dark:bg-error-600/80 dark:hover:bg-error-700/80 shadow-theme-xs px-4 py-3 text-sm"
                         >

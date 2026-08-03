@@ -18,9 +18,12 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         $entityRoles = [
-            'gudang'  => ['admin_gudang'],
-            'hendhys' => ['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'],
-            'jihans'  => ['kasir_jihans', 'admin_jihans', 'super_admin_jihans'],
+            // super_admin mengawasi Gudang Utama + seluruh unit, jadi ia ditempatkan
+            // pada entity 'all' (dan 'gudang' tetap diterima untuk kompatibilitas).
+            'all'     => ['super_admin', 'owner'],
+            'gudang'  => ['super_admin'],
+            'hendhys' => ['kasir_hendhys', 'admin_hendhys'],
+            'jihans'  => ['kasir_jihans', 'admin_jihans'],
             'owner'   => ['owner'],
         ];
 

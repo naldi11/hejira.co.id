@@ -46,7 +46,7 @@ export default function HendhysStockMovements({ movements, branches, products, i
                             {isPusat && (
                                 <select value={form.branch_id} onChange={(e) => setForm({ ...form, branch_id: e.target.value })} className="rounded-lg border-gray-300 py-2 text-sm focus:border-amber-500 focus:ring-amber-500 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white">
                                     <option value="">Semua Lokasi</option>
-                                    <option value="pusat">Pusat</option>
+                                    <option value="pusat">Gudang Hendhys</option>
                                     {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                                 </select>
                             )}

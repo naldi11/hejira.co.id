@@ -19,11 +19,11 @@ class PosProductResource extends JsonResource
             'barcode'       => $this->barcode,
             'name'          => $this->name,
             'selling_price' => (float) $this->selling_price,
-            'current_stock' => (float) ($this->current_stock ?? 0),
+            'current_stock' => (int) ($this->current_stock ?? 0),
             'unit'          => $this->whenLoaded('unit', fn () => $this->unit?->abbreviation ?? 'PCS'),
             'category_name' => $this->whenLoaded('category', fn () => $this->category?->name),
             'tiered_prices' => $this->whenLoaded('tieredPrices', fn () => $this->tieredPrices->map(fn ($t) => [
-                'min_qty' => (float) $t->min_qty,
+                'min_qty' => (int) $t->min_qty,
                 'price'   => (float) $t->price,
             ])->values()),
         ];

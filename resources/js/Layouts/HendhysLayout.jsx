@@ -9,9 +9,9 @@ export default function HendhysLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const isPusat = auth?.user?.branch?.type === 'pusat';
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_hendhys') || roles.includes('super_admin_hendhys');
-    const isAdmin = roles.includes('admin_hendhys') || roles.includes('super_admin_hendhys') || roles.includes('owner') || roles.includes('admin_gudang');
-    const isSuperAdmin = roles.includes('super_admin_hendhys');
+    const isKasir = roles.includes('kasir_hendhys');
+    const isAdmin = roles.includes('admin_hendhys') || roles.includes('super_admin') || roles.includes('owner');
+    const isSuperAdmin = roles.includes('super_admin');
 
     const navItems = [
         {

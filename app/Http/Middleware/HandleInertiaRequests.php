@@ -57,7 +57,7 @@ class HandleInertiaRequests extends Middleware
 
             // Dynamic system notifications shared with front-end components
             'notifications' => [
-                'gudang_pending' => fn () => $user && $user->hasAnyRole(['admin_gudang', 'owner'])
+                'gudang_pending' => fn () => $user && $user->hasAnyRole(['super_admin', 'owner'])
                     ? TransferRequest::where('status', 'pending')->count()
                     : 0,
                 'items' => function() use ($user) {
@@ -65,7 +65,7 @@ class HandleInertiaRequests extends Middleware
 
                     $items = [];
                     $roles = $user->getRoleNames();
-                    $isAdminGudang = $roles->contains('admin_gudang');
+                    $isAdminGudang = $roles->contains('super_admin');
                     $isOwner = $roles->contains('owner');
                     $isAdminJihans = $roles->contains('admin_jihans') || $roles->contains('kasir_jihans');
                     $isAdminHendhys = $roles->contains('admin_hendhys') || $roles->contains('kasir_hendhys');
@@ -172,7 +172,7 @@ class HandleInertiaRequests extends Middleware
 
                         if ($isPusat) {
                             // --- PUSAT NOTIFICATIONS: Gudang to Hendhys Pusat ---
-                            if ($user->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                            if ($user->hasAnyRole(['admin_hendhys', 'super_admin', 'owner'])) {
                                 $transitCount = \App\Models\TransferOut::where('to_entity', 'hendhys')
                                     ->where('branch_id', $user->branch_id)
                                     ->where('status', 'sent')
@@ -191,7 +191,7 @@ class HandleInertiaRequests extends Middleware
                             }
                         } else {
                             // --- CABANG NOTIFICATIONS: Hendhys Pusat to Hendhys Cabang ---
-                            if ($user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                            if ($user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'super_admin', 'owner'])) {
                                 $transitCount = \App\Models\HendhysTransferToBranch::where('branch_id', $user->branch_id)
                                     ->where('status', 'sent')
                                     ->count();
@@ -227,7 +227,7 @@ class HandleInertiaRequests extends Middleware
                         }
 
                         // 2. Low stock in Hendhys
-                        if ($user->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+                        if ($user->hasAnyRole(['admin_hendhys', 'super_admin', 'owner'])) {
                             if ($isPusat) {
                                 $lowStockCount = \App\Models\HendhysStockPusat::join('master_products', 'hendhys_stock_pusat.product_id', '=', 'master_products.id')
                                     ->where('master_products.status', 'active')

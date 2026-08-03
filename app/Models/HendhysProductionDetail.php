@@ -16,6 +16,19 @@ class HendhysProductionDetail extends Model
         'production_id', 'product_id', 'quantity_produced', 'unit_id'
     ];
 
+    /**
+     * Kuantitas stok WAJIB integer; hanya nilai uang yang desimal.
+     * Kolom DB masih decimal(15,3) karena alasan historis, sehingga tanpa cast
+     * Eloquent mengembalikan string seperti "5.000" dan perhitungan di PHP
+     * jadi rawan galat pembulatan.
+     */
+    protected function casts(): array
+    {
+        return [
+            'quantity_produced' => 'integer',
+        ];
+    }
+
     public function production(): BelongsTo
     {
         return $this->belongsTo(HendhysProduction::class, 'production_id');

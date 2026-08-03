@@ -47,9 +47,9 @@ class JihansStockTest extends TestCase
 
     public function test_gudang_admin_cannot_access_jihans_stock(): void
     {
-        Role::findOrCreate('admin_gudang', 'web');
+        Role::findOrCreate('super_admin', 'web');
         $user = User::factory()->create(['entity' => 'gudang']);
-        $user->assignRole('admin_gudang');
+        $user->assignRole('super_admin');
 
         $this->actingAs($user)
             ->get(route('jihans.stock.index'))

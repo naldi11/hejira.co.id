@@ -12,11 +12,16 @@ class CheckBranch
     {
         $user = $request->user();
 
-        if ($user && $user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys', 'kasir_jihans', 'admin_jihans', 'super_admin_jihans'])) {
+        if ($user && $user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'kasir_jihans', 'admin_jihans'])) {
             $activeBranchId = session('active_branch_id');
 
             if ($activeBranchId) {
                 $user->branch_id = $activeBranchId;
+                // Cabang aktif hanya berlaku untuk request ini — jangan sampai
+                // ter-persist. Tanpa ini, atribut menjadi "dirty" dan setiap
+                // $user->save()/update() di request yang sama akan diam-diam
+                // memindahkan cabang asal user di database.
+                $user->syncOriginalAttribute('branch_id');
                 $user->unsetRelation('branch');
                 $branch = \App\Models\Branch::find($activeBranchId);
                 if ($branch) {

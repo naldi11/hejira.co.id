@@ -10,7 +10,6 @@ use App\Models\JihansRetailStock;
 use App\Models\JihansTransaction;
 use App\Models\Product;
 use App\Services\ActivityLogService;
-use App\Services\InvoiceService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +20,7 @@ class PosController extends Controller
     public function __construct(
         private NumberGeneratorService $numbers,
         private StockService $stock,
-        private ActivityLogService $logger,
-        private InvoiceService $invoiceService
+        private ActivityLogService $logger
     ) {}
 
     public function index()
@@ -47,6 +45,75 @@ class PosController extends Controller
      * Persist a sale. Called by the React POS via axios (JSON), so it returns JSON
      * (not an Inertia response) and redirects the client to the printable receipt.
      */
+    /**
+     * Verifikasi konsistensi aritmetika nilai uang yang dikirim POS.
+     *
+     * Berbeda dengan Hendhys, kasir Jihan's MEMANG boleh mengubah harga per baris
+     * di keranjang (ada input harga di UI), jadi harga tidak bisa dipaksa dari
+     * master. Yang tetap wajib benar adalah hitungannya sendiri — tanpa ini,
+     * payload yang dimanipulasi bisa mencatat omzet nyaris nol padahal stok
+     * tetap terpotong penuh.
+     *
+     * Rumus mengikuti totals() di resources/js/Pages/Jihans/Pos/Index.jsx:
+     *   total_baris = qty * harga - diskon_baris
+     *   subtotal    = Σ total_baris
+     *   setelahDisk = subtotal - extra_discount
+     *   pajak       = ppn_type 'exclude' ? setelahDisk * (ppn_rate/100) : 0
+     *   grand_total = max(0, setelahDisk + pajak) + other_costs
+     *
+     * @return string|null Pesan error, atau null bila konsisten.
+     */
+    private function assertTotalsConsistent(array $data): ?string
+    {
+        $tolerance = 1.0; // Rp 1, untuk galat pembulatan floating point di browser
+        $subtotal  = 0.0;
+
+        foreach ($data['items'] as $i => $item) {
+            $expected = ((int) $item['quantity']) * (float) $item['price'] - (float) ($item['discount'] ?? 0);
+            if (abs($expected - (float) $item['total']) > $tolerance) {
+                return sprintf(
+                    'Total baris ke-%d tidak konsisten (server: %s, dikirim: %s).',
+                    $i + 1,
+                    number_format($expected, 0, ',', '.'),
+                    number_format((float) $item['total'], 0, ',', '.')
+                );
+            }
+            $subtotal += $expected;
+        }
+
+        if (abs($subtotal - (float) $data['subtotal']) > $tolerance) {
+            return sprintf(
+                'Subtotal tidak konsisten (server: %s, dikirim: %s).',
+                number_format($subtotal, 0, ',', '.'),
+                number_format((float) $data['subtotal'], 0, ',', '.')
+            );
+        }
+
+        $afterDiscount = $subtotal - (float) ($data['extra_discount'] ?? 0);
+        $tax = ($data['ppn_type'] ?? 'none') === 'exclude'
+            ? $afterDiscount * ((float) ($data['ppn_rate'] ?? 0) / 100)
+            : 0.0;
+
+        if (abs($tax - (float) ($data['tax_amount'] ?? 0)) > $tolerance) {
+            return sprintf(
+                'Nilai PPN tidak konsisten (server: %s, dikirim: %s).',
+                number_format($tax, 0, ',', '.'),
+                number_format((float) ($data['tax_amount'] ?? 0), 0, ',', '.')
+            );
+        }
+
+        $grandTotal = max(0, $afterDiscount + $tax) + (float) ($data['other_costs'] ?? 0);
+        if (abs($grandTotal - (float) $data['grand_total']) > $tolerance) {
+            return sprintf(
+                'Grand total tidak konsisten (server: %s, dikirim: %s).',
+                number_format($grandTotal, 0, ',', '.'),
+                number_format((float) $data['grand_total'], 0, ',', '.')
+            );
+        }
+
+        return null;
+    }
+
     public function store(StorePosTransactionRequest $request)
     {
         $now = now()->timezone('Asia/Jakarta');
@@ -56,10 +123,22 @@ class PosController extends Controller
 
         $data = $request->validated();
 
+        if ($error = $this->assertTotalsConsistent($data)) {
+            return response()->json(['error' => $error], 422);
+        }
+
+        // Jumlahkan per produk: satu produk bisa muncul di dua baris keranjang,
+        // dan mengecek tiap baris sendiri-sendiri meloloskan total melebihi stok.
+        $neededPerProduct = [];
         foreach ($data['items'] as $item) {
-            $available = JihansRetailStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
-            if ($item['quantity'] > $available) {
-                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$item['product_id']}."], 422);
+            $neededPerProduct[$item['product_id']] =
+                ($neededPerProduct[$item['product_id']] ?? 0) + (int) $item['quantity'];
+        }
+
+        foreach ($neededPerProduct as $productId => $needed) {
+            $available = (int) round((float) (JihansRetailStock::where('product_id', $productId)->value('quantity') ?? 0));
+            if ($needed > $available) {
+                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$productId}."], 422);
             }
         }
 
@@ -107,6 +186,14 @@ class PosController extends Controller
                 'bank_name'         => null,
                 'notes'             => null,
             ]);
+
+            // Hapus transaksi tertahan HANYA setelah penjualannya benar-benar
+            // tersimpan, di dalam transaksi DB yang sama. Sebelumnya frontend
+            // menghapusnya lebih dulu, sehingga keranjang bisa hilang permanen
+            // bila kasir menyegarkan halaman sebelum checkout.
+            if (!empty($data['pending_id'])) {
+                \App\Models\JihansPendingTransaction::whereKey($data['pending_id'])->delete();
+            }
 
             $this->logger->log('create', 'jihans.pos', "Transaksi POS Kasir Jihan's: {$trx->transaction_number}", $trx);
 
@@ -181,15 +268,48 @@ class PosController extends Controller
     {
         $data = $request->validated();
 
+        if ($transaction->status === 'cancelled') {
+            return response()->json(['error' => 'Transaksi yang sudah dibatalkan tidak dapat diubah.'], 422);
+        }
+
+        // Hanya transaksi dari shift yang MASIH TERBUKA yang boleh diedit.
+        //
+        // Rekap laci dihitung dari transaksi dalam rentang shift pada saat shift
+        // ditutup. Mengedit transaksi milik shift yang sudah tutup akan mengubah
+        // omzet dan stok, tetapi TIDAK memperbarui rekap yang sudah tercetak —
+        // sehingga angka laporan dan angka transaksi berbeda selamanya.
+        $openShift = \App\Models\CashierShift::where('user_id', $transaction->created_by)
+            ->where('status', 'open')
+            ->latest('id')
+            ->first();
+
+        if (!$openShift || $transaction->created_at < $openShift->opened_at) {
+            return response()->json([
+                'error' => 'Transaksi ini berasal dari shift yang sudah ditutup sehingga tidak bisa diubah. '
+                         . 'Gunakan pembatalan transaksi atau retur agar rekap laci tetap cocok.',
+            ], 422);
+        }
+
+        // Sama seperti store(): nilai uang wajib konsisten secara aritmetika.
+        if ($error = $this->assertTotalsConsistent($data)) {
+            return response()->json(['error' => $error], 422);
+        }
+
+        // Jumlahkan kebutuhan per produk (satu produk bisa muncul di dua baris),
+        // lalu tambahkan kembali qty yang sudah tercatat di transaksi ini karena
+        // stoknya akan dikembalikan dulu sebelum dipotong ulang.
+        $neededPerProduct = [];
         foreach ($data['items'] as $item) {
-            $available = JihansRetailStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
-            $currentDetail = $transaction->details()->where('product_id', $item['product_id'])->first();
-            if ($currentDetail) {
-                $available += $currentDetail->quantity;
-            }
-            
-            if ($item['quantity'] > $available) {
-                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$item['product_id']}."], 422);
+            $neededPerProduct[$item['product_id']] =
+                ($neededPerProduct[$item['product_id']] ?? 0) + (int) $item['quantity'];
+        }
+
+        foreach ($neededPerProduct as $productId => $needed) {
+            $available = (int) round((float) (JihansRetailStock::where('product_id', $productId)->value('quantity') ?? 0));
+            $available += (int) $transaction->details()->where('product_id', $productId)->sum('quantity');
+
+            if ($needed > $available) {
+                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$productId}."], 422);
             }
         }
 

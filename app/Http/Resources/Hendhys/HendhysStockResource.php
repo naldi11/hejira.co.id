@@ -16,7 +16,7 @@ class HendhysStockResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $qty = (float) ($this->current_stock ?? 0);
+        $qty = (int) ($this->current_stock ?? 0);
 
         return [
             'id'            => $this->id,
@@ -26,11 +26,11 @@ class HendhysStockResource extends JsonResource
             'category'      => $this->whenLoaded('category', fn () => $this->category?->name),
             'unit_id'       => $this->unit_id,
             'unit'          => $this->whenLoaded('unit', fn () => $this->unit?->abbreviation ?? 'PCS'),
-            'stock_min'     => (float) $this->stock_min,
+            'stock_min'     => (int) $this->stock_min,
             'current_stock' => $qty,
-            'return_stock'  => (float) ($this->return_stock ?? 0),
-            'parent_stock'  => (float) ($this->parent_stock ?? 0),
-            'is_low'        => $qty <= (float) $this->stock_min,
+            'return_stock'  => (int) ($this->return_stock ?? 0),
+            'parent_stock'  => (int) ($this->parent_stock ?? 0),
+            'is_low'        => $qty <= (int) $this->stock_min,
             'branch_id'     => $this->branch_id ?? null,
         ];
     }

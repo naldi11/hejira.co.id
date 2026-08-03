@@ -60,9 +60,9 @@ class OwnerTest extends TestCase
 
     public function test_non_owner_is_forbidden(): void
     {
-        Role::findOrCreate('admin_gudang', 'web');
+        Role::findOrCreate('super_admin', 'web');
         $user = User::factory()->create(['entity' => 'gudang']);
-        $user->assignRole('admin_gudang');
+        $user->assignRole('super_admin');
 
         $this->actingAs($user)
             ->get(route('owner.dashboard'))

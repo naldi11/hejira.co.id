@@ -23,7 +23,7 @@ class UpdateReceivingRequest extends FormRequest
             'notes'             => ['nullable', 'string'],
             'items'             => ['required', 'array', 'min:1'],
             'items.*.detail_id' => ['required', 'exists:gudang_receiving_details,id'],
-            'items.*.quantity'  => ['required', 'numeric', 'min:0'],
+            'items.*.quantity'  => ['required', 'integer', 'min:0'],
             'items.*.hpp_price' => ['required', 'numeric', 'min:0'],
             'items.*.kondisi'   => ['nullable', 'in:baik,rusak,kurang'],
             'items.*.notes'     => ['nullable', 'string'],

@@ -29,6 +29,12 @@ class PurchaseOrder extends Model
     public function details(): HasMany      { return $this->hasMany(PoDetail::class, 'po_id'); }
     public function receivings(): HasMany   { return $this->hasMany(Receiving::class, 'po_id'); }
 
+    /** Status di mana PO masih boleh diterima barangnya (dipakai juga oleh scope). */
+    public const RECEIVABLE_STATUSES = ['draft', 'sent', 'partial'];
+
+    /** Status di mana PO masih boleh dibatalkan. */
+    public const CANCELLABLE_STATUSES = ['draft', 'sent'];
+
     public function isEditable(): bool
     {
         return $this->status === 'draft';
@@ -37,6 +43,17 @@ class PurchaseOrder extends Model
     // Barang bisa diterima selama PO belum cancelled/completed
     public function isReceivable(): bool
     {
-        return in_array($this->status, ['draft', 'sent', 'partial']);
+        return in_array($this->status, self::RECEIVABLE_STATUSES, true);
+    }
+
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, self::CANCELLABLE_STATUSES, true);
+    }
+
+    /** Satu-satunya definisi "PO masih bisa diterima" untuk query builder. */
+    public function scopeReceivable($query)
+    {
+        return $query->whereIn('status', self::RECEIVABLE_STATUSES);
     }
 }

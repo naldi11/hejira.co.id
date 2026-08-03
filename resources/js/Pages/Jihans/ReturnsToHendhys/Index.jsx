@@ -11,11 +11,11 @@ export default function ReturnsIndex({ returns: rets, filters }) {
     const [form, setForm] = useState({ search: filters.search ?? '', status: filters.status ?? '' });
     const reload = (e) => { e?.preventDefault(); const p = {}; Object.entries(form).forEach(([k, v]) => { if (v) p[k] = v; }); router.get(route('jihans.returns-to-hendhys.index'), p, { preserveState: true, preserveScroll: true, replace: true, onStart: () => setLoading(true), onFinish: () => setLoading(false) }); };
     return (
-        <JihansLayout pageTitle="Return ke Hendhys Pusat">
-            <Head title="Return ke Hendhys Pusat" />
+        <JihansLayout pageTitle="Return ke Gudang Hendhys">
+            <Head title="Return ke Gudang Hendhys" />
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                    <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Return ke Hendhys Pusat</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Return ke Gudang Hendhys</h2>
                     <Link href={route('jihans.returns-to-hendhys.create')} className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-700"><Icon name="add" className="text-[20px]" /> Buat Return</Link>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">

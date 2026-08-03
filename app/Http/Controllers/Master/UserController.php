@@ -8,12 +8,15 @@ use App\Http\Requests\Master\UpdateUserRequest;
 use App\Http\Resources\Master\UserResource;
 use App\Models\Branch;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    public function __construct(private ActivityLogService $logger) {}
+
     public function index()
     {
         return Inertia::render('Master/Users/Index', [
@@ -52,6 +55,17 @@ class UserController extends Controller
 
         $user->assignRole($data['role']);
 
+        // Manajemen user (role, penempatan, aktivasi) adalah resource paling sensitif
+        // di Master, tapi satu-satunya yang dulu tidak meninggalkan jejak audit.
+        $this->logger->log(
+            'create',
+            'master.user',
+            "Tambah user: {$user->name} ({$user->email}) sebagai {$data['role']}",
+            $user,
+            null,
+            $this->auditable($user, $data['role'])
+        );
+
         return redirect()->route('master.users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
@@ -77,12 +91,24 @@ class UserController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ];
 
-        if (! empty($data['password'])) {
+        $passwordChanged = ! empty($data['password']);
+        if ($passwordChanged) {
             $payload['password'] = Hash::make($data['password']);
         }
 
+        $old = $this->auditable($user, $user->roles->first()?->name);
+
         $user->update($payload);
         $user->syncRoles([$data['role']]);
+
+        $this->logger->log(
+            'update',
+            'master.user',
+            "Update user: {$user->name}" . ($passwordChanged ? ' (password direset)' : ''),
+            $user,
+            $old,
+            $this->auditable($user->fresh(), $data['role'])
+        );
 
         return redirect()->route('master.users.index')->with('success', 'User berhasil diperbarui.');
     }
@@ -93,9 +119,31 @@ class UserController extends Controller
             return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
         }
 
+        $old = $this->auditable($user, $user->roles->first()?->name);
+        $name = $user->name;
+
         $user->delete();
 
+        $this->logger->log('delete', 'master.user', "Hapus user: {$name}", null, $old, null);
+
         return redirect()->route('master.users.index')->with('success', 'User berhasil dihapus.');
+    }
+
+    /**
+     * Cuplikan data user untuk audit log — sengaja TANPA kolom password
+     * agar hash kredensial tidak pernah ikut tersimpan di master_activity_logs.
+     */
+    private function auditable(User $user, ?string $role): array
+    {
+        return [
+            'id'        => $user->id,
+            'name'      => $user->name,
+            'email'     => $user->email,
+            'entity'    => $user->entity,
+            'branch_id' => $user->branch_id,
+            'is_active' => (bool) $user->is_active,
+            'role'      => $role,
+        ];
     }
 
     /** Shared option payload for the create/edit form. */
@@ -103,9 +151,12 @@ class UserController extends Controller
     {
         // Peta role per entitas — digunakan frontend untuk filter role berdasarkan penempatan
         $entityRoles = [
-            'gudang'  => ['admin_gudang'],
-            'hendhys' => ['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'],
-            'jihans'  => ['kasir_jihans', 'admin_jihans', 'super_admin_jihans'],
+            // super_admin mengawasi Gudang Utama + seluruh unit, jadi ia ditempatkan
+            // pada entity 'all' (dan 'gudang' tetap diterima untuk kompatibilitas).
+            'all'     => ['super_admin', 'owner'],
+            'gudang'  => ['super_admin'],
+            'hendhys' => ['kasir_hendhys', 'admin_hendhys'],
+            'jihans'  => ['kasir_jihans', 'admin_jihans'],
             'owner'   => ['owner'],
         ];
 

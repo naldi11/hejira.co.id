@@ -19,12 +19,15 @@ class NotificationController extends Controller
         ];
 
         // 1. Gudang Count (for Admin Gudang & Owner)
-        if ($user->hasRole('admin_gudang') || $user->hasRole('owner')) {
+        if ($user->hasRole('super_admin') || $user->hasRole('owner')) {
             $counts['gudang_pending'] = TransferRequest::where('status', 'pending')->count();
         }
 
         // 2. Hendhys Pusat Count (for Hendhys Pusat & Owner)
-        if (($user->hasRole('kasir_hendhys') && $user->branch->type === 'pusat') || $user->hasRole('owner')) {
+        // Pakai ?-> : user tanpa branch_id (mis. akun baru yang belum ditempatkan)
+        // sebelumnya membuat endpoint ini fatal error, padahal ia dipanggil di
+        // hampir setiap halaman untuk badge notifikasi.
+        if (($user->hasRole('kasir_hendhys') && $user->branch?->type === 'pusat') || $user->hasRole('owner')) {
             $counts['hendhys_pusat_pending'] = HendhysBranchRequest::where('status', 'pending')->count();
         }
 

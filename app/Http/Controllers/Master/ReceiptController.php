@@ -9,7 +9,6 @@ use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ReceiptController extends Controller
@@ -55,9 +54,9 @@ class ReceiptController extends Controller
 
         $request->validate([
             'quantity_bagus'           => 'required|array|min:1',
-            'quantity_bagus.*'         => 'required|numeric|min:0',
+            'quantity_bagus.*'         => 'required|integer|min:0',
             'quantity_rusak'           => 'required|array|min:1',
-            'quantity_rusak.*'         => 'required|numeric|min:0',
+            'quantity_rusak.*'         => 'required|integer|min:0',
             'batch_number'             => 'nullable|array',
             'expired_date'             => 'nullable|array',
             'expired_date.*'           => 'nullable|date',
@@ -71,10 +70,10 @@ class ReceiptController extends Controller
 
         // Validate sum of good + damaged equals shipped quantity
         foreach ($transferOut->details as $detail) {
-            $qtyBagus = (float) ($request->quantity_bagus[$detail->id] ?? 0);
-            $qtyRusak = (float) ($request->quantity_rusak[$detail->id] ?? 0);
-            $qtySent  = (float) $detail->quantity;
-            if (abs(($qtyBagus + $qtyRusak) - $qtySent) > 0.001) {
+            $qtyBagus = (int) ($request->quantity_bagus[$detail->id] ?? 0);
+            $qtyRusak = (int) ($request->quantity_rusak[$detail->id] ?? 0);
+            $qtySent  = (int) $detail->quantity;
+            if (($qtyBagus + $qtyRusak) !== $qtySent) {
                 return back()->withInput()->withErrors([
                     'received_quantities' => "Jumlah Bagus + Rusak untuk produk {$detail->product->name} harus sama dengan Qty Kirim ({$qtySent})."
                 ]);
@@ -93,9 +92,9 @@ class ReceiptController extends Controller
                 ]);
 
                 foreach ($transferOut->details as $detail) {
-                    $qtyBagus = (float) ($request->quantity_bagus[$detail->id] ?? 0);
-                    $qtyRusak = (float) ($request->quantity_rusak[$detail->id] ?? 0);
-                    $qtySent  = (float) $detail->quantity;
+                    $qtyBagus = (int) ($request->quantity_bagus[$detail->id] ?? 0);
+                    $qtyRusak = (int) ($request->quantity_rusak[$detail->id] ?? 0);
+                    $qtySent  = (int) $detail->quantity;
 
                     // Update legacy detail: received_quantity = good items, kondisi = 'baik'
                     // (Only good items go to stock)
@@ -140,7 +139,7 @@ class ReceiptController extends Controller
 
                     // 3. Missing items
                     $qtyKurang = $qtySent - ($qtyBagus + $qtyRusak);
-                    if ($qtyKurang > 0.001) {
+                    if ($qtyKurang > 0) {
                         $receiptConfirmation->details()->create([
                             'product_id'   => $detail->product_id,
                             'expected_qty' => $qtySent,
@@ -219,9 +218,10 @@ class ReceiptController extends Controller
     {
         $prefix = $request->route()->getPrefix() ?? '';
         if (str_contains($prefix, 'hendhys')) {
+            // 'layout' dihapus: key ini tidak pernah dibaca blade manapun, dan
+            // nilainya ('layouts.hendhys') menunjuk file yang sudah tidak ada.
             return [
                 'scope'          => 'hendhys',
-                'layout'         => 'layouts.hendhys',
                 'route'          => 'hendhys.',
                 'transferRoute'  => 'hendhys.transfer-requests.',
                 'printRoute'     => 'hendhys.transfer-requests.print-gudang',
@@ -231,7 +231,6 @@ class ReceiptController extends Controller
         }
         return [
             'scope'          => 'jihans',
-            'layout'         => 'layouts.jihans',
             'route'          => 'jihans.',
             'transferRoute'  => 'jihans.transfer-requests.',
             'printRoute'     => 'jihans.transfer-requests.print',

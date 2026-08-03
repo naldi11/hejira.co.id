@@ -24,6 +24,7 @@ class SaveBranchRequest extends FormRequest
             'code'      => ['required', 'string', 'max:20', Rule::unique('master_branches', 'code')->ignore($branchId)],
             'name'      => ['required', 'string', 'max:100'],
             'type'      => ['required', 'in:pusat,cabang'],
+            'entity'    => ['required', 'in:hendhys,jihans,gudang'],
             'address'   => ['nullable', 'string'],
             'phone'     => ['nullable', 'string', 'max:20'],
             'is_active' => ['boolean'],

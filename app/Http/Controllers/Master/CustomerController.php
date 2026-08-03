@@ -8,6 +8,7 @@ use App\Http\Resources\Master\CustomerResource;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -79,19 +80,24 @@ class CustomerController extends Controller
         ]);
 
         $tableName = 'master_customers';
-        $data['code']      = $this->numbers->generate('CST', $tableName, 'code');
-        $data['type']      = $data['type'] ?? 'Pelanggan Individual';
         if (empty($data['type'])) {
             $data['type'] = 'Pelanggan Individual';
         }
-        $data['created_by'] = auth()->id();
         $data['entity_scope']    = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
         $data['visible_gudang']  = $request->boolean('visible_gudang',  in_array($info['scope'], ['gudang']));
         $data['visible_jihans']  = $request->boolean('visible_jihans',  in_array($info['scope'], ['gudang','jihans']));
         $data['visible_hendhys'] = $request->boolean('visible_hendhys', in_array($info['scope'], ['gudang','hendhys']));
         $data['is_active']       = $request->boolean('is_active', true);
 
-        $customer = $this->getModelClass('Customer', $info['scope'])::create($data);
+        // Generate kode DI DALAM transaksi: lockForUpdate pada generator hanya
+        // menahan baris selama transaksi berlangsung. Tanpa pembungkus ini,
+        // dua penyimpanan bersamaan bisa mendapat kode yang sama.
+        $customer = DB::transaction(function () use ($data, $tableName, $info) {
+            $data['code'] = $this->numbers->generate('CST', $tableName, 'code');
+
+            return $this->getModelClass('Customer', $info['scope'])::create($data);
+        });
+
         $this->logger->log('create', 'master.customer', "Tambah customer: {$customer->name}", $customer);
 
         return redirect()->route($info['route'].'customers.index')->with('success', "Customer {$customer->name} berhasil ditambahkan.");
@@ -136,9 +142,12 @@ class CustomerController extends Controller
         }
         $data['is_active']       = $request->boolean('is_active', true);
         $data['entity_scope']    = $request->input('entity_scope', $customer->entity_scope);
-        $data['visible_gudang']  = $request->boolean('visible_gudang');
-        $data['visible_jihans']  = $request->boolean('visible_jihans');
-        $data['visible_hendhys'] = $request->boolean('visible_hendhys');
+        // Pertahankan nilai lama sebagai default. Tanpa fallback ini, form edit yang
+        // tidak menyertakan ketiga key visible_* akan mereset semuanya ke false dan
+        // customer menghilang dari SEMUA entity.
+        $data['visible_gudang']  = $request->boolean('visible_gudang',  (bool) $customer->visible_gudang);
+        $data['visible_jihans']  = $request->boolean('visible_jihans',  (bool) $customer->visible_jihans);
+        $data['visible_hendhys'] = $request->boolean('visible_hendhys', (bool) $customer->visible_hendhys);
         $customer->update($data);
 
         $this->logger->log('update', 'master.customer', "Update customer: {$customer->name}", $customer, $old, $customer->fresh()->toArray());

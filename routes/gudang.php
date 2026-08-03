@@ -15,7 +15,7 @@ use App\Http\Controllers\Master\UnitController;
 use Illuminate\Support\Facades\Route;
 
 // ── Gudang Operasional ───────────────────────────────────────────────────────
-Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
+Route::middleware(['auth', 'check.entity:gudang', 'role:super_admin'])
     ->prefix('gudang')
     ->name('gudang.')
     ->group(function () {
@@ -63,7 +63,7 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:admin_gudang'])
     });
 
 // ── Master Data (dikelola Admin Gudang) ──────────────────────────────────────
-Route::middleware(['auth', 'role:admin_gudang'])
+Route::middleware(['auth', 'role:super_admin'])
     ->prefix('master')
     ->name('master.')
     ->group(function () {

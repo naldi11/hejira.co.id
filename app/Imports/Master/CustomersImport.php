@@ -5,6 +5,7 @@ namespace App\Imports\Master;
 use App\Models\Customer;
 use App\Services\NumberGeneratorService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 
 class CustomersImport implements ToCollection
@@ -17,7 +18,23 @@ class CustomersImport implements ToCollection
     }
 
     // ── ENTRY POINT ──────────────────────────────────────────────────────────
+    /**
+     * Seluruh impor dijalankan dalam satu transaksi.
+     *
+     * Dua alasan:
+     * 1. NumberGeneratorService::generate() memakai lockForUpdate() untuk mencegah
+     *    kode duplikat. Di luar transaksi, lock itu langsung dilepas sehingga tidak
+     *    berefek — dua impor bersamaan (atau impor vs input manual) bisa menghasilkan
+     *    kode kembar dan menabrak unique index pada kolom `code`.
+     * 2. Tanpa transaksi, kegagalan di tengah berkas meninggalkan data separuh terimpor
+     *    yang sudah ter-commit.
+     */
     public function collection(Collection $rows)
+    {
+        DB::transaction(fn () => $this->importRows($rows));
+    }
+
+    private function importRows(Collection $rows)
     {
         $format = $this->detectFormat($rows);
         \Log::info("CustomersImport: format={$format}, total_rows={$rows->count()}");

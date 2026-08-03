@@ -52,7 +52,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4 pt-2">
-                    <Button disabled={processing} variant="primary" size="md">
+                    <Button type="submit" disabled={processing} variant="primary" size="md">
                         Simpan
                     </Button>
                     {recentlySuccessful && (

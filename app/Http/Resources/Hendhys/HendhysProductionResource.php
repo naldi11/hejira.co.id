@@ -27,7 +27,7 @@ class HendhysProductionResource extends JsonResource
                 'product_id'        => $d->product_id,
                 'product'           => $d->product?->name ?? '-',
                 'product_code'      => $d->product?->code ?? '-',
-                'quantity_produced' => (float) $d->quantity_produced,
+                'quantity_produced' => (int) $d->quantity_produced,
                 'unit_id'           => $d->unit_id,
                 'unit'              => $d->unit?->abbreviation ?? 'PCS',
             ])),

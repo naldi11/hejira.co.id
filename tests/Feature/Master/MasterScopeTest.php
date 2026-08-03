@@ -29,7 +29,7 @@ class MasterScopeTest extends TestCase
 
     public function test_gudang_scope_passes_gudang_layout_and_route_prefix(): void
     {
-        $this->actingAs($this->user('admin_gudang', 'gudang'))
+        $this->actingAs($this->user('super_admin', 'gudang'))
             ->get(route('master.suppliers.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page

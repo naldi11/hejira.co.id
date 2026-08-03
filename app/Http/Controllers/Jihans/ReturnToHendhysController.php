@@ -48,10 +48,10 @@ class ReturnToHendhysController extends Controller
     {
         // Get products that have stock in Jihans Retail Stock
         $products = Product::where('status', 'active')
-            ->join('jihans_retail_stocks', 'master_products.id', '=', 'jihans_retail_stocks.product_id')
-            ->where('jihans_retail_stocks.quantity', '>', 0)
+            ->join('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
+            ->where('jihans_retail_stock.quantity', '>', 0)
             ->with('unit')
-            ->select('master_products.*', 'jihans_retail_stocks.quantity as current_stock')
+            ->select('master_products.*', 'jihans_retail_stock.quantity as current_stock')
             ->orderBy('name')
             ->get()
             ->map(fn ($p) => [
@@ -60,7 +60,7 @@ class ReturnToHendhysController extends Controller
                 'code' => $p->code, 
                 'unit_id' => $p->unit_id, 
                 'unit' => $p->unit?->abbreviation ?? 'PCS',
-                'current_stock' => (float) $p->current_stock
+                'current_stock' => (int) $p->current_stock
             ]);
             
         $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
@@ -87,7 +87,10 @@ class ReturnToHendhysController extends Controller
 
         try {
             DB::transaction(function () use ($request, $user) {
-                $branchId = $user->branch_id ?? \App\Models\Branch::where('entity', 'jihans')->first()->id;
+                $branchId = $user->branch_id ?? \App\Models\Branch::where('entity', 'jihans')->value('id');
+                if (!$branchId) {
+                    throw new \RuntimeException('Cabang Jihan\'s belum dikonfigurasi. Hubungi admin untuk menetapkan entity cabang.');
+                }
 
                 $ret = HendhysReturnFromBranch::create([
                     'return_number' => $this->numbers->generateYearly('RET-HND', 'hendhys_returns_from_branch', 'return_number'),
@@ -137,7 +140,7 @@ class ReturnToHendhysController extends Controller
     public function show(HendhysReturnFromBranch $returnsToHendhy)
     {
         $returnsToHendhy->load('branch');
-        if ($returnsToHendhy->branch->entity !== 'jihans') {
+        if ($returnsToHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
         }
 

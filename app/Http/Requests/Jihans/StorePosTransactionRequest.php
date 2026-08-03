@@ -17,7 +17,15 @@ class StorePosTransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transaction_date'   => ['nullable', 'date'],
+            // Batas atas WAJIB: tanpa ini salah ketik tahun (2026 -> 2029) membuat
+            // transaksi lenyap dari laporan periode berjalan dan baru muncul
+            // bertahun-tahun kemudian. Sudah pernah terjadi dua kali di produksi.
+            'transaction_date'   => ['nullable', 'date', 'before_or_equal:today'],
+            // Bila penjualan ini berasal dari transaksi yang ditahan, pendingnya
+            // dihapus di dalam transaksi DB yang sama — bukan lebih dulu di
+            // frontend. Kalau dihapus di depan, keranjang bisa lenyap permanen
+            // saat kasir refresh halaman sebelum sempat checkout.
+            'pending_id'         => ['nullable', 'integer', 'exists:jihans_pending_transactions,id'],
             'customer_id'        => ['nullable', 'exists:master_customers,id'],
             'customer_name'      => ['nullable', 'string', 'max:150'],
             'customer_type'      => ['nullable', 'string'],

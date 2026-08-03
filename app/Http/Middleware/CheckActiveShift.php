@@ -13,10 +13,15 @@ class CheckActiveShift
     {
         $user = auth()->user();
         
-        // Time validation (00:01 to 06:59)
+        // Jam tutup kasir: 00:00–06:59 WIB.
+        //
+        // Dulu dibandingkan sebagai string ('00:01' s/d '06:59'), sehingga menit
+        // 00:00:00–00:00:59 LOLOS dari middleware ini padahal PosController
+        // (Hendhys & Jihans) memakai `hour >= 0 && hour < 7` dan tetap menolak
+        // penjualannya. Akibatnya kasir bisa masuk halaman POS lalu transaksinya
+        // ditolak. Sekarang keduanya memakai batas jam yang sama.
         $now = now()->timezone('Asia/Jakarta');
-        $currentTime = $now->format('H:i');
-        if ($currentTime >= '00:01' && $currentTime <= '06:59') {
+        if ($now->hour >= 0 && $now->hour < 7) {
             if (($request->wantsJson() || $request->ajax()) && !$request->hasHeader('X-Inertia')) {
                 return response()->json([
                     'error' => 'Sistem kasir tutup. Silakan lanjutkan pada pukul 07:00 WIB.',

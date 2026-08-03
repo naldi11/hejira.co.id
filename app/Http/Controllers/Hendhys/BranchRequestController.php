@@ -24,7 +24,7 @@ class BranchRequestController extends Controller
         $q = HendhysBranchRequest::with(['branch', 'creator', 'approver']);
 
         // Jika user adalah Cabang, hanya lihat request cabangnya sendiri
-        if ($user->branch->type === 'cabang') {
+        if ($user->branch?->type === 'cabang') {
             $q->where('branch_id', $user->branch_id);
         }
 
@@ -114,7 +114,7 @@ class BranchRequestController extends Controller
     public function show(HendhysBranchRequest $branchRequest)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $branchRequest->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $branchRequest->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -128,7 +128,7 @@ class BranchRequestController extends Controller
     public function reject(Request $request, HendhysBranchRequest $branchRequest)
     {
         $user = auth()->user();
-        if ($user->branch->type !== 'pusat') {
+        if ($user->branch && $user->branch->type !== 'pusat') {
             abort(403, 'Akses ditolak.');
         }
 

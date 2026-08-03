@@ -16,14 +16,32 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
     const [loadingShifts, setLoadingShifts] = useState(false);
 
     useEffect(() => {
+        // Kirim rentang tanggal yang sedang dipilih (dan shift yang sedang aktif)
+        // supaya daftar shift mengikuti filter. Sebelumnya tidak ada parameter
+        // tanggal yang dikirim sama sekali, jadi backend selalu memakai default
+        // 30 hari terakhir dan shift lama tidak pernah muncul.
+        let cancelled = false;
         setLoadingShifts(true);
-        axios.get(`/${entity}/shifts/by-date`, { params: { entity: entity } })
+
+        axios.get(`/${entity}/shifts/by-date`, {
+            params: {
+                entity,
+                date_from: startDate || undefined,
+                date_to: endDate || undefined,
+                shift_id: shiftId || undefined,
+            },
+        })
             .then(res => {
-                setAvailableShifts(res.data || []);
+                if (!cancelled) setAvailableShifts(res.data || []);
             })
             .catch(err => console.error(err))
-            .finally(() => setLoadingShifts(false));
-    }, [entity]);
+            .finally(() => {
+                if (!cancelled) setLoadingShifts(false);
+            });
+
+        // Cegah respons lama menimpa respons baru saat tanggal diubah cepat.
+        return () => { cancelled = true; };
+    }, [entity, startDate, endDate, shiftId]);
 
     const handleApply = (e) => {
         e.preventDefault();

@@ -10,7 +10,6 @@ use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
-use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
@@ -83,9 +82,9 @@ class TransferOutController extends Controller
                         'product_id'        => $d->product_id,
                         'product_name'      => $d->product?->name,
                         'stock'             => (int) ($stocks[$d->product_id] ?? 0),
-                        'quantity_approved' => (float) $d->quantity_approved,
-                        'quantity_sent'     => (float) $d->quantity_sent,
-                        'quantity'          => (float) max(0, $d->quantity_approved - $d->quantity_sent),
+                        'quantity_approved' => (int) $d->quantity_approved,
+                        'quantity_sent'     => (int) $d->quantity_sent,
+                        'quantity'          => (int) max(0, $d->quantity_approved - $d->quantity_sent),
                         'unit_id'           => $d->unit_id,
                         'unit_name'         => $d->unit?->abbreviation,
                         'hpp_price'         => (float) $d->product?->hpp,
@@ -104,13 +103,16 @@ class TransferOutController extends Controller
     {
         $data = $request->validated();
 
-        // Stock sufficiency check.
+        // Pra-cek stok untuk memberi pesan ramah sebelum transaksi dibuka.
+        // Penjaga sebenarnya ada di StockService::debitJihansGudang yang membaca
+        // saldo di bawah lockForUpdate dan melempar InsufficientStockException,
+        // sehingga dua permintaan bersamaan tidak bisa sama-sama lolos.
         foreach ($data['items'] as $item) {
-            $stock = JihansGudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0;
-            if ($item['quantity'] > $stock) {
+            $stock = (int) round((float) (JihansGudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0));
+            if ((int) $item['quantity'] > $stock) {
                 $product = Product::find($item['product_id']);
                 return back()->withInput()->withErrors([
-                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: " . (int) $stock,
+                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: " . number_format($stock, 0, ',', '.'),
                 ]);
             }
         }

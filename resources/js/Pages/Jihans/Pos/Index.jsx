@@ -20,6 +20,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
     const [date, setDate] = useState(todayISO());
     const [notes, setNotes] = useState('');
     const [extraDiscount, setExtraDiscount] = useState(0);
+    const [pendingId, setPendingId] = useState(null);
     const [ppnType, setPpnType] = useState('none');
     const [shippingFee, setShippingFee] = useState(0);
     const [showSearch, setShowSearch] = useState(false);
@@ -116,9 +117,12 @@ export default function PosIndex({ products, customers, editTransaction }) {
             setCustomerId(d.customerId ?? '');
             setCustomerName(d.customerName ?? '');
             setNotes(d.notes ?? '');
+            setPendingId(d.pendingId ?? null);
             setCart(recalculateCart(d.items ?? [], type));
         } catch { /* ignore */ }
-        localStorage.removeItem('jihans_resume_cart');
+        // localStorage TIDAK dibersihkan di sini: kalau kasir menyegarkan halaman
+        // sebelum checkout, keranjangnya harus tetap bisa dipulihkan. Pembersihan
+        // dilakukan setelah penjualan berhasil (lihat processTransaction).
     }, [editTransaction]);
 
     const totals = useMemo(() => {
@@ -219,6 +223,10 @@ export default function PosIndex({ products, customers, editTransaction }) {
                 ppn_type: ppnType, ppn_rate: 11, subtotal: totals.subtotal, discount_amount: totals.itemDiscount,
                 extra_discount: Number(extraDiscount) || 0, tax_amount: totals.tax, other_costs: Number(shippingFee) || 0,
                 grand_total: totals.grand, amount_paid: amountPaid, reference_number: null, notes,
+                // Server yang menghapus pending ini, di dalam transaksi DB yang sama
+                // dengan penjualannya — supaya tidak ada jendela di mana pending sudah
+                // hilang padahal penjualannya belum tersimpan.
+                pending_id: pendingId,
                 items: buildItems(),
             };
             
@@ -227,7 +235,11 @@ export default function PosIndex({ products, customers, editTransaction }) {
                 : axios.post(route('jihans.pos.store'), payload, { headers: { 'X-CSRF-TOKEN': csrf() } });
             
             const { data } = await req;
-            if (data.success) { window.location.href = data.redirect; }
+            if (data.success) {
+                // Aman dibersihkan: penjualannya sudah tersimpan.
+                localStorage.removeItem('jihans_resume_cart');
+                window.location.href = data.redirect;
+            }
         } catch (err) {
             const r = err.response?.data;
             const errorMsg = r?.error || r?.message || (r?.errors && Object.values(r.errors)[0]?.[0]) || 'Terjadi kesalahan saat memproses transaksi.';
@@ -240,6 +252,10 @@ export default function PosIndex({ products, customers, editTransaction }) {
     };
 
     const holdTransaction = async () => {
+        // Guard sama seperti processTransaction: tanpa ini, menekan F5 berkali-kali
+        // (atau klik tombol Pending cepat) saat request masih terbang akan membuat
+        // beberapa transaksi pending kembar dengan isi keranjang yang sama.
+        if (processing) return;
         if (cart.length === 0) return;
         if (!window.confirm('Simpan transaksi ini sebagai pending?')) return;
         setProcessing(true);
@@ -267,7 +283,9 @@ export default function PosIndex({ products, customers, editTransaction }) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    });
+        // Tanpa dependency array, listener ini dilepas & dipasang ulang pada SETIAP
+        // render — termasuk setiap ketikan di kolom qty/harga keranjang.
+    }, [showSearch, showPayment, cart, processing]);
 
     const inputCls = 'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-orange-500';
     const cellInput = 'w-full bg-transparent text-right outline-none tabular-nums transition focus:rounded focus:bg-orange-50 dark:focus:bg-orange-900/20';
@@ -358,7 +376,9 @@ export default function PosIndex({ products, customers, editTransaction }) {
                                         </td>
                                     </tr>
                                 ) : cart.map((it, i) => (
-                                    <tr key={i} className="group hover:bg-orange-50/40 dark:hover:bg-orange-900/10 transition-colors">
+                                    // key pakai product_id (bukan index) supaya identitas baris tetap
+                                    // benar saat item di tengah keranjang dihapus — sama seperti POS Hendhys.
+                                    <tr key={it.product_id} className="group hover:bg-orange-50/40 dark:hover:bg-orange-900/10 transition-colors">
                                         <td className="px-3 py-2.5 text-center text-xs font-bold text-gray-400">{i + 1}</td>
                                         <td className="px-3 py-2.5">
                                             <p className="font-semibold text-gray-800 dark:text-white">{it.product_name}</p>
@@ -454,7 +474,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
                             <kbd className="rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-mono text-gray-400 dark:bg-gray-800">Ins</kbd>
                         </button>
 
-                        <button onClick={holdTransaction} disabled={cart.length === 0}
+                        <button onClick={holdTransaction} disabled={cart.length === 0 || processing}
                             className="flex flex-1 min-w-[120px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-blue-200 bg-blue-50 py-4 font-bold text-blue-600 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                             <Icon name="pause_circle" className="text-[28px]" />
                             <span className="text-sm">Pending</span>

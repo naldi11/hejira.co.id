@@ -112,7 +112,7 @@ class ProductionController extends Controller
             'details'    => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
             'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|numeric|min:0',
+            'details.*.quantity'    => 'required|integer|min:0',
         ]);
 
         $totalQty = collect($request->details)->sum('quantity');
@@ -154,7 +154,7 @@ class ProductionController extends Controller
             'details'    => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
             'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|numeric|min:0',
+            'details.*.quantity'    => 'required|integer|min:0',
         ]);
 
         $totalQtyAll = collect($request->details)->sum('quantity');
@@ -172,16 +172,7 @@ class ProductionController extends Controller
                     ->first();
             }
 
-            $oldProductQtyMap = [];
             if ($existingPrediksi) {
-                foreach ($existingPrediksi->details as $oldDetail) {
-                    $pid = $oldDetail->product_id;
-                    $qty = $oldDetail->quantity;
-                    if ($qty > 0) {
-                        $oldProductQtyMap[$pid] = ($oldProductQtyMap[$pid] ?? 0) + $qty;
-                    }
-                }
-                
                 // Hapus detail lama untuk diganti
                 $existingPrediksi->details()->delete();
 
@@ -274,7 +265,7 @@ class ProductionController extends Controller
             'details'    => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
             'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|numeric|min:0',
+            'details.*.quantity'    => 'required|integer|min:0',
         ]);
 
         $totalQtyAll = collect($request->details)->sum('quantity');
@@ -284,14 +275,6 @@ class ProductionController extends Controller
 
         DB::transaction(function () use ($request, $production) {
             $production->load('details');
-            $oldProductQtyMap = [];
-            foreach ($production->details as $oldDetail) {
-                $pid = $oldDetail->product_id;
-                $qty = $oldDetail->quantity;
-                if ($qty > 0) {
-                    $oldProductQtyMap[$pid] = ($oldProductQtyMap[$pid] ?? 0) + $qty;
-                }
-            }
 
             $production->update(['date' => $request->date, 'notes' => $request->notes]);
             $production->details()->delete();
@@ -326,16 +309,6 @@ class ProductionController extends Controller
         }
 
         DB::transaction(function () use ($production) {
-            $production->load('details');
-            $oldProductQtyMap = [];
-            foreach ($production->details as $oldDetail) {
-                $pid = $oldDetail->product_id;
-                $qty = $oldDetail->quantity;
-                if ($qty > 0) {
-                    $oldProductQtyMap[$pid] = ($oldProductQtyMap[$pid] ?? 0) + $qty;
-                }
-            }
-
             // Prediksi tidak memengaruhi stok
 
             $this->logger->log('delete', 'jihans.production', "Hapus prediksi produksi: {$production->session_number}");

@@ -32,8 +32,8 @@ class TransferOutResource extends JsonResource
             'details'         => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'id'                => $d->id,
                 'product'           => $d->product?->name ?? '(Produk Dihapus)',
-                'quantity'          => (float) $d->quantity,
-                'received_quantity' => $d->received_quantity !== null ? (float) $d->received_quantity : null,
+                'quantity'          => (int) $d->quantity,
+                'received_quantity' => $d->received_quantity !== null ? (int) $d->received_quantity : null,
                 'kondisi'           => $d->kondisi,
                 'unit'              => $d->unit?->abbreviation ?? '-',
                 'hpp_price'         => (float) $d->hpp_price,

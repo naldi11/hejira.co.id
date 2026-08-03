@@ -65,7 +65,7 @@ function StockCard({ item, isPusat, activeTab }) {
                     {/* Stok Bagus / Siap Jual */}
                     <div className={`rounded-xl border p-2.5 text-center ${item.is_low && isCabangTab ? 'border-rose-100 bg-rose-50/50 text-rose-700 dark:border-rose-900/30 dark:bg-rose-500/10 dark:text-rose-400' : 'border-emerald-100 bg-emerald-50/50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-500/10 dark:text-emerald-400'}`}>
                         <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                            {isCabangTab ? 'Siap Jual' : (isPusat ? 'Stok Gudang' : 'Stok Pusat')}
+                            {isCabangTab ? 'Siap Jual' : (isPusat ? 'Stok Gudang' : 'Stok Gudang Hendhys')}
                         </span>
                         <span className="block text-lg font-bold tabular-nums leading-none mb-1">{formatQty(mainStock)}</span>
                         <span className="block text-[8px] font-bold uppercase text-gray-400 dark:text-gray-550">{item.unit ?? 'PCS'}</span>
@@ -176,7 +176,7 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
             <div className="space-y-6">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok {isPusat ? 'Pusat' : 'Cabang'}</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok {isPusat ? 'Gudang Hendhys' : 'Cabang'}</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Saldo inventori produk Hendhys Brownies</p>
                     </div>
                     <Link href={route('hendhys.stock.movements')} className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/[0.01] dark:border-gray-800 dark:bg-white/[0.03]">

@@ -45,7 +45,7 @@ export default function ReturnsIndex({ returns, filters }) {
                             </div>
                             <select value={form.entity} onChange={(e) => setForm({ ...form, entity: e.target.value })} className={selectClass}>
                                 <option value="">Semua Asal</option>
-                                <option value="hendhys">Hendhys (Pusat)</option>
+                                <option value="hendhys">Gudang Hendhys</option>
                                 <option value="jihans">Jihans (Food)</option>
                             </select>
                             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={selectClass}>
@@ -81,7 +81,7 @@ export default function ReturnsIndex({ returns, filters }) {
                                                 <div className="flex items-center gap-2">
                                                     <span className={`h-2 w-2 rounded-full ${ret.from_entity === 'hendhys' ? 'bg-blue-500' : 'bg-purple-500'}`} />
                                                     <span className="text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">{ret.from_entity}</span>
-                                                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">({ret.branch ?? (ret.from_entity === 'hendhys' ? 'Pusat' : 'Produksi')})</span>
+                                                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">({ret.branch ?? (ret.from_entity === 'hendhys' ? 'Gudang Hendhys' : 'Produksi')})</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4.5 text-center text-xs font-bold text-gray-700 dark:text-gray-300">{ret.details_count} Jenis</td>

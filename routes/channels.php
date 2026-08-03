@@ -11,11 +11,12 @@ Broadcast::channel('user.{id}.notifications', function ($user, $id) {
 });
 
 Broadcast::channel('gudang.notifications', function ($user) {
-    return $user->hasRole('admin_gudang') || $user->hasRole('owner');
+    return $user->hasRole('super_admin') || $user->hasRole('owner');
 });
 
 Broadcast::channel('hendhys.pusat.notifications', function ($user) {
-    return ($user->hasRole('kasir_hendhys') && $user->branch->type === 'pusat') || $user->hasRole('owner');
+    // ?-> wajib: user tanpa branch bikin callback otorisasi channel ini fatal error.
+    return ($user->hasRole('kasir_hendhys') && $user->branch?->type === 'pusat') || $user->hasRole('owner');
 });
 
 Broadcast::channel('owner.notifications', function ($user) {

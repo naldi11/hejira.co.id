@@ -43,7 +43,7 @@ class ReportController extends Controller
     public function laci(Request $request)
     {
         $user = auth()->user();
-        $isPusatOrAdmin = $user->hasRole('admin_jihans') || $user->hasRole('super_admin_jihans');
+        $isPusatOrAdmin = $user->hasRole('admin_jihans') || $user->hasRole('super_admin');
 
         $query = CashierShift::with('user')
             ->where('entity', 'jihans')

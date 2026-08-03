@@ -47,7 +47,7 @@ class TransferRequestController extends Controller
         $stocks = JihansGudangStock::whereIn('product_id', $transferRequest->details->pluck('product_id'))
             ->pluck('quantity', 'product_id');
         $transferRequest->details->each(function ($detail) use ($stocks) {
-            $detail->warehouse_stock = (float) ($stocks[$detail->product_id] ?? 0);
+            $detail->warehouse_stock = (int) ($stocks[$detail->product_id] ?? 0);
         });
 
         return Inertia::render('Gudang/TransferRequests/Show', [
@@ -71,7 +71,7 @@ class TransferRequestController extends Controller
                 }
 
                 // Business rule: approved qty cannot exceed requested qty.
-                if ((float) $item['quantity_approved'] > (float) $detail->quantity_requested) {
+                if ((int) $item['quantity_approved'] > (int) $detail->quantity_requested) {
                     throw ValidationException::withMessages([
                         'items' => "Kuantitas disetujui untuk produk '" . ($detail->product->name ?? 'Barang') . "' tidak boleh melebihi jumlah permintaan (" . floatval($detail->quantity_requested) . ").",
                     ]);
@@ -79,7 +79,7 @@ class TransferRequestController extends Controller
 
                 $detail->update(['quantity_approved' => $item['quantity_approved']]);
 
-                if ((float) $item['quantity_approved'] < (float) $detail->quantity_requested) {
+                if ((int) $item['quantity_approved'] < (int) $detail->quantity_requested) {
                     $allFulfilled = false;
                 }
             }

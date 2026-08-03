@@ -9,6 +9,7 @@ use App\Models\ProductCategory;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
@@ -33,7 +34,23 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
 
     public function startRow(): int { return 6; }
 
+    /**
+     * Seluruh impor dijalankan dalam satu transaksi.
+     *
+     * Dua alasan:
+     * 1. NumberGeneratorService::generate() memakai lockForUpdate() untuk mencegah
+     *    kode duplikat. Di luar transaksi, lock itu langsung dilepas sehingga tidak
+     *    berefek — dua impor bersamaan (atau impor vs input manual) bisa menghasilkan
+     *    kode kembar dan menabrak unique index pada kolom `code`.
+     * 2. Tanpa transaksi, kegagalan di tengah berkas meninggalkan data separuh terimpor
+     *    yang sudah ter-commit.
+     */
     public function collection(Collection $rows)
+    {
+        DB::transaction(fn () => $this->importRows($rows));
+    }
+
+    private function importRows(Collection $rows)
     {
         // product_id => [[min_qty, price], ...]
         $tiersToSync = [];

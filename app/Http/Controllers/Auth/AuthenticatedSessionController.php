@@ -51,11 +51,14 @@ class AuthenticatedSessionController extends Controller
     {
         if ($user->hasRole('owner'))
             return route('owner.dashboard');
-        if ($user->hasRole('admin_gudang'))
+        if ($user->hasRole('super_admin'))
             return route('gudang.dashboard');
+        // super_admin_* wajib ikut disebut di sini. Tanpa itu mereka jatuh ke
+        // route('dashboard') yang lalu me-redirect lagi ke tujuan yang sama —
+        // pemetaan ini dan yang di routes/web.php harus tetap sejalan.
         if ($user->hasRole(['kasir_jihans', 'admin_jihans']))
             return route('jihans.dashboard');
-        if ($user->hasRole('admin_hendhys'))
+        if ($user->hasRole(['admin_hendhys']))
             return route('hendhys.dashboard');
         if ($user->hasRole('kasir_hendhys'))
             return route('hendhys.pos.index');

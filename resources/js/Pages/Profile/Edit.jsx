@@ -18,7 +18,7 @@ export default function Edit() {
 
     if (roles.includes('owner')) {
         Layout = ({ children }) => <OwnerLayout pageTitle="Pengaturan Profil">{children}</OwnerLayout>;
-    } else if (roles.includes('admin_gudang')) {
+    } else if (roles.includes('super_admin')) {
         Layout = ({ children }) => <GudangLayout pageTitle="Pengaturan Profil" title="Profil">{children}</GudangLayout>;
     } else if (roles.includes('kasir_jihans') || roles.includes('admin_jihans')) {
         Layout = ({ children }) => <JihansLayout pageTitle="Pengaturan Profil">{children}</JihansLayout>;

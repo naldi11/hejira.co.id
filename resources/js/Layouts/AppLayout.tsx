@@ -4,6 +4,7 @@ import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
 import PageBreadcrumb from "../Components/common/PageBreadCrumb";
+import useRealtimeNotifications from "../lib/useRealtimeNotifications";
 import React from "react";
 
 import { NavItem } from "./AppSidebar";
@@ -36,6 +37,11 @@ const LayoutContent: React.FC<{ children?: React.ReactNode, navItems?: NavItem[]
 
 
 const AppLayout: React.FC<{ children?: React.ReactNode, navItems?: NavItem[], othersItems?: NavItem[], pageTitle?: string }> = ({ children, navItems, othersItems, pageTitle }) => {
+  // Dipasang di sini karena AppLayout dipakai oleh SEMUA layout entitas
+  // (Hendhys/Jihans/Gudang/Owner), jadi cukup satu titik pemasangan.
+  // No-op bila Reverb belum dikonfigurasi.
+  useRealtimeNotifications();
+
   return (
     <ThemeProvider>
       <SidebarProvider>

@@ -76,7 +76,7 @@ export default function UserDropdown() {
         </div>
 
         <ul className="flex flex-col gap-1 pt-3 pb-3 border-b border-gray-200 dark:border-gray-800">
-          {user?.roles?.some((r) => ['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys', 'kasir_jihans', 'admin_jihans', 'super_admin_jihans'].includes(r)) && (
+          {user?.roles?.some((r) => ['kasir_hendhys', 'admin_hendhys', 'kasir_jihans', 'admin_jihans'].includes(r)) && (
             <li>
               <DropdownItem
                 onItemClick={closeDropdown}

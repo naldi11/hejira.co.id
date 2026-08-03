@@ -1,4 +1,5 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import axios from 'axios';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -11,6 +12,37 @@ const route = window.route;
 export default function HendhysPendingIndex({ pendings, filters }) {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState(filters.search ?? '');
+
+    // Lanjutkan transaksi tertahan: muat keranjangnya ke localStorage lalu buka POS.
+    // Pendingnya TIDAK dihapus di sini — server yang menghapusnya saat penjualan
+    // benar-benar tersimpan (lihat pending_id di Hendhys\PosController::store),
+    // supaya keranjang tidak hilang bila kasir menyegarkan halaman POS.
+    const resume = async (p) => {
+        try {
+            const { data } = await axios.get(route('hendhys.pending.show', p.id));
+            const items = (data.details ?? []).map((d) => ({
+                product_id: d.product_id,
+                product_name: d.product_name ?? d.product?.name,
+                price: Number(d.price),
+                qty: Number(d.quantity),
+                unit: d.unit?.abbreviation ?? 'PCS',
+            }));
+            localStorage.setItem('hendhys_resume_cart', JSON.stringify({
+                pendingId: p.id,
+                items,
+                customerName: data.customer_name ?? '',
+                notes: data.notes ?? '',
+            }));
+            window.location.href = route('hendhys.pos.index');
+        } catch {
+            alert('Gagal memuat transaksi pending.');
+        }
+    };
+
+    const destroy = (p) => {
+        if (!window.confirm(`Hapus transaksi pending ${p.pending_number}?`)) return;
+        router.delete(route('hendhys.pending.destroy', p.id), { preserveScroll: true });
+    };
 
     const reload = (e) => {
         e?.preventDefault();
@@ -43,11 +75,12 @@ export default function HendhysPendingIndex({ pendings, filters }) {
                                     <th className="px-6 py-4 font-medium">Pelanggan</th>
                                     <th className="px-6 py-4 font-medium">Kasir</th>
                                     <th className="px-6 py-4 text-center font-medium">Item</th>
+                                    <th className="px-6 py-4 text-right font-medium">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                {loading ? <SkeletonTableRows rows={6} columns={5} />
-                                    : pendings.data.length === 0 ? <EmptyState colSpan={5} icon="schedule" message="Tidak ada transaksi pending." />
+                                {loading ? <SkeletonTableRows rows={6} columns={6} />
+                                    : pendings.data.length === 0 ? <EmptyState colSpan={6} icon="schedule" message="Tidak ada transaksi pending." />
                                     : pendings.data.map((p) => (
                                         <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{p.pending_number}</td>
@@ -55,6 +88,18 @@ export default function HendhysPendingIndex({ pendings, filters }) {
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{p.customer_name}</td>
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{p.creator}</td>
                                             <td className="px-6 py-4 text-center"><span className="rounded-lg bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700">{p.details_count ?? '-'}</span></td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button type="button" onClick={() => resume(p)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
+                                                        <Icon name="play_arrow" className="text-[16px]" /> Lanjutkan
+                                                    </button>
+                                                    <button type="button" onClick={() => destroy(p)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20">
+                                                        <Icon name="delete" className="text-[16px]" /> Hapus
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                             </tbody>

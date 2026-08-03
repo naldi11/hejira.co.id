@@ -4,8 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Catatan: relasi tortillaDetails() dihapus karena menunjuk ke kelas
+ * JihansTortillaSessionDetail yang tidak pernah ada (sisa rename ke
+ * JihansProductionSessionDetail). Memanggilnya akan fatal error.
+ * Relasi ke sesi produksi sudah tersedia dari sisi
+ * JihansProductionSessionDetail::karyawan().
+ */
 class Karyawan extends Model
 {
     use SoftDeletes;
@@ -19,10 +25,5 @@ class Karyawan extends Model
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
-    }
-
-    public function tortillaDetails(): HasMany
-    {
-        return $this->hasMany(JihansTortillaSessionDetail::class, 'karyawan_id');
     }
 }

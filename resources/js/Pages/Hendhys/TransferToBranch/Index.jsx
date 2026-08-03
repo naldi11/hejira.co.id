@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -21,10 +21,14 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
     const [activeTab, setActiveTab] = useState(getTabFromUrl);
     const [form, setForm] = useState({ search: filters.search ?? '', status: filters.status ?? '' });
 
-    // Sync tab state when URL changes (e.g. clicking sidebar links)
+    // Sync tab state when URL changes (e.g. clicking sidebar links).
+    // Dependency-nya adalah URL dari Inertia (reaktif terhadap navigasi), bukan
+    // window.location.search yang dibaca langsung saat render dan tidak pernah
+    // memicu React untuk menjalankan ulang efek ini.
+    const { url: inertiaUrl } = usePage();
     useEffect(() => {
         setActiveTab(getTabFromUrl());
-    }, [window.location.search]);
+    }, [inertiaUrl]);
 
     const reload = (e) => {
         e?.preventDefault();
@@ -64,7 +68,7 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
                                 : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-white'
                         }`}
                     >
-                        Dari Pusat (Hendhys Produksi)
+                        Dari Gudang Hendhys (Hendhys Produksi)
                     </button>
                     <button
                         onClick={() => setActiveTab('gudang')}

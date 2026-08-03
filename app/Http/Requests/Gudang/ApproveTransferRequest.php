@@ -19,7 +19,7 @@ class ApproveTransferRequest extends FormRequest
         return [
             'items'                     => ['required', 'array', 'min:1'],
             'items.*.id'                => ['required', 'integer', 'exists:gudang_transfer_request_details,id'],
-            'items.*.quantity_approved' => ['required', 'numeric', 'min:0.001'],
+            'items.*.quantity_approved' => ['required', 'integer', 'min:1'],
             'notes'                     => ['nullable', 'string'],
         ];
     }

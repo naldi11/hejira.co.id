@@ -8,7 +8,7 @@ class StockIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Route is already gated by ['auth', 'check.entity:gudang', 'role:admin_gudang'].
+        // Route is already gated by ['auth', 'check.entity:gudang', 'role:super_admin'].
         return true;
     }
 

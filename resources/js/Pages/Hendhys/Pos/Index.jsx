@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import Swal from 'sweetalert2';
@@ -20,6 +20,7 @@ export default function PosIndex({ products, paymentMethods }) {
 
     // Payment and Checkout states
     const [discount, setDiscount] = useState(0);
+    const [pendingId, setPendingId] = useState(null);
     const [amountPaid, setAmountPaid] = useState('');
     const [notes, setNotes] = useState('');
     const [selectedPayment, setSelectedPayment] = useState('tunai');
@@ -76,6 +77,29 @@ export default function PosIndex({ products, paymentMethods }) {
             setCart(cart.map(c => c.product_id === productId ? { ...c, qty } : c));
         }
     };
+
+    // Muat keranjang dari transaksi tertahan yang dilanjutkan dari halaman Pending.
+    // localStorage sengaja tidak dibersihkan di sini: kalau kasir menyegarkan
+    // halaman sebelum checkout, keranjangnya harus tetap bisa dipulihkan.
+    // Pembersihan dilakukan setelah penjualan berhasil.
+    useEffect(() => {
+        const raw = localStorage.getItem('hendhys_resume_cart');
+        if (!raw) return;
+        try {
+            const d = JSON.parse(raw);
+            setPendingId(d.pendingId ?? null);
+            setCustomerName(d.customerName ?? '');
+            setNotes(d.notes ?? '');
+            setCart((d.items ?? []).map((it) => ({
+                product_id: it.product_id,
+                name: it.product_name,
+                price: Number(it.price) || 0,
+                qty: Number(it.qty) || 1,
+                unit: it.unit ?? 'PCS',
+                tiered_prices: [],
+            })));
+        } catch { /* abaikan keranjang rusak */ }
+    }, []);
 
     const getPrice = (item) => {
         if (item.tiered_prices?.length) {
@@ -151,6 +175,51 @@ export default function PosIndex({ products, paymentMethods }) {
         setShowSuggestions(false);
     };
 
+    const holdTransaction = () => {
+        if (processing) return;
+        if (cart.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Keranjang kosong!' });
+            return;
+        }
+        if (!window.confirm('Simpan transaksi ini sebagai pending?')) return;
+
+        setProcessing(true);
+        fetch(route('hendhys.pending.store'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                customer_name: customerName || 'Pelanggan Umum',
+                notes,
+                items: cart.map((c) => ({
+                    product_id: c.product_id,
+                    quantity: c.qty,
+                    price: getPrice(c),
+                    discount: 0,
+                    total: getPrice(c) * c.qty,
+                })),
+            }),
+        })
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.success) {
+                    localStorage.removeItem('hendhys_resume_cart');
+                    setPendingId(null);
+                    setCart([]);
+                    clearCustomer();
+                    setNotes('');
+                    Swal.fire({ icon: 'success', title: 'Tersimpan', text: data.message ?? 'Transaksi ditahan.' });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Gagal', text: data.error ?? 'Gagal menahan transaksi.' });
+                }
+            })
+            .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Error jaringan' }))
+            .finally(() => setProcessing(false));
+    };
+
     const checkout = () => {
         if (processing) return;
         if (cart.length === 0) {
@@ -175,6 +244,7 @@ export default function PosIndex({ products, paymentMethods }) {
             notes: notes,
             payment_method_id: selectedMethod?.id ?? null,
             payment_type: selectedPayment,
+            pending_id: pendingId,
             ppn_type: 'none',
             tax_amount: 0,
             other_costs: 0,
@@ -199,6 +269,8 @@ export default function PosIndex({ products, paymentMethods }) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                localStorage.removeItem('hendhys_resume_cart');
+                setPendingId(null);
                 setCart([]);
                 clearCustomer();
                 setDiscount(0);
@@ -559,6 +631,14 @@ export default function PosIndex({ products, paymentMethods }) {
                             className="w-full rounded-xl bg-amber-600 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50 transition-colors"
                         >
                             {processing ? 'Memproses...' : 'Bayar & Cetak Struk'}
+                        </button>
+
+                        <button
+                            onClick={holdTransaction}
+                            disabled={processing || cart.length === 0}
+                            className="mt-2 w-full rounded-xl border-2 border-blue-200 bg-blue-50 py-2.5 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-40 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                        >
+                            Tahan Transaksi (Pending)
                         </button>
                     </div>
                 </div>

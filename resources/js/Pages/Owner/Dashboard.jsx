@@ -111,7 +111,7 @@ export default function OwnerDashboard({ stats, trends }) {
                         />
                         <SubUnitCard
                             icon="home_work" color="text-amber-500"
-                            title="Hendhys Pusat" subtitle="Stok pusat Hendhys"
+                            title="Gudang Hendhys" subtitle="Stok Gudang Hendhys"
                             value={formatQty(stats.stock.hendhys_pusat)} label="Sisa Stok"
                             onClick={() => openStockDetail('hendhys_pusat')}
                         />
@@ -164,7 +164,7 @@ export default function OwnerDashboard({ stats, trends }) {
                         />
                         <SubUnitCard
                             icon="home_work" color="text-amber-500"
-                            title="Hendhys Pusat" subtitle="Pendapatan Hendhys Pusat"
+                            title="Gudang Hendhys" subtitle="Pendapatan Gudang Hendhys"
                             value={formatRupiah(stats.hendhys_pusat_revenue)} label="Total Omset"
                             onClick={() => openOmsetDetail('hendhys_pusat')}
                         />

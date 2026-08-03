@@ -20,7 +20,7 @@ class ReceiveReturnRequest extends FormRequest
     {
         return [
             'items'                     => ['required', 'array', 'min:1'],
-            'items.*.received_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.received_quantity' => ['required', 'integer', 'min:0'],
             'items.*.condition'         => ['required', 'string', 'max:100'],
         ];
     }

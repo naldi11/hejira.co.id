@@ -18,7 +18,7 @@ class StockMovementResource extends JsonResource
             'created_at'   => $this->created_at ? \Illuminate\Support\Carbon::parse($this->created_at)->format('d M Y, H:i') : null,
             'product'      => $this->whenLoaded('product', fn () => $this->product?->name ?? 'Produk Dihapus'),
             'type'         => $this->type,
-            'quantity'     => (float) $this->quantity,
+            'quantity'     => (int) $this->quantity,
             'source'       => $this->source,
             'reference_id' => $this->reference_id,
             'doc_number'   => $this->document_number,

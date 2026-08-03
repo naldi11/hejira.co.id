@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
@@ -8,6 +8,7 @@ import StatusBadge from '@/Components/StatusBadge';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatRupiah } from '@/lib/format';
 import { FilterTransactionsModal } from '@/Components/FilterTransactionsModal';
+import VoidTransactionModal from '@/Components/VoidTransactionModal';
 
 const route = window.route;
 
@@ -21,6 +22,13 @@ export default function JihansTransactionsIndex({ transactions, filters }) {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState(filters.search ?? '');
     const [showFilterModal, setShowFilterModal] = useState(false);
+    const [voidTarget, setVoidTarget] = useState(null);
+
+    // Cerminan middleware role pada route pembatalan — otorisasi sebenarnya
+    // tetap ditegakkan di server.
+    const { auth } = usePage().props;
+    const roles = auth?.user?.roles ?? [];
+    const canVoid = ['admin_jihans', 'super_admin', 'owner'].some((r) => roles.includes(r));
 
     const hasActiveFilters = !!(filters.start_date || filters.end_date || filters.shift_id);
 
@@ -94,6 +102,13 @@ export default function JihansTransactionsIndex({ transactions, filters }) {
                 </div>
             </div>
 
+            <VoidTransactionModal
+                show={!!voidTarget}
+                onClose={() => setVoidTarget(null)}
+                transaction={voidTarget}
+                voidRoute={voidTarget ? route('jihans.transactions.void', voidTarget.id) : ''}
+                accent="orange"
+            />
             <FilterTransactionsModal 
                 show={showFilterModal} 
                 onClose={() => setShowFilterModal(false)}
@@ -141,6 +156,12 @@ export default function JihansTransactionsIndex({ transactions, filters }) {
                                                     <a href={route('jihans.transactions.show', t.id)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20">
                                                         <Icon name="receipt" className="text-[16px]" /> Struk
                                                     </a>
+                                                    {canVoid && t.status !== 'cancelled' && (
+                                                        <button type="button" onClick={() => setVoidTarget(t)}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20">
+                                                            <Icon name="close" className="text-[16px]" /> Batalkan
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

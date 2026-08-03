@@ -25,8 +25,8 @@ class TransferRequestResource extends JsonResource
             'details'        => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'product'            => $d->product?->name ?? '-',
                 'product_code'       => $d->product?->code ?? '-',
-                'quantity_requested' => (float) $d->quantity_requested,
-                'quantity_approved'  => $d->quantity_approved !== null ? (float) $d->quantity_approved : null,
+                'quantity_requested' => (int) $d->quantity_requested,
+                'quantity_approved'  => $d->quantity_approved !== null ? (int) $d->quantity_approved : null,
                 'unit'               => $d->unit?->abbreviation ?? 'PCS',
             ])),
 

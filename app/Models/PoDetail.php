@@ -17,12 +17,23 @@ class PoDetail extends Model
         'unit_id', 'price', 'total', 'notes',
     ];
 
+    /**
+     * Kuantitas stok WAJIB integer; hanya nilai uang yang desimal.
+     * Kolom DB masih decimal(15,3) karena alasan historis, sehingga tanpa cast
+     * Eloquent mengembalikan string seperti "5.000" dan perhitungan di PHP
+     * jadi rawan galat pembulatan.
+     */
+    protected function casts(): array
+    {
+        return [
+            'quantity_ordered'  => 'integer',
+            'quantity_received' => 'integer',
+            'price'             => 'decimal:2',
+            'total'             => 'decimal:2',
+        ];
+    }
+
     public function product(): BelongsTo { return $this->belongsTo(Product::class)->withTrashed(); }
     public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
     public function po(): BelongsTo      { return $this->belongsTo(PurchaseOrder::class, 'po_id'); }
-
-    public function remainingQty(): float
-    {
-        return max(0, $this->quantity_ordered - $this->quantity_received);
-    }
 }

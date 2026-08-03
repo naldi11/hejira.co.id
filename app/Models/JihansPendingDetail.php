@@ -23,6 +23,22 @@ class JihansPendingDetail extends Model
         'total',
     ];
 
+    /**
+     * Kuantitas stok WAJIB integer; hanya nilai uang yang desimal.
+     * Kolom DB masih decimal(15,3) karena alasan historis, sehingga tanpa cast
+     * Eloquent mengembalikan string seperti "5.000" dan perhitungan di PHP
+     * jadi rawan galat pembulatan.
+     */
+    protected function casts(): array
+    {
+        return [
+            'quantity'          => 'integer',
+            'price'             => 'decimal:2',
+            'discount_percent'  => 'decimal:2',
+            'total'             => 'decimal:2',
+        ];
+    }
+
     public function pendingTransaction(): BelongsTo
     {
         return $this->belongsTo(JihansPendingTransaction::class, 'pending_id');

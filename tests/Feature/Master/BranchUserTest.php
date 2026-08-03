@@ -15,9 +15,9 @@ class BranchUserTest extends TestCase
 
     private function adminGudang(): User
     {
-        Role::findOrCreate('admin_gudang', 'web');
+        Role::findOrCreate('super_admin', 'web');
         $user = User::factory()->create(['entity' => 'gudang']);
-        $user->assignRole('admin_gudang');
+        $user->assignRole('super_admin');
 
         return $user;
     }
@@ -39,15 +39,21 @@ class BranchUserTest extends TestCase
         // Missing required fields → validation error.
         $this->actingAs($admin)->from(route('master.branches.create'))
             ->post(route('master.branches.store'), ['name' => ''])
-            ->assertSessionHasErrors(['code', 'name', 'type']);
+            ->assertSessionHasErrors(['code', 'name', 'type', 'entity']);
 
         $this->actingAs($admin)
             ->post(route('master.branches.store'), [
-                'code' => 'CB-01', 'name' => 'Outlet A', 'type' => 'cabang', 'is_active' => true,
+                'code' => 'CB-01', 'name' => 'Outlet A', 'type' => 'cabang',
+                'entity' => 'hendhys', 'is_active' => true,
             ])
             ->assertRedirect(route('master.branches.index'));
 
-        $this->assertDatabaseHas('master_branches', ['code' => 'CB-01', 'name' => 'Outlet A', 'type' => 'cabang']);
+        // entity wajib ikut tersimpan: kolom ini dipakai BranchSelectionController
+        // dan dashboard Owner untuk menyaring cabang. Dulu ia hilang diam-diam
+        // karena tidak ada di $fillable maupun aturan validasi.
+        $this->assertDatabaseHas('master_branches', [
+            'code' => 'CB-01', 'name' => 'Outlet A', 'type' => 'cabang', 'entity' => 'hendhys',
+        ]);
     }
 
     public function test_branch_code_must_be_unique(): void

@@ -16,7 +16,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user    = auth()->user();
-        $isPusat = $user->branch->type === 'pusat';
+        $isPusat = !$user->branch || $user->branch->type === 'pusat';
         $branchId = $user->branch_id;
 
         // Build recent transactions scoped by branch
@@ -35,21 +35,28 @@ class DashboardController extends Controller
             'grand_total'        => (float) $t->grand_total,
         ]);
 
-        // Low stocks
+        // Low stocks — ambang diambil dari master_products.stock_min per produk,
+        // sama seperti halaman Stok. Sebelumnya dashboard memakai angka mati
+        // (<= 10 pusat / <= 5 cabang) sehingga "stok menipis" punya dua definisi
+        // berbeda di dua layar untuk produk yang sama.
         if ($isPusat) {
             $lowStocks = Product::where('status', 'active')
                 ->whereIn('master_products.entity_scope', ['hendhys', 'all'])
                 ->join('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-                ->where('hendhys_stock_pusat.quantity', '<=', 10)
+                ->where('master_products.stock_min', '>', 0)
+                ->whereRaw('COALESCE(hendhys_stock_pusat.quantity, 0) < master_products.stock_min')
                 ->select('master_products.*', 'hendhys_stock_pusat.quantity as current_stock')
+                ->orderBy('hendhys_stock_pusat.quantity')
                 ->take(5)->get();
         } else {
             $lowStocks = Product::where('status', 'active')
                 ->whereIn('master_products.entity_scope', ['hendhys', 'all'])
                 ->join('hendhys_stock_branch', 'master_products.id', '=', 'hendhys_stock_branch.product_id')
                 ->where('hendhys_stock_branch.branch_id', $branchId)
-                ->where('hendhys_stock_branch.quantity', '<=', 5)
+                ->where('master_products.stock_min', '>', 0)
+                ->whereRaw('COALESCE(hendhys_stock_branch.quantity, 0) < master_products.stock_min')
                 ->select('master_products.*', 'hendhys_stock_branch.quantity as current_stock')
+                ->orderBy('hendhys_stock_branch.quantity')
                 ->take(5)->get();
         }
 
@@ -57,7 +64,7 @@ class DashboardController extends Controller
             'id'            => $s->id,
             'name'          => $s->name,
             'code'          => $s->code,
-            'current_stock' => (float) $s->current_stock,
+            'current_stock' => (int) $s->current_stock,
         ]);
 
         // Stats

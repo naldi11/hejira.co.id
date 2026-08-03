@@ -49,44 +49,50 @@ class DashboardController extends Controller
         ]);
 
         // Stock Calculation
-        $jihansGudangStock = (float) JihansGudangStock::sum('quantity');
-        $jihansRetailStock = (float) JihansRetailStock::sum('quantity');
-        $hendhysPusatStock = (float) HendhysStockPusat::sum('quantity');
-        $hendhysCabangStock = (float) HendhysStockBranch::sum('quantity');
+        $jihansGudangStock = (int) JihansGudangStock::sum('quantity');
+        $jihansRetailStock = (int) JihansRetailStock::sum('quantity');
+        $hendhysPusatStock = (int) HendhysStockPusat::sum('quantity');
+        $hendhysCabangStock = (int) HendhysStockBranch::sum('quantity');
         $totalStock = $jihansGudangStock + $jihansRetailStock + $hendhysPusatStock + $hendhysCabangStock;
 
-        // Dynamic Hendhys branches list with their current stock (Filtering out other entities)
+        // Dynamic Hendhys branches list with their current stock.
+        // Pakai kolom `entity`, bukan tebak-tebakan nama/kode: cabang Hendhys yang
+        // namanya tidak mengandung "Hendhy" dan kodenya bukan HB*/HND* dulu hilang
+        // sepenuhnya dari dashboard Owner.
         $cabangBranches = Branch::where('is_active', true)
             ->where('type', 'cabang')
-            ->where(function($q) {
-                $q->where('name', 'like', '%Hendhy%')
-                  ->orWhere('code', 'like', 'HB%')
-                  ->orWhere('code', 'like', 'HND%');
-            })
+            ->where('entity', 'hendhys')
             ->orderBy('name')
             ->get();
 
-        $cabangList = [];
-        foreach ($cabangBranches as $cb) {
-            $qty = (float) HendhysStockBranch::where('branch_id', $cb->id)->sum('quantity');
-            $revenue = (float) HendhysTransaction::where('status', 'paid')->where('branch_id', $cb->id)->sum('grand_total');
-            $cabangList[] = [
-                'id' => $cb->id,
-                'name' => $cb->name,
-                'quantity' => $qty,
-                'revenue' => $revenue,
-            ];
-        }
+        // Agregat dihitung sekali secara batch (dulu 2 query per cabang di dalam loop).
+        $branchIds = $cabangBranches->pluck('id');
+        $stockPerBranch = HendhysStockBranch::whereIn('branch_id', $branchIds)
+            ->groupBy('branch_id')
+            ->selectRaw('branch_id, SUM(quantity) as total')
+            ->pluck('total', 'branch_id');
+        $revenuePerBranch = HendhysTransaction::where('status', 'paid')
+            ->whereIn('branch_id', $branchIds)
+            ->groupBy('branch_id')
+            ->selectRaw('branch_id, SUM(grand_total) as total')
+            ->pluck('total', 'branch_id');
+
+        $cabangList = $cabangBranches->map(fn ($cb) => [
+            'id'       => $cb->id,
+            'name'     => $cb->name,
+            'quantity' => (int) ($stockPerBranch[$cb->id] ?? 0),
+            'revenue'  => (float) ($revenuePerBranch[$cb->id] ?? 0),
+        ])->values()->all();
 
         // Movements Calculation
         $jihansGudangMovementsCount = JihansGudangStockMovement::count();
-        $jihansGudangMovementsQty = (float) JihansGudangStockMovement::sum('quantity');
+        $jihansGudangMovementsQty = (int) JihansGudangStockMovement::sum('quantity');
         
         $jihansRetailMovementsCount = JihansRetailStockMovement::count();
-        $jihansRetailMovementsQty = (float) JihansRetailStockMovement::sum('quantity');
+        $jihansRetailMovementsQty = (int) JihansRetailStockMovement::sum('quantity');
 
         $hendhysMovementsCount = HendhysStockMovement::count();
-        $hendhysMovementsQty = (float) HendhysStockMovement::sum('quantity');
+        $hendhysMovementsQty = (int) HendhysStockMovement::sum('quantity');
 
         $totalMovementsCount = $jihansGudangMovementsCount + $jihansRetailMovementsCount + $hendhysMovementsCount;
         $totalMovementsQty = $jihansGudangMovementsQty + $jihansRetailMovementsQty + $hendhysMovementsQty;
@@ -101,7 +107,7 @@ class DashboardController extends Controller
             ->map(fn($s) => [
                 'code' => $s->product?->code ?? '-',
                 'name' => $s->product?->name ?? '-',
-                'quantity' => (float) $s->quantity,
+                'quantity' => (int) $s->quantity,
                 'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
             ])->values();
 
@@ -117,7 +123,7 @@ class DashboardController extends Controller
             ->map(fn($s) => [
                 'code' => $s->code,
                 'name' => $s->name,
-                'quantity' => (float) $s->quantity,
+                'quantity' => (int) $s->quantity,
                 'unit' => $s->unit ?? 'PCS'
             ])->values();
 
@@ -135,8 +141,8 @@ class DashboardController extends Controller
             ->groupBy('product_id');
 
         $hendhysStocksList = $hendhysProducts->map(function ($p) use ($pusatStocks, $cabangStocks) {
-            $pusatQty = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity : 0.0;
-            $pusatRet = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity_return : 0.0;
+            $pusatQty = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity : 0;
+            $pusatRet = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity_return : 0;
 
             $branches = [];
             $totalQty = $pusatQty;
@@ -153,8 +159,8 @@ class DashboardController extends Controller
 
             if (isset($cabangStocks[$p->id])) {
                 foreach ($cabangStocks[$p->id] as $cs) {
-                    $qty = (float) $cs->quantity;
-                    $ret = (float) $cs->quantity_return;
+                    $qty = (int) $cs->quantity;
+                    $ret = (int) $cs->quantity_return;
                     if ($qty > 0 || $ret > 0) {
                         $branches[] = [
                             'branch_id' => $cs->branch_id,
@@ -179,15 +185,29 @@ class DashboardController extends Controller
         })->values();
 
         // 4. Movements List
-        $movementsList = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
-            ->map(fn($m) => [
-                'date' => $m->created_at->toDateTimeString(),
-                'product_name' => $m->product?->name ?? '-',
-                'type' => $m->type,
-                'quantity' => (float) $m->quantity,
-                'notes' => $m->notes,
-                'user' => $m->creator?->name ?? '-'
-            ])->values();
+        // Kartu ringkasan "movements" di atas menjumlahkan 3 sumber (Gudang, Retail
+        // Jihans, Hendhys), tapi daftar ini dulu hanya membaca Gudang — sehingga
+        // angka ringkasan dan isi daftarnya tidak pernah cocok.
+        $mapMovement = fn ($m, string $sumber) => [
+            'date'         => $m->created_at?->toDateTimeString(),
+            'product_name' => $m->product?->name ?? '-',
+            'type'         => $m->type,
+            'quantity'     => (int) $m->quantity,
+            'notes'        => $m->notes,
+            'user'         => $m->creator?->name ?? '-',
+            'sumber'       => $sumber,
+        ];
+
+        $movementsList = collect()
+            ->concat(JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
+                ->map(fn ($m) => $mapMovement($m, 'Gudang')))
+            ->concat(JihansRetailStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
+                ->map(fn ($m) => $mapMovement($m, "Jihan's Retail")))
+            ->concat(HendhysStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
+                ->map(fn ($m) => $mapMovement($m, 'Hendhys')))
+            ->sortByDesc('date')
+            ->take(50)
+            ->values();
 
         // 5. PO List
         $poList = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->take(50)->get()
@@ -296,7 +316,7 @@ class DashboardController extends Controller
                     ->map(fn($s) => [
                         'code' => $s->product?->code ?? '-',
                         'name' => $s->product?->name ?? '-',
-                        'quantity' => (float) $s->quantity,
+                        'quantity' => (int) $s->quantity,
                         'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
                     ])->values();
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
@@ -313,7 +333,7 @@ class DashboardController extends Controller
                     ->map(fn($s) => [
                         'code' => $s->code,
                         'name' => $s->name,
-                        'quantity' => (float) $s->quantity,
+                        'quantity' => (int) $s->quantity,
                         'unit' => $s->unit ?? 'PCS'
                     ])->values();
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
@@ -326,7 +346,7 @@ class DashboardController extends Controller
                     ->get();
                 $pusatStocks = DB::table('hendhys_stock_pusat')->get()->keyBy('product_id');
                 $list = $hendhysProducts->map(function ($p) use ($pusatStocks) {
-                    $pusatQty = isset($pusatStocks[$p->id]) ? (float) $pusatStocks[$p->id]->quantity : 0.0;
+                    $pusatQty = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity : 0;
                     return [
                         'code' => $p->code,
                         'name' => $p->name,
@@ -351,8 +371,8 @@ class DashboardController extends Controller
                     ->keyBy('product_id');
 
                 $list = $hendhysProducts->map(function ($p) use ($cabangStocks) {
-                    $qty = isset($cabangStocks[$p->id]) ? (float) $cabangStocks[$p->id]->quantity : 0.0;
-                    $qty_ret = isset($cabangStocks[$p->id]) ? (float) $cabangStocks[$p->id]->quantity_return : 0.0;
+                    $qty = isset($cabangStocks[$p->id]) ? (int) $cabangStocks[$p->id]->quantity : 0;
+                    $qty_ret = isset($cabangStocks[$p->id]) ? (int) $cabangStocks[$p->id]->quantity_return : 0;
                     return [
                         'code' => $p->code,
                         'name' => $p->name,
@@ -369,7 +389,7 @@ class DashboardController extends Controller
                         'date' => $m->created_at->toDateTimeString(),
                         'product_name' => $m->product?->name ?? '-',
                         'type' => $m->type,
-                        'quantity' => (float) $m->quantity,
+                        'quantity' => (int) $m->quantity,
                         'notes' => $m->notes,
                         'user' => $m->creator?->name ?? '-'
                     ])->values();
@@ -405,7 +425,7 @@ class DashboardController extends Controller
                     'user' => $t->creator?->name ?? '-',
                     'details' => $t->details->map(fn($d) => [
                         'product_name' => $d->product_name,
-                        'quantity' => (float) $d->quantity,
+                        'quantity' => (int) $d->quantity,
                         'price' => (float) $d->price,
                         'total' => (float) $d->total,
                     ])
@@ -622,18 +642,11 @@ class DashboardController extends Controller
         $paymentTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_payments' : 'jihans_transaction_payments';
         $detailTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_details' : 'jihans_transaction_details';
 
-        $closedAt = $shift->closed_at ?? now();
-
-        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
-            ->where('branch_id', $shift->branch_id)
-            ->where('id', '<', $shift->id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $startAt = \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
-        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($shift->opened_at)) {
-            $startAt = $previousShift->closed_at;
-        }
+        // Pakai batas periode kanonik dari model, sama persis dengan yang dipakai
+        // layar tutup kasir — dulu blok ini disalin ulang di sini dan ikut membawa
+        // bug Carbon::parse(null) pada shift sebelumnya yang masih terbuka.
+        $closedAt = $shift->periodEnd();
+        $startAt  = $shift->periodStart();
 
         $transactions = \Illuminate\Support\Facades\DB::table($transactionTable . ' as t')
             ->select('t.*')
@@ -684,24 +697,19 @@ class DashboardController extends Controller
         });
 
 
-        $tunai = 0;
-        $transfer = 0;
-        $debit = 0;
-        $kredit = 0;
+        // Ringkasan pembayaran diambil dari sumber kebenaran yang sama dengan
+        // layar tutup kasir (CashierShift::calculatePaymentSummary). Versi lama di
+        // sini menghitung "tunai" sebagai sisa grand_total dikurangi non-tunai, dan
+        // hanya membaca kolom legacy payment_method — akibatnya kartu debit/kredit
+        // Hendhys (yang disimpan sebagai payment_method='transfer' + payment_type)
+        // salah dikelompokkan, dan angka kas Owner bisa berbeda dari angka kasir
+        // untuk shift yang sama.
+        $paymentSummary = $shift->calculatePaymentSummary();
 
-        foreach ($transactions as $t) {
-            $tTransfer = $t->payments->where('type', 'transfer')->sum('amount');
-            $tDebit = $t->payments->where('type', 'debit')->sum('amount');
-            $tKredit = $t->payments->where('type', 'kredit')->sum('amount');
-            
-            // Tunai adalah sisa dari grand_total dikurangi pembayaran non-tunai (karena kembalian selalu dalam bentuk tunai)
-            $tTunai = max(0, $t->grand_total - ($tTransfer + $tDebit + $tKredit));
-            
-            $tunai += $tTunai;
-            $transfer += $tTransfer;
-            $debit += $tDebit;
-            $kredit += $tKredit;
-        }
+        $tunai    = (float) ($paymentSummary['tunai'] ?? 0);
+        $transfer = (float) ($paymentSummary['transfer'] ?? 0);
+        $debit    = (float) ($paymentSummary['kartu_debit'] ?? 0);
+        $kredit   = (float) ($paymentSummary['kartu_kredit'] ?? 0);
 
         $totalOmset = $transactions->sum('grand_total');
         

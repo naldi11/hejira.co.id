@@ -60,9 +60,17 @@ class TransferFromHendhysController extends Controller
 
     public function showReceiveForm(HendhysTransferToBranch $transferFromHendhy)
     {
+        $user = auth()->user();
+
         $transferFromHendhy->load('branch');
         if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Akses ditolak.');
+        }
+        // Cek entity saja tidak cukup: kalau ada lebih dari satu cabang ber-entity
+        // 'jihans', user cabang A bisa membuka form terima milik cabang B.
+        // Padanan Hendhys (TransferToBranchController::showReceiveForm) sudah cek ini.
+        if ($user->branch_id && $transferFromHendhy->branch_id !== $user->branch_id) {
+            abort(403, 'Transfer ini ditujukan untuk cabang lain.');
         }
         if ($transferFromHendhy->status !== 'sent') {
             return redirect()->route('jihans.transfer-from-hendhys.show', $transferFromHendhy->id)
@@ -84,13 +92,17 @@ class TransferFromHendhysController extends Controller
         if ($transferFromHendhy->branch?->entity !== 'jihans') {
             abort(403, 'Hanya cabang penerima yang dapat melakukan konfirmasi ini.');
         }
+        // Lihat catatan di showReceiveForm(): entity saja tidak menjamin cabangnya benar.
+        if ($user->branch_id && $transferFromHendhy->branch_id !== $user->branch_id) {
+            abort(403, 'Transfer ini ditujukan untuk cabang lain.');
+        }
         if ($transferFromHendhy->status !== 'sent') {
             return back()->with('error', 'Transfer ini sudah diproses sebelumnya.');
         }
 
         $request->validate([
             'received_quantities'      => 'required|array|min:1',
-            'received_quantities.*'    => 'required|numeric|min:0',
+            'received_quantities.*'    => 'required|integer|min:0',
             'kondisi'                  => 'nullable|array',
             'kondisi.*'                => 'nullable|in:baik,rusak,kurang',
             'receive_notes'            => 'nullable|string|max:2000',
@@ -106,8 +118,8 @@ class TransferFromHendhysController extends Controller
                 $transferFromHendhy->load('details');
 
                 foreach ($transferFromHendhy->details as $detail) {
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
-                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (int) $detail->quantity);
                     $kondisi = $request->kondisi[$detail->id] ?? null;
 
                     $detail->update([
@@ -139,8 +151,8 @@ class TransferFromHendhysController extends Controller
                 // AUTO-RETURN: Detect shortfall and create return document to Pusat
                 $shortfallDetails = [];
                 foreach ($transferFromHendhy->details as $detail) {
-                    $sentQty     = (float) $detail->quantity;
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
+                    $sentQty     = (int) $detail->quantity;
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
                     $receivedQty = min($receivedQty, $sentQty);
                     $selisih     = round($sentQty - $receivedQty, 3);
 

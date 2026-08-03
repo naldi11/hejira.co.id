@@ -23,18 +23,23 @@ class DashboardController extends Controller
                 'grand_total'        => (float) $t->grand_total,
             ]);
 
+        // Ambang "stok menipis" mengikuti master_products.stock_min per produk,
+        // sama dengan halaman Stok Jihan's. Sebelumnya dashboard memakai angka
+        // mati (<= 50) yang tidak ada kaitannya dengan stok minimum produk.
         $lowStocks = Product::where('status', 'active')
             ->whereIn('master_products.entity_scope', ['jihans', 'all'])
             ->join('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
-            ->where('jihans_retail_stock.quantity', '<=', 50)
+            ->where('master_products.stock_min', '>', 0)
+            ->whereRaw('COALESCE(jihans_retail_stock.quantity, 0) < master_products.stock_min')
             ->select('master_products.*', 'jihans_retail_stock.quantity as current_stock')
+            ->orderBy('jihans_retail_stock.quantity')
             ->take(5)->get()
             ->map(fn ($s) => [
                 'id'            => $s->id,
                 'name'          => $s->name,
                 'code'          => $s->code,
                 'jenis'         => $s->jenis,
-                'current_stock' => (float) $s->current_stock,
+                'current_stock' => (int) $s->current_stock,
             ]);
 
         return Inertia::render('Jihans/Dashboard', [

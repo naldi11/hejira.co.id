@@ -7,11 +7,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class BranchRequestCreated implements ShouldBroadcast
+class BranchRequestCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -27,11 +27,15 @@ class BranchRequestCreated implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
+        // ?-> + fallback: request tanpa branch (data lama / branch terhapus) tidak
+        // boleh membuat broadcast gagal dengan fatal error di dalam queue worker.
+        $branchName = $this->request->branch?->name ?? 'Tidak diketahui';
+
         return [
             'id'             => $this->request->id,
             'request_number' => $this->request->request_number,
-            'branch_name'    => $this->request->branch->name,
-            'message'        => 'Request stok baru dari Cabang ' . $this->request->branch->name,
+            'branch_name'    => $branchName,
+            'message'        => 'Request stok baru dari Cabang ' . $branchName,
             'url'            => route('hendhys.branch-requests.show', $this->request->id),
         ];
     }

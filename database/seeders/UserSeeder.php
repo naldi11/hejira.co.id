@@ -25,12 +25,14 @@ class UserSeeder extends Seeder
                 'role'     => 'owner',
             ],
             [
-                'name'     => 'Admin Gudang',
-                'email'    => 'admin.gudang@gmail.com',
+                'name'     => 'Super Admin',
+                'email'    => 'super.admin@gmail.com',
                 'password' => Hash::make('password'),
-                'entity'   => 'gudang',
+                // super_admin mengawasi Gudang Utama + seluruh unit, jadi entity 'all'
+                // dan tanpa penempatan cabang.
+                'entity'   => 'all',
                 'branch_id'=> null,
-                'role'     => 'admin_gudang',
+                'role'     => 'super_admin',
             ],
             [
                 'name'     => 'Kasir Jihan\'s',
@@ -49,14 +51,6 @@ class UserSeeder extends Seeder
                 'role'     => 'admin_jihans',
             ],
             [
-                'name'     => 'Super Admin Jihan\'s',
-                'email'    => 'super.admin.jihans@gmail.com',
-                'password' => Hash::make('password'),
-                'entity'   => 'jihans',
-                'branch_id'=> null,
-                'role'     => 'super_admin_jihans',
-            ],
-            [
                 'name'     => 'Kasir Hendhys Pusat',
                 'email'    => 'kasir.hendhys.pusat@gmail.com',
                 'password' => Hash::make('password'),
@@ -71,14 +65,6 @@ class UserSeeder extends Seeder
                 'entity'   => 'hendhys',
                 'branch_id'=> $pusat,
                 'role'     => 'admin_hendhys',
-            ],
-            [
-                'name'     => 'Super Admin Hendhys',
-                'email'    => 'super.admin.hendhys@gmail.com',
-                'password' => Hash::make('password'),
-                'entity'   => 'hendhys',
-                'branch_id'=> $pusat,
-                'role'     => 'super_admin_hendhys',
             ],
             [
                 'name'     => 'Kasir Hendhys Cabang 1',

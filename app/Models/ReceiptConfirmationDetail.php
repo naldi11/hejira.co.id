@@ -13,6 +13,10 @@ class ReceiptConfirmationDetail extends Model
 
     protected $casts = [
         'expired_date' => 'date',
+        // expected_qty/actual_qty adalah KUANTITAS barang (bukan nilai uang),
+        // walau kolomnya terlanjur decimal(15,2) di migrasi.
+        'expected_qty' => 'integer',
+        'actual_qty'   => 'integer',
     ];
 
     public function receiptConfirmation()

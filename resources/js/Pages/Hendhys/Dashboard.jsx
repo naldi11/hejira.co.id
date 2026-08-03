@@ -23,7 +23,7 @@ export default function HendhysDashboard({ stats, recentTransactions, lowStocks 
     const cards = stats.is_pusat ? STAT_PUSAT : STAT_CABANG;
 
     return (
-        <HendhysLayout pageTitle={`Dashboard ${stats.is_pusat ? 'Pusat' : 'Cabang'}`}>
+        <HendhysLayout pageTitle={`Dashboard ${stats.is_pusat ? 'Gudang Hendhys' : 'Cabang'}`}>
             <Head title="Dashboard" />
 
             <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

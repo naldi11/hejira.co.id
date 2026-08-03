@@ -12,13 +12,17 @@ return new class extends Migration
         if (DB::connection()->getDriverName() === 'sqlite') {
             return;
         }
-        DB::statement("ALTER TABLE jihans_stock_movements MODIFY COLUMN source ENUM(
+        // ENUM MODIFY hanya sintaks MySQL. Cek positif '=== mysql' (bukan '!== sqlite')
+        // supaya driver lain pun aman melewatinya.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE jihans_stock_movements MODIFY COLUMN source ENUM(
             'transfer_gudang',
             'production',
             'receive_from_gudang',
             'pos_sale',
             'adjustment'
-        )");
+            )");
+        }
     }
 
     public function down(): void
@@ -26,11 +30,15 @@ return new class extends Migration
         if (DB::connection()->getDriverName() === 'sqlite') {
             return;
         }
-        DB::statement("ALTER TABLE jihans_stock_movements MODIFY COLUMN source ENUM(
+        // ENUM MODIFY hanya sintaks MySQL. Cek positif '=== mysql' (bukan '!== sqlite')
+        // supaya driver lain pun aman melewatinya.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE jihans_stock_movements MODIFY COLUMN source ENUM(
             'transfer_gudang',
             'production',
             'pos_sale',
             'adjustment'
-        )");
+            )");
+        }
     }
 };

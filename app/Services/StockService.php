@@ -12,6 +12,7 @@ use App\Models\JihansRetailStock;
 use App\Models\JihansRetailStockIn;
 use App\Models\JihansRetailStockInDetail;
 use App\Models\JihansRetailStockMovement;
+use App\Exceptions\InsufficientStockException;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\Branch;
@@ -21,6 +22,31 @@ use Illuminate\Support\Facades\DB;
 class StockService
 {
     public function __construct(private NumberGeneratorService $numbers) {}
+
+    /**
+     * Baca saldo stok sebagai bilangan bulat.
+     *
+     * Kuantitas stok SELALU bilangan bulat di aplikasi ini — hanya nilai uang
+     * (harga, HPP, total) yang boleh pecahan. Kolom DB masih decimal(15,3) karena
+     * alasan historis, jadi Eloquent bisa mengembalikan string seperti "5.000".
+     * round() dipakai (bukan cast langsung) supaya nilai warisan yang tidak bulat
+     * dibulatkan, bukan dipotong diam-diam seperti (int) "5.7" => 5.
+     */
+    private function readQty(mixed $value): int
+    {
+        return (int) round((float) $value);
+    }
+
+    /**
+     * Pastikan saldo stok cukup sebelum dipotong.
+     * Utilitas numerik murni — dipakai semua unit bisnis, tanpa logika bisnis di dalamnya.
+     */
+    private function assertSufficient(int $productId, int $available, int $qty, string $stockLabel): void
+    {
+        if ($qty > $available) {
+            throw new InsufficientStockException($productId, $qty, $available, $stockLabel);
+        }
+    }
 
     // ── Jihans Gudang ─────────────────────────────────────────────────────────
 
@@ -39,7 +65,7 @@ class StockService
         );
         $stock = JihansGudangStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
-        $before = (int) $stock->quantity;
+        $before = $this->readQty($stock->quantity);
         $after  = $before + $qty;
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
@@ -72,8 +98,9 @@ class StockService
         );
         $stock = JihansGudangStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
-        $before = (int) $stock->quantity;
-        $after  = max(0, $before - $qty);
+        $before = $this->readQty($stock->quantity);
+        $this->assertSufficient($productId, $before, $qty, 'stok gudang');
+        $after  = $before - $qty;
 
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
@@ -104,7 +131,7 @@ class StockService
         ?int   $userId = null,
         ?string $notes = null
     ): void {
-        $currentQty = (int) (JihansGudangStock::where('product_id', $productId)->value('quantity') ?? 0);
+        $currentQty = $this->readQty(JihansGudangStock::where('product_id', $productId)->value('quantity') ?? 0);
 
         JihansGudangStockMovement::create([
             'product_id'      => $productId,
@@ -131,8 +158,11 @@ class StockService
             ['product_id' => $productId],
             ['quantity' => 0, 'unit_id' => $unitId, 'last_updated' => now()]
         );
+        // Kunci baris sebelum membaca saldo: penyesuaian menimpa nilai absolut, jadi tanpa
+        // lock ia bisa menimpa mutasi lain (penjualan/transfer) yang terjadi di sela baca-tulis.
+        $stock = JihansGudangStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
-        $before = (int) $stock->quantity;
+        $before = $this->readQty($stock->quantity);
         $diff   = $newQty - $before;
         $type   = $diff >= 0 ? 'in' : 'out';
 
@@ -162,7 +192,7 @@ class StockService
             foreach ($transfer->details as $detail) {
                 $this->debitJihansGudang(
                     $detail->product_id,
-                    $detail->quantity,
+                    $this->readQty($detail->quantity),
                     'transfer_out',
                     $transfer->id,
                     $userId
@@ -176,7 +206,7 @@ class StockService
     public function processTransferReceive(TransferOut $transfer, int $userId): void
     {
         foreach ($transfer->details as $detail) {
-            $qty = (float) $detail->received_quantity;
+            $qty = $this->readQty($detail->received_quantity);
             if ($qty <= 0) continue;
 
             if ($transfer->to_entity === 'jihans') {
@@ -195,7 +225,7 @@ class StockService
 
     // ── Jihans Retail ─────────────────────────────────────────────────────────
 
-    public function creditJihansRetail(int $productId, int $unitId, float $qty, string $source, ?int $refId, ?int $userId): void
+    public function creditJihansRetail(int $productId, int $unitId, int $qty, string $source, ?int $refId, ?int $userId): void
     {
         $stock = JihansRetailStock::firstOrCreate(
             ['product_id' => $productId],
@@ -203,14 +233,14 @@ class StockService
         );
         $stock = JihansRetailStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
-        $before = (int) $stock->quantity;
+        $before = $this->readQty($stock->quantity);
         $after  = $before + $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         $this->recordJihansRetailMovement($productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function debitJihansRetail(int $productId, float $qty, string $source, ?int $refId, ?int $userId): void
+    public function debitJihansRetail(int $productId, int $qty, string $source, ?int $refId, ?int $userId): void
     {
         $stock = JihansRetailStock::firstOrCreate(
             ['product_id' => $productId],
@@ -218,14 +248,15 @@ class StockService
         );
         $stock = JihansRetailStock::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
 
-        $before = (int) $stock->quantity;
-        $after  = max(0, $before - $qty);
+        $before = $this->readQty($stock->quantity);
+        $this->assertSufficient($productId, $before, $qty, 'stok retail Jihans');
+        $after  = $before - $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         $this->recordJihansRetailMovement($productId, 'out', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function recordJihansRetailMovement(int $productId, string $type, string $source, ?int $refId, float $qty, float $before, float $after, ?int $userId): void
+    public function recordJihansRetailMovement(int $productId, string $type, string $source, ?int $refId, int $qty, int $before, int $after, ?int $userId): void
     {
         DB::table('jihans_retail_stock_movements')->insert([
             'product_id'      => $productId,
@@ -252,7 +283,7 @@ class StockService
         ]);
 
         foreach ($transfer->details as $detail) {
-            $qty = (float) ($detail->received_quantity ?? $detail->quantity);
+            $qty = $this->readQty($detail->received_quantity ?? $detail->quantity);
             if ($qty <= 0) continue;
 
             JihansRetailStockInDetail::create([
@@ -267,7 +298,7 @@ class StockService
 
     // ── Hendhys ───────────────────────────────────────────────────────────────
 
-    public function creditHendhys(int $productId, int $unitId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
+    public function creditHendhys(int $productId, int $unitId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
         $isPusat = true;
         if ($branchId) {
@@ -291,14 +322,14 @@ class StockService
             $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
-        $before = (int) $stock->quantity;
+        $before = $this->readQty($stock->quantity);
         $after  = $before + $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function creditHendhysReturn(int $productId, int $unitId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
+    public function creditHendhysReturn(int $productId, int $unitId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
         $isPusat = true;
         if ($branchId) {
@@ -322,7 +353,7 @@ class StockService
             $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
-        $before = (float) $stock->quantity_return;
+        $before = $this->readQty($stock->quantity_return);
         $after  = $before + $qty;
         $stock->update(['quantity_return' => $after, 'last_updated' => now()]);
 
@@ -330,7 +361,7 @@ class StockService
         $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function debitHendhys(int $productId, float $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
+    public function debitHendhys(int $productId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
         $isPusat = true;
         if ($branchId) {
@@ -354,14 +385,15 @@ class StockService
             $stock = HendhysStockPusat::where('id', $stock->id)->lockForUpdate()->first() ?? $stock;
         }
 
-        $before = (int) $stock->quantity;
-        $after  = max(0, $before - $qty);
+        $before = $this->readQty($stock->quantity);
+        $this->assertSufficient($productId, $before, $qty, $isPusat ? 'stok pusat Hendhys' : 'stok cabang Hendhys');
+        $after  = $before - $qty;
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         $this->recordHendhysMovement($branchId, $productId, 'out', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function recordHendhysMovement(?int $branchId, int $productId, string $type, string $source, ?int $refId, float $qty, float $before, float $after, ?int $userId): void
+    public function recordHendhysMovement(?int $branchId, int $productId, string $type, string $source, ?int $refId, int $qty, int $before, int $after, ?int $userId): void
     {
         DB::table('hendhys_stock_movements')->insert([
             'branch_id'       => $branchId,

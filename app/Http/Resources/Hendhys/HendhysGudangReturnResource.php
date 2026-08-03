@@ -28,7 +28,7 @@ class HendhysGudangReturnResource extends JsonResource
                 'id'        => $d->id,
                 'product'   => $d->product?->name ?? '-',
                 'product_code' => $d->product?->code ?? '-',
-                'quantity'  => (float) $d->quantity,
+                'quantity'  => (int) $d->quantity,
                 'unit'      => $d->unit?->abbreviation ?? 'PCS',
                 'condition' => $d->condition,
                 'notes'     => $d->notes,

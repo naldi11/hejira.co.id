@@ -8,7 +8,7 @@ use App\Http\Controllers\Jihans\TransferRequestController;
 use App\Http\Controllers\Jihans\StockController;
 use App\Http\Controllers\Jihans\GudangReturnController;
 
-Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihans|super_admin_jihans'])
+Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihans|super_admin'])
     ->prefix('jihans')
     ->name('jihans.')
     ->group(function () {
@@ -18,16 +18,21 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         // Shared Routes: Riwayat Transaksi & Stock View
         Route::resource('transactions', \App\Http\Controllers\Jihans\TransactionController::class)->only(['index', 'show']);
         Route::get('transactions/{transaction}/pdf', [\App\Http\Controllers\Jihans\TransactionController::class, 'pdf'])->name('transactions.pdf');
+        // Pembatalan transaksi dibatasi ke penyelia — kasir tidak boleh membatalkan
+        // penjualannya sendiri tanpa sepengetahuan atasan.
+        Route::post('transactions/{transaction}/void', [\App\Http\Controllers\Jihans\TransactionController::class, 'void'])
+            ->middleware('role:admin_jihans|super_admin|owner')
+            ->name('transactions.void');
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
 
         // Laci Report (Accessible by both Kasir and Admin)
         Route::get('/reports/laci', [\App\Http\Controllers\Jihans\ReportController::class, 'laci'])
-            ->middleware('role:kasir_jihans|admin_jihans|super_admin_jihans')
+            ->middleware('role:kasir_jihans|admin_jihans|super_admin')
             ->name('reports.laci');
 
         // Shift Control Routes
-        Route::middleware('role:kasir_jihans|admin_jihans|super_admin_jihans')->group(function () {
+        Route::middleware('role:kasir_jihans|admin_jihans|super_admin')->group(function () {
             Route::post('/shifts/open', [\App\Http\Controllers\Shared\ShiftController::class, 'open'])->name('shifts.open');
             Route::post('/shifts/close', [\App\Http\Controllers\Shared\ShiftController::class, 'close'])->name('shifts.close');
             Route::get('/shifts/status', [\App\Http\Controllers\Shared\ShiftController::class, 'status'])->name('shifts.status');
@@ -41,7 +46,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:kasir_jihans|super_admin_jihans'])->group(function () {
+        Route::middleware(['role:kasir_jihans'])->group(function () {
             // POS routes gated by active shift
             Route::middleware('check.active.shift')->group(function () {
                 // POS Kasir
@@ -62,7 +67,7 @@ Route::middleware(['auth', 'check.entity:jihans', 'role:kasir_jihans|admin_jihan
         // ==========================================
         // ADMIN ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:admin_jihans|super_admin_jihans'])->group(function () {
+        Route::middleware(['role:admin_jihans|super_admin'])->group(function () {
             // Master Data (Scoped to Jihans)
             Route::prefix('master')->name('master.')->group(function () {
                 Route::get('suppliers/template', [\App\Http\Controllers\Master\SupplierController::class, 'downloadTemplate'])->name('suppliers.template');

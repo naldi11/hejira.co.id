@@ -8,6 +8,7 @@ use App\Http\Resources\Master\SupplierResource;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Exports\Master\SuppliersTemplateExport;
 use App\Imports\Master\SuppliersImport;
@@ -60,12 +61,17 @@ class SupplierController extends Controller
         $info = $this->getScopeInfo($request);
         $data = $request->validated();
 
-        $data['code']         = $this->numbers->generate('SUP', 'master_suppliers', 'code');
-        $data['created_by']   = auth()->id();
         $data['entity_scope'] = $request->input('entity_scope', $info['scope'] === 'gudang' ? 'all' : $info['scope']);
         $data['is_active']    = $request->boolean('is_active', true);
 
-        $supplier = $this->getModelClass('Supplier', $info['scope'])::create($data);
+        // Generate kode DI DALAM transaksi agar lockForUpdate pada generator
+        // benar-benar menahan baris sampai record baru tersimpan.
+        $supplier = DB::transaction(function () use ($data, $info) {
+            $data['code'] = $this->numbers->generate('SUP', 'master_suppliers', 'code');
+
+            return $this->getModelClass('Supplier', $info['scope'])::create($data);
+        });
+
         $this->logger->log('create', 'master.supplier', "Tambah supplier: {$supplier->name}", $supplier);
 
         return redirect()->route($info['route'].'suppliers.index')->with('success', "Supplier {$supplier->name} berhasil ditambahkan.");

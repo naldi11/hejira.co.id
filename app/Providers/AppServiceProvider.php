@@ -24,14 +24,10 @@ class AppServiceProvider extends ServiceProvider
         // agar Inertia dapat langsung mengakses properti (misal: transfer.transfer_number)
         JsonResource::withoutWrapping();
 
-        view()->composer(['layouts.gudang', 'layouts.hendhys', 'layouts.owner'], function ($view) {
-            $gudang_pending_count = \App\Models\TransferRequest::where('status', 'pending')->count();
-            $hendhys_pusat_pending_count = \App\Models\HendhysBranchRequest::where('status', 'pending')->count();
-            
-            $view->with([
-                'gudang_pending_count' => $gudang_pending_count,
-                'hendhys_pusat_pending_count' => $hendhys_pusat_pending_count
-            ]);
-        });
+        // Catatan: view composer untuk 'layouts.gudang' / 'layouts.hendhys' /
+        // 'layouts.owner' sudah dihapus. Dua yang pertama tidak pernah ada filenya,
+        // dan layouts.hendhys ikut terhapus bersama alur POS blade lama (pra-React).
+        // Hitungan badge pending sekarang disediakan lewat
+        // Api\NotificationController::getCounts yang dipakai UI Inertia/React.
     }
 }

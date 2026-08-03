@@ -27,7 +27,7 @@ class ReturnController extends Controller
         $user = auth()->user();
         $q = HendhysReturnFromBranch::with(['branch', 'creator', 'receiver']);
 
-        if ($user->branch->type === 'cabang') {
+        if ($user->branch?->type === 'cabang') {
             $q->where('branch_id', $user->branch_id);
         }
 
@@ -65,7 +65,7 @@ class ReturnController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        if ($user->branch->type !== 'cabang') {
+        if ($user->branch?->type !== 'cabang') {
             abort(403, 'Akses ditolak.');
         }
 
@@ -131,7 +131,7 @@ class ReturnController extends Controller
     public function show(HendhysReturnFromBranch $return)
     {
         $user = auth()->user();
-        if ($user->branch->type === 'cabang' && $return->branch_id !== $user->branch_id) {
+        if ($user->branch?->type === 'cabang' && $return->branch_id !== $user->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -145,7 +145,7 @@ class ReturnController extends Controller
     public function receive(Request $request, HendhysReturnFromBranch $return)
     {
         $user = auth()->user();
-        if ($user->branch->type !== 'pusat') {
+        if ($user->branch && $user->branch->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat mengkonfirmasi penerimaan retur.');
         }
 

@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -7,6 +7,7 @@ import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
 import { formatRupiah } from '@/lib/format';
 import { FilterTransactionsModal } from '@/Components/FilterTransactionsModal';
+import VoidTransactionModal from '@/Components/VoidTransactionModal';
 
 const route = window.route;
 
@@ -14,6 +15,13 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState(filters.search ?? '');
     const [showFilterModal, setShowFilterModal] = useState(false);
+    const [voidTarget, setVoidTarget] = useState(null);
+
+    // Cerminan middleware role pada route pembatalan — tombolnya disembunyikan
+    // untuk kasir, tapi otorisasi sebenarnya tetap ditegakkan di server.
+    const { auth } = usePage().props;
+    const roles = auth?.user?.roles ?? [];
+    const canVoid = ['admin_hendhys', 'super_admin', 'owner'].some((r) => roles.includes(r));
 
     const hasActiveFilters = !!(filters.start_date || filters.end_date || filters.shift_id);
 
@@ -80,12 +88,19 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                             )}
                         </form>
                     </div>
-                    <FilterTransactionsModal 
-                        show={showFilterModal} 
+                    <FilterTransactionsModal
+                        show={showFilterModal}
                         onClose={() => setShowFilterModal(false)}
                         filters={filters}
                         onApply={handleApplyFilter}
                         entity="hendhys"
+                    />
+                    <VoidTransactionModal
+                        show={!!voidTarget}
+                        onClose={() => setVoidTarget(null)}
+                        transaction={voidTarget}
+                        voidRoute={voidTarget ? route('hendhys.transactions.void', voidTarget.id) : ''}
+                        accent="amber"
                     />
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -122,6 +137,12 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                                                     <a href={`${route('hendhys.transactions.show', t.id)}?paper_size=80`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20">
                                                         <Icon name="receipt" className="text-[16px]" /> Struk 80mm
                                                     </a>
+                                                    {canVoid && t.status !== 'cancelled' && (
+                                                        <button type="button" onClick={() => setVoidTarget(t)}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20">
+                                                            <Icon name="close" className="text-[16px]" /> Batalkan
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

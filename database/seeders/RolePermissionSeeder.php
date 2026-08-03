@@ -67,9 +67,15 @@ class RolePermissionSeeder extends Seeder
             'master.supplier.view', 'master.customer.view', 'master.product.view', 'master.branch.view',
         ]);
 
-        // --- ADMIN GUDANG ---
-        $adminGudang = Role::firstOrCreate(['name' => 'admin_gudang', 'guard_name' => 'web']);
-        $adminGudang->syncPermissions([
+        // --- SUPER ADMIN ---
+        // Peleburan dari admin_gudang + super_admin_hendhys + super_admin_jihans.
+        // Mengelola Gudang Utama sekaligus mengawasi Hendhys, Jihans, dan (nanti) Izzy.
+        // Catatan: permission di bawah BELUM ditegakkan di kode — otorisasi masih
+        // sepenuhnya berbasis nama role lewat middleware `role:`. Daftar ini dijaga
+        // akurat sebagai dokumentasi niat dan jalan naik bila nanti dibutuhkan
+        // kontrol yang lebih halus.
+        $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $superAdmin->syncPermissions([
             'gudang.po.view', 'gudang.po.create', 'gudang.po.edit', 'gudang.po.delete',
             'gudang.receiving.view', 'gudang.receiving.create',
             'gudang.stock.view', 'gudang.stock.adjust',
@@ -82,6 +88,13 @@ class RolePermissionSeeder extends Seeder
             'master.branch.view', 'master.branch.manage',
             'master.unit.manage', 'master.brand.manage', 'master.category.manage',
             'global.activity_log.view', 'global.notification.view',
+            // Pengawasan lintas unit — sengaja TANPA *.pos.* karena kasir yang
+            // mengoperasikan POS (diputuskan setelah data membuktikan super admin
+            // tidak pernah sekali pun membuat transaksi atau membuka shift).
+            'jihans.production.view', 'jihans.stock.view', 'jihans.transfer_request.view',
+            'hendhys.production.view', 'hendhys.stock.view',
+            'hendhys.transfer_request.view', 'hendhys.branch_request.view',
+            'hendhys.transfer_to_branch.view', 'hendhys.return.view',
         ]);
 
         // --- KASIR JIHAN'S ---
@@ -126,30 +139,6 @@ class RolePermissionSeeder extends Seeder
             'global.notification.view',
         ]);
 
-        // --- SUPER ADMIN JIHAN'S ---
-        $superAdminJihans = Role::firstOrCreate(['name' => 'super_admin_jihans', 'guard_name' => 'web']);
-        $superAdminJihans->syncPermissions([
-            'jihans.production.view', 'jihans.production.create', 'jihans.production.edit', 'jihans.production.delete',
-            'jihans.pos.view', 'jihans.pos.create',
-            'jihans.stock.view',
-            'jihans.transfer_request.view', 'jihans.transfer_request.create',
-            'master.product.view', 'master.customer.view', 'master.customer.manage', 'master.supplier.view',
-            'global.notification.view',
-        ]);
-
-        // --- SUPER ADMIN HENDHYS ---
-        $superAdminHendhys = Role::firstOrCreate(['name' => 'super_admin_hendhys', 'guard_name' => 'web']);
-        $superAdminHendhys->syncPermissions([
-            'hendhys.production.view', 'hendhys.production.create', 'hendhys.production.edit',
-            'hendhys.pos.view', 'hendhys.pos.create',
-            'hendhys.stock.view',
-            'hendhys.transfer_request.view', 'hendhys.transfer_request.create',
-            'hendhys.branch_request.view', 'hendhys.branch_request.create', 'hendhys.branch_request.approve',
-            'hendhys.transfer_to_branch.view', 'hendhys.transfer_to_branch.create',
-            'hendhys.return.view', 'hendhys.return.create',
-            'master.customer.view', 'master.customer.manage', 'master.product.view', 'master.supplier.view',
-            'global.notification.view',
-        ]);
     }
 }
 

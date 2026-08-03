@@ -122,7 +122,7 @@ class PurchaseOrderController extends Controller
 
     public function cancel(PurchaseOrder $po)
     {
-        abort_if(! in_array($po->status, ['draft', 'sent']), 403, 'PO tidak bisa dibatalkan.');
+        abort_if(! $po->isCancellable(), 403, 'PO tidak bisa dibatalkan.');
 
         $po->update(['status' => 'cancelled', 'updated_by' => auth()->id()]);
         $this->logger->log('update', 'gudang.po', "PO dibatalkan: {$po->po_number}", $po);

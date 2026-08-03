@@ -72,7 +72,7 @@ class GudangReturnController extends Controller
                 'code'          => $p->code,
                 'unit_id'       => $p->unit_id,
                 'unit'          => $p->unit?->abbreviation ?? 'PCS',
-                'current_stock' => (float) $p->current_stock,
+                'current_stock' => (int) $p->current_stock,
             ]);
 
         $units = Unit::orderBy('name')->get()->map(fn ($u) => ['id' => $u->id, 'abbreviation' => $u->abbreviation]);
@@ -93,7 +93,7 @@ class GudangReturnController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity' => 'required|numeric|min:0.001',
+            'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
             'items.*.condition' => 'required|string|max:100',
             'items.*.notes' => 'nullable|string',

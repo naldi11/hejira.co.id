@@ -35,7 +35,7 @@ class TransferToBranchController extends Controller
 
         $q = HendhysTransferToBranch::with(['branch', 'branchRequest', 'creator', 'receiver']);
 
-        $isAdmin = $user->hasRole('admin_hendhys') || $user->hasRole('super_admin_hendhys');
+        $isAdmin = $user->hasRole('admin_hendhys') || $user->hasRole('super_admin');
 
         if (!$isAdmin) {
             $q->where('branch_id', $user->branch_id);
@@ -138,7 +138,7 @@ class TransferToBranchController extends Controller
 
         $request->validate([
             'received_quantities'      => 'required|array|min:1',
-            'received_quantities.*'    => 'required|numeric|min:0',
+            'received_quantities.*'    => 'required|integer|min:0',
             'kondisi'                  => 'nullable|array',
             'kondisi.*'                => 'nullable|in:baik,rusak,kurang',
             'receive_notes'            => 'nullable|string|max:2000',
@@ -150,8 +150,8 @@ class TransferToBranchController extends Controller
         try {
             DB::transaction(function () use ($request, $transferOut, $user) {
                 foreach ($transferOut->details as $detail) {
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
-                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (int) $detail->quantity);
                     $kondisi = $request->kondisi[$detail->id] ?? null;
 
                     $detail->update([
@@ -193,8 +193,8 @@ class TransferToBranchController extends Controller
                 ]);
 
                 foreach ($transferOut->details as $detail) {
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
-                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (int) $detail->quantity);
                     $kondisi = $request->kondisi[$detail->id] ?? 'baik';
 
                     $receiptConfirmation->details()->create([
@@ -216,8 +216,8 @@ class TransferToBranchController extends Controller
                 // AUTO-RETURN: Credit shortfall back to Gudang stock & create Return to Gudang document
                 $shortfallItems = [];
                 foreach ($transferOut->details as $detail) {
-                    $sentQty     = (float) $detail->quantity;
-                    $receivedQty = (float) $detail->received_quantity;
+                    $sentQty     = (int) $detail->quantity;
+                    $receivedQty = (int) $detail->received_quantity;
                     $selisih     = round($sentQty - $receivedQty, 3);
 
                     if ($selisih > 0.001) {
@@ -227,11 +227,14 @@ class TransferToBranchController extends Controller
                             'qty'        => $selisih,
                             'product'    => $detail->product?->name ?? '?',
                         ];
-                        // Credit selisih kembali ke stok Gudang
+                        // Credit selisih kembali ke stok Gudang.
+                        // Jangan di-cast ke int: kolom quantity adalah decimal(15,3),
+                        // (int) 2.75 => 2 membuat dokumen retur (2,75) dan stok yang
+                        // benar-benar dikembalikan (2) tidak cocok.
                         $this->stockService->creditJihansGudang(
                             $detail->product_id,
                             $detail->unit_id,
-                            (int) $selisih,
+                            $selisih,
                             'return_receiving',
                             $transferOut->id,
                             $user->id,
@@ -282,7 +285,7 @@ class TransferToBranchController extends Controller
         if (auth()->user()->branch && auth()->user()->branch->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat melakukan transfer barang ke cabang.');
         }
-        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin', 'owner'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -300,7 +303,7 @@ class TransferToBranchController extends Controller
                     'id'                 => $d->id,
                     'product_id'         => $d->product_id,
                     'product'            => $d->product?->name ?? '-',
-                    'quantity_requested' => (float) $d->quantity_requested,
+                    'quantity_requested' => (int) $d->quantity_requested,
                     'unit_id'            => $d->unit_id,
                     'unit'               => $d->unit?->abbreviation ?? 'PCS',
                 ]),
@@ -332,7 +335,7 @@ class TransferToBranchController extends Controller
                 'code'          => $p->code,
                 'unit_id'       => $p->unit_id,
                 'unit'          => $p->unit?->abbreviation ?? 'PCS',
-                'current_stock' => (float) $p->current_stock,
+                'current_stock' => (int) $p->current_stock,
             ]);
 
         return Inertia::render('Hendhys/TransferToBranch/Create', [
@@ -346,7 +349,7 @@ class TransferToBranchController extends Controller
         if (auth()->user()->branch && auth()->user()->branch->type !== 'pusat') {
             abort(403, 'Akses ditolak.');
         }
-        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin_hendhys', 'owner'])) {
+        if (!auth()->user()->hasAnyRole(['admin_hendhys', 'super_admin', 'owner'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -387,7 +390,7 @@ class TransferToBranchController extends Controller
                 $hasPartial = false;
 
                 foreach ($request->items as $item) {
-                    $qtyApproved = (float) $item['quantity'];
+                    $qtyApproved = (int) $item['quantity'];
 
                     if ($qtyApproved > 0) {
                         $allZero = false;
@@ -508,7 +511,7 @@ class TransferToBranchController extends Controller
 
         $request->validate([
             'received_quantities'      => 'required|array|min:1',
-            'received_quantities.*'    => 'required|numeric|min:0',
+            'received_quantities.*'    => 'required|integer|min:0',
             'kondisi'                  => 'nullable|array',
             'kondisi.*'                => 'nullable|in:baik,rusak,kurang',
             'receive_notes'            => 'nullable|string|max:2000',
@@ -524,8 +527,8 @@ class TransferToBranchController extends Controller
                 $transferToBranch->load('details');
 
                 foreach ($transferToBranch->details as $detail) {
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
-                    $receivedQty = min($receivedQty, (float) $detail->quantity);
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
+                    $receivedQty = min($receivedQty, (int) $detail->quantity);
                     $kondisi = $request->kondisi[$detail->id] ?? null;
 
                     $detail->update([
@@ -558,8 +561,8 @@ class TransferToBranchController extends Controller
                 // AUTO-RETURN: Detect shortfall and create return document to Pusat
                 $shortfallDetails = [];
                 foreach ($transferToBranch->details as $detail) {
-                    $sentQty     = (float) $detail->quantity;
-                    $receivedQty = (float) ($request->received_quantities[$detail->id] ?? 0);
+                    $sentQty     = (int) $detail->quantity;
+                    $receivedQty = (int) ($request->received_quantities[$detail->id] ?? 0);
                     $receivedQty = min($receivedQty, $sentQty);
                     $selisih     = round($sentQty - $receivedQty, 3);
 
@@ -648,7 +651,7 @@ class TransferToBranchController extends Controller
                 $transferToBranch->load('details');
 
                 foreach ($transferToBranch->details as $detail) {
-                    $qty = (float) $detail->quantity;
+                    $qty = (int) $detail->quantity;
 
                     $detail->update([
                         'received_quantity' => $qty,

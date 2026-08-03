@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Jihans\PendingResource;
 use App\Models\JihansPendingTransaction;
 use App\Models\Product;
+use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PendingController extends Controller
 {
+    public function __construct(private NumberGeneratorService $numbers) {}
+
     public function index(Request $request)
     {
         $pendings = JihansPendingTransaction::with('creator')->withCount('details')
@@ -42,33 +45,49 @@ class PendingController extends Controller
             'items.*.total'     => 'required|numeric|min:0',
         ]);
 
-        $pending = DB::transaction(function () use ($request) {
-            $pen = JihansPendingTransaction::create([
-                'pending_number' => 'HLD-' . time() . '-' . rand(100, 999),
-                'date'           => now()->toDateString(),
-                'customer_id'    => $request->customer_id,
-                'customer_name'  => $request->customer_name ?? 'Pelanggan Umum',
-                'customer_type'  => $request->customer_type ?? 'Pelanggan Retail',
-                'notes'          => $request->notes,
-                'created_by'     => auth()->id(),
-            ]);
-
-            foreach ($request->items as $item) {
-                $product = Product::with('unit')->find($item['product_id']);
-                
-                $pen->details()->create([
-                    'product_id'       => $item['product_id'],
-                    'product_name'     => $product->name,
-                    'quantity'         => $item['quantity'],
-                    'unit_id'          => $product->unit_id,
-                    'price'            => $item['price'],
-                    'discount_percent' => 0, // Simplified for pending
-                    'total'            => $item['total'],
+        try {
+            $pending = DB::transaction(function () use ($request) {
+                $pen = JihansPendingTransaction::create([
+                    // Pakai generator bernomor urut + lockForUpdate. Skema lama
+                    // ('HLD-'.time().'-'.rand()) bisa tabrakan pada unique index
+                    // jika dua kasir menahan keranjang di detik yang sama.
+                    'pending_number' => $this->numbers->generateYearly('JPND', 'jihans_pending_transactions', 'pending_number'),
+                    'date'           => now()->toDateString(),
+                    'customer_id'    => $request->customer_id,
+                    'customer_name'  => $request->customer_name ?? 'Pelanggan Umum',
+                    'customer_type'  => $request->customer_type ?? 'Pelanggan Retail',
+                    'notes'          => $request->notes,
+                    'created_by'     => auth()->id(),
                 ]);
+
+                foreach ($request->items as $item) {
+                    $product = Product::with('unit')->find($item['product_id']);
+
+                    $pen->details()->create([
+                        'product_id'       => $item['product_id'],
+                        'product_name'     => $product->name,
+                        'quantity'         => $item['quantity'],
+                        'unit_id'          => $product->unit_id,
+                        'price'            => $item['price'],
+                        'discount_percent' => 0, // Simplified for pending
+                        'total'            => $item['total'],
+                    ]);
+                }
+
+                return $pen;
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Gagal menahan transaksi: ' . $e->getMessage(),
+                ], 500);
             }
 
-            return $pen;
-        });
+            return back()->withInput()->with('error', 'Gagal menahan transaksi: ' . $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

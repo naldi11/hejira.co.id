@@ -37,7 +37,7 @@ class ProductResource extends JsonResource
             'visible_jihans'  => (bool) $this->visible_jihans,
             'visible_hendhys' => (bool) $this->visible_hendhys,
             'tiered_prices' => $this->whenLoaded('tieredPrices', fn () => $this->tieredPrices->map(fn ($t) => [
-                'min_qty' => (float) $t->min_qty,
+                'min_qty' => (int) $t->min_qty,
                 'price'   => (float) $t->price,
             ])->values()),
         ];

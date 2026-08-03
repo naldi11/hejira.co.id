@@ -75,7 +75,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [activeTab, setActiveTab] = useState('payments');
 
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_jihans') || roles.includes('super_admin_jihans');
+    const isKasir = roles.includes('kasir_jihans');
 
     const handleFilter = (e) => { 
         e?.preventDefault(); 
@@ -294,21 +294,33 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                 ) : (
                                     rows.data?.map((row, i) => {
                                         const isClosed = row.status === 'closed';
-                                        const hasDiscrepancy = isClosed && row.discrepancy !== 0;
+                                        const selisih = Number(row.discrepancy) || 0;
+                                        const hasDiscrepancy = isClosed && selisih !== 0;
 
                                         return (
-                                            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
+                                            // Shift dengan selisih kas ditandai jelas. Sebelumnya `discrepancy`
+                                            // dihitung backend & di sini, tapi tidak pernah ditampilkan sama
+                                            // sekali — selisih laci praktis tidak terlihat oleh siapa pun.
+                                            <tr key={i} className={`hover:bg-gray-50 dark:hover:bg-white/[0.01] ${hasDiscrepancy ? 'bg-rose-50/60 dark:bg-rose-500/5' : ''}`}>
                                                 <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{row.user?.name ?? 'Sistem'}</td>
                                                 <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(row.opened_at)}</td>
                                                 <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{isClosed ? formatDateTime(row.closed_at) : '-'}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                                        isClosed 
-                                                            ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' 
+                                                        isClosed
+                                                            ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                                                             : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
                                                     }`}>
                                                         {isClosed ? 'Selesai' : 'Aktif'}
                                                     </span>
+                                                    {hasDiscrepancy && (
+                                                        <span
+                                                            title={`Selisih kas: ${formatRupiah(selisih)}`}
+                                                            className="mt-1 block text-[10px] font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap"
+                                                        >
+                                                            Selisih {selisih > 0 ? '+' : ''}{formatRupiah(selisih)}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-right whitespace-nowrap">{formatRupiah(row.starting_cash)}</td>
                                                 {(() => {

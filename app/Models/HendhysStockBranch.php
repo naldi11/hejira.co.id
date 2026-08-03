@@ -14,6 +14,17 @@ class HendhysStockBranch extends Model
 
     protected $fillable = ['branch_id', 'product_id', 'quantity', 'quantity_return', 'unit_id', 'last_updated'];
 
+    // quantity / quantity_return adalah decimal(15,3) — beri cast eksplisit agar
+    // tidak dikembalikan sebagai string dan salah dipakai dalam aritmetika stok.
+    protected function casts(): array
+    {
+        return [
+            'quantity'        => 'integer',
+            'quantity_return' => 'integer',
+            'last_updated'    => 'datetime',
+        ];
+    }
+
     public function branch(): BelongsTo  { return $this->belongsTo(Branch::class); }
     public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class); }
     public function unit(): BelongsTo    { return $this->belongsTo(HendhysUnit::class); }

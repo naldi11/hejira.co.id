@@ -10,6 +10,7 @@ use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -117,39 +118,11 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         } elseif ($request->filled('image_url')) {
-            try {
-                $url = $request->input('image_url');
-                if (str_starts_with($url, 'data:')) {
-                    $contents = file_get_contents($url);
-                    if ($contents !== false) {
-                        $filename = 'products/' . uniqid() . '.png';
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
-                        $data['image'] = $filename;
-                    }
-                } else {
-                    $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
-                    if ($response->successful()) {
-                        $contents = $response->body();
-                        $contentType = $response->header('Content-Type');
-                        $ext = 'jpg';
-                        if (str_contains($contentType, 'png')) {
-                            $ext = 'png';
-                        } elseif (str_contains($contentType, 'webp')) {
-                            $ext = 'webp';
-                        } elseif (str_contains($contentType, 'gif')) {
-                            $ext = 'gif';
-                        }
-                        $filename = 'products/' . uniqid() . '.' . $ext;
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
-                        $data['image'] = $filename;
-                    }
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Failed to download image: " . $e->getMessage());
+            if ($stored = $this->storeImageFromUrl($request->input('image_url'))) {
+                $data['image'] = $stored;
             }
         }
 
-        $data['code']            = $this->numbers->generate('PRD', $tableName, 'code');
         $data['created_by']      = auth()->id();
         $data['visible_gudang']  = $request->boolean('visible_gudang');
         $data['visible_jihans']  = $request->boolean('visible_jihans');
@@ -157,12 +130,18 @@ class ProductController extends Controller
         // Simpan entity_scope dari entitas aktif untuk kompatibilitas
         $data['entity_scope']    = $info['scope'] === 'gudang' ? 'all' : $info['scope'];
 
-        $product = $this->getModelClass('Product', $info['scope'])::create($data);
-        
+        // Generate kode di dalam transaksi supaya lockForUpdate pada generator
+        // benar-benar menahan baris sampai produk tersimpan.
+        $product = DB::transaction(function () use ($data, $tableName, $info) {
+            $data['code'] = $this->numbers->generate('PRD', $tableName, 'code');
+
+            return $this->getModelClass('Product', $info['scope'])::create($data);
+        });
+
         if ($request->has('tiered_prices')) {
             $this->saveTieredPrices($product, $request->tiered_prices);
         }
-        
+
         $this->logger->log('create', 'master.product', "Tambah produk: {$product->name}", $product);
 
 
@@ -231,38 +210,13 @@ class ProductController extends Controller
             }
             $data['image'] = $request->file('image')->store('products', 'public');
         } elseif ($request->filled('image_url')) {
-            if ($product->image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
-            }
-            try {
-                $url = $request->input('image_url');
-                if (str_starts_with($url, 'data:')) {
-                    $contents = file_get_contents($url);
-                    if ($contents !== false) {
-                        $filename = 'products/' . uniqid() . '.png';
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
-                        $data['image'] = $filename;
-                    }
-                } else {
-                    $response = \Illuminate\Support\Facades\Http::timeout(10)->get($url);
-                    if ($response->successful()) {
-                        $contents = $response->body();
-                        $contentType = $response->header('Content-Type');
-                        $ext = 'jpg';
-                        if (str_contains($contentType, 'png')) {
-                            $ext = 'png';
-                        } elseif (str_contains($contentType, 'webp')) {
-                            $ext = 'webp';
-                        } elseif (str_contains($contentType, 'gif')) {
-                            $ext = 'gif';
-                        }
-                        $filename = 'products/' . uniqid() . '.' . $ext;
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
-                        $data['image'] = $filename;
-                    }
+            // Unduh dulu, baru hapus gambar lama — supaya gambar lama tidak hilang
+            // kalau URL baru ternyata ditolak/gagal diambil.
+            if ($stored = $this->storeImageFromUrl($request->input('image_url'))) {
+                if ($product->image) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
                 }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Failed to download image: " . $e->getMessage());
+                $data['image'] = $stored;
             }
         } elseif ($request->boolean('clear_image')) {
             if ($product->image) {
@@ -321,6 +275,119 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Simpan gambar produk dari sebuah URL (data: URI hasil cropper, atau URL http/https).
+     *
+     * Dipakai bersama oleh store() dan update() — sebelumnya blok ini disalin dua kali
+     * dan keduanya mengambil URL apa pun yang dikirim klien tanpa pemeriksaan, sehingga
+     * server bisa dipaksa menembak alamat internal (SSRF).
+     *
+     * @return string|null Path relatif di disk 'public', atau null bila ditolak/gagal.
+     */
+    private function storeImageFromUrl(string $url): ?string
+    {
+        try {
+            // 1. data: URI — di-encode di browser, tidak menyentuh jaringan sama sekali.
+            if (str_starts_with($url, 'data:')) {
+                if (!preg_match('#^data:image/(png|jpe?g|webp|gif);base64,#i', $url, $m)) {
+                    return null;
+                }
+                $contents = base64_decode(substr($url, strpos($url, ',') + 1), true);
+                if ($contents === false || $contents === '') {
+                    return null;
+                }
+                $ext = strtolower($m[1]) === 'jpeg' ? 'jpg' : strtolower($m[1]);
+
+                return $this->putProductImage($contents, $ext);
+            }
+
+            // 2. URL remote — hanya http/https ke alamat IP publik.
+            if (!$this->isPublicHttpUrl($url)) {
+                \Illuminate\Support\Facades\Log::warning('Image URL ditolak (bukan alamat publik): ' . $url);
+
+                return null;
+            }
+
+            $response = \Illuminate\Support\Facades\Http::timeout(10)
+                // Redirect dimatikan: host publik yang diizinkan tetap bisa
+                // meneruskan (302) ke alamat internal kalau ini dibiarkan.
+                ->withOptions(['allow_redirects' => false])
+                ->get($url);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $contentType = (string) $response->header('Content-Type');
+            if (!str_starts_with($contentType, 'image/')) {
+                \Illuminate\Support\Facades\Log::warning("Image URL ditolak (Content-Type {$contentType}): " . $url);
+
+                return null;
+            }
+
+            $ext = match (true) {
+                str_contains($contentType, 'png')  => 'png',
+                str_contains($contentType, 'webp') => 'webp',
+                str_contains($contentType, 'gif')  => 'gif',
+                default                            => 'jpg',
+            };
+
+            return $this->putProductImage($response->body(), $ext);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to download image: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    private function putProductImage(string $contents, string $ext): string
+    {
+        $filename = 'products/' . uniqid() . '.' . $ext;
+        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $contents);
+
+        return $filename;
+    }
+
+    /**
+     * True hanya jika URL memakai skema http/https DAN setiap IP yang di-resolve
+     * berada di luar rentang privat/reserved (10/8, 192.168/16, 127/8, 169.254/16
+     * termasuk endpoint metadata cloud, ::1, fc00::/7, dst).
+     */
+    private function isPublicHttpUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+        if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = $parts['host'] ?? '';
+        if ($host === '') {
+            return false;
+        }
+
+        $ips = [];
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ips[] = $host;
+        } else {
+            foreach (@dns_get_record($host, DNS_A | DNS_AAAA) ?: [] as $record) {
+                if (!empty($record['ip']))   { $ips[] = $record['ip']; }
+                if (!empty($record['ipv6'])) { $ips[] = $record['ipv6']; }
+            }
+        }
+
+        if (empty($ips)) {
+            return false;
+        }
+
+        foreach ($ips as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function resolveRelations(array $data, string $scope): array

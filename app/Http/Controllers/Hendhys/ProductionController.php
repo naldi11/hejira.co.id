@@ -56,6 +56,10 @@ class ProductionController extends Controller
     private function getProductionProducts()
     {
         return Product::where('status', 'active')
+            // Hanya produk yang memang diproduksi sendiri. Tanpa filter ini, barang
+            // beli-jadi ikut muncul di form produksi dan stoknya bisa ter-kredit dua
+            // kali (lewat penerimaan gudang DAN lewat produksi).
+            ->where('source_type', 'produced')
             ->visibleInHendhys()
             ->with('unit')
             ->orderBy('name')
@@ -120,7 +124,7 @@ class ProductionController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity_produced' => 'required|numeric|min:1',
+            'items.*.quantity_produced' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
@@ -162,7 +166,7 @@ class ProductionController extends Controller
             'prediction_id' => 'nullable|integer|exists:hendhys_productions,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity_produced' => 'required|numeric|min:1',
+            'items.*.quantity_produced' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 
@@ -257,7 +261,7 @@ class ProductionController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
-            'items.*.quantity_produced' => 'required|numeric|min:1',
+            'items.*.quantity_produced' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
         ]);
 

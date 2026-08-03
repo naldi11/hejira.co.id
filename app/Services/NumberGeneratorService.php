@@ -6,6 +6,22 @@ use Illuminate\Support\Facades\DB;
 
 class NumberGeneratorService
 {
+    /**
+     * Kutip nama kolom sebelum disisipkan ke SQL mentah (orderByRaw).
+     *
+     * Saat ini semua pemanggil mengirim nama kolom literal, jadi belum ada celah
+     * nyata — tapi menginterpolasi identifier mentah ke SQL adalah pola yang mudah
+     * berubah jadi injeksi begitu ada pemanggil yang meneruskan input pengguna.
+     */
+    private function quoteIdentifier(string $column): string
+    {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $column)) {
+            throw new \InvalidArgumentException("Nama kolom tidak valid: {$column}");
+        }
+
+        return '`' . $column . '`';
+    }
+
     public function generate(string $prefix, string $table, string $column): string
     {
         $prefixDash = $prefix . '-';
@@ -13,7 +29,7 @@ class NumberGeneratorService
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
-            ->orderByRaw("LENGTH($column) DESC")
+            ->orderByRaw('LENGTH(' . $this->quoteIdentifier($column) . ') DESC')
             ->orderBy($column, 'desc')
             ->lockForUpdate()
             ->value($column);
@@ -46,7 +62,7 @@ class NumberGeneratorService
 
         $last = DB::table($table)
             ->where($column, 'like', $like)
-            ->orderByRaw("LENGTH($column) DESC")
+            ->orderByRaw('LENGTH(' . $this->quoteIdentifier($column) . ') DESC')
             ->orderBy($column, 'desc')
             ->lockForUpdate()
             ->value($column);

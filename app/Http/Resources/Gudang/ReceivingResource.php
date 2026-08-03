@@ -38,8 +38,8 @@ class ReceivingResource extends JsonResource
             'details'           => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'id'               => $d->id,
                 'product'          => $d->product?->name ?? '-',
-                'quantity_ordered' => $d->quantity_ordered !== null ? (float) $d->quantity_ordered : null,
-                'quantity'         => (float) $d->quantity,
+                'quantity_ordered' => $d->quantity_ordered !== null ? (int) $d->quantity_ordered : null,
+                'quantity'         => (int) $d->quantity,
                 'unit'             => $d->unit?->abbreviation ?? '-',
                 'kondisi'          => $d->kondisi,
                 'hpp_price'        => (float) $d->hpp_price,

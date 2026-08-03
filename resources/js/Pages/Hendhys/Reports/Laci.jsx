@@ -76,7 +76,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [activeTab, setActiveTab] = useState('payments');
 
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_hendhys') || roles.includes('super_admin_hendhys');
+    const isKasir = roles.includes('kasir_hendhys');
 
     const handleFilter = (e) => { 
         e?.preventDefault(); 

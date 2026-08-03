@@ -19,9 +19,9 @@ trait ScopesMasterData
         }
         if ($request->route()->getName() === 'products.qr') {
             $user = auth()->user();
-            if ($user->hasRole(['kasir_hendhys', 'admin_hendhys', 'super_admin_hendhys'])) {
+            if ($user->hasRole(['kasir_hendhys', 'admin_hendhys'])) {
                 return ['scope' => 'hendhys', 'layout' => 'HendhysLayout', 'route' => ''];
-            } elseif ($user->hasRole(['kasir_jihans', 'admin_jihans', 'super_admin_jihans'])) {
+            } elseif ($user->hasRole(['kasir_jihans', 'admin_jihans'])) {
                 return ['scope' => 'jihans', 'layout' => 'JihansLayout', 'route' => ''];
             } elseif ($user->hasRole('owner')) {
                 return ['scope' => 'owner', 'layout' => 'OwnerLayout', 'route' => ''];
@@ -32,13 +32,14 @@ trait ScopesMasterData
         return ['scope' => 'gudang', 'layout' => 'GudangLayout', 'route' => 'master.'];
     }
 
+    /**
+     * Master data (produk, customer, supplier, dsb) memakai SATU model bersama untuk
+     * semua entity; pemisahan per-entity dilakukan lewat kolom entity_scope/visible_*,
+     * bukan lewat kelas model terpisah. Parameter $scope dipertahankan agar pemanggil
+     * tetap seragam kalau suatu saat pemisahan itu benar-benar dibutuhkan.
+     */
     protected function getModelClass(string $modelName, string $scope)
     {
-        $namespace = match($scope) {
-            'hendhys' => 'Hendhys',
-            'jihans'  => 'Jihans',
-            default   => 'Gudang',
-        };
         return "App\\Models\\{$modelName}";
     }
 

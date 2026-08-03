@@ -8,9 +8,9 @@ const route = window.route;
 export default function JihansLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const roles = auth?.user?.roles || [];
-    const isKasir = roles.includes('kasir_jihans') || roles.includes('super_admin_jihans');
-    const isAdmin = roles.includes('admin_jihans') || roles.includes('super_admin_jihans') || roles.includes('owner') || roles.includes('admin_gudang');
-    const isSuperAdmin = roles.includes('super_admin_jihans');
+    const isKasir = roles.includes('kasir_jihans');
+    const isAdmin = roles.includes('admin_jihans') || roles.includes('super_admin') || roles.includes('owner');
+    const isSuperAdmin = roles.includes('super_admin');
 
     const navItems = [
         {

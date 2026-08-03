@@ -15,6 +15,19 @@ class HendhysReturnDetail extends Model
         'return_id', 'product_id', 'quantity', 'unit_id'
     ];
 
+    /**
+     * Kuantitas stok WAJIB integer; hanya nilai uang yang desimal.
+     * Kolom DB masih decimal(15,3) karena alasan historis, sehingga tanpa cast
+     * Eloquent mengembalikan string seperti "5.000" dan perhitungan di PHP
+     * jadi rawan galat pembulatan.
+     */
+    protected function casts(): array
+    {
+        return [
+            'quantity'          => 'integer',
+        ];
+    }
+
     public function returnFromBranch(): BelongsTo
     {
         return $this->belongsTo(HendhysReturnFromBranch::class, 'return_id');

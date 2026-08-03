@@ -21,6 +21,9 @@ class JihansGudangStockMovement extends Model
     protected function casts(): array
     {
         return [
+            'quantity'          => 'integer',
+            'quantity_before'   => 'integer',
+            'quantity_after'    => 'integer',
             'created_at' => 'datetime',
         ];
     }

@@ -7,10 +7,10 @@ use App\Http\Requests\Gudang\StoreReceivingRequest;
 use App\Http\Requests\Gudang\UpdateReceivingRequest;
 use App\Http\Requests\Gudang\UploadReceivingPhotoRequest;
 use App\Http\Resources\Gudang\ReceivingResource;
-use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Receiving;
+use App\Models\ReceivingDetail;
 use App\Models\ReceivingPhoto;
 use App\Models\Supplier;
 use App\Services\ActivityLogService;
@@ -54,8 +54,10 @@ class ReceivingController extends Controller
                 ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             'products'       => Product::where('status', 'active')->visibleInGudang()->with('unit')->orderBy('name')->get()
                 ->map(fn ($p) => ['id' => $p->id, 'name' => $p->name, 'unit_id' => $p->unit_id, 'unit_name' => $p->unit?->abbreviation ?? 'PCS', 'hpp' => (float) $p->hpp]),
+            // Pakai scope model, bukan daftar status inline — definisi "PO masih
+            // bisa diterima" sebelumnya tersebar di 3 tempat dan bisa melenceng.
             'purchaseOrders' => PurchaseOrder::with('supplier', 'details.product', 'details.unit')
-                ->whereIn('status', ['draft', 'sent', 'partial'])->orderByDesc('date')->get()
+                ->receivable()->orderByDesc('date')->get()
                 ->map(fn ($po) => [
                     'id'          => $po->id,
                     'po_number'   => $po->po_number,
@@ -64,8 +66,8 @@ class ReceivingController extends Controller
                     'details'     => $po->details->map(fn ($d) => [
                         'product_id'        => $d->product_id,
                         'product_name'      => $d->product?->name,
-                        'quantity_ordered'  => (float) $d->quantity_ordered,
-                        'quantity_received' => (float) $d->quantity_received,
+                        'quantity_ordered'  => (int) $d->quantity_ordered,
+                        'quantity_received' => (int) $d->quantity_received,
                         'unit_id'           => $d->unit_id,
                         'unit_name'         => $d->unit?->abbreviation ?? 'PCS',
                         'price'             => (float) $d->price,
@@ -104,13 +106,13 @@ class ReceivingController extends Controller
             if ($request->po_id) {
                 $po = PurchaseOrder::with('details')->find($request->po_id);
                 foreach ($po?->details ?? [] as $d) {
-                    $poDetailMap[$d->product_id] = (float) $d->quantity_ordered;
+                    $poDetailMap[$d->product_id] = (int) $d->quantity_ordered;
                 }
             }
 
             foreach ($request->items as $item) {
-                $qtyBagus = (float) $item['quantity_bagus'];
-                $qtyRusak = (float) $item['quantity_rusak'];
+                $qtyBagus = (int) $item['quantity_bagus'];
+                $qtyRusak = (int) $item['quantity_rusak'];
 
                 if ($qtyBagus <= 0 && $qtyRusak <= 0) {
                     continue;
@@ -169,7 +171,7 @@ class ReceivingController extends Controller
             }
 
             if ($request->po_id) {
-                $this->updatePoReceived($request->po_id, $request->items);
+                $this->updatePoReceived($request->po_id);
             }
 
             if ($request->hasFile('photos')) {
@@ -233,25 +235,33 @@ class ReceivingController extends Controller
         DB::transaction(function () use ($data, $receiving) {
             foreach ($data['items'] as $item) {
                 $detail = $receiving->details()->findOrFail($item['detail_id']);
-                $delta  = (float) $item['quantity'] - (float) $detail->quantity;
+
+                // Hanya barang berkondisi 'baik' yang pernah masuk ke stok jual
+                // (lihat store(): item 'rusak' tidak pernah di-credit). Karena itu
+                // delta stok harus dihitung dari kontribusi lama vs baru, bukan
+                // dari selisih qty mentah — kalau tidak, mengedit qty barang rusak
+                // akan salah menambah/mengurangi stok yang layak jual, dan mengubah
+                // kondisi baik->rusak tidak akan pernah menarik stoknya kembali.
+                $newKondisi = $item['kondisi'] ?? $detail->kondisi;
+
+                $oldContribution = $detail->kondisi === 'baik' ? (int) $detail->quantity : 0;
+                $newContribution = $newKondisi === 'baik' ? (int) $item['quantity'] : 0;
+                $delta = $newContribution - $oldContribution;
 
                 if ($delta > 0) {
                     $this->stock->creditJihansGudang($detail->product_id, $detail->unit_id, $delta, 'receiving_edit', $receiving->id, auth()->id());
                 } elseif ($delta < 0) {
-                    $absDelta = abs($delta);
-                    $stock = JihansGudangStock::where('product_id', $detail->product_id)->first();
-                    if (! $stock || $stock->quantity < $absDelta) {
-                        throw new \Exception("Stok tidak mencukupi untuk koreksi produk: {$detail->product->name}");
-                    }
-                    $this->stock->debitJihansGudang($detail->product_id, $absDelta, 'receiving_edit', $receiving->id, auth()->id());
+                    // debitJihansGudang membaca saldo di bawah lockForUpdate dan
+                    // melempar InsufficientStockException bila tidak cukup.
+                    $this->stock->debitJihansGudang($detail->product_id, abs($delta), 'receiving_edit', $receiving->id, auth()->id());
                 }
 
                 $newHpp = (float) $item['hpp_price'];
                 $detail->update([
-                    'quantity'  => (float) $item['quantity'],
+                    'quantity'  => (int) $item['quantity'],
                     'hpp_price' => $newHpp,
                     'total'     => (float) $item['quantity'] * $newHpp,
-                    'kondisi'   => $item['kondisi'] ?? null,
+                    'kondisi'   => $newKondisi,
                     'notes'     => $item['notes'] ?? null,
                 ]);
             }
@@ -262,6 +272,12 @@ class ReceivingController extends Controller
                 'supplier_rep_name' => $data['supplier_rep_name'] ?? null,
                 'kendala'           => $data['kendala'] ?? null,
             ]);
+
+            // store() memanggil updatePoReceived(), update() dulu tidak — sehingga
+            // koreksi qty pada GRN meninggalkan quantity_received / status PO basi.
+            if ($receiving->po_id) {
+                $this->syncPoReceivedFromGrn($receiving->po_id);
+            }
 
             $this->logger->log('update', 'gudang.receiving', "Edit GRN: {$receiving->grn_number}", $receiving);
         });
@@ -352,21 +368,53 @@ class ReceivingController extends Controller
         return back()->with('success', 'Foto berhasil dihapus.');
     }
 
-    private function updatePoReceived(int $poId, array $items): void
+    /**
+     * Hitung ulang quantity_received tiap baris PO dari SELURUH GRN yang menempel
+     * pada PO tersebut (hanya baris berkondisi 'baik'), lalu perbarui status PO.
+     *
+     * Dipakai setelah GRN dibuat maupun diedit. Menghitung ulang dari
+     * increment() dan hanya benar saat GRN pertama kali dibuat, metode ini
+     * menghitung dari nol sehingga aman dipanggil berulang kali.
+     */
+    private function syncPoReceivedFromGrn(int $poId): void
     {
         $po = PurchaseOrder::with('details')->find($poId);
         if (! $po) {
             return;
         }
 
-        foreach ($items as $item) {
-            // Hanya barang BAGUS yang dihitung sebagai diterima ke stok.
-            // Barang rusak tidak masuk stok, sehingga tidak dihitung ke quantity_received PO.
-            $totalReceived = (float) ($item['quantity_bagus'] ?? 0);
-            if ($totalReceived <= 0) {
-                continue;
-            }
-            $po->details->where('product_id', $item['product_id'])->first()?->increment('quantity_received', $totalReceived);
+        $receivedPerProduct = ReceivingDetail::query()
+            ->whereIn('receiving_id', Receiving::where('po_id', $poId)->pluck('id'))
+            ->where('kondisi', 'baik')
+            ->selectRaw('product_id, SUM(quantity) as total')
+            ->groupBy('product_id')
+            ->pluck('total', 'product_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        // Satu PO BISA memuat produk yang sama di beberapa baris. Karena itu total
+        // penerimaan per produk harus DIALOKASIKAN berurutan ke tiap baris sesuai
+        // porsinya — bukan diberikan utuh ke setiap baris (menggandakan hitungan),
+        // dan bukan hanya ke baris pertama (membuat baris lain selamanya 0 sehingga
+        // PO terkunci di status 'partial'). Keduanya pernah terjadi di sini.
+        $remaining = $receivedPerProduct;
+
+        foreach ($po->details as $detail) {
+            $pid       = $detail->product_id;
+            $available = $remaining[$pid] ?? 0;
+            $ordered   = (int) $detail->quantity_ordered;
+
+            // Baris terakhir untuk produk ini menyerap sisa lebihnya, supaya
+            // penerimaan berlebih tetap terlihat dan tidak hilang diam-diam.
+            $isLastLineForProduct = $po->details
+                ->where('product_id', $pid)
+                ->last()?->id === $detail->id;
+
+            $allocated = $isLastLineForProduct ? $available : min($ordered, $available);
+
+            $remaining[$pid] = $available - $allocated;
+
+            $detail->update(['quantity_received' => max(0, $allocated)]);
         }
 
         $po->refresh();
@@ -377,5 +425,22 @@ class ReceivingController extends Controller
             'status'     => $allReceived ? 'received' : ($anyReceived ? 'partial' : $po->status),
             'updated_by' => auth()->id(),
         ]);
+    }
+
+    /**
+     * Selaraskan qty diterima PO setelah sebuah GRN dibuat.
+     *
+     * Dulu fungsi ini meng-increment baris PO hasil `->where('product_id', ..)->first()`.
+     * Pada PO yang memuat produk sama di dua baris, hanya baris pertama yang pernah
+     * bertambah — baris kedua tetap 0 selamanya, sehingga syarat "semua baris
+     * terpenuhi" tidak pernah tercapai dan PO terkunci di status 'partial'.
+     * 24 PO di produksi terkena masalah ini.
+     *
+     * Sekarang cukup menghitung ulang dari seluruh GRN milik PO tersebut, memakai
+     * alokasi per baris yang sama dengan syncPoReceivedFromGrn().
+     */
+    private function updatePoReceived(int $poId): void
+    {
+        $this->syncPoReceivedFromGrn($poId);
     }
 }

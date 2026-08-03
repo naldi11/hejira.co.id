@@ -83,16 +83,8 @@ class ShiftController extends Controller
         $closedAt = now();
         $entity = $shift->entity;
 
-        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
-            ->where('branch_id', $shift->branch_id)
-            ->where('id', '<', $shift->id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $startAt = \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
-        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($shift->opened_at)) {
-            $startAt = $previousShift->closed_at;
-        }
+        // Batas periode kanonik dari model (menangani shift sebelumnya yang masih terbuka).
+        $startAt = $shift->periodStart();
 
         // Calculate total cash collected during shift
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
@@ -139,19 +131,45 @@ class ShiftController extends Controller
     public function listByDate(Request $request)
     {
         $request->validate([
-            'date' => 'nullable|date',
-            'entity' => 'required|in:hendhys,jihans'
+            'date'      => 'nullable|date',
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+            'shift_id'  => 'nullable|integer',
+            'entity'    => 'required|in:hendhys,jihans'
         ]);
 
         $user = auth()->user();
         $query = \App\Models\CashierShift::with('user')
             ->where('entity', $request->entity);
 
-        if ($request->filled('date')) {
-            $query->whereDate('opened_at', $request->date);
-        } else {
-            $query->where('opened_at', '>=', now()->subDays(30));
-        }
+        // Dropdown "Pilih Shift" kini bisa mengirim rentang tanggal yang sedang
+        // dipilih user. Sebelumnya tidak ada parameter tanggal sama sekali yang
+        // dikirim, sehingga daftar selalu jatuh ke default 30 hari terakhir dan
+        // shift yang lebih lama mustahil dipilih.
+        $selectedShiftId = $request->integer('shift_id') ?: null;
+
+        $query->where(function ($q) use ($request, $selectedShiftId) {
+            $q->where(function ($w) use ($request) {
+                if ($request->filled('date')) {
+                    $w->whereDate('opened_at', $request->date);
+                } elseif ($request->filled('date_from') || $request->filled('date_to')) {
+                    if ($request->filled('date_from')) {
+                        $w->whereDate('opened_at', '>=', $request->date_from);
+                    }
+                    if ($request->filled('date_to')) {
+                        $w->whereDate('opened_at', '<=', $request->date_to);
+                    }
+                } else {
+                    $w->where('opened_at', '>=', now()->subDays(30));
+                }
+            });
+
+            // Shift yang sedang terpilih harus selalu ikut, walau di luar rentang —
+            // kalau tidak, dropdown tampil kosong padahal filter sedang aktif.
+            if ($selectedShiftId) {
+                $q->orWhere('id', $selectedShiftId);
+            }
+        });
 
         if (!$user->hasRole("admin_{$request->entity}") && !$user->hasRole("super_admin_{$request->entity}")) {
             if ($user->branch && $user->branch->type !== 'pusat') {
@@ -188,18 +206,8 @@ class ShiftController extends Controller
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
         $detailTable = ($entity === 'jihans') ? 'jihans_transaction_details' : 'hendhys_transaction_details';
 
-        $closedAt = $shift->closed_at ?? now();
-
-        $previousShift = \App\Models\CashierShift::where('user_id', $shift->user_id)
-            ->where('branch_id', $shift->branch_id)
-            ->where('id', '<', $shift->id)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $startAt = \Carbon\Carbon::parse($shift->opened_at)->startOfDay();
-        if ($previousShift && \Carbon\Carbon::parse($previousShift->closed_at)->isSameDay($shift->opened_at)) {
-            $startAt = $previousShift->closed_at;
-        }
+        $closedAt = $shift->periodEnd();
+        $startAt  = $shift->periodStart();
 
         // Extra column exists in hendhys_transaction_payments for specific type tracking
         $hasPtypeCol = ($entity === 'hendhys');

@@ -13,7 +13,7 @@ use App\Http\Controllers\Hendhys\GudangReturnController;
 
 use App\Http\Controllers\Hendhys\DashboardController;
 
-Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_hendhys|admin_hendhys|super_admin_hendhys'])
+Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_hendhys|admin_hendhys|super_admin'])
     ->prefix('hendhys')
     ->name('hendhys.')
     ->group(function () {
@@ -22,16 +22,21 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
 
         // Shared Routes: Riwayat Transaksi & Stock View
         Route::resource('transactions', \App\Http\Controllers\Hendhys\TransactionController::class)->only(['index', 'show']);
+        // Pembatalan transaksi dibatasi ke penyelia — kasir tidak boleh membatalkan
+        // penjualannya sendiri tanpa sepengetahuan atasan.
+        Route::post('transactions/{transaction}/void', [\App\Http\Controllers\Hendhys\TransactionController::class, 'void'])
+            ->middleware('role:admin_hendhys|super_admin|owner')
+            ->name('transactions.void');
         Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
         Route::get('/stock/movements', [StockController::class, 'movements'])->name('stock.movements');
 
         // Laci Report (Accessible by both Kasir and Admin)
         Route::get('/reports/laci', [\App\Http\Controllers\Hendhys\ReportController::class, 'laci'])
-            ->middleware('role:kasir_hendhys|admin_hendhys|super_admin_hendhys')
+            ->middleware('role:kasir_hendhys|admin_hendhys|super_admin')
             ->name('reports.laci');
 
         // Shift Control Routes
-        Route::middleware('role:kasir_hendhys|admin_hendhys|super_admin_hendhys')->group(function () {
+        Route::middleware('role:kasir_hendhys|admin_hendhys|super_admin')->group(function () {
             Route::post('/shifts/open', [\App\Http\Controllers\Shared\ShiftController::class, 'open'])->name('shifts.open');
             Route::post('/shifts/close', [\App\Http\Controllers\Shared\ShiftController::class, 'close'])->name('shifts.close');
             Route::get('/shifts/status', [\App\Http\Controllers\Shared\ShiftController::class, 'status'])->name('shifts.status');
@@ -45,7 +50,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         // ==========================================
         // KASIR ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:kasir_hendhys|super_admin_hendhys'])->group(function () {
+        Route::middleware(['role:kasir_hendhys'])->group(function () {
             // Receive from Pusat (Cabang receiving)
             Route::get('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'showReceiveForm'])->name('transfer-to-branch.receive-form');
             Route::post('transfer-to-branch/{transfer_to_branch}/receive', [TransferToBranchController::class, 'receive'])->name('transfer-to-branch.receive');
@@ -53,8 +58,6 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
             // POS routes gated by active shift
             Route::middleware('check.active.shift')->group(function () {
                 Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
-                Route::get('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
-                Route::get('/pos/held-stock', [PosController::class, 'heldStock'])->name('pos.held-stock');
                 Route::get('/pos/customer-search', [PosController::class, 'customerSearch'])->name('pos.customer-search');
                 Route::post('/pos', [PosController::class, 'store'])->name('pos.store');
                 Route::get('/pos/{transaction}/receipt', [PosController::class, 'receipt'])->name('pos.receipt');
@@ -71,7 +74,7 @@ Route::middleware(['auth', 'check.entity:hendhys', 'check.branch', 'role:kasir_h
         // ==========================================
         // ADMIN ONLY ROUTES
         // ==========================================
-        Route::middleware(['role:admin_hendhys|super_admin_hendhys'])->group(function () {
+        Route::middleware(['role:admin_hendhys|super_admin'])->group(function () {
             // Master Data (Scoped to Hendhys)
             Route::prefix('master')->name('master.')->group(function () {
                 Route::get('suppliers/template', [\App\Http\Controllers\Master\SupplierController::class, 'downloadTemplate'])->name('suppliers.template');

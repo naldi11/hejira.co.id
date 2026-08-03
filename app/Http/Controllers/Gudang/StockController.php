@@ -14,6 +14,7 @@ use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class StockController extends Controller
@@ -62,13 +63,19 @@ class StockController extends Controller
         $data    = $request->validated();
         $product = Product::findOrFail($data['product_id']);
 
-        $this->stock->adjustJihansGudang(
-            $data['product_id'],
-            $data['unit_id'],
-            $data['quantity'],
-            auth()->id(),
-            $data['notes'],
-        );
+        // Wajib dibungkus transaksi: adjustJihansGudang menimpa saldo dengan nilai
+        // absolut dan mengunci barisnya (lockForUpdate). Tanpa transaksi, lock itu
+        // langsung lepas sehingga penyesuaian bisa menimpa penjualan/transfer yang
+        // terjadi di sela baca-tulis.
+        DB::transaction(function () use ($data) {
+            $this->stock->adjustJihansGudang(
+                $data['product_id'],
+                $data['unit_id'],
+                $data['quantity'],
+                auth()->id(),
+                $data['notes'],
+            );
+        });
 
         $this->logger->log('update', 'gudang.stock', "Adjustment stok: {$product->name} → {$data['quantity']}", null);
 

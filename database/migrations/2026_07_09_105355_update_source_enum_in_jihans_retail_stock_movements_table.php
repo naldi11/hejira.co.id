@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE jihans_retail_stock_movements MODIFY COLUMN source ENUM('transfer_gudang','production','receive_from_gudang','return_gudang','pos_sale','adjustment','receive_from_hendhys','return_to_hendhys') NULL");
+        // ENUM MODIFY hanya sintaks MySQL. Cek positif '=== mysql' (bukan '!== sqlite')
+        // supaya driver lain pun aman melewatinya.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE jihans_retail_stock_movements MODIFY COLUMN source ENUM('transfer_gudang','production','receive_from_gudang','return_gudang','pos_sale','adjustment','receive_from_hendhys','return_to_hendhys') NULL");
+        }
     }
 
     /**
