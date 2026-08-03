@@ -71,7 +71,7 @@ export default function UsersIndex({
     const selectCls = 'rounded-lg border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white';
 
     return (
-        <Layout title="Manajemen User" pageTitle="Keamanan & Akses">
+        <Layout title="Manajemen Pengguna" pageTitle="Master Data — Manajemen Pengguna">
             <Head title="Manajemen User" />
 
             <div className="space-y-6">

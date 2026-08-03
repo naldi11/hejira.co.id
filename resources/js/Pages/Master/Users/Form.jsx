@@ -58,7 +58,7 @@ export default function UserForm({ branches, roles, entity_roles = {}, user = nu
     const err = (k) => errors[k] && <p className="mt-1 text-xs font-semibold text-rose-500">{errors[k]}</p>;
 
     return (
-        <Layout title={isEdit ? 'Edit Pengguna' : 'Tambah Pengguna'} pageTitle="Manajemen Akses">
+        <Layout title={isEdit ? 'Edit Pengguna' : 'Tambah Pengguna'} pageTitle="Master Data — Manajemen Pengguna">
             <Head title={isEdit ? 'Edit Pengguna' : 'Tambah Pengguna'} />
 
             <div className="w-full space-y-6 pb-20">

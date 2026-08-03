@@ -21,7 +21,8 @@ export default function GudangLayout({ title, pageTitle, children }) {
             subItems: [
                 { name: "Supplier", path: route('master.suppliers.index') },
                 { name: "Produk", path: route('master.products.index') },
-                { name: "Cabang", path: route('master.branches.index') }
+                { name: "Cabang", path: route('master.branches.index') },
+                { name: "Manajemen Pengguna", path: route('master.users.index') }
             ]
         },
         {
@@ -40,11 +41,6 @@ export default function GudangLayout({ title, pageTitle, children }) {
                 { name: "Transfer Keluar", path: route('gudang.transfer-out.index') },
                 { name: "Penerimaan Retur", path: route('gudang.returns.index') }
             ]
-        },
-        {
-            name: "Hak Akses",
-            icon: <Icon name="manage_accounts" className="text-[22px]" />,
-            path: route('master.users.index')
         }
     ];
 
