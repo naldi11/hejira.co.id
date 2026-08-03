@@ -18,13 +18,57 @@ const ENTITY_CLASS = {
     owner: 'bg-purple-50 text-purple-705 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-900/30',
 };
 
-export default function UsersIndex({ users, layout = 'GudangLayout', routePrefix = 'master.' }) {
+export default function UsersIndex({
+    users,
+    filters = {},
+    totalUsers = 0,
+    roleOptions = [],
+    branchOptions = [],
+    layout = 'GudangLayout',
+    routePrefix = 'master.',
+}) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
+
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [role, setRole] = useState(filters.role ?? '');
+    const [branchId, setBranchId] = useState(filters.branch_id ?? '');
+    const [status, setStatus] = useState(filters.status ?? '');
+    const [loading, setLoading] = useState(false);
+
+    // Penyaringan dilakukan di server agar tetap benar walau daftar user bertambah
+    // banyak — bukan menyaring array yang sudah terlanjur dikirim ke browser.
+    const applyFilter = (override = {}) => {
+        const params = {
+            search: search || undefined,
+            role: role || undefined,
+            branch_id: branchId || undefined,
+            status: status || undefined,
+            ...override,
+        };
+        router.get(route(routePrefix + 'users.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => setLoading(true),
+            onFinish: () => setLoading(false),
+        });
+    };
+
+    const resetFilter = () => {
+        setSearch(''); setRole(''); setBranchId(''); setStatus('');
+        router.get(route(routePrefix + 'users.index'), {}, { preserveScroll: true, replace: true });
+    };
+
+    const hasFilter = !!(filters.search || filters.role || filters.branch_id || filters.status);
+    const shown = (users ?? []).length;
+
     const destroy = (user) => {
         if (window.confirm(`Hapus pengguna ${user.name}?`)) {
             router.delete(route(routePrefix + 'users.destroy', user.id), { preserveScroll: true });
         }
     };
+
+    const selectCls = 'rounded-lg border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white';
 
     return (
         <Layout title="Manajemen User" pageTitle="Keamanan & Akses">
@@ -44,9 +88,54 @@ export default function UsersIndex({ users, layout = 'GudangLayout', routePrefix
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
-                    <div className="border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Total: <strong className="font-mono text-gray-850 dark:text-white">{(users ?? []).length}</strong> Pengguna Terdaftar
+                    <div className="space-y-3 border-b border-gray-150 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <form
+                            onSubmit={(e) => { e.preventDefault(); applyFilter(); }}
+                            className="flex flex-wrap items-center gap-3"
+                        >
+                            <div className="relative min-w-[240px] flex-1">
+                                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400 dark:text-gray-500" />
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Cari nama atau email..."
+                                    className="w-full rounded-lg border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                />
+                            </div>
+
+                            <select value={role} onChange={(e) => { setRole(e.target.value); applyFilter({ role: e.target.value || undefined }); }} className={selectCls}>
+                                <option value="">Semua Role</option>
+                                {roleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
+                            </select>
+
+                            <select value={branchId} onChange={(e) => { setBranchId(e.target.value); applyFilter({ branch_id: e.target.value || undefined }); }} className={selectCls}>
+                                <option value="">Semua Cabang</option>
+                                <option value="none">— Tanpa Cabang —</option>
+                                {branchOptions.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </select>
+
+                            <select value={status} onChange={(e) => { setStatus(e.target.value); applyFilter({ status: e.target.value || undefined }); }} className={selectCls}>
+                                <option value="">Semua Status</option>
+                                <option value="aktif">Aktif</option>
+                                <option value="nonaktif">Nonaktif</option>
+                            </select>
+
+                            <button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Cari</button>
+
+                            {hasFilter && (
+                                <button type="button" onClick={resetFilter} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-rose-400 dark:hover:bg-gray-700">
+                                    Reset
+                                </button>
+                            )}
+                        </form>
+
+                        <span className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            {loading ? 'Memuat…' : (
+                                hasFilter
+                                    ? <>Menampilkan <strong className="font-mono text-gray-850 dark:text-white">{shown}</strong> dari <strong className="font-mono text-gray-850 dark:text-white">{totalUsers}</strong> pengguna</>
+                                    : <>Total: <strong className="font-mono text-gray-850 dark:text-white">{totalUsers}</strong> Pengguna Terdaftar</>
+                            )}
                         </span>
                     </div>
 
@@ -63,7 +152,7 @@ export default function UsersIndex({ users, layout = 'GudangLayout', routePrefix
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {(users ?? []).length === 0 ? (
-                                    <EmptyState colSpan={5} icon="group" message="Belum ada pengguna." />
+                                    <EmptyState colSpan={5} icon="group" message={hasFilter ? "Tidak ada pengguna yang cocok dengan filter." : "Belum ada pengguna."} />
                                 ) : (
                                     (users ?? []).map((user) => (
                                         <tr key={user.id} className="group transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">

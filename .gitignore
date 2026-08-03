@@ -26,3 +26,7 @@ Homestead.yaml
 Thumbs.db
 /.claude
 /public/templates/*
+backup_db/*.sql.gz
+backup_db/*.sql
+backup_db/backup_db_hejira.sh
+backup_db/download-backup.md

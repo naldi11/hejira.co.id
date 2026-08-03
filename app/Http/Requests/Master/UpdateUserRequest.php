@@ -47,6 +47,21 @@ class UpdateUserRequest extends FormRequest
             'role'      => [
                 'required',
                 'exists:roles,name',
+                // Role owner terkunci dua arah: tidak bisa diberikan ke orang lain,
+                // dan tidak bisa dicabut dari pemegangnya lewat form. Ia hanya
+                // ditetapkan oleh seeder.
+                function ($attribute, $value, $fail) {
+                    $target     = $this->route('user');
+                    $isOwnerNow = $target && $target->hasRole(\App\Models\User::ROLE_OWNER);
+
+                    if ($value === \App\Models\User::ROLE_OWNER && ! $isOwnerNow) {
+                        $fail('Role owner tidak dapat diberikan lewat form. Role ini hanya bisa ditetapkan lewat seeder.');
+                    }
+
+                    if ($isOwnerNow && $value !== \App\Models\User::ROLE_OWNER) {
+                        $fail('Role owner tidak dapat diubah lewat form.');
+                    }
+                },
                 function ($attribute, $value, $fail) use ($entityRoles) {
                     $entity = $this->input('entity');
                     if (isset($entityRoles[$entity]) && !in_array($value, $entityRoles[$entity])) {

@@ -30,7 +30,7 @@ class StoreUserRequest extends FormRequest
             'name'      => ['required', 'string', 'max:100'],
             'email'     => ['required', 'string', 'email', 'max:100', 'unique:master_users,email'],
             'password'  => ['required', 'string', 'min:8', 'confirmed'],
-            'entity'    => ['required', 'in:gudang,jihans,hendhys,owner,all'],
+            'entity'    => ['required', 'in:gudang,jihans,hendhys,all'],
             'branch_id' => [
                 'nullable',
                 'exists:master_branches,id',
@@ -46,6 +46,14 @@ class StoreUserRequest extends FormRequest
             'role'      => [
                 'required',
                 'exists:roles,name',
+                // Owner hanya boleh lahir dari seeder. Penjagaan ini di sisi server,
+                // bukan sekadar menyembunyikan pilihannya di form — supaya request
+                // yang dikirim langsung pun tetap ditolak.
+                function ($attribute, $value, $fail) {
+                    if ($value === \App\Models\User::ROLE_OWNER) {
+                        $fail('Akun owner tidak dapat dibuat dari sini. Role ini hanya bisa ditetapkan lewat seeder.');
+                    }
+                },
                 function ($attribute, $value, $fail) use ($entityRoles) {
                     $entity = $this->input('entity');
                     if (isset($entityRoles[$entity]) && !in_array($value, $entityRoles[$entity])) {

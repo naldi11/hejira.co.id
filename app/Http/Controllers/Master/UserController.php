@@ -9,6 +9,7 @@ use App\Http\Resources\Master\UserResource;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
@@ -17,10 +18,24 @@ class UserController extends Controller
 {
     public function __construct(private ActivityLogService $logger) {}
 
-    public function index()
+    public function index(Request $request)
     {
+        $filters = $request->only('search', 'role', 'branch_id', 'status');
+
+        $query = User::with(['branch', 'roles'])
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$request->search}%")
+                ->orWhere('email', 'like', "%{$request->search}%")))
+            ->when($request->filled('role'), fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('name', $request->role)))
+            // 'none' = belum ditempatkan di cabang mana pun (super admin/owner).
+            ->when($request->filled('branch_id'), fn ($q) => $request->branch_id === 'none'
+                ? $q->whereNull('branch_id')
+                : $q->where('branch_id', $request->branch_id))
+            ->when($request->filled('status'), fn ($q) => $q->where('is_active', $request->status === 'aktif'))
+            ->orderBy('name');
+
         return Inertia::render('Master/Users/Index', [
-            'users' => User::with(['branch', 'roles'])->orderBy('name')->get()->map(fn ($u) => [
+            'users' => $query->get()->map(fn ($u) => [
                 'id'        => $u->id,
                 'name'      => $u->name,
                 'email'     => $u->email,
@@ -31,6 +46,13 @@ class UserController extends Controller
                 'role'      => $u->roles->first()?->name,
                 'is_active' => (bool) $u->is_active,
             ])->values()->all(),
+            'filters'    => $filters,
+            // Total tanpa filter, supaya pengguna tahu berapa yang tersaring.
+            'totalUsers' => User::count(),
+            'roleOptions'   => Role::orderBy('name')->pluck('name'),
+            'branchOptions' => Branch::where('is_active', true)->orderBy('name')
+                ->get(['id', 'name', 'entity'])
+                ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'entity' => $b->entity]),
         ]);
     }
 
@@ -153,11 +175,13 @@ class UserController extends Controller
         $entityRoles = [
             // super_admin mengawasi Gudang Utama + seluruh unit, jadi ia ditempatkan
             // pada entity 'all' (dan 'gudang' tetap diterima untuk kompatibilitas).
-            'all'     => ['super_admin', 'owner'],
+            // 'owner' SENGAJA tidak ada di sini. Akun owner hanya boleh lahir dari
+            // seeder — ia pemegang kendali tertinggi, jadi tidak boleh bisa dibuat
+            // atau diberikan lewat form oleh siapa pun.
+            'all'     => ['super_admin'],
             'gudang'  => ['super_admin'],
             'hendhys' => ['kasir_hendhys', 'admin_hendhys'],
             'jihans'  => ['kasir_jihans', 'admin_jihans'],
-            'owner'   => ['owner'],
         ];
 
         return [
@@ -167,7 +191,8 @@ class UserController extends Controller
                     'name'   => $b->name,
                     'entity' => $b->entity,
                 ]),
-            'roles'        => Role::orderBy('name')->pluck('name'),
+            // Sembunyikan 'owner' dari daftar pilihan role di form.
+            'roles'        => Role::where('name', '!=', User::ROLE_OWNER)->orderBy('name')->pluck('name'),
             'entity_roles' => $entityRoles,
         ];
     }

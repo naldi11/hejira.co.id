@@ -13,6 +13,12 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles, SoftDeletes;
 
+    /**
+     * Role pemegang kendali tertinggi. Akun dengan role ini HANYA boleh lahir dari
+     * seeder — tidak bisa dibuat, diberikan, atau dicabut lewat form manajemen user.
+     */
+    public const ROLE_OWNER = 'owner';
+
     protected $table = 'master_users';
 
     protected $fillable = [
