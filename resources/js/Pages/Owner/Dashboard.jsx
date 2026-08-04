@@ -56,7 +56,7 @@ function InfoBox({ icon, color, title, value, sub, onClick }) {
 }
 
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
-export default function OwnerDashboard({ stats, trends, period, periodLabel, periodOptions }) {
+export default function OwnerDashboard({ stats, trends, period, periodLabel, periodRange, periodOptions }) {
     // Navigate to detail page
     const openStockDetail = (unit) => {
         router.visit(route('owner.dashboard.detail', { mode: 'stock', unit }));
@@ -160,7 +160,11 @@ export default function OwnerDashboard({ stats, trends, period, periodLabel, per
                         <Icon name="analytics" className="text-emerald-500 text-[20px]" />
                         <div>
                             <h2 className="font-bold text-slate-800 dark:text-white text-base">Rincian Omset Penjualan</h2>
-                            <p className="text-xs text-slate-400">Klik card untuk melihat detail transaksi</p>
+                            {/* Label periode saja tidak memberi tahu cakupan tanggalnya. */}
+                            <p className="text-xs text-slate-400">
+                                Periode <span className="font-semibold text-slate-500 dark:text-gray-400">{periodLabel}</span>
+                                {' · '}{periodRange}
+                            </p>
                         </div>
                         {/* Enum pendek 7 pilihan — pakai select native, bukan SelectField. */}
                         <div className="ml-auto flex items-center gap-2">

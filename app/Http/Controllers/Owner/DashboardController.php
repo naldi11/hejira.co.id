@@ -63,6 +63,50 @@ class DashboardController extends Controller
     }
 
     /**
+     * Keterangan rentang tanggal sebuah periode, dalam bahasa Indonesia.
+     *
+     * Label seperti "Bulan Ini" tidak memberi tahu bulan apa dan tanggal berapa
+     * saja yang ikut terhitung. Keterangan ini yang menjawabnya, sehingga angka
+     * omset di kartu tidak perlu ditebak cakupannya.
+     *
+     * `->locale('id')` WAJIB eksplisit: APP_LOCALE aplikasi ini bernilai 'en',
+     * tanpa itu keluar "August" alih-alih "Agustus".
+     */
+    private function periodDescription(?array $range): string
+    {
+        if (! $range) {
+            // 'Keseluruhan' tidak punya batas yang ditentukan di kode — ambil
+            // tanggal transaksi paling awal yang benar-benar ada di data.
+            $earliest = collect([
+                JihansTransaction::min('date'),
+                HendhysTransaction::min('date'),
+            ])->filter()->min();
+
+            return $earliest
+                ? 'Sejak ' . Carbon::parse($earliest)->locale('id')->translatedFormat('j F Y') . ' sampai hari ini'
+                : 'Seluruh data yang tercatat';
+        }
+
+        $start = $range[0]->copy()->locale('id');
+        $end   = $range[1]->copy()->locale('id');
+
+        // Satu hari
+        if ($start->toDateString() === $end->toDateString()) {
+            return $start->translatedFormat('l, j F Y');
+        }
+        // Masih dalam bulan yang sama: "1 – 31 Agustus 2026"
+        if ($start->format('Y-m') === $end->format('Y-m')) {
+            return $start->translatedFormat('j') . ' – ' . $end->translatedFormat('j F Y');
+        }
+        // Beda bulan, tahun sama: "4 Februari – 4 Agustus 2026"
+        if ($start->format('Y') === $end->format('Y')) {
+            return $start->translatedFormat('j F') . ' – ' . $end->translatedFormat('j F Y');
+        }
+        // Beda tahun: "4 Agustus 2025 – 4 Agustus 2026"
+        return $start->translatedFormat('j F Y') . ' – ' . $end->translatedFormat('j F Y');
+    }
+
+    /**
      * Urutkan daftar stok: yang punya qty di atas, yang nol menyusul di bawah
      * (masing-masing menurut nama).
      *
@@ -348,6 +392,7 @@ class DashboardController extends Controller
         return Inertia::render('Owner/Dashboard', [
             'period'        => $period,
             'periodLabel'   => self::PERIODS[$period],
+            'periodRange'   => $this->periodDescription($range),
             'periodOptions' => collect(self::PERIODS)->map(fn ($label, $value) => [
                 'value' => $value,
                 'label' => $label,
