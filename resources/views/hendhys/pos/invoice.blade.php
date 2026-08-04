@@ -311,7 +311,7 @@
 
     <div class="invoice-meta-bar">
         <span>No: {{ $transaction->transaction_number }}</span>
-        <span>{{ \Carbon\Carbon::parse($transaction->date)->translatedFormat('d F Y') }} {{ $transaction->time }}</span>
+        <span>{{ \Carbon\Carbon::parse($transaction->date)->locale('id')->translatedFormat('d F Y') }} {{ $transaction->time }}</span>
     </div>
 
     {{-- ===== CUSTOMER INFO ===== --}}

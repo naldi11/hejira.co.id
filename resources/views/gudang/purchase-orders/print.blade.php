@@ -221,9 +221,9 @@
     {{-- Info --}}
     <div class="info-grid">
         <div class="info-row"><span class="info-label">Kepada</span><span class="info-value">{{ $po->supplier->name }}</span></div>
-        <div class="info-row"><span class="info-label">Tanggal PO</span><span class="info-value">{{ $po->date->translatedFormat('d F Y') }}</span></div>
+        <div class="info-row"><span class="info-label">Tanggal PO</span><span class="info-value">{{ $po->date->locale('id')->translatedFormat('d F Y') }}</span></div>
         <div class="info-row"><span class="info-label">Alamat Supplier</span><span class="info-value">{{ $po->supplier->address ?? '-' }}</span></div>
-        <div class="info-row"><span class="info-label">Estimasi Tiba</span><span class="info-value">{{ $po->expected_date?->translatedFormat('d F Y') ?? '-' }}</span></div>
+        <div class="info-row"><span class="info-label">Estimasi Tiba</span><span class="info-value">{{ $po->expected_date?->locale('id')->translatedFormat('d F Y') ?? '-' }}</span></div>
         <div class="info-row"><span class="info-label">Kontak</span><span class="info-value">{{ $po->supplier->phone ?? '-' }}</span></div>
         <div class="info-row"><span class="info-label">Dibuat Oleh</span><span class="info-value">{{ $po->creator->name }}</span></div>
     </div>

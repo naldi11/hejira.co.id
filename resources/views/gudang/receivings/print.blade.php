@@ -224,11 +224,11 @@
     {{-- Info --}}
     <div class="info-grid">
         <div class="info-row"><span class="info-label">No. GRN</span><span class="info-value">{{ $receiving->grn_number }}</span></div>
-        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ $receiving->date->translatedFormat('d F Y') }}</span></div>
+        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ $receiving->date->locale('id')->translatedFormat('d F Y') }}</span></div>
         <div class="info-row"><span class="info-label">Supplier</span><span class="info-value">{{ $receiving->supplier->name }}</span></div>
         <div class="info-row"><span class="info-label">Ref. PO</span><span class="info-value">{{ $receiving->po?->po_number ?? 'Penerimaan Langsung' }}</span></div>
         <div class="info-row"><span class="info-label">No. Surat Jalan</span><span class="info-value">{{ $receiving->notes ?: '-' }}</span></div>
-        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->translatedFormat('d F Y H:i') }}</span></div>
+        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->locale('id')->translatedFormat('d F Y H:i') }}</span></div>
     </div>
 
     {{-- Kendala --}}

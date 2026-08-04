@@ -125,11 +125,11 @@
 
     @if(!$isDetailed)
         <div class="page-header">
-            <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
+            <div class="page-header-left">{{ now()->locale('id')->translatedFormat('d/m/Y H:i') }}</div>
         </div>
     @else
         <div class="page-footer">
-            <div class="page-footer-left">{{ now()->translatedFormat('d/m/Y H:i') }} &nbsp; &nbsp; {{ strtoupper(auth()->user()->name ?? '-') }}</div>
+            <div class="page-footer-left">{{ now()->locale('id')->translatedFormat('d/m/Y H:i') }} &nbsp; &nbsp; {{ strtoupper(auth()->user()->name ?? '-') }}</div>
         </div>
     @endif
 

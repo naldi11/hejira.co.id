@@ -94,13 +94,13 @@
     {{-- Info --}}
     <div class="info-grid">
         <div class="info-row"><span class="info-label">No. Transfer</span><span class="info-value">{{ $transferOut->transfer_number }}</span></div>
-        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ ($transferOut->received_at ?? $transferOut->updated_at)->translatedFormat('d F Y') }}</span></div>
+        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ ($transferOut->received_at ?? $transferOut->updated_at)->locale('id')->translatedFormat('d F Y') }}</span></div>
         <div class="info-row"><span class="info-label">Pengirim (Gudang)</span><span class="info-value">{{ $transferOut->receive_pengirim_name ?: ($transferOut->creator->name ?? '-') }}</span></div>
         <div class="info-row"><span class="info-label">Penerima</span><span class="info-value">{{ $transferOut->receive_received_by_name ?: '-' }}</span></div>
         @if($transferOut->receive_notes)
         <div class="info-row"><span class="info-label">No. Surat Jalan</span><span class="info-value">{{ $transferOut->receive_notes }}</span></div>
         @endif
-        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->translatedFormat('d F Y H:i') }}</span></div>
+        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->locale('id')->translatedFormat('d F Y H:i') }}</span></div>
     </div>
 
     {{-- Kendala --}}

@@ -89,11 +89,11 @@
     {{-- Info --}}
     <div class="info-grid">
         <div class="info-row"><span class="info-label">No. Transfer</span><span class="info-value">{{ $transferToBranch->transfer_number }}</span></div>
-        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ $transferToBranch->updated_at->translatedFormat('d F Y') }}</span></div>
+        <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ $transferToBranch->updated_at->locale('id')->translatedFormat('d F Y') }}</span></div>
         <div class="info-row"><span class="info-label">Pengirim (Pusat)</span><span class="info-value">{{ $transferToBranch->receive_pengirim_name ?: ($transferToBranch->creator->name ?? '-') }}</span></div>
         <div class="info-row"><span class="info-label">Penerima (Cabang)</span><span class="info-value">{{ $transferToBranch->receive_received_by_name ?: '-' }}</span></div>
         <div class="info-row"><span class="info-label">Cabang Tujuan</span><span class="info-value">{{ $transferToBranch->branch->name }}</span></div>
-        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->translatedFormat('d F Y H:i') }}</span></div>
+        <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->locale('id')->translatedFormat('d F Y H:i') }}</span></div>
     </div>
 
     {{-- Kendala --}}

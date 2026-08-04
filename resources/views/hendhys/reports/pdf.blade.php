@@ -102,7 +102,7 @@
         }
     </script>
     <div class="page-header">
-        <div class="page-header-left">{{ now()->translatedFormat('d/m/Y H:i') }}</div>
+        <div class="page-header-left">{{ now()->locale('id')->translatedFormat('d/m/Y H:i') }}</div>
     </div>
     @endif
 
