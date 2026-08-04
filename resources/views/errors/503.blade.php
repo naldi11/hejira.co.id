@@ -1,75 +1,155 @@
+{{--
+    Halaman maintenance yang dilihat klien saat `php artisan down`.
+
+    SENGAJA berdiri sendiri: tanpa @vite, tanpa font eksternal, tanpa aset apa pun
+    dari luar. Halaman ini justru ditampilkan pada saat aplikasi paling rapuh —
+    di tengah deploy, ketika manifest build bisa saja belum tersinkron. Kalau ia
+    bergantung pada aset, klien akan melihat error mentah, bukan pesan maintenance.
+    Jangan menambahkan @vite atau <link> ke sini.
+--}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>503 - Sistem Sedang Pemeliharaan</title>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    {{-- Muat ulang otomatis, supaya klien tidak perlu menekan refresh terus. --}}
+    <meta http-equiv="refresh" content="60">
+    <title>Sedang Pemeliharaan — HEJIRA</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        :root {
+            --brand: #465fff;
+            --brand-dark: #3641f5;
+            --ink: #1d2939;
+            --muted: #667085;
+            --line: #e4e7ec;
+            --surface: #ffffff;
+            --bg: #f9fafb;
+        }
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <style>
-            body { font-family: 'Outfit', sans-serif; }
-            @keyframes blob {
-                0% { transform: translate(0px, 0px) scale(1); }
-                33% { transform: translate(30px, -50px) scale(1.1); }
-                66% { transform: translate(-20px, 20px) scale(0.9); }
-                100% { transform: translate(0px, 0px) scale(1); }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --ink: #f2f4f7;
+                --muted: #98a2b3;
+                --line: #1d2939;
+                --surface: #101828;
+                --bg: #0c111d;
             }
-            .animate-blob { animation: blob 7s infinite; }
-            .animation-delay-2000 { animation-delay: 2s; }
-            .animation-delay-4000 { animation-delay: 4s; }
-            .glass-card {
-                @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-2xl;
-            }
-            .bg-animated-gradient {
-                background: linear-gradient(-45deg, #f59e0b, #eab308, #23a6d5, #23d5ab);
-                background-size: 400% 400%;
-                animation: gradient 15s ease infinite;
-            }
-            @keyframes gradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-        </style>
-    </head>
-    <body class="antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-animated-gradient relative overflow-hidden">
-             <!-- Decorative Elements (Fixed with pointer-events-none to prevent click blocking) -->
-            <div class="absolute top-0 -left-4 w-72 h-72 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob pointer-events-none" style="pointer-events: none;"></div>
-            <div class="absolute top-0 -right-4 w-72 h-72 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 pointer-events-none" style="pointer-events: none;"></div>
-            <div class="absolute -bottom-8 left-20 w-72 h-72 bg-amber-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 pointer-events-none" style="pointer-events: none;"></div>
+        }
 
-            <div class="relative z-10 w-full sm:max-w-lg mt-6 px-8 py-12 bg-white/70 backdrop-blur-lg border border-white/20 shadow-2xl overflow-hidden sm:rounded-3xl transition-all duration-500 text-center" style="position: relative; z-index: 10;">
-                
-                <div class="flex justify-center mb-6">
-                    <div class="p-4 bg-yellow-100/50 rounded-full drop-shadow-md">
-                        <svg class="w-16 h-16 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                </div>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
 
-                <h1 class="text-6xl font-bold text-gray-800 mb-2">503</h1>
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4 tracking-tight">Pemeliharaan Sistem</h2>
-                
-                <p class="text-gray-600 mb-8 leading-relaxed px-4">
-                    {{ $exception->getMessage() ?: 'Mohon maaf, sistem saat ini sedang dalam pemeliharaan rutin. Kami akan segera kembali dalam beberapa saat.' }}
-                </p>
+        .card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 12px 32px rgba(16, 24, 40, 0.06);
+        }
 
-                <div class="flex justify-center space-x-4">
-                    <button onclick="window.location.reload()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-105 cursor-pointer">
-                        Muat Ulang Halaman
-                    </button>
-                </div>
-            </div>
+        .brand {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--brand);
+            margin-bottom: 28px;
+        }
+
+        .icon-wrap {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(70, 95, 255, 0.1);
+        }
+
+        .icon-wrap svg { width: 34px; height: 34px; stroke: var(--brand); }
+
+        /* Perputaran lambat: menandakan "sedang dikerjakan", bukan "rusak". */
+        .spin { transform-origin: 50% 50%; animation: spin 4s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.3px; }
+        .lead { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+
+        .note {
+            border: 1px dashed var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+        .note strong { color: var(--ink); font-weight: 600; }
+
+        .retry {
+            display: inline-block;
+            padding: 11px 26px;
+            border-radius: 10px;
+            background: var(--brand);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .retry:hover { background: var(--brand-dark); }
+
+        .foot { margin-top: 24px; font-size: 12px; color: var(--muted); }
+
+        @media (max-width: 420px) {
+            .card { padding: 32px 22px; border-radius: 16px; }
+            h1 { font-size: 19px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="brand">HEJIRA</div>
+
+        <div class="icon-wrap" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <g class="spin">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </g>
+            </svg>
         </div>
-    </body>
+
+        <h1>Sedang Dalam Pemeliharaan</h1>
+
+        <p class="lead">
+            Sistem HEJIRA sementara tidak dapat diakses karena sedang kami perbarui.
+            Mohon maaf atas ketidaknyamanannya.
+        </p>
+
+        <div class="note">
+            Data Anda <strong>aman</strong> dan tidak ada yang hilang.
+            Layanan akan kembali normal dalam waktu singkat.
+        </div>
+
+        <a href="{{ url()->current() }}" class="retry">Coba Muat Ulang</a>
+
+        <p class="foot">Halaman ini akan menyegarkan sendiri setiap 60 detik.</p>
+    </main>
+</body>
 </html>
