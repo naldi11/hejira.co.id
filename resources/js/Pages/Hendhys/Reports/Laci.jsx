@@ -7,7 +7,7 @@ import Modal from '@/Components/Modal';
 import Icon from '@/Components/Icon';
 import { formatRupiah } from '@/lib/format';
 import axios from 'axios';
-import SearchableSelect from '@/Components/SearchableSelect';
+import SelectField from '@/Components/SelectField';
 
 const route = window.route;
 
@@ -861,15 +861,14 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                         <div className="mb-5 space-y-4">
                             <div>
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-2">Pilih Shift</label>
-                                <SearchableSelect
+                                <SelectField
                                     options={rows.data?.filter(r => r.status === 'closed').map(r => ({
                                         value: r.id,
                                         label: `${r.user?.name ?? 'Kasir'} — ${formatDateTime(r.opened_at)} s/d ${formatDateTime(r.closed_at)}`
-                                    }))}
+                                    })) ?? []}
                                     value={exportShiftId}
                                     onChange={setExportShiftId}
                                     placeholder="-- Pilih Shift --"
-                                    accentColor="orange"
                                 />
                             </div>
                             <div>

@@ -6,7 +6,7 @@ import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import SearchableSelect from '@/Components/SearchableSelect';
+import SelectField from '@/Components/SelectField';
 
 export function FilterTransactionsModal({ show, onClose, filters, onApply, entity }) {
     const [startDate, setStartDate] = useState(filters.start_date || filters.date || '');
@@ -92,13 +92,12 @@ export function FilterTransactionsModal({ show, onClose, filters, onApply, entit
 
                     <div>
                         <InputLabel value="Pilih Shift" />
-                        <SearchableSelect 
+                        <SelectField
                             options={shiftOptions}
                             value={shiftId}
                             onChange={setShiftId}
-                            disabled={loadingShifts}
+                            isDisabled={loadingShifts}
                             placeholder={loadingShifts ? 'Memuat...' : 'Semua Shift'}
-                            accentColor="orange"
                         />
                         <p className="mt-1 text-xs text-gray-500">Anda dapat memfilter berdasarkan shift secara mandiri.</p>
                     </div>

@@ -24,6 +24,11 @@ import CreatableSelect from 'react-select/creatable';
  *
  * Untuk field yang boleh diisi nilai baru (mis. Satuan/Kategori produk), pakai
  * `creatable` — kemampuan "ketik baru" dari <datalist> lama tetap terjaga.
+ *
+ * Sebuah option boleh membawa `sublabel` (mis. kode produk atau nama kasir).
+ * Sublabel tampil sebagai baris kedua yang lebih redup DAN ikut dicari, karena
+ * kode produk justru yang paling sering diketik. Option tanpa `sublabel` sama
+ * sekali tidak terpengaruh.
  */
 
 const control = (state) => [
@@ -61,6 +66,36 @@ const classNames = {
     multiValueRemove:() => 'px-1 rounded-r text-brand-500 hover:bg-rose-100 hover:text-rose-600',
 };
 
+// Di menu sublabel ditaruh di baris kedua; di kotak terpilih ruangnya sempit,
+// jadi disandingkan mendatar.
+const formatOptionLabel = (opt, { context }) => {
+    if (!opt.sublabel) return opt.label;
+
+    return context === 'value' ? (
+        <span>
+            {opt.label}
+            <span className="ml-2 text-[11px] text-gray-400 dark:text-gray-500">{opt.sublabel}</span>
+        </span>
+    ) : (
+        <span className="flex flex-col">
+            <span>{opt.label}</span>
+            <span className="text-[11px] leading-4 text-gray-400 dark:text-gray-500">{opt.sublabel}</span>
+        </span>
+    );
+};
+
+// Penyaring bawaan react-select hanya melihat label, sedangkan sublabel berisi
+// kode produk yang justru sering dipakai mencari.
+const filterOption = (candidate, input) => {
+    const query = input.trim().toLowerCase();
+    if (!query) return true;
+
+    const label = String(candidate.label ?? '').toLowerCase();
+    const sublabel = String(candidate.data?.sublabel ?? '').toLowerCase();
+
+    return label.includes(query) || sublabel.includes(query);
+};
+
 export default function SelectField({
     options = [],
     value,
@@ -85,6 +120,12 @@ export default function SelectField({
 
     const Component = creatable ? CreatableSelect : Select;
 
+    // Disebar hanya bila memang ada sublabel — bukan dikirim sebagai undefined —
+    // supaya puluhan pemakaian lama benar-benar memakai bawaan react-select.
+    const sublabelProps = options.some((o) => o.sublabel)
+        ? { formatOptionLabel, filterOption }
+        : {};
+
     return (
         <Component
             unstyled
@@ -93,6 +134,7 @@ export default function SelectField({
             options={options}
             value={selected ?? fallback}
             onChange={(opt) => onChange?.(opt ? opt.value : '')}
+            {...sublabelProps}
             placeholder={placeholder}
             isDisabled={isDisabled}
             isClearable={isClearable}

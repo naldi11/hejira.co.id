@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
-import SearchableSelect from '@/Components/SearchableSelect';
+import SelectField from '@/Components/SelectField';
 
 const route = window.route;
 
@@ -76,12 +76,11 @@ export default function JihansTransferRequestCreate({ products, units }) {
                                     {data.items.map((item, i) => (
                                         <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-4 py-4">
-                                                <SearchableSelect
+                                                <SelectField
                                                     options={productOptions}
                                                     value={item.product_id}
                                                     onChange={(val) => onProduct(i, val)}
                                                     placeholder="-- Cari & pilih barang --"
-                                                    accentColor="orange"
                                                 />
                                                 {errors[`items.${i}.product_id`] && (
                                                     <p className="mt-1 text-xs text-red-500">{errors[`items.${i}.product_id`]}</p>
@@ -91,12 +90,11 @@ export default function JihansTransferRequestCreate({ products, units }) {
                                                 <input type="number" step="1" min="1" required value={item.quantity} onChange={(e) => setItem(i, { quantity: e.target.value })} placeholder="0" className={field} />
                                             </td>
                                             <td className="px-4 py-4">
-                                                <SearchableSelect
+                                                <SelectField
                                                     options={unitOptions}
                                                     value={item.unit_id}
                                                     onChange={(val) => setItem(i, { unit_id: val })}
                                                     placeholder="Satuan"
-                                                    accentColor="orange"
                                                 />
                                             </td>
                                             <td className="px-4 py-3 text-center">

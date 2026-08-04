@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
-import SearchableSelect from '@/Components/SearchableSelect';
+import SelectField from '@/Components/SelectField';
 
 const route = window.route;
 
@@ -74,7 +74,7 @@ export default function TransferRequestsCreate({ products, units }) {
                                 {data.items.map((item, i) => (
                                     <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                         <td className="px-4 py-3">
-                                            <SearchableSelect
+                                            <SelectField
                                                 options={productOptions}
                                                 value={item.product_id}
                                                 onChange={(val) => updateItem(i, 'product_id', val)}
@@ -88,7 +88,7 @@ export default function TransferRequestsCreate({ products, units }) {
                                             <input type="number" min="1" required value={item.quantity} onChange={(e) => updateItem(i, 'quantity', e.target.value)} placeholder="0" className={fieldClass} />
                                         </td>
                                         <td className="px-4 py-3">
-                                            <SearchableSelect
+                                            <SelectField
                                                 options={unitOptions}
                                                 value={item.unit_id}
                                                 onChange={(val) => updateItem(i, 'unit_id', val)}
