@@ -62,6 +62,22 @@ class DashboardController extends Controller
         };
     }
 
+    /**
+     * Urutkan daftar stok: yang punya qty di atas, yang nol menyusul di bawah
+     * (masing-masing menurut nama).
+     *
+     * Sengaja MENGURUTKAN, bukan menyembunyikan: barang ber-stok 0 tetap
+     * informasi yang berguna ("kita kehabisan"), dan kalau dibuang dari daftar
+     * kotak pencarian di layar detail jadi tidak bisa menemukannya sama sekali.
+     */
+    private function sortStockList(\Illuminate\Support\Collection $list): \Illuminate\Support\Collection
+    {
+        return $list->sortBy(fn ($s) => [
+            (($s['quantity'] ?? 0) > 0 || ($s['quantity_return'] ?? 0) > 0) ? 0 : 1,
+            $s['name'] ?? '',
+        ])->values();
+    }
+
     /** Ambil periode dari query string, tolak nilai yang tidak dikenal. */
     private function resolvePeriod(\Illuminate\Http\Request $request): string
     {
@@ -167,29 +183,33 @@ class DashboardController extends Controller
 
         // Detailed Tables Data (values() added to reset collection keys for clean JSON arrays)
         // 1. Jihans Gudang Stocks
-        $gudangStocksList = JihansGudangStock::with('product')->get()
-            ->map(fn($s) => [
-                'code' => $s->product?->code ?? '-',
-                'name' => $s->product?->name ?? '-',
-                'quantity' => (int) $s->quantity,
-                'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
-            ])->values();
+        $gudangStocksList = $this->sortStockList(
+            JihansGudangStock::with('product')->get()
+                ->map(fn($s) => [
+                    'code' => $s->product?->code ?? '-',
+                    'name' => $s->product?->name ?? '-',
+                    'quantity' => (int) $s->quantity,
+                    'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
+                ])
+        );
 
         // 2. Jihans Retail Stocks
-        $jihansStocksList = DB::table('master_products as p')
-            ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
-            ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
-            ->where('p.status', 'active')
-            ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
-            ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
-            ->orderBy('p.name')
-            ->get()
-            ->map(fn($s) => [
-                'code' => $s->code,
-                'name' => $s->name,
-                'quantity' => (int) $s->quantity,
-                'unit' => $s->unit ?? 'PCS'
-            ])->values();
+        $jihansStocksList = $this->sortStockList(
+            DB::table('master_products as p')
+                ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
+                ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
+                ->where('p.status', 'active')
+                ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
+                ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
+                ->orderBy('p.name')
+                ->get()
+                ->map(fn($s) => [
+                    'code' => $s->code,
+                    'name' => $s->name,
+                    'quantity' => (int) $s->quantity,
+                    'unit' => $s->unit ?? 'PCS'
+                ])
+        );
 
         // 3. Hendhys Consolidated Stocks (Pusat & Cabang combined)
         $hendhysProducts = DB::table('master_products')
@@ -246,6 +266,18 @@ class DashboardController extends Controller
                 'total_quantity' => $totalQty,
                 'total_quantity_return' => $totalRet,
             ];
+        });
+
+        // Daftar Hendhys memakai kunci total_*, bukan quantity — dipetakan dulu
+        // supaya bisa memakai pengurutan yang sama dengan daftar stok lainnya.
+        $hendhysStocksList = $this->sortStockList(
+            $hendhysStocksList->map(fn ($p) => $p + [
+                'quantity'        => $p['total_quantity'],
+                'quantity_return' => $p['total_quantity_return'],
+            ])
+        )->map(function ($p) {
+            unset($p['quantity'], $p['quantity_return']);
+            return $p;
         })->values();
 
         // 4. Movements List
@@ -393,30 +425,34 @@ class DashboardController extends Controller
         if ($mode === 'stock') {
             if ($unit === 'gudang') {
                 $title = 'Jihans Gudang';
-                $list = JihansGudangStock::with('product')->get()
-                    ->map(fn($s) => [
-                        'code' => $s->product?->code ?? '-',
-                        'name' => $s->product?->name ?? '-',
-                        'quantity' => (int) $s->quantity,
-                        'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
-                    ])->values();
+                $list = $this->sortStockList(
+                    JihansGudangStock::with('product')->get()
+                        ->map(fn($s) => [
+                            'code' => $s->product?->code ?? '-',
+                            'name' => $s->product?->name ?? '-',
+                            'quantity' => (int) $s->quantity,
+                            'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
+                        ])
+                );
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif ($unit === 'retail') {
                 $title = 'Jihans Retail';
-                $list = DB::table('master_products as p')
-                    ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
-                    ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
-                    ->where('p.status', 'active')
-                    ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
-                    ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
-                    ->orderBy('p.name')
-                    ->get()
-                    ->map(fn($s) => [
-                        'code' => $s->code,
-                        'name' => $s->name,
-                        'quantity' => (int) $s->quantity,
-                        'unit' => $s->unit ?? 'PCS'
-                    ])->values();
+                $list = $this->sortStockList(
+                    DB::table('master_products as p')
+                        ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
+                        ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
+                        ->where('p.status', 'active')
+                        ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
+                        ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
+                        ->orderBy('p.name')
+                        ->get()
+                        ->map(fn($s) => [
+                            'code' => $s->code,
+                            'name' => $s->name,
+                            'quantity' => (int) $s->quantity,
+                            'unit' => $s->unit ?? 'PCS'
+                        ])
+                );
                 $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
             } elseif ($unit === 'hendhys_pusat') {
                 $title = 'Hendhys Pusat';

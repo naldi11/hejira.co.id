@@ -22,6 +22,12 @@ class JihansGudangStock extends Model
         ];
     }
 
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
+    /**
+     * withTrashed wajib: produk yang sudah dihapus BISA MASIH punya sisa stok
+     * (mis. "Saset Sasa" 5 pcs). Tanpa ini relasinya null dan baris stoknya
+     * tampil sebagai "-" tanpa nama, sehingga barang fisik yang masih ada di
+     * gudang tidak bisa dikenali di layar Owner.
+     */
+    public function product(): BelongsTo { return $this->belongsTo(Product::class)->withTrashed(); }
     public function unit(): BelongsTo    { return $this->belongsTo(Unit::class); }
 }
