@@ -20,6 +20,20 @@
             font-size: 11px;
             padding: 0;
             margin: 0;
+
+            /* Dicetak di printer dot-matrix continuous form. Jarum printer
+               mencetak guratan tipis dengan sangat pudar, sehingga teks
+               berketebalan normal nyaris tidak terbaca sementara yang bold jelas.
+               Seluruh dokumen dibuat tebal. Sama seperti faktur Jihans. */
+            font-weight: bold;
+        }
+
+        @media print {
+            * {
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
 
         /* ===== Wrapper ===== */

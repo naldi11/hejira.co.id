@@ -19,6 +19,23 @@
             line-height: 1.35;
             padding: 0;
             margin: 0;
+
+            /* Faktur ini dicetak di printer dot-matrix continuous form. Jarum
+               printer mencetak guratan tipis dengan sangat pudar, sehingga teks
+               berketebalan normal nyaris tidak terbaca sementara yang bold jelas.
+               Karena itu SELURUH dokumen dibuat tebal — bukan sekadar judul.
+               Jangan diturunkan ke normal tanpa mengujinya di printer aslinya. */
+            font-weight: bold;
+        }
+
+        /* Warna abu-abu apa pun ikut jadi tipis di printer jarum. Semua teks
+           dipaksa hitam pekat, dan browser diminta tidak "menghemat" tinta. */
+        @media print {
+            * {
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
 
         /* ===== Wrapper ===== */
@@ -321,7 +338,8 @@
             </table>
 
             <div style="margin-top: 5px; font-weight: bold;">
-                Terbilang : <span id="terbilang-text" style="font-style: italic; font-weight: normal;"></span>
+                {{-- Tetap bold: di printer dot-matrix teks normal nyaris tidak terbaca. --}}
+                Terbilang : <span id="terbilang-text" style="font-style: italic;"></span>
             </div>
         </div>
 
@@ -390,7 +408,11 @@
         nilai = Math.floor(Math.abs(nilai));
         var huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
         var temp = "";
-        if (nilai < 12) {
+        // Nol harus menghasilkan string kosong, bukan " ". Kalau tidak, sisa
+        // pembagian yang nol menyisipkan spasi ganda (mis. "...puluh  ribu").
+        if (nilai === 0) {
+            temp = "";
+        } else if (nilai < 12) {
             temp = " " + huruf[nilai];
         } else if (nilai < 20) {
             temp = terbilang(nilai - 10) + " belas";
@@ -409,10 +431,14 @@
         } else if (nilai < 1000000000000) {
             temp = terbilang(Math.floor(nilai / 1000000000)) + " milyar" + terbilang(nilai % 1000000000);
         }
-        return temp.trim();
+        // JANGAN trim di sini. Fungsi ini rekursif dan penyambungannya bergantung
+        // pada spasi di depan yang dihasilkan tiap level. Trim di tiap level
+        // membuat kata menempel: "tiga jutaempat ratusempat puluh ribu".
+        // Pemangkasan dilakukan sekali saja di pemanggil terluar.
+        return temp;
     }
 
-    document.getElementById('terbilang-text').innerText = terbilang({{ $transaction->grand_total }}) + " rupiah";
+    document.getElementById('terbilang-text').innerText = terbilang({{ $transaction->grand_total }}).trim() + " rupiah";
 
     window.onload = function() {
         setTimeout(function() { window.print(); }, 600);
