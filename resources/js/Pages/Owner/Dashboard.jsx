@@ -56,14 +56,23 @@ function InfoBox({ icon, color, title, value, sub, onClick }) {
 }
 
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
-export default function OwnerDashboard({ stats, trends }) {
+export default function OwnerDashboard({ stats, trends, period, periodLabel, periodOptions }) {
     // Navigate to detail page
     const openStockDetail = (unit) => {
         router.visit(route('owner.dashboard.detail', { mode: 'stock', unit }));
     };
 
+    // Periode ikut dibawa, supaya angka di halaman detail sama dengan yang
+    // barusan dilihat di kartu — bukan kembali ke "keseluruhan".
     const openOmsetDetail = (unit) => {
-        router.visit(route('owner.dashboard.detail', { mode: 'omset', unit }));
+        router.visit(route('owner.dashboard.detail', { mode: 'omset', unit, filter: period }));
+    };
+
+    const changePeriod = (value) => {
+        router.get(route('owner.dashboard'), { period: value }, {
+            preserveScroll: true,
+            preserveState: false,
+        });
     };
 
     // Chart
@@ -147,11 +156,27 @@ export default function OwnerDashboard({ stats, trends }) {
 
                 {/* ── OMSET Section ──────────────────────────────────────── */}
                 <div className="rounded-2xl border border-emerald-105 bg-white p-6 shadow-sm dark:border-emerald-950/30 dark:bg-white/[0.02]">
-                    <div className="mb-5 flex items-center gap-2">
+                    <div className="mb-5 flex flex-wrap items-center gap-3">
                         <Icon name="analytics" className="text-emerald-500 text-[20px]" />
                         <div>
                             <h2 className="font-bold text-slate-800 dark:text-white text-base">Rincian Omset Penjualan</h2>
                             <p className="text-xs text-slate-400">Klik card untuk melihat detail transaksi</p>
+                        </div>
+                        {/* Enum pendek 7 pilihan — pakai select native, bukan SelectField. */}
+                        <div className="ml-auto flex items-center gap-2">
+                            <label htmlFor="periode-omset" className="text-xs font-semibold text-slate-400 dark:text-gray-500">
+                                Periode
+                            </label>
+                            <select
+                                id="periode-omset"
+                                value={period}
+                                onChange={(e) => changePeriod(e.target.value)}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            >
+                                {periodOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
@@ -159,13 +184,13 @@ export default function OwnerDashboard({ stats, trends }) {
                         <SubUnitCard
                             icon="storefront" color="text-orange-500"
                             title="Jihan's Food" subtitle="Pendapatan retail Jihan's"
-                            value={formatRupiah(stats.jihans_revenue)} label="Total Omset"
+                            value={formatRupiah(stats.jihans_revenue)} label={`Omset ${periodLabel}`}
                             onClick={() => openOmsetDetail('jihans_transactions')}
                         />
                         <SubUnitCard
                             icon="home_work" color="text-amber-500"
                             title="Gudang Hendhys" subtitle="Pendapatan Gudang Hendhys"
-                            value={formatRupiah(stats.hendhys_pusat_revenue)} label="Total Omset"
+                            value={formatRupiah(stats.hendhys_pusat_revenue)} label={`Omset ${periodLabel}`}
                             onClick={() => openOmsetDetail('hendhys_pusat')}
                         />
                         {stats.stock.hendhys_cabang_list.map((cb) => (
@@ -173,7 +198,7 @@ export default function OwnerDashboard({ stats, trends }) {
                                 key={cb.id}
                                 icon="store" color="text-yellow-600"
                                 title={cb.name} subtitle="Cabang Hendhys"
-                                value={formatRupiah(cb.revenue)} label="Total Omset"
+                                value={formatRupiah(cb.revenue)} label={`Omset ${periodLabel}`}
                                 onClick={() => openOmsetDetail(`hendhys_cabang_${cb.id}`)}
                             />
                         ))}

@@ -22,8 +22,70 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index()
+    /**
+     * Pilihan periode untuk kartu OMSET di dashboard Owner.
+     *
+     * Didefinisikan sekali di sini lalu dikirim ke frontend, supaya daftar di
+     * layar tidak bisa melenceng dari yang benar-benar dipahami backend.
+     *
+     * Catatan penafsiran: `last_6_months` dan `last_year` adalah jendela BERJALAN
+     * (6 dan 12 bulan terakhir dihitung mundur dari hari ini), bukan periode
+     * kalender. `this_month`/`last_month` sebaliknya mengikuti batas bulan.
+     */
+    private const PERIODS = [
+        'today'         => 'Hari Ini',
+        'this_week'     => 'Minggu Ini',
+        'this_month'    => 'Bulan Ini',
+        'last_month'    => 'Bulan Lalu',
+        'last_6_months' => '6 Bulan Terakhir',
+        'last_year'     => '1 Tahun Terakhir',
+        'all'           => 'Keseluruhan',
+    ];
+
+    private const DEFAULT_PERIOD = 'this_month';
+
+    /**
+     * Rentang tanggal untuk sebuah periode. `null` berarti tanpa batas (keseluruhan).
+     *
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}|null
+     */
+    private function periodRange(string $period): ?array
     {
+        return match ($period) {
+            'today'         => [today(), today()],
+            'this_week'     => [now()->startOfWeek(), now()->endOfWeek()],
+            'this_month'    => [now()->startOfMonth(), now()->endOfMonth()],
+            'last_month'    => [now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth()],
+            'last_6_months' => [now()->subMonthsNoOverflow(6)->startOfDay(), today()],
+            'last_year'     => [now()->subYearNoOverflow()->startOfDay(), today()],
+            default         => null, // 'all'
+        };
+    }
+
+    /** Ambil periode dari query string, tolak nilai yang tidak dikenal. */
+    private function resolvePeriod(\Illuminate\Http\Request $request): string
+    {
+        $period = (string) $request->query('period', self::DEFAULT_PERIOD);
+
+        return array_key_exists($period, self::PERIODS) ? $period : self::DEFAULT_PERIOD;
+    }
+
+    public function index(\Illuminate\Http\Request $request)
+    {
+        $period = $this->resolvePeriod($request);
+        $range  = $this->periodRange($period);
+
+        // Hanya OMSET yang mengikuti periode. Stok, mutasi, dan PO tetap
+        // menampilkan posisi keseluruhan — stok adalah saldo berjalan, bukan
+        // akumulasi periode, sehingga memfilternya per bulan justru menyesatkan.
+        $omsetPeriod = function ($query) use ($range) {
+            if ($range) {
+                $query->whereBetween('date', [$range[0]->toDateString(), $range[1]->toDateString()]);
+            }
+
+            return $query;
+        };
+
         $days = collect();
         for ($i = 6; $i >= 0; $i--) {
             $days->push(today()->subDays($i)->format('Y-m-d'));
@@ -71,8 +133,10 @@ class DashboardController extends Controller
             ->groupBy('branch_id')
             ->selectRaw('branch_id, SUM(quantity) as total')
             ->pluck('total', 'branch_id');
-        $revenuePerBranch = HendhysTransaction::where('status', 'paid')
-            ->whereIn('branch_id', $branchIds)
+        // Omset per cabang mengikuti periode; stok per cabang di atas tidak.
+        $revenuePerBranch = $omsetPeriod(
+            HendhysTransaction::where('status', 'paid')->whereIn('branch_id', $branchIds)
+        )
             ->groupBy('branch_id')
             ->selectRaw('branch_id, SUM(grand_total) as total')
             ->pluck('total', 'branch_id');
@@ -243,13 +307,26 @@ class DashboardController extends Controller
                 'user' => $t->creator?->name ?? '-'
             ])->values();
 
+        $jihansRevenue = (float) $omsetPeriod(JihansTransaction::where('status', 'paid'))->sum('grand_total');
+        $hendhysRevenue = (float) $omsetPeriod(HendhysTransaction::where('status', 'paid'))->sum('grand_total');
+        $hendhysPusatRevenue = (float) $omsetPeriod(
+            HendhysTransaction::where('status', 'paid')->whereNull('branch_id')
+        )->sum('grand_total');
+
         return Inertia::render('Owner/Dashboard', [
+            'period'        => $period,
+            'periodLabel'   => self::PERIODS[$period],
+            'periodOptions' => collect(self::PERIODS)->map(fn ($label, $value) => [
+                'value' => $value,
+                'label' => $label,
+            ])->values()->all(),
+
             'stats' => [
-                'jihans_revenue'     => (float) JihansTransaction::where('status', 'paid')->sum('grand_total'),
-                'hendhys_revenue'    => (float) HendhysTransaction::where('status', 'paid')->sum('grand_total'),
-                'hendhys_pusat_revenue' => (float) HendhysTransaction::where('status', 'paid')->whereNull('branch_id')->sum('grand_total'),
-                'total_revenue'      => (float) (JihansTransaction::where('status', 'paid')->sum('grand_total') + HendhysTransaction::where('status', 'paid')->sum('grand_total')),
-                
+                'jihans_revenue'        => $jihansRevenue,
+                'hendhys_revenue'       => $hendhysRevenue,
+                'hendhys_pusat_revenue' => $hendhysPusatRevenue,
+                'total_revenue'         => $jihansRevenue + $hendhysRevenue,
+
                 'jihans_today'       => (float) JihansTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total'),
                 'hendhys_today'      => (float) HendhysTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total'),
                 'total_today'        => (float) (JihansTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total') + HendhysTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total')),
@@ -289,7 +366,15 @@ class DashboardController extends Controller
     {
         $mode = $request->query('mode', 'stock');
         $unit = $request->query('unit', 'gudang');
-        $filter = $request->query('filter', 'all'); // 'today', 'week', 'month', 'all'
+        $filter = $request->query('filter', 'all');
+
+        // Samakan kosakata periode dengan dashboard supaya angka di kartu dan di
+        // halaman detail tidak pernah berbeda. Kunci lama ('week'/'month') tetap
+        // diterima agar tautan/bookmark yang sudah beredar tidak rusak.
+        $filter = ['week' => 'this_week', 'month' => 'this_month'][$filter] ?? $filter;
+
+        $isExactDate = (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter);
+        $range = $isExactDate ? null : $this->periodRange($filter);
 
         $title = 'Detail';
         $subtitle = '';
@@ -297,15 +382,11 @@ class DashboardController extends Controller
         $shifts = collect(); // Store shifts for the omset mode
 
         // Apply date filter logic for omset
-        $dateFilter = function($q) use ($filter) {
-            if ($filter === 'today') {
-                $q->whereDate('date', today());
-            } elseif ($filter === 'week') {
-                $q->whereBetween('date', [now()->copy()->startOfWeek(), now()->copy()->endOfWeek()]);
-            } elseif ($filter === 'month') {
-                $q->whereMonth('date', now()->month)->whereYear('date', now()->year);
-            } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+        $dateFilter = function ($q) use ($range, $isExactDate, $filter) {
+            if ($isExactDate) {
                 $q->whereDate('date', $filter);
+            } elseif ($range) {
+                $q->whereBetween('date', [$range[0]->toDateString(), $range[1]->toDateString()]);
             }
         };
 
@@ -432,15 +513,13 @@ class DashboardController extends Controller
                 ];
             };
 
-            $dateFilterShift = function($q) use ($filter) {
-                if ($filter === 'today') {
-                    $q->whereDate('opened_at', today());
-                } elseif ($filter === 'week') {
-                    $q->whereBetween('opened_at', [now()->copy()->startOfWeek(), now()->copy()->endOfWeek()]);
-                } elseif ($filter === 'month') {
-                    $q->whereMonth('opened_at', now()->month)->whereYear('opened_at', now()->year);
-                } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+            $dateFilterShift = function ($q) use ($range, $isExactDate, $filter) {
+                if ($isExactDate) {
                     $q->whereDate('opened_at', $filter);
+                } elseif ($range) {
+                    // endOfDay: `opened_at` bertipe datetime, kalau dibatasi ke
+                    // tanggal saja shift yang dibuka siang hari ikut terbuang.
+                    $q->whereBetween('opened_at', [$range[0]->copy()->startOfDay(), $range[1]->copy()->endOfDay()]);
                 }
             };
 
@@ -466,7 +545,7 @@ class DashboardController extends Controller
             $trendQueryCallback = null;
             $mapTrends = null;
 
-            if ($filter === 'today' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter)) {
+            if ($filter === 'today' || $isExactDate) {
                 $targetDate = $filter === 'today' ? today() : Carbon::parse($filter);
                 $hours = collect();
                 for ($i = 8; $i <= 22; $i++) {
@@ -484,41 +563,29 @@ class DashboardController extends Controller
                         'total' => (float) (($salesMap1[(int)substr($h,0,2)] ?? 0) + ($salesMap2[(int)substr($h,0,2)] ?? 0)),
                     ])->values();
                 };
-            } elseif ($filter === 'week') {
+            } elseif (in_array($filter, ['this_week', 'this_month', 'last_month'], true) && $range) {
+                // Periode pendek (≤ 1 bulan) digambar per hari. Satu blok untuk
+                // ketiganya, batasnya diambil dari $range — dulu "bulan ini"
+                // di-hardcode ke bulan berjalan sehingga "bulan lalu" mustahil.
                 $days = collect();
-                $start = now()->copy()->startOfWeek();
-                for ($i = 0; $i < 7; $i++) {
-                    $days->push($start->copy()->addDays($i)->format('Y-m-d'));
+                $cursor = $range[0]->copy()->startOfDay();
+                $last = $range[1]->copy()->startOfDay();
+                while ($cursor->lte($last)) {
+                    $days->push($cursor->format('Y-m-d'));
+                    $cursor->addDay();
                 }
-                $trendQueryCallback = function($q) use ($start) {
-                    return $q->whereBetween('date', [$start->copy(), now()->copy()->endOfWeek()])
+
+                $trendQueryCallback = function ($q) use ($range) {
+                    return $q->whereBetween('date', [$range[0]->toDateString(), $range[1]->toDateString()])
                              ->selectRaw('date, SUM(grand_total) as total')
                              ->groupBy('date')
                              ->pluck('total', 'date');
                 };
-                $mapTrends = function($salesMap1, $salesMap2 = []) use ($days) {
-                    return $days->map(fn($d) => [
-                        'date' => Carbon::parse($d)->translatedFormat('D'),
-                        'total' => (float) (($salesMap1[$d] ?? 0) + ($salesMap2[$d] ?? 0)),
-                    ])->values();
-                };
-            } elseif ($filter === 'month') {
-                $days = collect();
-                $start = now()->startOfMonth();
-                $daysInMonth = now()->daysInMonth;
-                for ($i = 0; $i < $daysInMonth; $i++) {
-                    $days->push($start->copy()->addDays($i)->format('Y-m-d'));
-                }
-                $trendQueryCallback = function($q) {
-                    return $q->whereMonth('date', now()->month)
-                             ->whereYear('date', now()->year)
-                             ->selectRaw('date, SUM(grand_total) as total')
-                             ->groupBy('date')
-                             ->pluck('total', 'date');
-                };
-                $mapTrends = function($salesMap1, $salesMap2 = []) use ($days) {
-                    return $days->map(fn($d) => [
-                        'date' => Carbon::parse($d)->format('d'),
+                // Minggu ini cukup nama hari; rentang sebulan pakai tanggal.
+                $labelFormat = $filter === 'this_week' ? 'D' : 'd';
+                $mapTrends = function ($salesMap1, $salesMap2 = []) use ($days, $labelFormat) {
+                    return $days->map(fn ($d) => [
+                        'date' => Carbon::parse($d)->translatedFormat($labelFormat),
                         'total' => (float) (($salesMap1[$d] ?? 0) + ($salesMap2[$d] ?? 0)),
                     ])->values();
                 };
