@@ -165,4 +165,12 @@ class TransferOutController extends Controller
             'transfer' => new TransferOutResource($transferOut),
         ]);
     }
+
+    /** Surat jalan yang menyertai barang — dokumen cetak, bukan halaman Inertia. */
+    public function print(TransferOut $transferOut)
+    {
+        $transferOut->load(['request', 'branch', 'creator', 'details.product', 'details.unit']);
+
+        return view('gudang.transfer-out.print', compact('transferOut'));
+    }
 }

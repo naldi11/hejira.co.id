@@ -55,6 +55,7 @@ Route::middleware(['auth', 'check.entity:gudang', 'role:super_admin'])
         Route::get('transfer-out/create',        [TransferOutController::class, 'create'])->name('transfer-out.create');
         Route::post('transfer-out',              [TransferOutController::class, 'store'])->name('transfer-out.store');
         Route::get('transfer-out/{transferOut}', [TransferOutController::class, 'show'])->name('transfer-out.show');
+        Route::get('transfer-out/{transferOut}/print', [TransferOutController::class, 'print'])->name('transfer-out.print');
 
         // Retur Masuk dari Jihans / Hendhys
         Route::resource('returns', \App\Http\Controllers\Gudang\ReturnController::class)->only(['index', 'show']);

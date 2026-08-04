@@ -2,7 +2,6 @@ import { Head, Link } from '@inertiajs/react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
 import { formatDate, formatQty, formatRupiah } from '@/lib/format';
-import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
@@ -13,9 +12,16 @@ export default function TransferOutShow({ transfer }) {
 
             <div className="max-w-5xl space-y-6 print:max-w-none print:space-y-4">
                 <div className="flex justify-end print:hidden">
-                    <Button onClick={() => window.print()} size="sm" startIcon={<Icon name="print" className="text-[18px]" />}>
-                        Cetak Surat Jalan
-                    </Button>
+                    {/* Surat jalan adalah dokumen Blade tersendiri — mencetak halaman ini
+                        ikut membawa sidebar & kartu UI, dan membocorkan HPP ke penerima. */}
+                    <a
+                        href={route('gudang.transfer-out.print', transfer.id)}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600"
+                    >
+                        <Icon name="print" className="text-[18px]" /> Cetak Surat Jalan
+                    </a>
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
