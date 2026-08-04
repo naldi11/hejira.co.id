@@ -28,9 +28,11 @@ class DashboardController extends Controller
      * Didefinisikan sekali di sini lalu dikirim ke frontend, supaya daftar di
      * layar tidak bisa melenceng dari yang benar-benar dipahami backend.
      *
-     * Catatan penafsiran: `last_6_months` dan `last_year` adalah jendela BERJALAN
-     * (6 dan 12 bulan terakhir dihitung mundur dari hari ini), bukan periode
-     * kalender. `this_month`/`last_month` sebaliknya mengikuti batas bulan.
+     * SEMUA periode berbasis bulan dibulatkan ke batas bulan penuh — termasuk
+     * `last_6_months` dan `last_year`, yang berakhir di akhir bulan berjalan,
+     * bukan di tanggal hari ini. Ini permintaan eksplisit user: laporan omset
+     * dibaca per bulan penuh, dan memotong bulan berjalan di tengah membuat
+     * angkanya tidak setara untuk dibandingkan.
      */
     private const PERIODS = [
         'today'         => 'Hari Ini',
@@ -56,8 +58,12 @@ class DashboardController extends Controller
             'this_week'     => [now()->startOfWeek(), now()->endOfWeek()],
             'this_month'    => [now()->startOfMonth(), now()->endOfMonth()],
             'last_month'    => [now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth()],
-            'last_6_months' => [now()->subMonthsNoOverflow(6)->startOfDay(), today()],
-            'last_year'     => [now()->subYearNoOverflow()->startOfDay(), today()],
+            // Dibulatkan ke batas BULAN, bukan tanggal berjalan: laporan omset
+            // dibaca per bulan penuh, sehingga "6 bulan terakhir" yang berhenti
+            // di tanggal 4 akan memotong bulan berjalan di tengah dan membuat
+            // angkanya tidak bisa dibandingkan dengan bulan-bulan sebelumnya.
+            'last_6_months' => [now()->subMonthsNoOverflow(6)->startOfMonth(), now()->endOfMonth()],
+            'last_year'     => [now()->subYearNoOverflow()->startOfMonth(), now()->endOfMonth()],
             default         => null, // 'all'
         };
     }
