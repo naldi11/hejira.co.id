@@ -15,64 +15,173 @@ import Barcode from 'react-barcode';
 const Layouts = { GudangLayout, JihansLayout, HendhysLayout, OwnerLayout };
 const route = window.route;
 
+const PX_PER_MM = 96 / 25.4;
+
+// CODE128 wajib punya quiet zone (area kosong) minimal 10 modul di kiri & kanan.
+// Tanpa ini scanner sering gagal baca walaupun barnya tercetak sempurna.
+const QUIET_ZONE_MODULES = 10;
+
+// Lebar 1 modul (bar tersempit) dalam px CSS. Printer thermal 203 dpi punya
+// 1 dot = 0,125 mm, jadi 1 modul minimal ~2 dot (0,25 mm ≈ 0,95 px). Di bawah itu
+// printer membulatkan lebar bar secara acak ke 1 atau 2 dot dan rasio barcode rusak.
+const MIN_MODULE_PX = 0.9;
+const MAX_MODULE_PX = 3;
+
+// Perkiraan jumlah modul CODE128 mengikuti aturan auto-switch JsBarcode:
+// deretan angka panjang dikodekan subset C (2 digit jadi 1 simbol), sisanya subset B.
+// Tiap simbol = 11 modul, ditutup stop pattern 13 modul.
+const estimateCode128Modules = (value) => {
+    const s = String(value ?? '');
+    if (!s) return 0;
+    let symbols = 1;   // start — sekaligus menentukan subset awal, jadi tak perlu switch
+    let mode = null;   // 'B' | 'C'
+    let i = 0;
+    while (i < s.length) {
+        const run = /^\d+/.exec(s.slice(i));
+        const len = run ? run[0].length : 0;
+        const atEdge = i === 0 || i + len === s.length;
+        // Subset C baru menguntungkan untuk run >= 4 digit (>= 2 bila di ujung string)
+        if (len >= 4 || (atEdge && len >= 2)) {
+            const even = len - (len % 2); // digit ganjil terakhir tetap subset B
+            if (mode !== 'C') { if (mode !== null) symbols += 1; mode = 'C'; }
+            symbols += even / 2;
+            i += even;
+        } else {
+            if (mode !== 'B') { if (mode !== null) symbols += 1; mode = 'B'; }
+            symbols += 1;
+            i += 1;
+        }
+    }
+    symbols += 1; // checksum
+    return symbols * 11 + 13;
+};
+
+// Hitung lebar bar terbesar yang masih muat di area label, lalu bulatkan ke
+// kelipatan 0,05 px. Mengembalikan juga quiet zone kiri/kanan.
+const barcodeProps = (value, areaMm, heightPx) => {
+    const modules = estimateCode128Modules(value) + QUIET_ZONE_MODULES * 2;
+    const raw = (areaMm * PX_PER_MM) / modules;
+    const width = Math.min(MAX_MODULE_PX, Math.max(MIN_MODULE_PX, Math.floor(raw * 20) / 20));
+    const quiet = width * QUIET_ZONE_MODULES;
+    return {
+        width,
+        height: heightPx,
+        margin: 0,
+        marginLeft: quiet,
+        marginRight: quiet,
+    };
+};
+
+// widthMm/heightMm = ukuran fisik satu halaman cetak (untuk roll 3 kolom, satu
+// halaman = satu strip berisi 3 label). Nilai ini dipakai sekaligus untuk @page
+// dan untuk kotak di layar, supaya keduanya tidak pernah beda.
+// barcodeAreaMm = lebar area yang boleh dipakai barcode di dalam satu label.
+// barcodeHeight dalam px CSS (1 mm ≈ 3,78 px).
 const PAPER_CONFIGS = {
     'thermal-33x15-3line': {
         name: '🏷️ Codeshop / Thermal 33 × 15 mm (3 Line / 3 Kolom Roll)',
-        pageSize: '104mm 15mm',
-        barcodeWidth: 0.7,
-        barcodeHeight: 10,
+        widthMm: 104,
+        heightMm: 15,
+        barcodeAreaMm: 31.5,
+        barcodeHeight: 28,
         is3Line: true,
     },
     'thermal-33x15-1line': {
         name: '🏷️ Direct Thermal 33 × 15 mm (1 Line / Single Label)',
-        pageSize: '33mm 15mm',
-        barcodeWidth: 0.7,
-        barcodeHeight: 10,
+        widthMm: 33,
+        heightMm: 15,
+        barcodeAreaMm: 31.5,
+        barcodeHeight: 28,
         isThermalSingle: true,
     },
     'thermal-40x30': {
         name: '🏷️ Direct Thermal 40 × 30 mm (Standard Barcode Label)',
-        pageSize: '40mm 30mm',
-        barcodeWidth: 0.95,
-        barcodeHeight: 18,
+        widthMm: 40,
+        heightMm: 30,
+        barcodeAreaMm: 38,
+        barcodeHeight: 55,
         isThermalSingle: true,
     },
     'thermal-50x20': {
         name: '🏷️ Direct Thermal 50 × 20 mm (Retail Medium Label)',
-        pageSize: '50mm 20mm',
-        barcodeWidth: 1.05,
-        barcodeHeight: 16,
+        widthMm: 50,
+        heightMm: 20,
+        barcodeAreaMm: 48,
+        barcodeHeight: 38,
         isThermalSingle: true,
     },
     'thermal-33x19': {
         name: '🏷️ Direct Thermal 33 × 19 mm (Small Sticker Minimarket)',
-        pageSize: '33mm 19mm',
-        barcodeWidth: 0.8,
-        barcodeHeight: 14,
+        widthMm: 33,
+        heightMm: 19,
+        barcodeAreaMm: 31.5,
+        barcodeHeight: 40,
         isThermalSingle: true,
     },
     'thermal-100x50': {
         name: '📦 Direct Thermal 100 × 50 mm (Shipping / Box Label)',
-        pageSize: '100mm 50mm',
-        barcodeWidth: 1.8,
-        barcodeHeight: 44,
+        widthMm: 100,
+        heightMm: 50,
+        barcodeAreaMm: 96,
+        barcodeHeight: 110,
         isThermalSingle: true,
+    },
+    'custom': {
+        name: '⚙️ Ukuran Kustom (samakan dengan driver printer)',
+        widthMm: 104,
+        heightMm: 15,
+        barcodeAreaMm: 31.5,
+        barcodeHeight: 28,
+        isThermalSingle: true,
+        isCustom: true,
     },
     'a4-grid': {
         name: '📄 Kertas A4 Grid (5 Kolom - Printer Biasa / Inkjet)',
         pageSize: 'A4 portrait',
-        barcodeWidth: 1.1,
-        barcodeHeight: 32,
+        barcodeAreaMm: 34,
+        barcodeHeight: 45,
         isThermalSingle: false,
     }
 };
+
+// Satu halaman cetak. Bila `rotate` aktif, halaman dibalik menjadi potret dan isinya
+// diputar 90°. Ini kompensasi untuk driver printer yang kertasnya terdaftar potret —
+// Chrome akan memutar sendiri halaman lanskap agar "muat", dan hasilnya miring.
+function PrintPage({ widthMm, heightMm, rotate, isLast, className = '', children }) {
+    const pageW = rotate ? heightMm : widthMm;
+    const pageH = rotate ? widthMm : heightMm;
+    return (
+        <div
+            className={`relative overflow-hidden bg-white break-inside-avoid box-border print:m-0 ${isLast ? '' : 'page-break-after-always'} ${className}`}
+            style={{ width: `${pageW}mm`, height: `${pageH}mm`, pageBreakInside: 'avoid', breakInside: 'avoid' }}
+        >
+            <div
+                className="absolute left-0 top-0 box-border"
+                style={{
+                    width: `${widthMm}mm`,
+                    height: `${heightMm}mm`,
+                    transformOrigin: '0 0',
+                    // rotate(90°) di origin 0,0 memindahkan isi ke x negatif, jadi
+                    // digeser balik sejauh tinggi aslinya.
+                    transform: rotate ? `translateX(${heightMm}mm) rotate(90deg)` : undefined,
+                }}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
 
 export default function QrPrint({ products, filters, layout = 'GudangLayout', routePrefix = 'master.' }) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [paperType, setPaperType] = useState('thermal-33x15-3line');
-    const [form, setForm] = useState({ 
+    // Putar isi 90°: dipakai kalau driver printer mendaftarkan kertasnya potret
+    // sehingga Chrome memutar sendiri halaman lanskap kita.
+    const [rotate, setRotate] = useState(false);
+    const [customSize, setCustomSize] = useState({ width: 104, height: 15 });
+    const [form, setForm] = useState({
         search: filters.search ?? '', 
         status: filters.status ?? '',
         per_page: filters.per_page ?? '50'
@@ -156,7 +265,47 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
         return rows;
     }, [labelsToPrint]);
 
-    const activeConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-33x15-3line'];
+    const baseConfig = PAPER_CONFIGS[paperType] || PAPER_CONFIGS['thermal-33x15-3line'];
+
+    // Ukuran kustom menimpa preset, dan area barcode ikut menyesuaikan lebar label.
+    const activeConfig = useMemo(() => {
+        if (!baseConfig.isCustom) return baseConfig;
+        const widthMm = Math.max(10, Number(customSize.width) || 10);
+        const heightMm = Math.max(6, Number(customSize.height) || 6);
+        return {
+            ...baseConfig,
+            widthMm,
+            heightMm,
+            barcodeAreaMm: Math.max(8, widthMm - 1.5),
+            // Sisakan ruang untuk baris nama di atas dan baris kode/harga di bawah.
+            barcodeHeight: Math.max(14, Math.round((heightMm - 5.6) * PX_PER_MM)),
+        };
+    }, [baseConfig, customSize.width, customSize.height]);
+
+    const canRotate = !!(activeConfig.is3Line || activeConfig.isThermalSingle);
+    const effectiveRotate = canRotate && rotate;
+
+    // Ukuran halaman untuk @page. A4 tetap memakai keyword-nya sendiri.
+    const pageSizeCss = activeConfig.pageSize
+        ?? (effectiveRotate
+            ? `${activeConfig.heightMm}mm ${activeConfig.widthMm}mm`
+            : `${activeConfig.widthMm}mm ${activeConfig.heightMm}mm`);
+
+    // Kode yang, pada lebar bar minimum yang masih bisa dipindai, tetap lebih lebar
+    // dari area label. Barcode-nya akan terpotong, jadi user perlu diberi tahu.
+    const oversizedLabels = useMemo(() => {
+        const found = new Map();
+        labelsToPrint.forEach((l) => {
+            const value = l.barcode || l.code || '';
+            if (!value || found.has(value)) return;
+            const modules = estimateCode128Modules(value) + QUIET_ZONE_MODULES * 2;
+            const neededMm = (modules * MIN_MODULE_PX) / PX_PER_MM;
+            if (neededMm > activeConfig.barcodeAreaMm) {
+                found.set(value, { value, name: l.name, neededMm });
+            }
+        });
+        return [...found.values()];
+    }, [labelsToPrint, activeConfig.barcodeAreaMm]);
 
     // Inject dynamic @page size into document.head so Chrome print engine reads it globally
     useEffect(() => {
@@ -169,12 +318,14 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
         styleEl.innerHTML = `
             @media print {
                 @page {
-                    size: ${activeConfig.pageSize} !important;
+                    size: ${pageSizeCss} !important;
                     margin: 0 !important;
                 }
                 body, html {
                     margin: 0 !important;
                     padding: 0 !important;
+                    width: auto !important;
+                    height: auto !important;
                     background: white !important;
                 }
                 .no-print {
@@ -183,21 +334,52 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                 .print-controls {
                     display: none !important;
                 }
+                /* Overlay dikembalikan ke aliran dokumen biasa. display:block dan
+                   overflow:visible WAJIB — selama masih flex + overflow, Chrome
+                   memperlakukannya sebagai kotak scroll dan memotong isinya. */
                 #print-modal-overlay {
                     position: static !important;
+                    display: block !important;
+                    inset: auto !important;
+                    overflow: visible !important;
                     background: white !important;
+                    backdrop-filter: none !important;
                     padding: 0 !important;
                     margin: 0 !important;
-                    width: 100% !important;
+                    width: auto !important;
+                    height: auto !important;
+                }
+                /* Pembungkus scroll preview. Padding p-4/md:p-8 di sini (≈8,5 mm per
+                   sisi) membuat total lebar isi melebihi lebar kertas, sehingga tiap
+                   baris label dipecah Chrome menjadi 2 halaman — itu sebabnya banyak
+                   stiker tercetak kosong / bergeser. */
+                #print-scroll-wrap {
+                    display: block !important;
+                    flex: none !important;
+                    overflow: visible !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    width: auto !important;
                     height: auto !important;
                 }
                 #print-area {
                     position: static !important;
+                    display: block !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     box-shadow: none !important;
-                    width: 100% !important;
+                    border: 0 !important;
+                    width: auto !important;
+                    max-width: none !important;
                     background: white !important;
+                }
+                /* Daftar strip label dibuat block agar tiap strip mulai persis di
+                   x=0 halaman; centering flex bisa menggeser strip setengah milimeter. */
+                .print-strip-list {
+                    display: block !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    gap: 0 !important;
                 }
                 .page-break-after-always {
                     page-break-after: always !important;
@@ -207,9 +389,19 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                     break-inside: avoid !important;
                     page-break-inside: avoid !important;
                 }
+                /* Bar barcode harus jatuh tepat di batas dot printer, bukan di-antialias
+                   jadi abu-abu — antialias inilah yang bikin bar terlihat tipis/pudar. */
+                #print-area svg {
+                    shape-rendering: crispEdges !important;
+                    image-rendering: pixelated !important;
+                }
+                #print-area, #print-area * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
             }
         `;
-    }, [paperType, activeConfig.pageSize]);
+    }, [pageSizeCss]);
 
     return (
         <Layout title="Cetak Label Barcode" pageTitle="Master Data — Cetak Label">
@@ -355,13 +547,13 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                         </div>
 
                         {/* Paper & Label Type Selector */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
                                 <Icon name="settings_overscan" className="text-[18px]" />
                                 Ukuran Kertas & Stiker Label:
                             </label>
-                            <select 
-                                value={paperType} 
+                            <select
+                                value={paperType}
                                 onChange={(e) => setPaperType(e.target.value)}
                                 className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 shadow-xs outline-hidden transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                             >
@@ -369,6 +561,42 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                     <option key={key} value={key}>{cfg.name}</option>
                                 ))}
                             </select>
+
+                            {activeConfig.isCustom && (
+                                <div className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-2 py-1 dark:border-gray-700">
+                                    <input
+                                        type="number" min="10" max="300" step="0.5"
+                                        value={customSize.width}
+                                        onChange={(e) => setCustomSize((s) => ({ ...s, width: e.target.value }))}
+                                        className="w-16 rounded-md border-gray-300 py-1 text-center text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                    />
+                                    <span className="text-xs text-gray-500">×</span>
+                                    <input
+                                        type="number" min="6" max="300" step="0.5"
+                                        value={customSize.height}
+                                        onChange={(e) => setCustomSize((s) => ({ ...s, height: e.target.value }))}
+                                        className="w-16 rounded-md border-gray-300 py-1 text-center text-xs dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                                    />
+                                    <span className="text-xs font-semibold text-gray-500">mm</span>
+                                </div>
+                            )}
+
+                            {canRotate && (
+                                <button
+                                    type="button"
+                                    onClick={() => setRotate((r) => !r)}
+                                    title="Pakai kalau hasil cetak keluar miring/berdiri"
+                                    className={`flex h-10 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition ${
+                                        rotate
+                                            ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                                            : 'border-gray-300 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                                    }`}
+                                >
+                                    <Icon name="rotate_90_degrees_cw" className="text-[16px]" />
+                                    Putar 90° {rotate ? 'ON' : 'OFF'}
+                                </button>
+                            )}
+
                             <Button onClick={() => window.print()} startIcon={<Icon name="print" />}>
                                 Cetak Sekarang
                             </Button>
@@ -376,118 +604,153 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                     </div>
 
                     {/* Helper Print Tip Banner (Hidden in Print) */}
-                    <div className="print-controls bg-amber-50 px-6 py-2 border-b border-amber-200 text-xs font-medium text-amber-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Icon name="info" className="text-[16px] text-amber-600" />
-                            <span><strong>Tips Cetak Thermal:</strong> Di jendela print browser, pasang <strong>Margins: "None"</strong> &amp; <strong>Paper Size / Destination</strong> pilih Printer Thermal Barcode Anda (atau Custom 104x15mm).</span>
+                    <div className="print-controls bg-amber-50 px-6 py-2 border-b border-amber-200 text-xs font-medium text-amber-800">
+                        <div className="flex items-start gap-2">
+                            <Icon name="info" className="text-[16px] text-amber-600 shrink-0" />
+                            <span>
+                                <strong>Ukuran kertas harus sama di 3 tempat.</strong> Set <strong>Printer Preferences → Paper Size</strong> ke{' '}
+                                <strong className="font-mono">{pageSizeCss.replace('mm ', ' mm × ')}</strong>, lalu di jendela print browser pilih ukuran yang sama,
+                                dengan <strong>Margins: None</strong> dan <strong>Scale: 100%</strong> (jangan "Fit to page").
+                                Kalau ukuran driver beda, Chrome akan memutar &amp; menyusutkan halaman sendiri — itu penyebab hasil cetak berdiri dan tidak pas.
+                                {canRotate && <> Kalau driver printer Anda hanya mau kertas berdiri, nyalakan <strong>Putar 90°</strong>.</>}
+                            </span>
                         </div>
                     </div>
 
+                    {oversizedLabels.length > 0 && (
+                        <div className="print-controls bg-red-50 px-6 py-2 border-b border-red-200 text-xs font-medium text-red-800">
+                            <div className="flex items-start gap-2">
+                                <Icon name="warning" className="text-[16px] text-red-600 shrink-0" />
+                                <span>
+                                    <strong>{oversizedLabels.length} kode terlalu panjang</strong> untuk label ini —
+                                    barcode akan terpotong dan tidak bisa dipindai. Pakai ukuran label yang lebih lebar,
+                                    atau isi kolom <strong>barcode</strong> produk dengan angka saja (lebih padat daripada kode huruf).
+                                    <span className="ml-1 font-mono">
+                                        {oversizedLabels.slice(0, 5).map((o) => o.value).join(', ')}
+                                        {oversizedLabels.length > 5 ? `, +${oversizedLabels.length - 5} lagi` : ''}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Preview Area (Visible in Print) */}
-                    <div className="flex-1 overflow-auto p-4 md:p-8">
+                    <div id="print-scroll-wrap" className="flex-1 overflow-auto p-4 md:p-8">
                         <div id="print-area" className={`mx-auto bg-white p-4 ${activeConfig.is3Line ? 'w-auto max-w-[106mm]' : activeConfig.isThermalSingle ? 'w-auto max-w-xl' : 'max-w-5xl p-8 shadow-md'}`}>
                             {activeConfig.is3Line ? (
                                 /* 3-Line Roll (e.g. 33x15mm 3 Kolom per Baris Roll) */
-                                <div className="flex flex-col items-center print:gap-0 gap-4">
+                                <div className="print-strip-list flex flex-col items-center print:gap-0 gap-4">
                                     {labelRows3Line.map((row, rIdx) => (
-                                        <div 
-                                            key={rIdx} 
-                                            className="grid grid-cols-3 gap-x-[2mm] w-[104mm] h-[14.5mm] max-h-[14.5mm] overflow-hidden page-break-after-always break-inside-avoid bg-white items-center box-border print:m-0 print:p-0"
-                                            style={{ pageBreakAfter: 'always', breakAfter: 'page', pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                                        <PrintPage
+                                            key={rIdx}
+                                            widthMm={activeConfig.widthMm}
+                                            heightMm={activeConfig.heightMm}
+                                            rotate={effectiveRotate}
+                                            isLast={rIdx === labelRows3Line.length - 1}
+                                        >
+                                        <div
+                                            className="grid grid-cols-3 gap-x-[2mm] h-full w-full overflow-hidden bg-white items-center box-border"
                                         >
                                             {[0, 1, 2].map((cIdx) => {
                                                 const label = row[cIdx];
                                                 if (!label) {
-                                                    return <div key={cIdx} className="w-[33mm] h-[14.5mm]" />;
+                                                    return <div key={cIdx} className="h-full" />;
                                                 }
+                                                const value = label.barcode || label.code || '';
                                                 return (
-                                                    <div 
-                                                        key={cIdx} 
-                                                        className="w-[33mm] h-[14.5mm] max-h-[14.5mm] px-[1px] py-[0.5px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid"
+                                                    <div
+                                                        key={cIdx}
+                                                        className="h-full px-[1px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid"
                                                         style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
                                                     >
-                                                        <div className="text-[6.5px] font-bold leading-none truncate w-full text-black h-[3mm] flex items-center justify-center">
+                                                        <div className="text-[6.5px] font-bold leading-none truncate w-full text-black h-[2.8mm] flex items-center justify-center">
                                                             {label.name}
                                                         </div>
-                                                        <div className="flex items-center justify-center overflow-hidden h-[7.5mm] max-h-[7.5mm] w-full">
-                                                            <Barcode 
-                                                                value={label.barcode || label.code} 
-                                                                width={activeConfig.barcodeWidth} 
-                                                                height={activeConfig.barcodeHeight} 
-                                                                margin={0}
-                                                                displayValue={false}
-                                                                background="transparent"
-                                                            />
+                                                        <div className="flex items-center justify-center overflow-hidden h-[8.4mm] max-h-[8.4mm] w-full">
+                                                            {value && (
+                                                                <Barcode
+                                                                    value={value}
+                                                                    {...barcodeProps(value, activeConfig.barcodeAreaMm, activeConfig.barcodeHeight)}
+                                                                    displayValue={false}
+                                                                    background="#ffffff"
+                                                                    lineColor="#000000"
+                                                                />
+                                                            )}
                                                         </div>
-                                                        <div className="flex w-full items-center justify-between px-0.5 h-[3mm] leading-none">
-                                                            <span className="font-mono text-[5.5px] tracking-tighter text-black leading-none">{label.barcode || label.code}</span>
+                                                        <div className="flex w-full items-center justify-between px-0.5 h-[2.8mm] leading-none">
+                                                            <span className="font-mono text-[5.5px] tracking-tighter text-black leading-none">{value}</span>
                                                             <span className="text-[6px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
+                                        </PrintPage>
                                     ))}
                                 </div>
                             ) : activeConfig.isThermalSingle ? (
                                 /* Single Thermal Label Continuous Stream */
-                                <div className="flex flex-col items-center print:gap-0 gap-2">
-                                    {labelsToPrint.map((label, idx) => (
-                                        <div 
-                                            key={idx} 
-                                            className="px-1 py-[0.5px] flex flex-col items-center justify-between text-center box-border page-break-after-always break-inside-avoid overflow-hidden bg-white print:m-0"
-                                            style={{ 
-                                                width: activeConfig.pageSize.split(' ')[0], 
-                                                height: `calc(${activeConfig.pageSize.split(' ')[1]} - 0.5mm)`,
-                                                maxHeight: `calc(${activeConfig.pageSize.split(' ')[1]} - 0.5mm)`,
-                                                pageBreakAfter: 'always', 
-                                                breakAfter: 'page',
-                                                pageBreakInside: 'avoid', 
-                                                breakInside: 'avoid'
-                                            }}
+                                <div className="print-strip-list flex flex-col items-center print:gap-0 gap-2">
+                                    {labelsToPrint.map((label, idx) => {
+                                        const value = label.barcode || label.code || '';
+                                        return (
+                                        <PrintPage
+                                            key={idx}
+                                            widthMm={activeConfig.widthMm}
+                                            heightMm={activeConfig.heightMm}
+                                            rotate={effectiveRotate}
+                                            isLast={idx === labelsToPrint.length - 1}
                                         >
+                                        <div className="h-full w-full px-1 flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white">
                                             <div className="text-[8px] font-bold leading-none truncate w-full text-black">
                                                 {label.name}
                                             </div>
                                             <div className="flex items-center justify-center overflow-hidden w-full my-0.5">
-                                                <Barcode 
-                                                    value={label.barcode || label.code} 
-                                                    width={activeConfig.barcodeWidth} 
-                                                    height={activeConfig.barcodeHeight} 
-                                                    margin={0}
-                                                    displayValue={false}
-                                                    background="transparent"
-                                                />
+                                                {value && (
+                                                    <Barcode
+                                                        value={value}
+                                                        {...barcodeProps(value, activeConfig.barcodeAreaMm, activeConfig.barcodeHeight)}
+                                                        displayValue={false}
+                                                        background="#ffffff"
+                                                        lineColor="#000000"
+                                                    />
+                                                )}
                                             </div>
                                             <div className="flex w-full items-center justify-between px-1 leading-none">
-                                                <span className="font-mono text-[7px] tracking-tight text-black leading-none">{label.barcode || label.code}</span>
+                                                <span className="font-mono text-[7px] tracking-tight text-black leading-none">{value}</span>
                                                 <span className="text-[7.5px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                        </PrintPage>
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 /* Multi-column Grid Layout (e.g. A4 Sticker Paper) */
                                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                                    {labelsToPrint.map((label, idx) => (
+                                    {labelsToPrint.map((label, idx) => {
+                                        const value = label.barcode || label.code || '';
+                                        return (
                                         <div key={idx} className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-2 text-center print:border-solid print:border-gray-200 bg-white break-inside-avoid">
                                             <div className="mb-1 w-full truncate text-[11px] font-bold leading-tight text-gray-800 print:text-black">
                                                 {label.name}
                                             </div>
-                                            <Barcode 
-                                                value={label.barcode || label.code} 
-                                                width={activeConfig.barcodeWidth} 
-                                                height={activeConfig.barcodeHeight} 
-                                                margin={0}
-                                                displayValue={false}
-                                                background="transparent"
-                                            />
+                                            {value && (
+                                                <Barcode
+                                                    value={value}
+                                                    {...barcodeProps(value, activeConfig.barcodeAreaMm, activeConfig.barcodeHeight)}
+                                                    displayValue={false}
+                                                    background="#ffffff"
+                                                    lineColor="#000000"
+                                                />
+                                            )}
                                             <div className="mt-1 flex w-full items-center justify-between px-1">
-                                                <span className="font-mono text-[10px] tracking-tight text-gray-800 print:text-black">{label.barcode || label.code}</span>
+                                                <span className="font-mono text-[10px] tracking-tight text-gray-800 print:text-black">{value}</span>
                                                 <span className="text-xs font-bold text-gray-800 print:text-black">{formatRupiah(label.selling_price)}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
