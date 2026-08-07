@@ -27,6 +27,12 @@ const QUIET_ZONE_MODULES = 10;
 const MIN_MODULE_PX = 0.9;
 const MAX_MODULE_PX = 3;
 
+// Jarak aman kiri-kanan untuk teks. Potongan die-cut tidak pernah presisi sempurna
+// dan tepi stiker melengkung sedikit saat menempel di liner, jadi teks yang mepet
+// tepi ikut terpotong. Barcode sengaja tidak diberi inset ini — quiet zone-nya
+// sudah jadi jarak aman tersendiri dan lebarnya butuh ruang penuh.
+const TEXT_INSET = 'px-[1.5mm]';
+
 // Perkiraan jumlah modul CODE128 mengikuti aturan auto-switch JsBarcode:
 // deretan angka panjang dikodekan subset C (2 digit jadi 1 simbol), sisanya subset B.
 // Tiap simbol = 11 modul, ditutup stop pattern 13 modul.
@@ -398,6 +404,11 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                 #print-area, #print-area * {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
+                    /* Antialias mengubah tepi huruf jadi piksel abu-abu, dan printer
+                       thermal mencetak abu-abu sebagai dot setengah panas — itu yang
+                       bikin teks kecil terlihat pudar. Dimatikan supaya murni hitam. */
+                    -webkit-font-smoothing: none !important;
+                    text-rendering: geometricPrecision !important;
                 }
             }
         `;
@@ -660,13 +671,13 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                                 return (
                                                     <div
                                                         key={cIdx}
-                                                        className="h-full px-[1px] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid"
+                                                        className="h-full py-[0.5mm] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white break-inside-avoid"
                                                         style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
                                                     >
-                                                        <div className="text-[6.5px] font-bold leading-none truncate w-full text-black h-[2.8mm] flex items-center justify-center">
+                                                        <div className={`${TEXT_INSET} text-[7px] font-bold leading-none truncate w-full text-black h-[2.8mm] flex items-center justify-center`}>
                                                             {label.name}
                                                         </div>
-                                                        <div className="flex items-center justify-center overflow-hidden h-[8.4mm] max-h-[8.4mm] w-full">
+                                                        <div className="flex items-center justify-center overflow-hidden h-[8mm] max-h-[8mm] w-full">
                                                             {value && (
                                                                 <Barcode
                                                                     value={value}
@@ -677,9 +688,9 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                                                 />
                                                             )}
                                                         </div>
-                                                        <div className="flex w-full items-center justify-between px-0.5 h-[2.8mm] leading-none">
-                                                            <span className="font-mono text-[5.5px] tracking-tighter text-black leading-none">{value}</span>
-                                                            <span className="text-[6px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
+                                                        <div className={`${TEXT_INSET} flex w-full items-center justify-between h-[2.8mm] leading-none`}>
+                                                            <span className="font-mono text-[6.5px] font-bold tracking-tight text-black leading-none">{value}</span>
+                                                            <span className="text-[7px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                                         </div>
                                                     </div>
                                                 );
@@ -701,8 +712,8 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                             rotate={effectiveRotate}
                                             isLast={idx === labelsToPrint.length - 1}
                                         >
-                                        <div className="h-full w-full px-1 flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white">
-                                            <div className="text-[8px] font-bold leading-none truncate w-full text-black">
+                                        <div className="h-full w-full py-[0.5mm] flex flex-col items-center justify-between text-center box-border overflow-hidden bg-white">
+                                            <div className={`${TEXT_INSET} text-[8px] font-bold leading-none truncate w-full text-black`}>
                                                 {label.name}
                                             </div>
                                             <div className="flex items-center justify-center overflow-hidden w-full my-0.5">
@@ -716,9 +727,9 @@ export default function QrPrint({ products, filters, layout = 'GudangLayout', ro
                                                     />
                                                 )}
                                             </div>
-                                            <div className="flex w-full items-center justify-between px-1 leading-none">
-                                                <span className="font-mono text-[7px] tracking-tight text-black leading-none">{value}</span>
-                                                <span className="text-[7.5px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
+                                            <div className={`${TEXT_INSET} flex w-full items-center justify-between leading-none`}>
+                                                <span className="font-mono text-[7.5px] font-bold tracking-tight text-black leading-none">{value}</span>
+                                                <span className="text-[8px] font-bold text-black leading-none">{formatRupiah(label.selling_price)}</span>
                                             </div>
                                         </div>
                                         </PrintPage>
