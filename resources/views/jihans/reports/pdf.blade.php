@@ -166,7 +166,7 @@
         @foreach($rows as $txIndex => $tx)
         <div style="margin-bottom: 6px;">
             {{-- Header transaksi --}}
-            <table style="width: 100%; border-collapse: collapse; font-size: 7.5px; border-top: 1px solid #000; border-bottom: 1px solid #000;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px; border-top: 1px solid #000; border-bottom: 1px solid #000;">
                 <tr style="font-weight: bold;">
                     <td style="width: 18%; padding: 2px 0;">No Transaksi</td>
                     <td style="width: 12%; padding: 2px 0;">Tanggal</td>
@@ -186,7 +186,7 @@
             </table>
 
             {{-- Detail item --}}
-            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px;">
+            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 9px;">
                 <thead>
                     <tr style="font-style: italic; border-bottom: 1px dashed #000;">
                         <th style="text-align: left; width: 5%; padding: 1px 0;">No.</th>
@@ -223,7 +223,7 @@
             </table>
 
             {{-- Ringkasan biaya --}}
-            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 7px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
+            <table style="width: 93%; border-collapse: collapse; margin-left: 15px; font-size: 9px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
                 <tr>
                     <td style="width: 25%; text-align: left; padding: 2px 0;">Pot. : {{ number_format($tx->discount_total ?? 0, 0, ',', '.') }}</td>
                     <td style="width: 25%; text-align: left; padding: 2px 0;">Pajak : {{ number_format($tx->tax_total ?? 0, 0, ',', '.') }}</td>

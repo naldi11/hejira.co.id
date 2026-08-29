@@ -5,7 +5,12 @@
     <title>Invoice {{ $transaction->transaction_number }}</title>
     <style>
         @page { size: 9.5in 5.5in; margin: 4mm 6mm; }
-        body { font-family: 'Helvetica', Arial, sans-serif; font-size: 11px; line-height: 1.35; color: #000; background: #fff; }
+        /* Dicetak di dot-matrix yang sama dengan faktur POS: jarum printer mencetak
+           guratan tipis dengan sangat pudar sehingga teks berketebalan normal nyaris
+           tidak terbaca. Seluruh dokumen dibuat tebal, sama seperti jihans/pos/receipt.
+           Penebalan TIDAK boleh dipindah ke blok @media print: dompdf merender dengan
+           media "screen", jadi blok itu tidak pernah dipakai di sini. */
+        body { font-family: 'Helvetica', Arial, sans-serif; font-size: 12px; font-weight: bold; line-height: 1.35; color: #000; background: #fff; }
         .header { margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 6px; }
         .logo { font-size: 18px; font-weight: bold; color: #000; }
         .company-info { float: left; width: 50%; }
@@ -16,10 +21,10 @@
         table th { background: #fff; border-bottom: 2px solid #000; padding: 6px; text-align: left; font-weight: bold; color: #000; }
         table td { border-bottom: 1px dashed #000; padding: 6px; color: #000; }
         .totals { float: right; width: 280px; }
-        .totals-row { margin-bottom: 4px; font-size: 10px; }
+        .totals-row { margin-bottom: 4px; font-size: 11px; }
         .totals-label { display: inline-block; width: 140px; color: #000; }
         .totals-value { display: inline-block; width: 130px; text-align: right; font-weight: bold; color: #000; }
-        .footer { margin-top: 25px; text-align: center; color: #000; font-size: 9px; border-top: 1px dashed #000; padding-top: 6px; }
+        .footer { margin-top: 25px; text-align: center; color: #000; font-size: 10px; border-top: 1px dashed #000; padding-top: 6px; }
         .status-paid { color: #000; font-weight: bold; text-transform: uppercase; border: 1px solid #000; padding: 1px 4px; }
         .status-pending { color: #000; font-weight: bold; text-transform: uppercase; border: 1px dashed #000; padding: 1px 4px; }
     </style>
@@ -33,7 +38,7 @@
             <div>Telp: 0812-3456-7890</div>
         </div>
         <div class="invoice-info">
-            <h2 style="margin: 0; color: #333;">FAKTUR PENJUALAN</h2>
+            <h2 style="margin: 0; color: #000;">FAKTUR PENJUALAN</h2>
             <div>No: <strong>{{ $transaction->transaction_number }}</strong></div>
             <div>Tanggal: {{ $transaction->date->format('d/m/Y') }}</div>
             <div>Waktu: {{ $transaction->time }}</div>
@@ -73,7 +78,6 @@
             </tr>
             @endforeach
         </tbody>
-    </tbody>
     </table>
 
     <div class="totals">
@@ -99,7 +103,7 @@
             <span class="totals-value">Rp {{ number_format($transaction->other_costs, 0, ',', '.') }}</span>
         </div>
         @endif
-        <div class="totals-row" style="border-top: 1px solid #333; padding-top: 5px; margin-top: 5px;">
+        <div class="totals-row" style="border-top: 1px solid #000; padding-top: 5px; margin-top: 5px;">
             <span class="totals-label" style="font-size: 14px;"><strong>Total Akhir</strong></span>
             <span class="totals-value" style="font-size: 14px;"><strong>Rp {{ number_format($transaction->grand_total, 0, ',', '.') }}</strong></span>
         </div>
