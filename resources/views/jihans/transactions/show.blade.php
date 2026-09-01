@@ -15,7 +15,12 @@
                9.5 x 11 in = continuous form yang dipakai; ukuran yang sama sudah
                dipakai (terbalik) oleh laporan: `size: 11in 9.5in`. */
             size: 9.5in 11in;
-            margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
+            /* margin: 0 TIDAK menghilangkan header & footer bawaan browser — itu
+               keliru. URL, tanggal, judul, dan nomor halaman yang ikut tercetak di
+               tepi kertas berasal dari centang "Header dan footer" di dialog cetak
+               Chrome, dan tidak ada CSS yang bisa mematikannya. Centangnya harus
+               dilepas sekali di mesin kasir; setelah itu Chrome mengingatnya. */
+            margin: 0;
         }
 
         body {
@@ -95,15 +100,15 @@
             letter-spacing: 1px;
         }
         .brand-name {
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: bold;
         }
         .brand-sub {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: bold;
         }
         .brand-detail {
-            font-size: 11px;
+            font-size: 10.5px;
         }
 
         /* ===== Metadata Table ===== */
@@ -129,7 +134,7 @@
         }
         table.items-table th {
             padding: 5px 3px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: bold;
             border-top: 1px solid #000;
             border-bottom: 3px double #000;
@@ -138,7 +143,7 @@
         table.items-table td {
             padding: 5px 3px;
             border: none;
-            font-size: 13px;
+            font-size: 12.5px;
         }
         table.items-table th.text-center, table.items-table td.text-center { text-align: center; }
         table.items-table th.text-right, table.items-table td.text-right { text-align: right; }
@@ -253,7 +258,7 @@
                     <div class="invoice-title">FAKTUR PENJUALAN</div>
                      <div class="brand-name">JIHAAN'S FOOD</div>
                     <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
-                    <div class="brand-detail">JL. Beringin Pasar 7</div>
+                    <div class="brand-detail">Jln. Datuk Kabu Pasar 3</div>
                     <div class="brand-detail">081362148090 - 085373736060</div>
                 </div>
             </div>
@@ -364,7 +369,7 @@
                 <tr>
                     <td>Jml Item</td>
                     <td>:</td>
-                    <td class="text-right font-bold" style="font-size: 12px;">{{ (int) $transaction->details->sum('quantity') }}</td>
+                    <td class="text-right font-bold" style="font-size: 11.5px;">{{ (int) $transaction->details->sum('quantity') }}</td>
                 </tr>
                 <tr>
                     <td>Potongan</td>
@@ -375,7 +380,7 @@
                 <tr>
                     <td>Tunai</td>
                     <td>:</td>
-                    <td class="text-right font-bold" style="font-size: 12px;">
+                    <td class="text-right font-bold" style="font-size: 11.5px;">
                         {{ number_format($payment ? $payment->amount : 0, 0, ',', '.') }}
                     </td>
                 </tr>
@@ -394,7 +399,7 @@
                     <td>:</td>
                     <td class="text-right">{{ number_format($transaction->other_costs ?? 0, 0, ',', '.') }}</td>
                 </tr>
-                <tr style="border-top: 1px solid #000; font-size: 12px; font-weight: bold;">
+                <tr style="border-top: 1px solid #000; font-size: 11.5px; font-weight: bold;">
                     <td style="padding-top: 3px;">Total Akhir</td>
                     <td style="padding-top: 3px;">:</td>
                     <td class="text-right font-bold text-black" style="padding-top: 3px;">
@@ -403,7 +408,7 @@
                 </tr>
             </table>
 
-            <div style="margin-top: 8px; text-align: right; font-size: 11px; font-weight: bold; line-height: 1.35;">
+            <div style="margin-top: 8px; text-align: right; font-size: 10.5px; font-weight: bold; line-height: 1.35;">
                 BANK BRI<br>
                 1092-0100-0365-563<br>
                 A/N ANNY RITONGA

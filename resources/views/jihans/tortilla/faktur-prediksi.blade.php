@@ -19,7 +19,11 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
+            /* Sans-serif, bukan Courier. Batang huruf Courier tipis dan seragam
+               lebarnya, jadi di printer jarum sebagian guratannya putus. Stack ini
+               sama dengan yang dipakai WhatsApp (Segoe UI di Windows) dan sudah
+               dipakai juga oleh jihans/transactions/show. */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #fff;
             color: #000;
             font-size: 13px;
@@ -165,7 +169,7 @@
             <div class="invoice-title">FAKTUR PREDIKSI PRODUKSI</div>
             <div class="brand-name">JIHAAN'S FOOD</div>
             <div class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</div>
-            <div class="brand-detail">JL. Beringin Pasar 7</div>
+            <div class="brand-detail">Jln. Datuk Kabu Pasar 3</div>
             <div class="brand-detail">081362148090 - 085373736060</div>
         </div>
         <div class="header-right">

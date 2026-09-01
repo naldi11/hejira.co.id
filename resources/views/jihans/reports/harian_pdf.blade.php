@@ -155,7 +155,7 @@
                 <div class="report-title">LHI DETAIL</div>
                 <h1 class="brand-name">JIHAAN'S FOOD</h1>
                 <p class="brand-sub">MANUFACTURE FOR KEBAB &amp; TORTILLA</p>
-                <p class="brand-addr">Jl. Beringin Pasar 7 | 081362148090 - 085373736060</p>
+                <p class="brand-addr">Jln. Datuk Kabu Pasar 3 | 081362148090 - 085373736060</p>
             </td>
             <td class="period-cell">
                 PERIODE : {{ $request->date_from ? \Carbon\Carbon::parse($request->date_from)->format('d/m/y') : 'Awal' }} - {{ $request->date_to ? \Carbon\Carbon::parse($request->date_to)->format('d/m/y') : \Carbon\Carbon::now()->format('d/m/y') }}
