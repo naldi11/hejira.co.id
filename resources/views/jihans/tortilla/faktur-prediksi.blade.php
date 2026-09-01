@@ -7,14 +7,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            /* JANGAN diubah jadi `9.5in auto`. `auto` tidak boleh digabung dengan
-               satuan panjang, jadi seluruh deklarasi `size` dibuang browser dan
-               halaman jatuh ke kertas bawaan driver (Letter/A4). Isi selebar 8.2in
-               lalu diperkecil agar muat di area cetak kertas itu, dan penyusutan
-               pecahan inilah yang membuat huruf jadi tipis dan kabur.
-               9.5 x 11 in = continuous form yang dipakai; ukuran yang sama sudah
-               dipakai (terbalik) oleh laporan: `size: 11in 9.5in`. */
-            size: 9.5in 11in;
+            size: 9.5in auto;
             margin: 0;
         }
 

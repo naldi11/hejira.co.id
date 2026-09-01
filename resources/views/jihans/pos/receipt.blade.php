@@ -7,20 +7,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @page {
-            /* JANGAN diubah jadi `9.5in auto`. `auto` tidak boleh digabung dengan
-               satuan panjang, jadi seluruh deklarasi `size` dibuang browser dan
-               halaman jatuh ke kertas bawaan driver (Letter/A4). Isi selebar 8.2in
-               lalu diperkecil agar muat di area cetak kertas itu, dan penyusutan
-               pecahan inilah yang membuat huruf jadi tipis dan kabur.
-               9.5 x 11 in = continuous form yang dipakai; ukuran yang sama sudah
-               dipakai (terbalik) oleh laporan: `size: 11in 9.5in`. */
-            size: 9.5in 11in;
-            /* margin: 0 TIDAK menghilangkan header & footer bawaan browser — itu
-               keliru. URL, tanggal, judul, dan nomor halaman yang ikut tercetak di
-               tepi kertas berasal dari centang "Header dan footer" di dialog cetak
-               Chrome, dan tidak ada CSS yang bisa mematikannya. Centangnya harus
-               dilepas sekali di mesin kasir; setelah itu Chrome mengingatnya. */
-            margin: 0;
+            size: 9.5in auto;
+            margin: 0; /* Menonaktifkan header & footer bawaan browser secara otomatis */
         }
 
         body {
