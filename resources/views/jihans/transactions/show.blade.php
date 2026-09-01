@@ -35,6 +35,16 @@
                 color: #000 !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                /* Guratan huruf ditebalkan 0,3px tanpa mengubah ukuran sedikit pun.
+                   Jarum printer menjatuhkan batang huruf yang lebih tipis dari satu
+                   titik, itu sebabnya huruf tercetak putus-putus. Stroke ini membuat
+                   batangnya cukup tebal untuk selalu kena jarum.
+                   Diverifikasi: Chrome ikut menuliskannya ke hasil cetak (teks digambar
+                   dua kali di PDF, isian + guratan), tinta naik 28%, dan lebar teks
+                   tetap 360px persis seperti tanpa stroke — jadi tata letak tidak
+                   bergeser sama sekali. Kalau terlihat terlalu tebal, turunkan ke
+                   0,2px; JANGAN diperbaiki dengan memperbesar hurufnya. */
+                -webkit-text-stroke: 0.3px #000;
             }
         }
 
