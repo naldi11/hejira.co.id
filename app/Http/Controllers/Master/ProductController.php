@@ -138,9 +138,12 @@ class ProductController extends Controller
             return $this->getModelClass('Product', $info['scope'])::create($data);
         });
 
-        if ($request->has('tiered_prices')) {
-            $this->saveTieredPrices($product, $request->tiered_prices);
-        }
+        // Selalu sinkronkan harga bertingkat dengan isi form. saveTieredPrices()
+        // menghapus lalu membuat ulang, jadi array kosong = semua tier dihapus.
+        // Catatan: dengan forceFormData, Inertia tidak mengirim array kosong sama
+        // sekali, sehingga $request->has('tiered_prices') bernilai false saat semua
+        // tier dihapus — memakai has() membuat tier lama tidak pernah terhapus.
+        $this->saveTieredPrices($product, $request->input('tiered_prices', []));
 
         $this->logger->log('create', 'master.product', "Tambah produk: {$product->name}", $product);
 
@@ -233,9 +236,12 @@ class ProductController extends Controller
 
         $product->update($data);
         
-        if ($request->has('tiered_prices')) {
-            $this->saveTieredPrices($product, $request->tiered_prices);
-        }
+        // Selalu sinkronkan harga bertingkat dengan isi form. saveTieredPrices()
+        // menghapus lalu membuat ulang, jadi array kosong = semua tier dihapus.
+        // Catatan: dengan forceFormData, Inertia tidak mengirim array kosong sama
+        // sekali, sehingga $request->has('tiered_prices') bernilai false saat semua
+        // tier dihapus — memakai has() membuat tier lama tidak pernah terhapus.
+        $this->saveTieredPrices($product, $request->input('tiered_prices', []));
 
 
         $this->logger->log('update', 'master.product', "Update produk: {$product->name}", $product, $old, $product->fresh()->toArray());
