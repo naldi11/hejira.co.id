@@ -1,4 +1,4 @@
-// Thin wrapper around Google Material Symbols so pages don't repeat the class string.
+// Material Symbols are bundled locally by app.css, including filled variants.
 export default function Icon({ name, className = '', filled = false, ...props }) {
     return (
         <span

@@ -155,13 +155,20 @@
     "name": "format"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DOaG6yqe.css",
+    "file": "assets/app-DkmaABLb.css",
     "name": "app",
     "names": [
       "app.css"
     ],
     "src": "resources/css/app.css",
-    "isEntry": true
+    "isEntry": true,
+    "assets": [
+      "assets/material-symbols-outlined-Bf8OVgit.woff2"
+    ]
+  },
+  "resources/fonts/material-symbols-outlined.woff2": {
+    "file": "assets/material-symbols-outlined-Bf8OVgit.woff2",
+    "src": "resources/fonts/material-symbols-outlined.woff2"
   },
   "resources/js/Pages/Auth/ConfirmPassword.jsx": {
     "file": "assets/ConfirmPassword-CQQlLFAY.js",
