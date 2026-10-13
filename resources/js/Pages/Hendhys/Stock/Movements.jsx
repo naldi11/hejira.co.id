@@ -82,7 +82,7 @@ export default function HendhysStockMovements({ movements, branches, products, i
                                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${m.type === 'in' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'}`}>{m.type === 'in' ? 'Masuk' : 'Keluar'}</span>
                                             </td>
                                             <td className="px-6 py-4 text-center font-black tabular-nums text-gray-800 dark:text-white/90">{m.quantity}</td>
-                                            <td className="px-6 py-4">{m.branch_transfer_id ? <Link className="text-brand-500 underline" href={route('branch-transfers.show', m.branch_transfer_id)}>Lihat mutasi antar cabang</Link> : <span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">{(m.source ?? '').replace(/_/g, ' ')}</span>}</td>
+                                            <td className="px-6 py-4">{m.production_material_id ? <span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">Barang untuk produksi</span> : m.branch_transfer_id ? <Link className="text-brand-500 underline" href={route('branch-transfers.show', m.branch_transfer_id)}>Lihat mutasi antar cabang</Link> : <span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">{(m.source ?? '').replace(/_/g, ' ')}</span>}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{m.operator}</td>
                                         </tr>
                                     ))}

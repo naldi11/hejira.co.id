@@ -67,6 +67,7 @@ export default function StockMovements({ movements, filters }) {
                                 <option value="purchase_receiving">Penerimaan Barang (GRN)</option>
                                 <option value="transfer_out">Transfer Keluar (DO)</option>
                                 <option value="adjustment">Penyesuaian (SO)</option>
+                                <option value="production_material">Barang untuk Produksi</option>
                             </select>
                             <Button type="submit" size="sm">Filter</Button>
                             {hasFilter && <Link href={route('gudang.stock.movements')} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"><Icon name="refresh" /></Link>}
@@ -102,7 +103,8 @@ export default function StockMovements({ movements, filters }) {
                                                 </td>
                                                 <td className={`px-4 py-4 text-right font-bold tabular-nums ${isIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-605 dark:text-rose-400'}`}>{isIn ? '+' : '-'}{formatQty(m.quantity)}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300">{SOURCE_LABELS[m.source] ?? m.source}</span>
+                                                    <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300">{m.source_label ?? SOURCE_LABELS[m.source] ?? m.source}</span>
+                                                    {m.production_material_id && <Link className="block text-xs text-brand-500 underline" href={route('production-materials.show', m.production_material_id)}>Lihat rincian barang produksi</Link>}
                                                     {m.doc_number ? (
                                                         <span className="text-[10px] font-bold text-brand-500 dark:text-brand-400">Doc: {m.doc_number}</span>
                                                     ) : m.reference_id ? (

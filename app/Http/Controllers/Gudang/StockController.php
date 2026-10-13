@@ -47,7 +47,9 @@ class StockController extends Controller
         $movements = JihansGudangStockMovement::with(['product', 'creator'])
             ->when($request->filled('search'), fn ($q) => $q->whereHas('product', fn ($p) => $p->where('name', 'like', "%{$request->search}%")))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
-            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->source))
+            ->when($request->filled('source'), fn ($q) => $request->source === 'production_material'
+                ? $q->whereNotNull('production_material_id')
+                : $q->where('source', $request->source)->when($request->source === 'adjustment', fn ($q) => $q->whereNull('production_material_id')))
             ->orderByDesc('created_at')
             ->paginate(20)->withQueryString();
 

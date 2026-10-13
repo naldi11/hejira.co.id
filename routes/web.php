@@ -25,6 +25,13 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->group(function() {
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/production-materials', [\App\Http\Controllers\ProductionMaterialController::class, 'index'])->name('production-materials.index');
+        Route::get('/production-materials/create', [\App\Http\Controllers\ProductionMaterialController::class, 'create'])->name('production-materials.create');
+        Route::post('/production-materials', [\App\Http\Controllers\ProductionMaterialController::class, 'store'])->name('production-materials.store');
+        Route::get('/production-materials/{transaction}', [\App\Http\Controllers\ProductionMaterialController::class, 'show'])->whereNumber('transaction')->name('production-materials.show');
+        Route::post('/production-materials/{transaction}/cancel', [\App\Http\Controllers\ProductionMaterialController::class, 'cancel'])->whereNumber('transaction')->name('production-materials.cancel');
+    });
     Route::middleware('role:super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
         Route::get('/branch-transfers', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.index');
         Route::get('/branch-transfers/history', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.history');

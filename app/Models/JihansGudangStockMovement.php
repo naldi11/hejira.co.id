@@ -33,6 +33,7 @@ class JihansGudangStockMovement extends Model
 
     public function getDocumentNumberAttribute(): ?string
     {
+        if ($this->production_material_id) return \Illuminate\Support\Facades\DB::table('production_material_transactions')->where('id', $this->production_material_id)->value('number');
         if (!$this->reference_id) {
             return null;
         }

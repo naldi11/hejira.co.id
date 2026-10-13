@@ -76,7 +76,11 @@ class BranchStockTransfers
         if ($delta > 0) DB::table($table)->insertOrIgnore($row);
         $q = $this->stockQuery($branch, $item->product_id);
         $stock = $q->lockForUpdate()->first();
-        if (!$stock || (int) $stock->unit_id !== (int) $item->unit_id) throw ValidationException::withMessages(['items' => 'Kartu stok atau satuan tidak sesuai untuk '.$item->product_name.'. Periksa stok lokasi ini.']);
+        if (!$stock) throw ValidationException::withMessages(['items' => 'Kartu stok '.$item->product_name.' belum tersedia di '.$branch->name.'. Mutasi tidak disimpan; saldo stok tidak berubah.']);
+        if ((int) $stock->unit_id !== (int) $item->unit_id) {
+            $stockUnit = DB::table('master_units')->where('id', $stock->unit_id)->value('abbreviation') ?? 'tidak diketahui';
+            throw ValidationException::withMessages(['items' => 'Satuan '.$item->product_name.' di '.$branch->name.' adalah '.$stockUnit.', sedangkan satuan mutasi adalah '.$item->unit_name.'. Periksa master produk dan kartu stok; konversi satuan tidak dilakukan otomatis. Mutasi tidak disimpan; saldo stok tidak berubah.']);
+        }
         $before = (int) round((float) $stock->quantity);
         if ($before + $delta < 0) throw ValidationException::withMessages(['items' => 'Stok '.$item->product_name.' tidak cukup. Tersedia '.$before.' '.$item->unit_name.'.']);
         $q->update(['quantity' => $before + $delta, 'last_updated' => now()]);

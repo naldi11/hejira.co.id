@@ -383,6 +383,44 @@ class BranchStockTransferTest extends TestCase
         $this->assertDatabaseHas('branch_stock_transfers', ['number' => 'MUT-20261012-0001']);
     }
 
+    public function test_mutation_uses_product_master_unit_for_hendhys_and_jihans_without_defaulting_to_pcs(): void
+    {
+        $pack = Unit::create(['name' => 'Kemasan', 'abbreviation' => 'PACK', 'entity_scope' => 'all']);
+        foreach (['hendhys', 'jihans'] as $entity) {
+            $a = $this->branch($entity); $b = $this->branch(); $p = $this->product();
+            $p->update(['unit_id' => $pack->id]); $this->stock($a, $p);
+            $this->actingAs($this->user('kasir_'.$entity, $entity, $a));
+            $this->get(route('branch-transfers.create'))->assertInertia(fn (Assert $page) => $page
+                ->where('products.0.unit', 'PACK')->where('products.0.stock_unit', 'PACK')->where('products.0.unit_matches', true));
+            $data = $this->data($a, $b, $p);
+            // A manually supplied unit cannot override the product master.
+            $data['items'][0]['unit_id'] = Unit::where('abbreviation', 'PCS')->value('id');
+            $this->post(route('branch-transfers.store'), $data)->assertSessionHas('success');
+            $this->assertDatabaseHas('branch_stock_transfer_items', ['product_id' => $p->id, 'unit_id' => $pack->id, 'unit_name' => 'PACK', 'quantity' => 7, 'received_quantity' => 7]);
+            $this->assertDatabaseHas($entity === 'jihans' ? 'jihans_retail_stock' : 'hendhys_stock_branch', ['product_id' => $p->id, 'unit_id' => $pack->id, 'quantity' => 13]);
+            $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $b->id, 'product_id' => $p->id, 'unit_id' => $pack->id, 'quantity' => 7]);
+        }
+    }
+
+    public function test_wrong_source_unit_is_visible_in_form_and_cannot_change_stocks_even_with_direct_post(): void
+    {
+        $pack = Unit::create(['name' => 'Kemasan', 'abbreviation' => 'PACK', 'entity_scope' => 'all']);
+        foreach (['hendhys', 'jihans'] as $entity) {
+            $a = $this->branch($entity); $b = $this->branch(); $p = $this->product(); $this->stock($a, $p);
+            $table = $entity === 'jihans' ? 'jihans_retail_stock' : 'hendhys_stock_branch';
+            DB::table($table)->where('product_id', $p->id)->update(['unit_id' => $pack->id]);
+            $this->actingAs($this->user('kasir_'.$entity, $entity, $a));
+            $this->get(route('branch-transfers.create'))->assertInertia(fn (Assert $page) => $page
+                ->where('products.0.unit', 'PCS')->where('products.0.stock_unit', 'PACK')->where('products.0.unit_matches', false)->where('products.0.quantity', 20));
+            $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertSessionHasErrors('items')
+                ->assertSessionHas('errors', fn ($errors) => str_contains($errors->first('items'), $a->name)
+                    && str_contains($errors->first('items'), 'PACK') && str_contains($errors->first('items'), 'PCS'));
+            $this->assertDatabaseHas($table, ['product_id' => $p->id, 'unit_id' => $pack->id, 'quantity' => 20]);
+            $this->assertDatabaseMissing('hendhys_stock_branch', ['branch_id' => $b->id, 'product_id' => $p->id]);
+        }
+        foreach (['branch_stock_transfers', 'branch_stock_transfer_receipts', 'branch_stock_transfer_items', 'branch_transfer_daily_sequences', 'hendhys_stock_movements', 'jihans_retail_stock_movements'] as $table) $this->assertDatabaseCount($table, 0);
+    }
+
     public function test_history_searches_snapshots_receivers_items_and_notes_without_leaking_other_branches(): void
     {
         $a = $this->branch(); $b = $this->branch(); $c = $this->branch(); $p = $this->product(); $this->stock($a, $p);

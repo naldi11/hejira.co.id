@@ -22,9 +22,10 @@ class OwnerStockMovement
             'movement' => [
                 'id' => $movement->id, 'product' => $movement->product?->name ?? 'Produk tidak tersedia',
                 'code' => $movement->product?->code, 'type' => $movement->type,
-                'source' => $document && $document['status'] === 'writeoff_reversed' ? 'Pembatalan penghapusan stok oleh owner'
+                'source' => $movement->production_material_id ? 'Barang untuk produksi oleh Super Admin'
+                    : ($document && $document['status'] === 'writeoff_reversed' ? 'Pembatalan penghapusan stok oleh owner'
                     : ($document && in_array($document['status'], ['written_off', 'writeoff_cancelled'], true) ? 'Penghapusan sisa produksi oleh owner'
-                    : ($this->isShortfall($movement) ? 'Pengembalian selisih pengiriman' : (self::SOURCES[$movement->source] ?? 'Mutasi stok lainnya'))),
+                    : ($this->isShortfall($movement) ? 'Pengembalian selisih pengiriman' : (self::SOURCES[$movement->source] ?? 'Mutasi stok lainnya')))),
                 'quantity' => $movement->quantity, 'before' => $movement->quantity_before,
                 'after' => $movement->quantity_after, 'delta' => $movement->quantity_after - $movement->quantity_before,
                 'unit' => $movement->product?->unit?->abbreviation ?? '-',
@@ -32,9 +33,10 @@ class OwnerStockMovement
                 'user' => $movement->creator?->name ?? 'Pengguna tidak tersedia', 'notes' => $movement->notes,
             ],
             'document' => $document,
-            'document_message' => $document ? null : ($movement->source === 'adjustment' && !$movement->reference_id
+            'document_message' => $movement->production_material_id ? 'Dokumen barang produksi dikelola melalui menu khusus Super Admin. Nomor transaksi tercantum pada catatan; perubahan saldo tetap terlihat di sini.'
+                : ($document ? null : ($movement->source === 'adjustment' && !$movement->reference_id
                 ? 'Penyesuaian ini dicatat langsung pada stok, sehingga tidak memiliki dokumen transaksi terpisah.'
-                : 'Dokumen asal mutasi belum tersedia atau rujukannya tidak dapat dipastikan. Rincian mutasi tetap ditampilkan di atas.'),
+                : 'Dokumen asal mutasi belum tersedia atau rujukannya tidak dapat dipastikan. Rincian mutasi tetap ditampilkan di atas.')),
         ];
     }
 

@@ -5,7 +5,9 @@ const route = window.route;
 function Form({ sources, destinations, from, products, today, currentTime }) {
     const { auth } = usePage().props;
     const form = useForm({ request_key: crypto.randomUUID(), from_branch_id: from.id, to_branch_id: '', date: today, occurred_time: currentTime, physical_sender_name: auth.user.name, physical_receiver_name: '', reason: '', notes: '', courier_name: '', items: [{ product_id: '', quantity: '', notes: '' }], confirmed: false });
-    const changeItem = (index, key, value) => form.setData('items', form.data.items.map((item, i) => i === index ? { ...item, [key]: value } : item));
+    const changeItem = (index, key, value) => form.setData('items', form.data.items.map((item, i) => i === index ? { ...item, [key]: value, ...(key === 'product_id' ? { quantity: '' } : {}) } : item));
+    const blockedProducts = products.filter(p => !p.unit_matches);
+    const invalidUnitSelected = form.data.items.some(item => item.product_id && !products.find(p => String(p.id) === String(item.product_id))?.unit_matches);
     return <form className="space-y-6" onSubmit={e => { e.preventDefault(); form.post(route('branch-transfers.store')); }}>
         <Errors errors={form.errors} />
         <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-900"><strong>Pencatatan setelah barang diterima</strong><p className="mt-2 text-sm">Status otomatis Selesai diterima. Sekali simpan, stok asal berkurang dan stok penerima bertambah. Pastikan mutasi ini belum pernah dicatat.</p></div>
@@ -23,21 +25,23 @@ function Form({ sources, destinations, from, products, today, currentTime }) {
             <label className="block">Catatan mutasi / kondisi saat diterima (opsional)<textarea maxLength={2000} className={`${input} mt-2`} placeholder="Contoh: diterima lengkap, kondisi baik, bukti serah terima nomor 12." value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} /></label>
         </div>
         <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Barang yang telah diterima</h2>
+            <p className="text-sm text-gray-500">Satuan otomatis mengikuti master produk, misalnya PCS atau PACK. Isi jumlah dalam satuan tersebut. Produk yang sama harus memiliki satuan yang sama di stok asal dan tujuan; isi PACK ke PCS tidak dikonversi otomatis.</p>
             {products.length === 0 && <p className="text-red-600">Belum ada stok siap jual di saldo asal. Mutasi membutuhkan stok yang tersedia.</p>}
+            {blockedProducts.length > 0 && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900"><strong>Ada satuan stok yang perlu diperiksa</strong><ul className="mt-2 list-disc space-y-1 pl-5">{blockedProducts.map(p => <li key={p.id}>{p.name}: stok asal {p.quantity} {p.stock_unit ?? '(satuan tidak diketahui)'}, master produk {p.unit ?? '(belum tersedia)'}. Produk ini belum dapat dimutasi. Minta admin memeriksa master produk dan kartu stok.</li>)}</ul></div>}
             {form.data.items.map((item, index) => {
                 const product = products.find(p => String(p.id) === String(item.product_id));
                 return <div key={index} className="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
                     <div className="flex items-center justify-between gap-3"><strong>Barang {index + 1}</strong>{form.data.items.length > 1 && <button type="button" className="text-red-600" onClick={() => form.setData('items', form.data.items.filter((_, i) => i !== index))}>Hapus baris</button>}</div>
-                    <label className="block">Produk<select required className={`${input} mt-1`} value={item.product_id} onChange={e => changeItem(index, 'product_id', e.target.value)}><option value="">Pilih produk dari stok asal</option>{products.map(p => <option key={p.id} value={p.id} disabled={form.data.items.some((other, i) => i !== index && String(other.product_id) === String(p.id))}>{p.name} · {p.quantity} {p.unit}</option>)}</select></label>
-                    <label className="block">Jumlah dipindahkan dan diterima<input required type="number" min="1" step="1" max={product?.quantity ?? 999999999} className={`${input} mt-1`} value={item.quantity} onChange={e => changeItem(index, 'quantity', e.target.value)} /></label>
-                    {product && <p className="text-sm text-gray-500">Tersedia {product.quantity} {product.unit} · Sisa stok asal setelah dicatat: {product.quantity - Number(item.quantity || 0)} {product.unit}</p>}
+                    <label className="block">Produk<select required className={`${input} mt-1`} value={item.product_id} onChange={e => changeItem(index, 'product_id', e.target.value)}><option value="">Pilih produk dari stok asal</option>{products.map(p => <option key={p.id} value={p.id} disabled={!p.unit_matches || form.data.items.some((other, i) => i !== index && String(other.product_id) === String(p.id))}>{p.name} · {p.quantity} {p.stock_unit ?? '?'}{!p.unit_matches ? ' · Satuan belum sesuai' : ''}</option>)}</select></label>
+                    <div className="grid gap-4 sm:grid-cols-2"><label className="block">Jumlah dipindahkan dan diterima{product?.unit_matches ? ` (${product.unit})` : ''}<input required type="number" min="1" step="1" max={product?.quantity ?? 999999999} disabled={!product?.unit_matches} className={`${input} mt-1`} value={item.quantity} onChange={e => changeItem(index, 'quantity', e.target.value)} /></label><label className="block">Satuan otomatis dari master produk<input readOnly className={`${input} mt-1 bg-gray-50 dark:bg-gray-800`} value={product?.unit ?? ''} placeholder="Pilih produk terlebih dahulu" /><span className="mt-1 block text-sm text-gray-500">Satuan ini juga digunakan pada stok penerima dan riwayat mutasi.</span></label></div>
+                    {product?.unit_matches && <p className="text-sm text-gray-500">Tersedia {product.quantity} {product.unit} · Sisa stok asal setelah dicatat: {product.quantity - Number(item.quantity || 0)} {product.unit}</p>}
                     <label className="block">Catatan barang (opsional)<input maxLength={500} className={`${input} mt-1`} placeholder="Contoh: 2 kotak, kondisi baik." value={item.notes} onChange={e => changeItem(index, 'notes', e.target.value)} /></label>
                 </div>;
             })}<button type="button" disabled={form.data.items.length >= 100 || form.processing} className="text-brand-500 disabled:opacity-50" onClick={() => form.setData('items', [...form.data.items, { product_id: '', quantity: '', notes: '' }])}>+ Tambah barang</button>
         </div>
         <div className={`${panel} space-y-4`}><p className="text-sm text-gray-500">Masukkan hanya jumlah yang sudah diterima. Periksa tanggal, asal, tujuan, nama petugas, dan barang sebelum menyimpan. Riwayat beserta perubahan saldo stok akan tersimpan.</p>
             <label className="flex items-start gap-3"><input type="checkbox" checked={form.data.confirmed} onChange={e => form.setData('confirmed', e.target.checked)} />Barang sudah diterima oleh cabang tujuan dan belum pernah dicatat sebagai mutasi. Rincian ini sudah saya periksa.</label>
-            <button disabled={form.processing || !form.data.confirmed || products.length === 0} className={button}>Simpan mutasi selesai</button>
+            <button disabled={form.processing || !form.data.confirmed || !products.some(p => p.unit_matches) || invalidUnitSelected} className={button}>Simpan mutasi selesai</button>
         </div>
     </form>;
 }

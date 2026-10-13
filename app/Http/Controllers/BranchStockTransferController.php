@@ -68,10 +68,13 @@ class BranchStockTransferController extends Controller
         abort_unless($from, 403);
         $table = $from->entity === 'jihans' ? 'jihans_retail_stock' : 'hendhys_stock_branch';
         $products = DB::table($table.' as s')->join('master_products as p', 'p.id', '=', 's.product_id')
-            ->join('master_units as u', 'u.id', '=', 's.unit_id')->whereNull('p.deleted_at')->where('p.status', 'active')->where('s.quantity', '>', 0)
+            ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')
+            ->leftJoin('master_units as su', 'su.id', '=', 's.unit_id')
+            ->whereNull('p.deleted_at')->where('p.status', 'active')->where('s.quantity', '>', 0)
             ->when($from->entity === 'hendhys', fn ($q) => $q->where('s.branch_id', $from->id))
-            ->orderBy('p.name')->get(['p.id', 'p.name', 'p.code', 'u.abbreviation as unit', 's.quantity'])
-            ->map(fn ($p) => [...(array) $p, 'quantity' => (int) round((float) $p->quantity)]);
+            ->orderBy('p.name')->get(['p.id', 'p.name', 'p.code', 'p.unit_id', 's.unit_id as stock_unit_id', 'u.abbreviation as unit', 'su.abbreviation as stock_unit', 's.quantity'])
+            ->map(fn ($p) => [...(array) $p, 'quantity' => (int) round((float) $p->quantity),
+                'unit_matches' => $p->unit !== null && (int) $p->unit_id === (int) $p->stock_unit_id]);
         return Inertia::render('BranchTransfers/Create', [
             'sources' => $sources->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'entity' => $b->entity]),
             'destinations' => $this->transfers->branches()->where('entity', 'hendhys')->where('id', '!=', $from->id)->values()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
