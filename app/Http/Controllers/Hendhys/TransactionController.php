@@ -37,7 +37,8 @@ class TransactionController extends Controller
                 \Carbon\Carbon::parse($request->end_date)->endOfDay()
             ]);
         } elseif ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
+            $query->where('created_at', '>=', \App\Support\DateFilter::start($request->date))
+                ->where('created_at', '<', \App\Support\DateFilter::nextDay($request->date));
         }
 
         if ($request->filled('shift_id')) {

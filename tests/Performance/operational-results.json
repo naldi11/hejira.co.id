@@ -1,0 +1,134 @@
+{
+  "environment": "PHP 8.3.30 / isolated SQLite :memory:",
+  "method": "One in-process Inertia GET per page against isolated synthetic data; no browser, network or operational writes. Single-run timings vary and are not production guarantees.",
+  "fixture": {
+    "products": 500,
+    "movements": 9000,
+    "production_lots": 5500,
+    "active_lots": 500,
+    "users": 504,
+    "transactions_per_unit": 1000,
+    "shifts_per_unit": 41,
+    "incoming_shipments_per_unit": 200
+  },
+  "pages": {
+    "superadmin_dashboard": {
+      "request_ms": 86.96,
+      "query_count": 11,
+      "sql_ms": 1.85,
+      "json_bytes": 518,
+      "slowest_query_ms": 0.62
+    },
+    "superadmin_users": {
+      "request_ms": 90.72,
+      "query_count": 14,
+      "sql_ms": 2.79,
+      "json_bytes": 11300,
+      "slowest_query_ms": 0.55
+    },
+    "superadmin_products": {
+      "request_ms": 56.57,
+      "query_count": 11,
+      "sql_ms": 2.45,
+      "json_bytes": 10224,
+      "slowest_query_ms": 0.58
+    },
+    "superadmin_stock": {
+      "request_ms": 41.75,
+      "query_count": 13,
+      "sql_ms": 3.32,
+      "json_bytes": 6785,
+      "slowest_query_ms": 1.21
+    },
+    "superadmin_movements": {
+      "request_ms": 33.29,
+      "query_count": 10,
+      "sql_ms": 1.73,
+      "json_bytes": 8016,
+      "slowest_query_ms": 0.52
+    },
+    "superadmin_shipments": {
+      "request_ms": 30.84,
+      "query_count": 10,
+      "sql_ms": 2.1,
+      "json_bytes": 5217,
+      "slowest_query_ms": 0.88
+    },
+    "jihans_dashboard": {
+      "request_ms": 25.88,
+      "query_count": 14,
+      "sql_ms": 2.9,
+      "json_bytes": 1538,
+      "slowest_query_ms": 0.72
+    },
+    "jihans_stock": {
+      "request_ms": 29.69,
+      "query_count": 12,
+      "sql_ms": 3.64,
+      "json_bytes": 6944,
+      "slowest_query_ms": 1.4
+    },
+    "jihans_incoming": {
+      "request_ms": 24.89,
+      "query_count": 10,
+      "sql_ms": 2.03,
+      "json_bytes": 4771,
+      "slowest_query_ms": 0.63
+    },
+    "jihans_pos": {
+      "request_ms": 36.59,
+      "query_count": 12,
+      "sql_ms": 2.8,
+      "json_bytes": 3971,
+      "slowest_query_ms": 1.08
+    },
+    "jihans_shift_report": {
+      "request_ms": 143.76,
+      "query_count": 13,
+      "sql_ms": 10.18,
+      "json_bytes": 24690,
+      "slowest_query_ms": 4.44
+    },
+    "hendhys_dashboard": {
+      "request_ms": 37.11,
+      "query_count": 14,
+      "sql_ms": 3.38,
+      "json_bytes": 902,
+      "slowest_query_ms": 0.7
+    },
+    "hendhys_stock": {
+      "request_ms": 40.81,
+      "query_count": 13,
+      "sql_ms": 4.08,
+      "json_bytes": 6677,
+      "slowest_query_ms": 1.6
+    },
+    "hendhys_incoming": {
+      "request_ms": 46.38,
+      "query_count": 11,
+      "sql_ms": 2.1,
+      "json_bytes": 6653,
+      "slowest_query_ms": 0.72
+    },
+    "hendhys_pos": {
+      "request_ms": 40.77,
+      "query_count": 11,
+      "sql_ms": 3.52,
+      "json_bytes": 4096,
+      "slowest_query_ms": 2.02
+    },
+    "hendhys_shift_report": {
+      "request_ms": 145.76,
+      "query_count": 14,
+      "sql_ms": 11.53,
+      "json_bytes": 24875,
+      "slowest_query_ms": 4.58
+    }
+  },
+  "mysql_read_only_comparison": {
+    "method": "Compared the existing single-shift calculations with the batched loader for 30 closed shifts on the local MySQL dataset.",
+    "before_queries": 60,
+    "after_queries": 2,
+    "payment_totals_identical": true
+  }
+}

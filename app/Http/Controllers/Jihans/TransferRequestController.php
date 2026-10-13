@@ -32,8 +32,10 @@ class TransferRequestController extends Controller
             ->paginate(15)->withQueryString();
 
         $incoming = TransferOut::where('to_entity', 'jihans')->where('status', 'sent')
-            ->with(['creator', 'request'])->get()
-            ->map(fn ($do) => [
+            ->with(['creator', 'request'])
+            ->when($request->filled('search'), fn ($q) => $q->where('transfer_number', 'like', "%{$request->search}%"))
+            ->orderByDesc('id')->paginate(20, ['*'], 'incoming_page')->withQueryString();
+        $incomingRows = $incoming->getCollection()->map(fn ($do) => [
                 'id'              => $do->id,
                 'transfer_number' => $do->transfer_number,
                 'date'            => $do->date?->format('d/m/Y'),
@@ -43,7 +45,8 @@ class TransferRequestController extends Controller
 
         return Inertia::render('Jihans/TransferRequests/Index', [
             'requests'          => TransferRequestResource::collection($requests),
-            'incomingTransfers' => $incoming,
+            'incomingTransfers' => $incomingRows,
+            'incomingPagination' => \App\Support\ListPage::metadata($incoming),
             'filters'           => $request->only('search', 'status'),
         ]);
     }

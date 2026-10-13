@@ -8,7 +8,7 @@ import { SkeletonTableRows } from '@/Components/Skeleton';
 
 const route = window.route;
 
-export default function TransferToBranchIndex({ transfers, gudangTransfers = [], filters, isPusat }) {
+export default function TransferToBranchIndex({ transfers, gudangTransfers = [], gudangPagination, filters, isPusat }) {
     const [loading, setLoading] = useState(false);
     
     // Get initial tab from query params
@@ -32,7 +32,7 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
 
     const reload = (e) => {
         e?.preventDefault();
-        const p = {};
+        const p = { tab: activeTab };
         Object.entries(form).forEach(([k, v]) => {
             if (v) p[k] = v;
         });
@@ -83,7 +83,7 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-                    {activeTab === 'pusat' && (
+                    {(
                         <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.01]">
                             <form onSubmit={reload} className="flex flex-wrap items-center gap-3">
                                 <div className="relative min-w-[200px] flex-1">
@@ -180,9 +180,9 @@ export default function TransferToBranchIndex({ transfers, gudangTransfers = [],
                             </tbody>
                         </table>
                     </div>
-                    {activeTab === 'pusat' && transfers.meta?.links && (
+                    {(activeTab === 'pusat' ? transfers.meta?.links : gudangPagination?.links) && (
                         <div className="border-t border-gray-100 p-4 dark:border-gray-800">
-                            <Pagination links={transfers.meta.links} />
+                            <Pagination links={activeTab === 'pusat' ? transfers.meta.links : gudangPagination.links} />
                         </div>
                     )}
                 </div>

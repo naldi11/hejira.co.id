@@ -21,7 +21,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only('search', 'role', 'entity', 'branch_id', 'status');
+        $filters = $request->only('search', 'role', 'entity', 'branch_id', 'status', 'per_page');
         $units = config('user_access.units');
         if (User::where('entity', 'owner')->exists()) {
             $units[] = ['value' => 'owner', 'label' => 'Pemantauan seluruh unit', 'sublabel' => 'Khusus akun pemilik'];
@@ -40,8 +40,11 @@ class UserController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('is_active', $request->status === 'aktif'))
             ->orderBy('name');
 
+        $users = \App\Support\ListPage::paginate($query, $request);
+
         return Inertia::render('Master/Users/Index', [
-            'users' => $query->get()->map(fn ($u) => [
+            'pagination' => \App\Support\ListPage::metadata($users),
+            'users' => $users->getCollection()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,

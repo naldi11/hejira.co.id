@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import usePosCatalogue from '@/hooks/usePosCatalogue';
+import CataloguePages from '@/Components/CataloguePages';
+import { useEffect, useRef, useState } from 'react';
 import Icon from '@/Components/Icon';
 import { formatQty, formatRupiah } from '@/lib/format';
 
 /** Item-search modal for the POS. Click a row (or Enter) to add it to the cart. */
-export default function SearchModal({ products, onAdd, onClose }) {
-    const [query, setQuery] = useState('');
+export default function SearchModal({ products, catalogue: cataloguePage, onAdd, onClose }) {
+    const catalogue = usePosCatalogue(window.route('jihans.pos.index'), products.slice(0, 20), cataloguePage);
+    const { query, setQuery } = catalogue;
     const [active, setActive] = useState(0);
     const [selected, setSelected] = useState({}); // Stores selected product objects: { [id]: product }
     const inputRef = useRef(null);
     const listRef = useRef(null);
+    const pendingEnter = useRef(null);
 
     // Auto-focus search input on mount
     useEffect(() => {
@@ -16,15 +20,17 @@ export default function SearchModal({ products, onAdd, onClose }) {
         return () => clearTimeout(t);
     }, []);
 
-    const filtered = useMemo(() => {
-        const q = query.toLowerCase().trim();
-        if (!q) return products;
-        return products.filter((p) =>
-            p.name.toLowerCase().includes(q) ||
-            (p.code && p.code.toLowerCase().includes(q)) ||
-            (p.barcode && p.barcode.toLowerCase().includes(q))
-        );
-    }, [query, products]);
+    const filtered = catalogue.products;
+
+    // A barcode scanner may press Enter before the remote search has completed.
+    useEffect(() => {
+        if (pendingEnter.current === null) return;
+        if (pendingEnter.current !== query || catalogue.error) { pendingEnter.current = null; return; }
+        if (catalogue.loading) return;
+        pendingEnter.current = null;
+        const product = filtered.find(p => p.barcode === query.trim() || p.code === query.trim()) || filtered[0];
+        if (product && product.current_stock > 0) onAdd([product]);
+    }, [query, catalogue.loading, catalogue.error, filtered, onAdd]);
 
     // Reset active index when filtered results change
     useEffect(() => {
@@ -77,6 +83,8 @@ export default function SearchModal({ products, onAdd, onClose }) {
             const selectedList = Object.values(selected);
             if (selectedList.length > 0) {
                 onAdd(selectedList);
+            } else if (catalogue.loading) {
+                pendingEnter.current = query;
             } else {
                 const p = filtered[active];
                 if (p && p.current_stock > 0) onAdd([p]);
@@ -133,7 +141,7 @@ export default function SearchModal({ products, onAdd, onClose }) {
                         )}
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                        <span>{filtered.length} produk ditemukan</span>
+                        <span>{filtered.length} produk pada halaman ini</span>
                         <span className="flex items-center gap-1.5">
                             Gunakan <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">↑↓</kbd> navigasi, 
                             <kbd className="rounded border border-gray-250 bg-gray-50 px-1 py-0.5 font-mono text-[9px] dark:border-gray-700 dark:bg-gray-900">Spasi</kbd> centang, 
@@ -144,7 +152,7 @@ export default function SearchModal({ products, onAdd, onClose }) {
 
                 {/* Product list */}
                 <div ref={listRef} className="custom-scrollbar flex-1 overflow-y-auto">
-                    {filtered.length === 0 ? (
+                    {catalogue.loading ? <p className="p-8 text-center text-sm text-gray-500">Mencari produk…</p> : filtered.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-16 text-gray-400 dark:text-gray-600">
                             <Icon name="search_off" className="text-[40px] text-gray-300 dark:text-gray-700" />
                             <p className="text-sm font-semibold">Produk tidak ditemukan</p>
@@ -239,6 +247,7 @@ export default function SearchModal({ products, onAdd, onClose }) {
                     )}
                 </div>
 
+                <CataloguePages catalogue={catalogue} />
                 {/* Footer */}
                 <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/80 px-5 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
                     <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
@@ -248,7 +257,7 @@ export default function SearchModal({ products, onAdd, onClose }) {
                     <div className="flex items-center gap-2">
                         {hasSelected && (
                             <button
-                                onClick={() => onAdd(Object.values(selected))}
+                                disabled={catalogue.loading} onClick={() => onAdd(Object.values(selected))}
                                 className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
                             >
                                 <Icon name="check" className="text-[16px]" />

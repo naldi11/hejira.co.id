@@ -65,6 +65,26 @@ class StockOpnameTest extends TestCase
         return ['product_id' => $p->id, 'expected_quantity' => 10, 'quantity' => $quantity, 'notes' => 'Hitungan fisik sudah diverifikasi petugas.', 'confirmed' => true];
     }
 
+    public function test_owner_movement_detail_separates_the_count_reason_and_links_the_verified_opname(): void
+    {
+        $product = $this->product(); $this->stock($product);
+        $session = $this->open();
+        $admin = $this->user('super_admin', 'gudang');
+        $this->actingAs($admin)->post(route('stock-opname.count', $session), $this->countData($product, 7))->assertSessionHas('success');
+        $count = DB::table('stock_opname_counts')->first();
+        $this->actingAs($this->user('owner'))->get(route('owner.movements.show', $count->stock_movement_id))
+            ->assertInertia(fn (Assert $p) => $p->where('movement.is_opname', true)
+                ->where('movement.source', 'Hasil hitung stok fisik (Stock Opname)')
+                ->where('movement.notes', $count->notes)->where('movement.unit', 'PCS')
+                ->where('movement.before', 10)->where('movement.after', 7)->where('movement.delta', -3)
+                ->where('document.status', 'opname_recorded')->where('document.number', "Sesi opname #{$session} · Hasil #{$count->id}")
+                ->where('document.links.0.href', route('stock-opname.result', $count->id)));
+        // An ID alone must never connect a different movement to this count.
+        $movement = (array) DB::table('jihans_gudang_stock_movements')->first(); unset($movement['id']);
+        $id = DB::table('jihans_gudang_stock_movements')->insertGetId($movement);
+        $this->get(route('owner.movements.show', $id))->assertInertia(fn (Assert $p) => $p->where('movement.is_opname', false)->where('document', null));
+    }
+
     public function test_only_owner_opens_closes_and_expiry_is_wib(): void
     {
         $admin = $this->user('super_admin');
@@ -80,6 +100,40 @@ class StockOpnameTest extends TestCase
         $this->actingAs($admin)->post(route('owner.stock-opname.close', $id), ['confirmed' => true])->assertForbidden();
         $this->actingAs($owner)->post(route('owner.stock-opname.close', $id), ['confirmed' => true])->assertRedirect();
         $this->assertDatabaseHas('stock_opname_sessions', ['id' => $id, 'status' => 'closed', 'closed_by' => $owner->id]);
+    }
+
+    public function test_large_session_limits_history_and_keeps_counted_products_on_every_page(): void
+    {
+        $session = $this->open();
+        $owner = DB::table('stock_opname_sessions')->where('id', $session)->first();
+        $admin = $this->user('super_admin', 'gudang');
+        $ids = [];
+        for ($i = 1; $i <= 45; $i++) {
+            $product = $this->product();
+            $product->update(['name' => sprintf('Produk %03d', $i)]);
+            $this->stock($product);
+            $ids[] = $product->id;
+            DB::table('stock_opname_counts')->insert([
+                'session_id' => $session, 'product_id' => $product->id, 'unit_id' => $product->unit_id,
+                'product_name' => $product->name, 'unit_name' => 'PCS', 'quantity_before' => 10,
+                'quantity_after' => 10, 'difference' => 0, 'notes' => 'Hitung sesuai stok fisik.',
+                'counted_by' => $admin->id, 'counted_by_name' => $admin->name, 'created_at' => now(),
+            ]);
+        }
+        for ($i = 0; $i < 24; $i++) DB::table('stock_opname_session_events')->insert([
+            'session_id' => $session, 'action' => 'reopen', 'owner_id' => $owner->opened_by,
+            'owner_name' => $owner->opened_by_name, 'created_at' => now(),
+        ]);
+        $this->actingAs($admin)->get(route('stock-opname.show', $session))->assertInertia(fn (Assert $p) => $p
+            ->has('products.data', 20)->has('counts', 5)->where('countTotal', 45)
+            ->has('productCounts', 20)->where('productCounts.0.product_id', $ids[0])
+            ->has('events', 20)->where('eventsPagination.total', 25));
+        $this->get(route('stock-opname.show', ['session' => $session, 'page' => 3, 'access_page' => 2]))
+            ->assertInertia(fn (Assert $p) => $p->has('products.data', 5)->has('productCounts', 5)
+                ->where('productCounts.0.product_id', $ids[40])->has('counts', 5)->has('events', 5));
+        $this->get(route('stock-opname.show', ['session' => $session, 'search' => 'Produk 001']))
+            ->assertInertia(fn (Assert $p) => $p->has('products.data', 1)->has('productCounts', 1)
+                ->where('productCounts.0.product_id', $ids[0])->where('countTotal', 45));
     }
 
     public function test_gudang_has_no_adjustment_without_session_and_counts_within_session(): void

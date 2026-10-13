@@ -168,11 +168,11 @@ class StockController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $q->whereDate('created_at', '>=', $request->date_from);
+            $q->where('created_at', '>=', \App\Support\DateFilter::start($request->date_from));
         }
 
         if ($request->filled('date_to')) {
-            $q->whereDate('created_at', '<=', $request->date_to);
+            $q->where('created_at', '<', \App\Support\DateFilter::nextDay($request->date_to));
         }
 
         $movements = $q->orderBy('created_at', 'desc')->paginate(20)->withQueryString();

@@ -44,8 +44,8 @@ class DashboardController extends Controller
 
         return Inertia::render('Jihans/Dashboard', [
             'stats' => [
-                'produksi_hari_ini' => JihansProductionSession::where('type', 'aktual')->whereDate('date', now())->count(),
-                'omset_hari_ini'    => (float) JihansTransaction::whereDate('date', now())->where('status', 'paid')->sum('grand_total'),
+                'produksi_hari_ini' => JihansProductionSession::where('type', 'aktual')->where('date', now()->toDateString())->count(),
+                'omset_hari_ini'    => (float) JihansTransaction::where('date', now()->toDateString())->where('status', 'paid')->sum('grand_total'),
                 'pending_count'     => JihansPendingTransaction::count(),
                 'request_pending'   => TransferRequest::where('from_entity', 'jihans')->where('status', 'pending')->count(),
             ],

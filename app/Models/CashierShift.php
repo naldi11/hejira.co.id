@@ -128,7 +128,15 @@ class CashierShift extends Model
             ->where('t.created_by', $this->user_id)
             ->where('t.status', '!=', 'cancelled')
             ->whereBetween('t.created_at', [$startAt, $closedAt])
-            ->selectRaw("
+            ->selectRaw(self::paymentSummaryColumns($hasPtypeCol))
+            ->first();
+
+        return (array) $summary;
+    }
+    /** Shared SQL keeps batch reports and a single shift's calculation identical. */
+    public static function paymentSummaryColumns(bool $hasPtypeCol): string
+    {
+        return "
                 COALESCE(SUM(CASE
                     WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
                     WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
@@ -148,11 +156,9 @@ class CashierShift extends Model
                     " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_kredit' THEN p.amount" : "") . "
                     ELSE 0 END), 0) as kartu_kredit,
                 COALESCE(SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END), 0) as kredit
-            ")
-            ->first();
-
-        return (array) $summary;
+            ";
     }
+
     /**
      * Get sales summary for the shift
      */

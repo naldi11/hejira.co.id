@@ -18,17 +18,17 @@ function CountForm({ product, session, onClose }) {
         </label>
         {diff !== null && <p className={diff < 0 ? 'text-red-600' : 'text-green-600'}>Selisih: {diff > 0 ? '+' : ''}{diff} {product.unit}. Saldo sesudah disimpan: {form.data.quantity} {product.unit}.</p>}
         <label className="block">Catatan hasil hitung / alasan selisih
-            <textarea required minLength={5} maxLength={1000} className={`${input} mt-2`} value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} />
+            <textarea placeholder="Contoh: Ditemukan barang di rak lain saat hitung ulang. Jelaskan penyebab selisih sesuai keadaan sebenarnya." required minLength={5} maxLength={1000} className={`${input} mt-2`} value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} />
         </label>
         <label className="flex items-start gap-3"><input type="checkbox" checked={form.data.confirmed} onChange={e => form.setData('confirmed', e.target.checked)} />Saya sudah menghitung stok fisik. Jumlah ini akan menggantikan saldo sistem di lokasi sesi.</label>
         <div className="flex flex-wrap gap-3"><button disabled={form.processing || !form.data.confirmed || diff === null} className={button}>Simpan hasil hitung</button><button type="button" disabled={form.processing} className="px-4 py-3" onClick={onClose}>Tutup form</button></div>
     </form>;
 }
-export default function Show({ session, products, counts, isOwner, description, canCount: permitted, filters, events = [] }) {
+export default function Show({ session, products, counts, isOwner, description, canCount: permitted, filters, events = [], eventsPagination, countTotal = counts.length, productCounts = counts }) {
     const canCount = useOpnameActive(permitted, session);
     const [selected, select] = useState(null);
     const [search, setSearch] = useState(filters.search);
-    const counted = new Map(counts.map(c => [Number(c.product_id), c]));
+    const counted = new Map(productCounts.map(c => [Number(c.product_id), c]));
     return <Layout><Head title={`Opname #${session.id}`} /><div className="mx-auto max-w-5xl space-y-6 text-gray-800 dark:text-gray-200">
         <Link className="text-brand-500" href={route('stock-opname.index')}>← Daftar sesi stock opname</Link>
         <div className={panel}><div className="flex flex-wrap justify-between gap-2"><h1 className="text-xl font-bold">Opname #{session.id} · {session.location_name}</h1><SessionState session={session} /></div>
@@ -38,11 +38,11 @@ export default function Show({ session, products, counts, isOwner, description, 
             {isOwner && <SessionActions key={session.expires_at_iso + session.status} session={session} />}
             {!isOwner && !canCount && <p className="mt-4 text-red-600">Akses hitung fisik tidak aktif. Minta Owner membuka kembali sesi ini untuk melanjutkan produk yang belum dihitung.</p>}
         </div>
-        {events.length > 0 && <section className={`${panel} space-y-3`}><h2 className="font-bold">Riwayat akses Owner</h2>{events.map(e => <div className="border-b border-gray-100 pb-3 text-sm dark:border-gray-800" key={e.id}><strong>{({ open: 'Sesi dibuka', close: 'Sesi ditutup', reopen: 'Sesi dibuka kembali' })[e.action]}</strong><p>{e.created_at} · {e.owner_name}</p>{e.expires_at && <p>Batas waktu: {e.expires_at}</p>}{e.previous_expires_at && <p>Batas waktu sebelumnya: {e.previous_expires_at}</p>}{e.previous_closed_at && <p>Sebelumnya ditutup {e.previous_closed_at} oleh {e.previous_closed_by_name}.</p>}{e.notes && <p>Alasan / instruksi: {e.notes}</p>}</div>)}</section>}
-        <section id="hasil-so-sesi" className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-lg font-bold">Hasil SO sesi ini · {counts.length} produk</h2><Link className="text-sm text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Cari seluruh hasil sesi ini →</Link></div>
+        {events.length > 0 && <section className={`${panel} space-y-3`}><h2 className="font-bold">Riwayat akses Owner</h2>{events.map(e => <div className="border-b border-gray-100 pb-3 text-sm dark:border-gray-800" key={e.id}><strong>{({ open: 'Sesi dibuka', close: 'Sesi ditutup', reopen: 'Sesi dibuka kembali' })[e.action]}</strong><p>{e.created_at} · {e.owner_name}</p>{e.expires_at && <p>Batas waktu: {e.expires_at}</p>}{e.previous_expires_at && <p>Batas waktu sebelumnya: {e.previous_expires_at}</p>}{e.previous_closed_at && <p>Sebelumnya ditutup {e.previous_closed_at} oleh {e.previous_closed_by_name}.</p>}{e.notes && <p>Alasan / instruksi: {e.notes}</p>}</div>)}{eventsPagination?.links && <Pagination links={eventsPagination.links} />}</section>}
+        <section id="hasil-so-sesi" className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-lg font-bold">Hasil hitung stok sesi ini · {countTotal} produk</h2><Link className="text-sm text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Cari seluruh hasil sesi ini →</Link></div>
             <p className="text-sm text-gray-500">Sebelum dan sesudah di bawah adalah saldo saat SO disimpan. Klik produk untuk melihat petugas, alasan, izin Owner, dan jejak penyesuaian.</p>
             {counts.length === 0 ? <p>Belum ada hasil SO yang disimpan dalam sesi ini.</p> : counts.slice(0, 5).map(c => <StockOpnameResultCard key={c.id} count={c} />)}
-            {counts.length > 5 && <Link className="inline-block font-semibold text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Lihat seluruh {counts.length} hasil SO →</Link>}
+            {countTotal > 5 && <Link className="inline-block font-semibold text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Lihat seluruh {countTotal} hasil hitung stok →</Link>}
         </section>
         {canCount && <p className="text-sm text-gray-500">Hitung saat pergerakan barang berhenti sementara. Jika saldo berubah sebelum disimpan, sistem meminta Anda memuat ulang dan menghitung kembali. Setiap produk hanya dapat disimpan satu kali dalam sesi.</p>}
         {['gudang', 'hendhys-pusat'].includes(session.stock_key) && <p className="text-sm text-gray-500">Untuk stok pusat/produksi: kekurangan mengurangi stok produksi terlama terlebih dahulu; kelebihan dicatat tanpa nomor produksi karena asalnya belum diketahui. Stok retur rusak dan kedaluwarsa tidak termasuk hitungan ini.</p>}

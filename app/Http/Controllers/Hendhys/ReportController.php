@@ -39,6 +39,10 @@ class ReportController extends Controller
                     WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_kredit' THEN p.amount
                     ELSE 0 END) as kartu_kredit
             ")
+            ->whereIn('p.transaction_id', DB::table('hendhys_transactions as eligible')->select('eligible.id')
+                ->where('eligible.status', '!=', 'cancelled')
+                ->when($request->date_from, fn ($q) => $q->where('eligible.date', '>=', $request->date_from))
+                ->when($request->date_to, fn ($q) => $q->where('eligible.date', '<=', $request->date_to)))
             ->groupBy('p.transaction_id');
 
         return DB::table('hendhys_transactions as t')
@@ -46,8 +50,8 @@ class ReportController extends Controller
             ->where('t.status', '!=', 'cancelled')
             ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))
             ->when($kasirId, fn($q) => $q->where('t.created_by', $kasirId))
-            ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to));
+            ->when($request->date_from, fn($q) => $q->where('t.date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->where('t.date', '<=', $request->date_to));
     }
 
     public function index()
@@ -64,29 +68,17 @@ class ReportController extends Controller
             ->where('entity', 'hendhys')
             ->when(!$isPusatOrAdmin, fn($q) => $q->where('user_id', $user->id))
             ->when($user->branch && $user->branch->type !== 'pusat', fn($q) => $q->where('branch_id', $user->branch_id))
-            ->when($request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to));
+            ->when($request->date_from, fn($q) => $q->where('opened_at', '>=', \App\Support\DateFilter::start($request->date_from)))
+            ->when($request->date_to, fn($q) => $q->where('opened_at', '<', \App\Support\DateFilter::nextDay($request->date_to)));
 
         $rows = $query->orderBy('opened_at', 'desc')
             ->paginate(30)
             ->withQueryString();
 
-        foreach ($rows as $row) {
-            $summary = $row->calculatePaymentSummary();
-            $row->payment_summary = $summary;
-            if ($row->status === 'open') {
-                $row->expected_cash = $row->calculateExpectedCashSoFar();
-            }
-        }
-
-        $activeShift = CashierShift::where('user_id', $user->id)
-            ->where('status', 'open')
-            ->first();
-
-        if ($activeShift) {
-            $activeShift->expected_cash = $activeShift->calculateExpectedCashSoFar();
-            $activeShift->payment_summary = $activeShift->calculatePaymentSummary();
-        }
+        $activeShift = CashierShift::where('user_id', $user->id)->where('status', 'open')->first();
+        app(\App\Services\ShiftReportSummaries::class)->load(
+            $rows->getCollection()->concat($activeShift ? [$activeShift] : [])
+        );
 
         return Inertia::render('Hendhys/Reports/Laci', [
             'rows'    => $rows,
@@ -105,8 +97,8 @@ class ReportController extends Controller
             ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
             ->where('t.status', '!=', 'cancelled')
             ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))
-            ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+            ->when($request->date_from, fn($q) => $q->where('t.date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->where('t.date', '<=', $request->date_to))
             ->when($request->search, fn($q) => $q->where(function($qi) use ($request) {
                 $qi->where('c.name', 'like', '%'.$request->search.'%')
                    ->orWhere('t.customer_name', 'like', '%'.$request->search.'%')
@@ -200,6 +192,10 @@ class ReportController extends Controller
                 SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                 SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
             ")
+            ->whereIn('p.transaction_id', DB::table('hendhys_transactions as eligible')->select('eligible.id')
+                ->where('eligible.status', '!=', 'cancelled')
+                ->when($request->date_from, fn ($q) => $q->where('eligible.date', '>=', $request->date_from))
+                ->when($request->date_to, fn ($q) => $q->where('eligible.date', '<=', $request->date_to)))
             ->groupBy('p.transaction_id');
 
         $rows = DB::table('hendhys_transactions as t')
@@ -207,8 +203,8 @@ class ReportController extends Controller
             ->where('t.status', '!=', 'cancelled')
             ->whereNotNull('t.customer_name')
             ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))
-            ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+            ->when($request->date_from, fn($q) => $q->where('t.date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->where('t.date', '<=', $request->date_to))
             ->when($request->search, fn($q) => $q->where('t.customer_name', 'like', '%'.$request->search.'%'))
             ->selectRaw("
                 t.customer_name                                                            as pelanggan,
@@ -250,8 +246,8 @@ class ReportController extends Controller
                 ->leftJoin('master_customers as c', 'c.id', '=', 't.customer_id')
                 ->where('t.status', '!=', 'cancelled')
                 ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))
-                ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
-                ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+                ->when($request->date_from, fn($q) => $q->where('t.date', '>=', $request->date_from))
+                ->when($request->date_to, fn($q) => $q->where('t.date', '<=', $request->date_to))
                 ->select([
                     't.id',
                     't.transaction_number',
@@ -294,8 +290,8 @@ class ReportController extends Controller
                     ->when($user->hasRole('kasir_hendhys'), fn($q) => $q->where('user_id', $user->id))
                     ->when($user->branch && $user->branch->type !== 'pusat', fn($q) => $q->where('branch_id', $user->branch_id))
                     ->when($request->shift_id, fn($q) => $q->where('id', $request->shift_id))
-                    ->when(!$request->shift_id && $request->date_from, fn($q) => $q->whereDate('opened_at', '>=', $request->date_from))
-                    ->when(!$request->shift_id && $request->date_to, fn($q) => $q->whereDate('opened_at', '<=', $request->date_to))
+                    ->when(!$request->shift_id && $request->date_from, fn($q) => $q->where('opened_at', '>=', \App\Support\DateFilter::start($request->date_from)))
+                    ->when(!$request->shift_id && $request->date_to, fn($q) => $q->where('opened_at', '<', \App\Support\DateFilter::nextDay($request->date_to)))
                     ->orderBy('opened_at', 'desc');
             } elseif ($type === 'mingguan') {
                 $title = "Laporan Penjualan Mingguan";
@@ -343,6 +339,10 @@ class ReportController extends Controller
                         SUM(CASE WHEN pm.type = 'kartu_debit'  THEN p.amount ELSE 0 END) as kartu_debit,
                         SUM(CASE WHEN pm.type = 'kartu_kredit' THEN p.amount ELSE 0 END) as kartu_kredit
                     ")
+                    ->whereIn('p.transaction_id', DB::table('hendhys_transactions as eligible')->select('eligible.id')
+                        ->where('eligible.status', '!=', 'cancelled')
+                        ->when($request->date_from, fn ($q) => $q->where('eligible.date', '>=', $request->date_from))
+                        ->when($request->date_to, fn ($q) => $q->where('eligible.date', '<=', $request->date_to)))
                     ->groupBy('p.transaction_id');
 
                 $query = DB::table('hendhys_transactions as t')
@@ -350,8 +350,8 @@ class ReportController extends Controller
                     ->where('t.status', '!=', 'cancelled')
                     ->whereNotNull('t.customer_name')
                     ->when(!$isPusat, fn($q) => $q->where('t.branch_id', $user->branch_id))
-                    ->when($request->date_from, fn($q) => $q->whereDate('t.date', '>=', $request->date_from))
-                    ->when($request->date_to, fn($q) => $q->whereDate('t.date', '<=', $request->date_to))
+                    ->when($request->date_from, fn($q) => $q->where('t.date', '>=', $request->date_from))
+                    ->when($request->date_to, fn($q) => $q->where('t.date', '<=', $request->date_to))
                     ->when($request->search, fn($q) => $q->where('t.customer_name', 'like', '%'.$request->search.'%'))
                     ->selectRaw("
                         t.customer_name as pelanggan,

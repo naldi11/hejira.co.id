@@ -31,33 +31,16 @@ class PosController extends Controller
         private CheckoutService $checkout
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $user = auth()->user();
-        
-        $q = Product::where('status', 'active')->visibleInHendhys();
-
-        $isPusat = !$user->branch || $user->branch->type === 'pusat';
-        if ($isPusat) {
-            $q->leftJoin('hendhys_stock_pusat', 'master_products.id', '=', 'hendhys_stock_pusat.product_id')
-              ->select('master_products.*', DB::raw('COALESCE(hendhys_stock_pusat.quantity, 0) as current_stock'));
-        } else {
-            $q->leftJoin('hendhys_stock_branch', function($join) use ($user) {
-                $join->on('master_products.id', '=', 'hendhys_stock_branch.product_id')
-                     ->where('hendhys_stock_branch.branch_id', '=', $user->branch_id);
-            })->select('master_products.*', DB::raw('COALESCE(hendhys_stock_branch.quantity, 0) as current_stock'));
-        }
-
-        $products = $q->with(['unit', 'tieredPrices'])->get()
-            ->sort(fn($a, $b) =>
-                ($b->current_stock > 0 ? 1 : 0) - ($a->current_stock > 0 ? 1 : 0)
-                ?: strcmp($a->name, $b->name)
-            )
-            ->values()
+        $catalogue = app(\App\Services\PosCatalogue::class);
+        $page = $catalogue->page('hendhys', $request);
+        $products = (method_exists($page, 'items') ? collect($page->items()) : $page)
             ->map(fn ($p) => [
                 'id'            => $p->id,
                 'name'          => $p->name,
                 'code'          => $p->code,
+                'barcode'       => $p->barcode,
                 'jenis'         => $p->jenis,
                 'price'         => (float) $p->selling_price,
                 'unit_id'       => $p->unit_id,
@@ -69,6 +52,10 @@ class PosController extends Controller
                     'price'   => (float) $tp->price,
                 ]),
             ]);
+
+        if ($request->query('lookup') === 'products') return response()->json([
+            'products' => $products, 'catalogue' => method_exists($page, 'hasMorePages') ? $catalogue->metadata($page) : null,
+        ]);
 
         // Metode Pembayaran Aktif
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
@@ -87,6 +74,7 @@ class PosController extends Controller
 
         return Inertia::render('Hendhys/Pos/Index', [
             'products'       => $products,
+            'catalogue'      => $catalogue->metadata($page),
             'paymentMethods' => $paymentMethods,
         ]);
     }

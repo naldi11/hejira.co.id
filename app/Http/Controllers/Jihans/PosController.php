@@ -26,22 +26,30 @@ class PosController extends Controller
         private CheckoutService $checkout
     ) {}
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $products = Product::where('status', 'active')
-            ->visibleInJihans()
-            ->leftJoin('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
-            ->select('master_products.*', DB::raw('COALESCE(jihans_retail_stock.quantity, 0) as current_stock'))
-            ->with(['unit', 'tieredPrices', 'category'])
-            ->orderBy('master_products.name')
-            ->get();
-
-        return Inertia::render('Jihans/Pos/Index', [
-            'products'  => PosProductResource::collection($products)->resolve(),
-            'customers' => Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])->orderBy('name')
-                ->get(['id', 'name', 'type', 'phone'])
-                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'type' => $c->type, 'phone' => $c->phone]),
+        $catalogue = app(\App\Services\PosCatalogue::class);
+        if ($request->query('lookup') === 'customers') {
+            $request->validate(['q' => 'nullable|string|max:255', 'customer_id' => 'nullable|integer|min:1']);
+            return response()->json($this->customers($request->q, $request->customer_id));
+        }
+        $page = $catalogue->page('jihans', $request);
+        $products = PosProductResource::collection($page)->resolve();
+        if ($request->query('lookup') === 'products') return response()->json([
+            'products' => $products, 'catalogue' => method_exists($page, 'hasMorePages') ? $catalogue->metadata($page) : null,
         ]);
+        return Inertia::render('Jihans/Pos/Index', [
+            'products' => $products, 'catalogue' => $catalogue->metadata($page), 'customers' => $this->customers(),
+        ]);
+    }
+
+    private function customers(?string $search = null, ?int $id = null)
+    {
+        return Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])
+            ->when($id, fn ($q) => $q->where('id', $id))
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%$search%")
+                ->orWhere('phone', 'like', "%$search%")))
+            ->orderBy('name')->limit(20)->get(['id', 'name', 'type', 'phone']);
     }
 
     /**
@@ -232,21 +240,17 @@ class PosController extends Controller
     {
         $transaction->load(['details.product', 'details.unit', 'payments']);
         
-        $products = Product::where('status', 'active')
-            ->visibleInJihans()
-            ->leftJoin('jihans_retail_stock', 'master_products.id', '=', 'jihans_retail_stock.product_id')
-            ->select('master_products.*', DB::raw('COALESCE(jihans_retail_stock.quantity, 0) as current_stock'))
-            ->with(['unit', 'tieredPrices', 'category'])
-            ->orderBy('master_products.name')
-            ->get();
+        $catalogue = app(\App\Services\PosCatalogue::class);
+        $page = $catalogue->page('jihans', request());
+        $products = $page->getCollection()->concat($catalogue->query('jihans', request()->user())
+            ->whereIn('master_products.id', $transaction->details->pluck('product_id'))->get())->unique('id')->values();
 
         $extraDiscount = $transaction->discount_amount - $transaction->details->sum('discount_amount');
 
         return Inertia::render('Jihans/Pos/Index', [
             'products'  => PosProductResource::collection($products)->resolve(),
-            'customers' => Customer::where('is_active', true)->whereIn('entity_scope', ['jihans', 'all'])->orderBy('name')
-                ->get(['id', 'name', 'type', 'phone'])
-                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'type' => $c->type, 'phone' => $c->phone]),
+            'catalogue' => $catalogue->metadata($page),
+            'customers' => $this->customers()->concat($transaction->customer_id ? $this->customers(null, $transaction->customer_id) : [])->unique('id')->values(),
             'editTransaction' => [
                 'id' => $transaction->id,
                 'transaction_number' => $transaction->transaction_number,

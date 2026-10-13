@@ -53,6 +53,8 @@ class StockController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20)->withQueryString();
 
+        app(\App\Services\StockMovementDocuments::class)->load($movements->getCollection());
+
         return Inertia::render('Gudang/Stock/Movements', [
             'movements' => StockMovementResource::collection($movements),
             'filters'   => $request->only('search', 'type', 'source'),

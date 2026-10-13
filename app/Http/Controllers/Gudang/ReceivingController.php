@@ -35,8 +35,8 @@ class ReceivingController extends Controller
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('grn_number', 'like', "%{$request->search}%")
                 ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$request->search}%"))))
-            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('date', '>=', $request->date_from))
-            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->when($request->filled('date_from'), fn ($q) => $q->where('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->where('date', '<=', $request->date_to))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->orderByDesc('date')->orderByDesc('id')
             ->paginate(15)->withQueryString();

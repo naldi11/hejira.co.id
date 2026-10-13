@@ -17,26 +17,57 @@ class OwnerStockMovement
     public function show(JihansGudangStockMovement $movement): array
     {
         $movement->load(['product' => fn ($q) => $q->withTrashed()->with('unit'), 'creator']);
-        $document = $this->document($movement);
+        $opname = $movement->source === 'adjustment' && !$movement->production_material_id && $movement->reference_id
+            ? DB::table('stock_opname_counts as c')
+            ->join('stock_opname_sessions as s', 's.id', '=', 'c.session_id')
+            ->where('c.stock_movement_table', $movement->getTable())->where('c.stock_movement_id', $movement->id)
+            ->where('c.product_id', $movement->product_id)->where('c.id', $movement->reference_id)
+            ->select('c.*', 's.opened_by_name', 's.location_name')->first() : null;
+        $document = $opname ? $this->opnameDocument($opname) : $this->document($movement);
+        $delta = $movement->quantity_after - $movement->quantity_before;
+        $unit = $movement->product?->unit?->abbreviation ?? '-';
+        $explanation = $opname
+            ? ($delta === 0 ? 'Hasil hitung fisik sama dengan stok di sistem. Jumlah stok tidak berubah.'
+                : 'Petugas menghitung stok fisik dan memperbarui stok di sistem agar sesuai dengan barang yang benar-benar ada. Ini bukan pengiriman barang.')
+            : ($delta === 0 ? 'Pencatatan ini tidak mengubah stok siap jual. Periksa kondisi barang dan rincian dokumen di bawah.'
+                : ($delta > 0 ? 'Stok siap jual di Gudang Utama bertambah.' : 'Stok siap jual di Gudang Utama berkurang.'));
         return [
             'movement' => [
                 'id' => $movement->id, 'product' => $movement->product?->name ?? 'Produk tidak tersedia',
                 'code' => $movement->product?->code, 'type' => $movement->type,
-                'source' => $movement->production_material_id ? 'Barang untuk produksi oleh Super Admin'
+                'source' => $opname ? 'Hasil hitung stok fisik (Stock Opname)' : ($movement->production_material_id ? 'Barang untuk produksi oleh Super Admin'
                     : ($document && $document['status'] === 'writeoff_reversed' ? 'Pembatalan penghapusan stok oleh owner'
                     : ($document && in_array($document['status'], ['written_off', 'writeoff_cancelled'], true) ? 'Penghapusan sisa produksi oleh owner'
-                    : ($this->isShortfall($movement) ? 'Pengembalian selisih pengiriman' : (self::SOURCES[$movement->source] ?? 'Mutasi stok lainnya')))),
+                    : ($this->isShortfall($movement) ? 'Pengembalian selisih pengiriman' : (self::SOURCES[$movement->source] ?? 'Mutasi stok lainnya'))))),
                 'quantity' => $movement->quantity, 'before' => $movement->quantity_before,
                 'after' => $movement->quantity_after, 'delta' => $movement->quantity_after - $movement->quantity_before,
-                'unit' => $movement->product?->unit?->abbreviation ?? '-',
+                'unit' => $opname?->unit_name ?? $unit, 'explanation' => $explanation, 'is_opname' => (bool) $opname,
                 'recorded_at' => $movement->created_at ? $movement->created_at->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB' : 'Belum tercatat',
-                'user' => $movement->creator?->name ?? 'Pengguna tidak tersedia', 'notes' => $movement->notes,
+                'user' => $opname?->counted_by_name ?? $movement->creator?->name ?? 'Pengguna tidak tersedia',
+                'notes' => $opname ? $opname->notes : $movement->notes, 'original_notes' => $movement->notes,
             ],
             'document' => $document,
             'document_message' => $movement->production_material_id ? 'Dokumen barang produksi dikelola melalui menu khusus Super Admin. Nomor transaksi tercantum pada catatan; perubahan saldo tetap terlihat di sini.'
                 : ($document ? null : ($movement->source === 'adjustment' && !$movement->reference_id
                 ? 'Penyesuaian ini dicatat langsung pada stok, sehingga tidak memiliki dokumen transaksi terpisah.'
                 : 'Dokumen asal mutasi belum tersedia atau rujukannya tidak dapat dipastikan. Rincian mutasi tetap ditampilkan di atas.')),
+        ];
+    }
+
+    private function opnameDocument(object $count): array
+    {
+        return [
+            'title' => 'Hasil hitung stok fisik', 'number' => 'Sesi opname #'.$count->session_id.' · Hasil #'.$count->id,
+            'status' => 'opname_recorded', 'date' => ProductionWriteoffs::time($count->created_at),
+            'notes' => null,
+            'fields' => [
+                ['label' => 'Lokasi yang dihitung', 'value' => $count->location_name],
+                ['label' => 'Akses dibuka oleh', 'value' => $count->opened_by_name],
+                ['label' => 'Dihitung dan disimpan oleh', 'value' => $count->counted_by_name],
+            ],
+            'items' => [],
+            'links' => [['label' => 'Lihat rincian hasil opname', 'href' => route('stock-opname.result', $count->id)],
+                ['label' => 'Lihat sesi dan riwayat opname', 'href' => route('stock-opname.show', $count->session_id)]],
         ];
     }
 

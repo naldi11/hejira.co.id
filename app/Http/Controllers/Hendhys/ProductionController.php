@@ -33,13 +33,13 @@ class ProductionController extends Controller
     {
         $this->checkPusat();
 
-        $q = HendhysProduction::with(['creator', 'details.product', 'details.unit']);
+        $q = HendhysProduction::with('creator')->withCount('details');
 
         if ($request->filled('date_from')) {
-            $q->whereDate('date', '>=', $request->date_from);
+            $q->where('date', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $q->whereDate('date', '<=', $request->date_to);
+            $q->where('date', '<=', $request->date_to);
         }
         if ($search = $request->search) {
             $q->where('production_number', 'like', "%$search%");

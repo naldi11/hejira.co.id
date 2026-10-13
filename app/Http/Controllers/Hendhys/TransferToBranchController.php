@@ -52,7 +52,7 @@ class TransferToBranchController extends Controller
 
         // Fetch direct Gudang transfers sent to this branch/entity
         $gudangQuery = TransferOut::where('to_entity', 'hendhys')
-            ->with(['branch', 'creator', 'receiver', 'details.product', 'details.unit']);
+            ->with(['branch', 'creator', 'receiver']);
 
         if (!$isAdmin) {
             $gudangQuery->where('branch_id', $user->branch_id);
@@ -65,12 +65,13 @@ class TransferToBranchController extends Controller
             $gudangQuery->where('transfer_number', 'like', "%$search%");
         }
 
-        $gudangTransfers = $gudangQuery->orderBy('id', 'desc')->get();
+        $gudangTransfers = $gudangQuery->orderBy('id', 'desc')->paginate(20, ['*'], 'gudang_page')->withQueryString()->appends(['tab' => 'gudang']);
 
         return Inertia::render('Hendhys/TransferToBranch/Index', [
             'transfers'       => HendhysTransferToBranchResource::collection($transfers),
-            'gudangTransfers' => TransferOutResource::collection($gudangTransfers),
-            'filters'         => $request->only('search', 'status'),
+            'gudangTransfers' => TransferOutResource::collection($gudangTransfers->getCollection()),
+            'gudangPagination' => \App\Support\ListPage::metadata($gudangTransfers),
+            'filters'         => $request->only('search', 'status', 'tab'),
             'isPusat'         => !$user->branch || $user->branch->type === 'pusat',
         ]);
     }

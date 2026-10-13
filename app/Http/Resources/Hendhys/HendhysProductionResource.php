@@ -32,7 +32,7 @@ class HendhysProductionResource extends JsonResource
                 'unit'              => $d->unit?->abbreviation ?? 'PCS',
             ])),
 
-            'total_items' => $this->whenLoaded('details', fn () => $this->details->count()),
+            'total_items' => $this->resource->relationLoaded('details') ? $this->details->count() : (int) $this->details_count,
         ];
     }
 }

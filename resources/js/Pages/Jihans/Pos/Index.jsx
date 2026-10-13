@@ -1,7 +1,8 @@
+import { recalculateJihansCart } from '@/lib/jihansPricing';
 import { todayWib } from '@/lib/date';
 import { Head, Link, usePage } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 import Swal from 'sweetalert2';
@@ -14,13 +15,37 @@ const route = window.route;
 const axios = window.axios;
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
 
-export default function PosIndex({ products, customers, editTransaction }) {
+export default function PosIndex({ products, customers: initialCustomers, catalogue, editTransaction }) {
     const { auth } = usePage().props;
+    const productById = useRef(new Map(products.map(product => [product.id, product])));
+    const [customers, setCustomers] = useState(initialCustomers);
+    const [customerQuery, setCustomerQuery] = useState('');
+    const [customerLoading, setCustomerLoading] = useState(false);
+    const customerById = useRef(new Map(initialCustomers.map(customer => [String(customer.id), customer])));
+    const firstCustomerSearch = useRef(true);
+    useEffect(() => {
+        if (firstCustomerSearch.current) { firstCustomerSearch.current = false; return; }
+        const abort = new AbortController();
+        setCustomerLoading(true);
+        const timer = setTimeout(async () => {
+            try {
+                const params = new URLSearchParams({ lookup: 'customers', q: customerQuery });
+                const response = await fetch(`${route('jihans.pos.index')}?${params}`, { signal: abort.signal, headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Pelanggan belum berhasil dimuat.');
+                const rows = await response.json();
+                if (!abort.signal.aborted) { rows.forEach(c => customerById.current.set(String(c.id), c)); setCustomers(rows); }
+            } catch (error) { if (!abort.signal.aborted) Swal.fire({ icon: 'error', text: error.message }); }
+            finally { if (!abort.signal.aborted) setCustomerLoading(false); }
+        }, 250);
+        return () => { clearTimeout(timer); abort.abort(); };
+    }, [customerQuery]);
     const checkoutScope = `jihans:${auth.user.id}:${auth.user.branch?.id ?? 'pusat'}`;
     const [cart, setCart] = useState([]);
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [customerType, setCustomerType] = useState('Pelanggan Retail');
+    const customerTypeRef = useRef(customerType);
+    customerTypeRef.current = customerType;
     const [date, setDate] = useState(todayWib());
     const [notes, setNotes] = useState('');
     const [extraDiscount, setExtraDiscount] = useState(0);
@@ -31,59 +56,10 @@ export default function PosIndex({ products, customers, editTransaction }) {
     const [showPayment, setShowPayment] = useState(false);
     const [amountPaid, setAmountPaid] = useState(0);
     const [processing, setProcessing] = useState(false);
+    const [pricingLoading, setPricingLoading] = useState(false);
     const isEditMode = !!editTransaction;
 
-    const recalculateCart = (currentCart, type = customerType) => {
-        const combinedQty = currentCart.reduce((sum, item) => {
-            const product = products.find(p => p.id === item.product_id);
-            if (product) {
-                const catName = (product.category_name || '').toLowerCase();
-                const prodName = (product.name || '').toLowerCase();
-                const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
-                                         prodName.includes('daging') || prodName.includes('tortilla');
-                if (isMeatOrTortilla) {
-                    return sum + item.quantity;
-                }
-            }
-            return sum;
-        }, 0);
-
-        return currentCart.map(item => {
-            const product = products.find(p => p.id === item.product_id);
-            if (!product) return item;
-
-            let effectiveQty = item.quantity;
-            if (type === 'Reseller') {
-                effectiveQty = Math.max(effectiveQty, 50);
-            } else if (type === 'Agen') {
-                effectiveQty = Math.max(effectiveQty, 300);
-            }
-
-            const catName = (product.category_name || '').toLowerCase();
-            const prodName = (product.name || '').toLowerCase();
-            const isMeatOrTortilla = catName === 'daging' || catName === 'tortilla' ||
-                                     prodName.includes('daging') || prodName.includes('tortilla');
-            
-            if (isMeatOrTortilla && combinedQty >= 50) {
-                effectiveQty = Math.max(effectiveQty, combinedQty);
-            }
-
-            let price = product.selling_price || 0;
-            const sortedTiers = [...(product.tiered_prices ?? [])].sort((a, b) => b.min_qty - a.min_qty);
-            for (const tier of sortedTiers) {
-                if (effectiveQty >= tier.min_qty) {
-                    price = tier.price;
-                    break;
-                }
-            }
-
-            if (item.is_custom_price) {
-                price = item.price;
-            }
-
-            return { ...item, price };
-        });
-    };
+    const recalculateCart = (currentCart, type = customerType) => recalculateJihansCart(currentCart, type, productById.current);
 
     useEffect(() => {
         if (editTransaction) {
@@ -122,7 +98,25 @@ export default function PosIndex({ products, customers, editTransaction }) {
             setCustomerName(d.customerName ?? '');
             setNotes(d.notes ?? '');
             setPendingId(d.pendingId ?? null);
-            setCart(recalculateCart(d.items ?? [], type));
+            const items = d.items ?? [];
+            setCart(items);
+            // Restore pricing metadata for every held item, including later catalogue pages.
+            const ids = [...new Set(items.map(item => item.product_id))];
+            setPricingLoading(true);
+            (async () => {
+                try {
+                    for (let offset = 0; offset < ids.length; offset += 100) {
+                        const params = new URLSearchParams({ lookup: 'products' });
+                        ids.slice(offset, offset + 100).forEach(id => params.append('product_ids[]', String(id)));
+                        const response = await fetch(`${route('jihans.pos.index')}?${params}`, { headers: { Accept: 'application/json' } });
+                        if (!response.ok) throw new Error('Data harga keranjang belum berhasil dimuat. Muat ulang sebelum melanjutkan.');
+                        const data = await response.json();
+                        data.products.forEach(product => productById.current.set(product.id, product));
+                    }
+                    setCart(current => recalculateCart(current, customerTypeRef.current));
+                    setPricingLoading(false);
+                } catch (error) { Swal.fire({ icon: 'error', text: error.message }); }
+            })();
         } catch { /* ignore */ }
         // localStorage TIDAK dibersihkan di sini: kalau kasir menyegarkan halaman
         // sebelum checkout, keranjangnya harus tetap bisa dipulihkan. Pembersihan
@@ -149,6 +143,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
         const validItems = itemsToAdd.filter(p => p.current_stock > 0 || isEditMode);
         if (validItems.length === 0) return;
 
+        validItems.forEach(product => productById.current.set(product.id, product));
         setCart((prev) => {
             let next = [...prev];
             for (const product of validItems) {
@@ -199,7 +194,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
 
     const onCustomerChange = (id) => {
         setCustomerId(id);
-        const c = customers.find((x) => String(x.id) === String(id));
+        const c = customerById.current.get(String(id));
         const type = c ? c.type : 'Pelanggan Retail';
         setCustomerType(type);
         setCustomerName(c ? c.name : '');
@@ -207,6 +202,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
     };
 
     const openPayment = () => {
+        if (pricingLoading) { Swal.fire({ icon: 'info', text: 'Tunggu data harga keranjang selesai dimuat.' }); return; }
         if (cart.length === 0) return;
         setAmountPaid(totals.grand);
         setShowPayment(true);
@@ -215,7 +211,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
     const buildItems = () => cart.map((i) => ({ product_id: i.product_id, quantity: i.quantity, price: i.price, discount: Number(i.discount) || 0, total: lineTotal(i) }));
 
     const processTransaction = async () => {
-        if (processing) return;
+        if (processing || pricingLoading) return;
         if (amountPaid < totals.grand) { 
             Swal.fire({ icon: 'warning', title: 'Nominal Kurang', text: 'Uang pembayaran kurang dari total tagihan.' }); 
             return; 
@@ -262,7 +258,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
         // Guard sama seperti processTransaction: tanpa ini, menekan F5 berkali-kali
         // (atau klik tombol Pending cepat) saat request masih terbang akan membuat
         // beberapa transaksi pending kembar dengan isi keranjang yang sama.
-        if (processing) return;
+        if (processing || pricingLoading) return;
         if (cart.length === 0) return;
         if (!window.confirm('Simpan transaksi ini sebagai pending?')) return;
         setProcessing(true);
@@ -292,7 +288,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
         return () => window.removeEventListener('keydown', onKey);
         // Tanpa dependency array, listener ini dilepas & dipasang ulang pada SETIAP
         // render — termasuk setiap ketikan di kolom qty/harga keranjang.
-    }, [showSearch, showPayment, cart, processing]);
+    }, [showSearch, showPayment, cart, processing, pricingLoading]);
 
     const inputCls = 'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-orange-500';
     const cellInput = 'w-full bg-transparent text-right outline-none tabular-nums transition focus:rounded focus:bg-orange-50 dark:focus:bg-orange-900/20';
@@ -314,7 +310,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
 
                             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Pelanggan</label>
-                            <SelectField options={customers.map((c) => ({ value: c.id, label: c.name + (c.phone ? ` | ${c.phone}` : '') }))} value={customerId} onChange={(v) => onCustomerChange(v)} placeholder="— Pelanggan Umum —" />
+                            <SelectField isLoading={customerLoading} filterOption={() => true} onInputChange={(value, meta) => { if (meta.action === 'input-change') setCustomerQuery(value); }} options={[...customers, ...(customerId && !customers.some(c => String(c.id) === String(customerId)) ? [customerById.current.get(String(customerId)) || { id: customerId, name: customerName }] : [])].map((c) => ({ value: c.id, label: c.name + (c.phone ? ` | ${c.phone}` : '') }))} value={customerId} onChange={(v) => onCustomerChange(v)} placeholder="— Pelanggan Umum —" />
 
                             {!customerId && <>
                                 <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Nama Manual</label>
@@ -478,7 +474,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
                             <kbd className="rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-mono text-gray-400 dark:bg-gray-800">Ins</kbd>
                         </button>
 
-                        <button onClick={holdTransaction} disabled={cart.length === 0 || processing}
+                        <button onClick={holdTransaction} disabled={cart.length === 0 || processing || pricingLoading}
                             className="flex flex-1 min-w-[120px] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-blue-200 bg-blue-50 py-4 font-bold text-blue-600 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                             <Icon name="pause_circle" className="text-[28px]" />
                             <span className="text-sm">Pending</span>
@@ -501,7 +497,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
                 </div>
             </div>
 
-            {showSearch && <SearchModal products={products} onAdd={addItem} onClose={() => setShowSearch(false)} />}
+            {showSearch && <SearchModal products={products} catalogue={catalogue} onAdd={addItem} onClose={() => setShowSearch(false)} />}
             {showPayment && <PaymentModal grandTotal={totals.grand} amountPaid={amountPaid} setAmountPaid={setAmountPaid} onClose={() => setShowPayment(false)} onProcess={processTransaction} processing={processing} />}
         </JihansLayout>
     );

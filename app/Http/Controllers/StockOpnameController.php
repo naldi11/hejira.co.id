@@ -139,14 +139,22 @@ class StockOpnameController extends Controller
             ->select('p.id', 'p.name', 'p.code', 's.quantity', 'u.abbreviation as unit')
             ->orderBy('p.name')->paginate(20)->withQueryString();
         $products->through(fn ($p) => array_merge((array) $p, ['quantity' => (int) round((float) $p->quantity)]));
-        $counts = DB::table('stock_opname_counts')->where('session_id', $session)->orderByDesc('id')->get()->map(fn ($c) => $this->opname->serializeCount($c));
+        $countQuery = DB::table('stock_opname_counts')->where('session_id', $session);
+        $countTotal = (clone $countQuery)->count();
+        $counts = (clone $countQuery)->orderByDesc('id')->limit(5)->get()->map(fn ($c) => $this->opname->serializeCount($c));
+        $productCounts = (clone $countQuery)->whereIn('product_id', $products->getCollection()->pluck('id'))
+            ->get()->map(fn ($c) => $this->opname->serializeCount($c));
+        $events = DB::table('stock_opname_session_events')->where('session_id', $session)->orderByDesc('id')
+            ->paginate(20, ['*'], 'access_page')->withQueryString();
         $location = collect($this->opname->locations())->firstWhere('key', $s->location_key);
         return Inertia::render('StockOpname/Show', [
             'session' => $this->opname->serialize($s), 'products' => $products, 'counts' => $counts,
+            'countTotal' => $countTotal, 'productCounts' => $productCounts,
             'isOwner' => $request->user()->hasRole('owner'), 'description' => $location['description'] ?? 'Lokasi sudah tidak aktif.',
             'canCount' => !$request->user()->hasRole('owner') && $this->opname->active($s) && $location !== null && $this->opname->allowed($request->user(), $location),
             'filters' => ['search' => $request->input('search', '')],
-            'events' => DB::table('stock_opname_session_events')->where('session_id', $session)->orderByDesc('id')->get()->map(function ($event) {
+            'eventsPagination' => \App\Support\ListPage::metadata($events),
+            'events' => $events->getCollection()->map(function ($event) {
                 $row = (array) $event;
                 foreach (['created_at', 'previous_expires_at', 'expires_at', 'previous_closed_at'] as $field) $row[$field] = $event->$field ? \Carbon\Carbon::parse($event->$field)->format('d/m/Y H:i').' WIB' : null;
                 return $row;

@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/format';
 
 const route = window.route;
 
-export default function JihansTransferRequestsIndex({ requests, incomingTransfers, filters }) {
+export default function JihansTransferRequestsIndex({ requests, incomingTransfers, incomingPagination, filters }) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ search: filters.search ?? '', status: filters.status ?? '' });
 
@@ -18,7 +18,7 @@ export default function JihansTransferRequestsIndex({ requests, incomingTransfer
         e?.preventDefault();
         router.get(route('jihans.transfer-requests.index'),
             { search: form.search || undefined, status: form.status || undefined },
-            { preserveState: true, preserveScroll: true, replace: true, only: ['requests', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+            { preserveState: true, preserveScroll: true, replace: true, only: ['requests', 'incomingTransfers', 'incomingPagination', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
     };
 
     return (
@@ -31,7 +31,7 @@ export default function JihansTransferRequestsIndex({ requests, incomingTransfer
                         <h3 className="flex items-center gap-2 font-bold text-orange-950 dark:text-orange-300">
                             <Icon name="local_shipping" className="animate-pulse text-[20px]" /> Pengiriman Masuk Belum Diterima
                         </h3>
-                        <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-bold text-white dark:bg-orange-800">{incomingTransfers.length} Pengiriman</span>
+                        <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-bold text-white dark:bg-orange-800">{incomingPagination?.total ?? incomingTransfers.length} Pengiriman</span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -67,6 +67,7 @@ export default function JihansTransferRequestsIndex({ requests, incomingTransfer
                             </tbody>
                         </table>
                     </div>
+                    {incomingPagination?.links && <div className="p-4"><Pagination links={incomingPagination.links} /></div>}
                 </div>
             )}
 

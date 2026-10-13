@@ -68,7 +68,7 @@ class DashboardController extends Controller
         ]);
 
         // Stats
-        $qSales = HendhysTransaction::whereDate('date', now())->where('status', 'paid');
+        $qSales = HendhysTransaction::where('date', now()->toDateString())->where('status', 'paid');
         if (!$isPusat) $qSales->where('branch_id', $branchId);
         else $qSales->whereNull('branch_id');
 
@@ -83,7 +83,7 @@ class DashboardController extends Controller
         ];
 
         if ($isPusat) {
-            $stats['produksi_hari_ini'] = HendhysProduction::whereDate('date', now())->count();
+            $stats['produksi_hari_ini'] = HendhysProduction::where('date', now()->toDateString())->count();
             $stats['request_pending_cabang'] = HendhysBranchRequest::where('status', 'pending')->count();
         } else {
             $stats['return_bulan_ini'] = HendhysReturnFromBranch::where('branch_id', $branchId)

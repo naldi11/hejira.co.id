@@ -5,6 +5,7 @@ import GudangLayout from '@/Layouts/GudangLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
+import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import Button from '@/Components/ui/button/Button';
 
@@ -21,7 +22,7 @@ const unitClasses = {
 const humanize = (value) => value ? value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Belum ditentukan';
 const labelClass = 'mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300';
 
-export default function UsersIndex({ users = [], filters = {}, totalUsers = 0, roleOptions = [], branchOptions = [], unit_options = [], role_descriptions = {}, layout = 'GudangLayout', routePrefix = 'master.' }) {
+export default function UsersIndex({ users = [], pagination, filters = {}, totalUsers = 0, roleOptions = [], branchOptions = [], unit_options = [], role_descriptions = {}, layout = 'GudangLayout', routePrefix = 'master.' }) {
     const Layout = Layouts[layout] || (({ children }) => <div>{children}</div>);
     const [search, setSearch] = useState(filters.search ?? '');
     const [role, setRole] = useState(filters.role ?? '');
@@ -38,6 +39,7 @@ export default function UsersIndex({ users = [], filters = {}, totalUsers = 0, r
             entity: entity || undefined,
             branch_id: branchId || undefined,
             status: status || undefined,
+            per_page: filters.per_page || '20',
             ...override,
         }, {
             preserveState: true, preserveScroll: true, replace: true,
@@ -111,9 +113,10 @@ export default function UsersIndex({ users = [], filters = {}, totalUsers = 0, r
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
+                                <label className="text-sm text-gray-600 dark:text-gray-300">Data per halaman <select aria-label="Data per halaman" value={filters.per_page || '20'} onChange={e => applyFilter({ per_page: e.target.value })} className="ml-2 rounded-lg border-gray-300 bg-white text-sm dark:border-gray-700 dark:bg-gray-900">{['20', '50', '100', 'all'].map(value => <option key={value} value={value}>{value === 'all' ? 'Semua' : value}</option>)}</select></label>
                                 <Button type="submit" size="sm" disabled={loading}>Cari pengguna</Button>
                                 {hasFilter && <button type="button" onClick={resetFilter} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300">Hapus filter</button>}
-                                <p className="text-sm text-gray-500 dark:text-gray-400" role="status">{loading ? 'Memuat pengguna…' : hasFilter ? `Menampilkan ${users.length} dari ${totalUsers} pengguna` : `${totalUsers} pengguna terdaftar`}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400" role="status">{loading ? 'Memuat pengguna…' : hasFilter ? `Menampilkan ${pagination?.from || 0}–${pagination?.to || 0} dari ${pagination?.total ?? users.length} pengguna yang sesuai` : `${totalUsers} pengguna terdaftar`}</p>
                             </div>
                         </form>
                         <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">Peran menentukan pekerjaan dan hak akses. Cabang awal adalah penempatan akun; pengguna unit dapat memilih cabang aktif melalui menu cabang.</p>
@@ -166,6 +169,7 @@ export default function UsersIndex({ users = [], filters = {}, totalUsers = 0, r
                             </tbody>
                         </table>
                     </div>
+                    {pagination?.links && <div className="border-t border-gray-200 p-4 dark:border-gray-800"><Pagination links={pagination.links} /></div>}
                 </div>
             </div>
         </Layout>
