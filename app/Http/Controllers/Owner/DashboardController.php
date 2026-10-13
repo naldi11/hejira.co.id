@@ -112,22 +112,6 @@ class DashboardController extends Controller
         return $start->translatedFormat('j F Y') . ' – ' . $end->translatedFormat('j F Y');
     }
 
-    /**
-     * Urutkan daftar stok: yang punya qty di atas, yang nol menyusul di bawah
-     * (masing-masing menurut nama).
-     *
-     * Sengaja MENGURUTKAN, bukan menyembunyikan: barang ber-stok 0 tetap
-     * informasi yang berguna ("kita kehabisan"), dan kalau dibuang dari daftar
-     * kotak pencarian di layar detail jadi tidak bisa menemukannya sama sekali.
-     */
-    private function sortStockList(\Illuminate\Support\Collection $list): \Illuminate\Support\Collection
-    {
-        return $list->sortBy(fn ($s) => [
-            (($s['quantity'] ?? 0) > 0 || ($s['quantity_return'] ?? 0) > 0) ? 0 : 1,
-            $s['name'] ?? '',
-        ])->values();
-    }
-
     /** Ambil periode dari query string, tolak nilai yang tidak dikenal. */
     private function resolvePeriod(\Illuminate\Http\Request $request): string
     {
@@ -158,13 +142,13 @@ class DashboardController extends Controller
         }
 
         $jihansSales = JihansTransaction::where('status', 'paid')
-            ->whereDate('date', '>=', today()->subDays(6))
+            ->where('date', '>=', today()->subDays(6)->toDateString())
             ->groupBy('date')
             ->selectRaw('date, SUM(grand_total) as total')
             ->pluck('total', 'date');
 
         $hendhysSales = HendhysTransaction::where('status', 'paid')
-            ->whereDate('date', '>=', today()->subDays(6))
+            ->where('date', '>=', today()->subDays(6)->toDateString())
             ->groupBy('date')
             ->selectRaw('date, SUM(grand_total) as total')
             ->pluck('total', 'date');
@@ -214,190 +198,28 @@ class DashboardController extends Controller
             'revenue'  => (float) ($revenuePerBranch[$cb->id] ?? 0),
         ])->values()->all();
 
-        // Movements Calculation
-        $jihansGudangMovementsCount = JihansGudangStockMovement::count();
-        $jihansGudangMovementsQty = (int) JihansGudangStockMovement::sum('quantity');
-        
-        $jihansRetailMovementsCount = JihansRetailStockMovement::count();
-        $jihansRetailMovementsQty = (int) JihansRetailStockMovement::sum('quantity');
-
-        $hendhysMovementsCount = HendhysStockMovement::count();
-        $hendhysMovementsQty = (int) HendhysStockMovement::sum('quantity');
-
-        $totalMovementsCount = $jihansGudangMovementsCount + $jihansRetailMovementsCount + $hendhysMovementsCount;
-        $totalMovementsQty = $jihansGudangMovementsQty + $jihansRetailMovementsQty + $hendhysMovementsQty;
+        $movementTotals = collect([JihansGudangStockMovement::class, JihansRetailStockMovement::class, HendhysStockMovement::class])
+            ->map(fn ($model) => $model::selectRaw('COUNT(*) as count, COALESCE(SUM(quantity), 0) as qty')->first());
+        $totalMovementsCount = (int) $movementTotals->sum('count');
+        $totalMovementsQty = (int) $movementTotals->sum('qty');
 
         // PO Calculation
         $totalPoCount = PurchaseOrder::count();
         $totalPoQty = (float) PoDetail::sum('quantity_ordered');
 
-        // Detailed Tables Data (values() added to reset collection keys for clean JSON arrays)
-        // 1. Jihans Gudang Stocks
-        $gudangStocksList = $this->sortStockList(
-            JihansGudangStock::with('product')->get()
-                ->map(fn($s) => [
-                    'code' => $s->product?->code ?? '-',
-                    'name' => $s->product?->name ?? '-',
-                    'quantity' => (int) $s->quantity,
-                    'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
-                ])
-        );
-
-        // 2. Jihans Retail Stocks
-        $jihansStocksList = $this->sortStockList(
-            DB::table('master_products as p')
-                ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
-                ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
-                ->where('p.status', 'active')
-                ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
-                ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
-                ->orderBy('p.name')
-                ->get()
-                ->map(fn($s) => [
-                    'code' => $s->code,
-                    'name' => $s->name,
-                    'quantity' => (int) $s->quantity,
-                    'unit' => $s->unit ?? 'PCS'
-                ])
-        );
-
-        // 3. Hendhys Consolidated Stocks (Pusat & Cabang combined)
-        $hendhysProducts = DB::table('master_products')
-            ->where('status', 'active')
-            ->where('visible_hendhys', true)
-            ->orderBy('name')
-            ->get();
-        $pusatStocks = DB::table('hendhys_stock_pusat')->get()->keyBy('product_id');
-        $cabangStocks = DB::table('hendhys_stock_branch as sb')
-            ->join('master_branches as b', 'b.id', '=', 'sb.branch_id')
-            ->select('sb.product_id', 'b.id as branch_id', 'b.name as branch_name', 'sb.quantity', 'sb.quantity_return')
-            ->get()
-            ->groupBy('product_id');
-
-        $hendhysStocksList = $hendhysProducts->map(function ($p) use ($pusatStocks, $cabangStocks) {
-            $pusatQty = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity : 0;
-            $pusatRet = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity_return : 0;
-
-            $branches = [];
-            $totalQty = $pusatQty;
-            $totalRet = $pusatRet;
-
-            if ($pusatQty > 0 || $pusatRet > 0) {
-                $branches[] = [
-                    'branch_id' => 'pusat',
-                    'branch_name' => 'Hendhys Produksi (Pusat)',
-                    'quantity' => $pusatQty,
-                    'quantity_return' => $pusatRet,
-                ];
-            }
-
-            if (isset($cabangStocks[$p->id])) {
-                foreach ($cabangStocks[$p->id] as $cs) {
-                    $qty = (int) $cs->quantity;
-                    $ret = (int) $cs->quantity_return;
-                    if ($qty > 0 || $ret > 0) {
-                        $branches[] = [
-                            'branch_id' => $cs->branch_id,
-                            'branch_name' => $cs->branch_name,
-                            'quantity' => $qty,
-                            'quantity_return' => $ret,
-                        ];
-                        $totalQty += $qty;
-                        $totalRet += $ret;
-                    }
-                }
-            }
-
-            return [
-                'id' => $p->id,
-                'code' => $p->code,
-                'name' => $p->name,
-                'branches' => $branches,
-                'total_quantity' => $totalQty,
-                'total_quantity_return' => $totalRet,
-            ];
-        });
-
-        // Daftar Hendhys memakai kunci total_*, bukan quantity — dipetakan dulu
-        // supaya bisa memakai pengurutan yang sama dengan daftar stok lainnya.
-        $hendhysStocksList = $this->sortStockList(
-            $hendhysStocksList->map(fn ($p) => $p + [
-                'quantity'        => $p['total_quantity'],
-                'quantity_return' => $p['total_quantity_return'],
-            ])
-        )->map(function ($p) {
-            unset($p['quantity'], $p['quantity_return']);
-            return $p;
-        })->values();
-
-        // 4. Movements List
-        // Kartu ringkasan "movements" di atas menjumlahkan 3 sumber (Gudang, Retail
-        // Jihans, Hendhys), tapi daftar ini dulu hanya membaca Gudang — sehingga
-        // angka ringkasan dan isi daftarnya tidak pernah cocok.
-        $mapMovement = fn ($m, string $sumber) => [
-            'date'         => $m->created_at?->toDateTimeString(),
-            'product_name' => $m->product?->name ?? '-',
-            'type'         => $m->type,
-            'quantity'     => (int) $m->quantity,
-            'notes'        => $m->notes,
-            'user'         => $m->creator?->name ?? '-',
-            'sumber'       => $sumber,
-        ];
-
-        $movementsList = collect()
-            ->concat(JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
-                ->map(fn ($m) => $mapMovement($m, 'Gudang')))
-            ->concat(JihansRetailStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
-                ->map(fn ($m) => $mapMovement($m, "Jihan's Retail")))
-            ->concat(HendhysStockMovement::with(['product', 'creator'])->latest('id')->take(50)->get()
-                ->map(fn ($m) => $mapMovement($m, 'Hendhys')))
-            ->sortByDesc('date')
-            ->take(50)
-            ->values();
-
-        // 5. PO List
-        $poList = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->take(50)->get()
-            ->map(fn($po) => [
-                'id' => $po->id,
-                'po_number' => $po->po_number,
-                'supplier' => $po->supplier?->name ?? '-',
-                'date' => $po->date ? $po->date->toDateString() : '-',
-                'status' => $po->status,
-                'total_amount' => (float) $po->total_amount,
-                'user' => $po->creator?->name ?? '-'
-            ])->values();
-
-        // 6. Jihans Transactions List
-        $jihansTransactionsList = JihansTransaction::with('creator')->latest('id')->take(50)->get()
-            ->map(fn($t) => [
-                'date' => $t->date,
-                'transaction_number' => $t->transaction_number,
-                'customer' => $t->customer_name,
-                'grand_total' => (float) $t->grand_total,
-                'status' => $t->status,
-                'user' => $t->creator?->name ?? '-'
-            ])->values();
-
-        // 7. Hendhys Transactions List
-        $hendhysTransactionsList = HendhysTransaction::with(['creator', 'branch'])->latest('id')->take(50)->get()
-            ->map(fn($t) => [
-                'date' => $t->date,
-                'transaction_number' => $t->transaction_number,
-                'customer' => $t->customer_name,
-                'grand_total' => (float) $t->grand_total,
-                'status' => $t->status,
-                'branch' => $t->branch?->name ?? 'Hendhys Produksi (Pusat)',
-                'user' => $t->creator?->name ?? '-'
-            ])->values();
-
+        // The dashboard renders aggregate cards only. Item lists are fetched by
+        // their paginated detail routes rather than loaded and serialized here.
         $jihansRevenue = (float) $omsetPeriod(JihansTransaction::where('status', 'paid'))->sum('grand_total');
         $hendhysRevenue = (float) $omsetPeriod(HendhysTransaction::where('status', 'paid'))->sum('grand_total');
         $hendhysPusatRevenue = (float) $omsetPeriod(
             HendhysTransaction::where('status', 'paid')->whereNull('branch_id')
         )->sum('grand_total');
 
+        $jihansToday = (float) JihansTransaction::where('status', 'paid')->where('date', today()->toDateString())->sum('grand_total');
+        $hendhysToday = (float) HendhysTransaction::where('status', 'paid')->where('date', today()->toDateString())->sum('grand_total');
+
         return Inertia::render('Owner/Dashboard', [
-            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->overview(),
+            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->summaryForRequest($request),
             'period'        => $period,
             'periodLabel'   => self::PERIODS[$period],
             'periodRange'   => $this->periodDescription($range),
@@ -412,9 +234,9 @@ class DashboardController extends Controller
                 'hendhys_pusat_revenue' => $hendhysPusatRevenue,
                 'total_revenue'         => $jihansRevenue + $hendhysRevenue,
 
-                'jihans_today'       => (float) JihansTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total'),
-                'hendhys_today'      => (float) HendhysTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total'),
-                'total_today'        => (float) (JihansTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total') + HendhysTransaction::where('status', 'paid')->whereDate('date', today())->sum('grand_total')),
+                'jihans_today'       => $jihansToday,
+                'hendhys_today'      => $hendhysToday,
+                'total_today'        => $jihansToday + $hendhysToday,
 
                 'stock' => [
                     'total' => $totalStock,
@@ -435,15 +257,6 @@ class DashboardController extends Controller
                 ],
             ],
             'trends' => $trends,
-            'details' => [
-                'gudang_stocks'        => $gudangStocksList,
-                'jihans_stocks'        => $jihansStocksList,
-                'hendhys_stocks'       => $hendhysStocksList,
-                'movements'            => $movementsList,
-                'purchase_orders'      => $poList,
-                'jihans_transactions'  => $jihansTransactionsList,
-                'hendhys_transactions' => $hendhysTransactionsList,
-            ],
         ]);
     }
 
@@ -469,118 +282,45 @@ class DashboardController extends Controller
         // Apply date filter logic for omset
         $dateFilter = function ($q) use ($range, $isExactDate, $filter) {
             if ($isExactDate) {
-                $q->whereDate('date', $filter);
+                $q->where('date', $filter);
             } elseif ($range) {
                 $q->whereBetween('date', [$range[0]->toDateString(), $range[1]->toDateString()]);
             }
         };
 
         if ($mode === 'stock') {
-            if ($unit === 'gudang') {
-                $title = 'Jihans Gudang';
-                $list = $this->sortStockList(
-                    JihansGudangStock::with('product')->get()
-                        ->map(fn($s) => [
-                            'code' => $s->product?->code ?? '-',
-                            'name' => $s->product?->name ?? '-',
-                            'quantity' => (int) $s->quantity,
-                            'unit' => $s->product?->unit?->abbreviation ?? 'PCS'
-                        ])
-                );
-                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
-            } elseif ($unit === 'retail') {
-                $title = 'Jihans Retail';
-                $list = $this->sortStockList(
-                    DB::table('master_products as p')
-                        ->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
-                        ->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id')
-                        ->where('p.status', 'active')
-                        ->where(fn($w) => $w->whereRaw('p.visible_jihans = 1')->orWhereNotNull('s.quantity'))
-                        ->select('p.name', 'p.code', DB::raw('COALESCE(s.quantity, 0) as quantity'), 'u.abbreviation as unit')
-                        ->orderBy('p.name')
-                        ->get()
-                        ->map(fn($s) => [
-                            'code' => $s->code,
-                            'name' => $s->name,
-                            'quantity' => (int) $s->quantity,
-                            'unit' => $s->unit ?? 'PCS'
-                        ])
-                );
-                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
-            } elseif ($unit === 'hendhys_pusat') {
-                $title = 'Hendhys Pusat';
-                $hendhysProducts = DB::table('master_products')
-                    ->where('status', 'active')
-                    ->where('visible_hendhys', true)
-                    ->orderBy('name')
-                    ->get();
-                $pusatStocks = DB::table('hendhys_stock_pusat')->get()->keyBy('product_id');
-                $list = $hendhysProducts->map(function ($p) use ($pusatStocks) {
-                    $pusatQty = isset($pusatStocks[$p->id]) ? (int) $pusatStocks[$p->id]->quantity : 0;
-                    return [
-                        'code' => $p->code,
-                        'name' => $p->name,
-                        'quantity' => $pusatQty,
-                        'unit' => 'PCS'
-                    ];
-                })->filter(fn($p) => $p['quantity'] > 0)->values();
-                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
-            } elseif (str_starts_with($unit, 'hendhys_cabang_')) {
-                $branchId = str_replace('hendhys_cabang_', '', $unit);
-                $branch = Branch::find($branchId);
-                $title = $branch ? $branch->name : 'Hendhys Cabang';
-                
-                $hendhysProducts = DB::table('master_products')
-                    ->where('status', 'active')
-                    ->where('visible_hendhys', true)
-                    ->orderBy('name')
-                    ->get();
-                $cabangStocks = DB::table('hendhys_stock_branch')
-                    ->where('branch_id', $branchId)
-                    ->get()
-                    ->keyBy('product_id');
-
-                $list = $hendhysProducts->map(function ($p) use ($cabangStocks) {
-                    $qty = isset($cabangStocks[$p->id]) ? (int) $cabangStocks[$p->id]->quantity : 0;
-                    $qty_ret = isset($cabangStocks[$p->id]) ? (int) $cabangStocks[$p->id]->quantity_return : 0;
-                    return [
-                        'code' => $p->code,
-                        'name' => $p->name,
-                        'quantity' => $qty,
-                        'quantity_return' => $qty_ret,
-                        'unit' => 'PCS'
-                    ];
-                })->filter(fn($p) => $p['quantity'] > 0 || $p['quantity_return'] > 0)->values();
-                $subtitle = number_format($list->sum('quantity'), 0, ',', '.') . ' Item';
-            } elseif ($unit === 'movements') {
-                $title = 'Mutasi Pergerakan Stok';
-                $list = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->get()
-                    ->map(fn($m) => [
-                        'id' => $m->id,
-                        'date' => $m->created_at->toDateTimeString(),
-                        'product_name' => $m->product?->name ?? '-',
-                        'type' => $m->type,
-                        'quantity' => (int) $m->quantity,
-                        'notes' => $m->notes,
-                        'user' => $m->creator?->name ?? '-'
-                    ])->values();
-                $subtitle = $list->count() . ' Mutasi Terakhir';
-            } elseif ($unit === 'po') {
-                $title = 'Purchase Order Supplier';
-                $list = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->get()
-                    ->map(fn($po) => [
-                        'id' => $po->id,
-                        'po_number' => $po->po_number,
-                        'supplier' => $po->supplier?->name ?? '-',
-                        'date' => $po->date ? $po->date->toDateString() : '-',
-                        'status' => $po->status,
-                        'total_amount' => (float) $po->total_amount,
-                        'user' => $po->creator?->name ?? '-'
-                    ])->values();
-                $subtitle = $list->count() . ' PO Terakhir';
-            }
+            return $this->stockDetail($request, $unit, $filter);
         }
-        
+
+        $input = $request->validate([
+            'per_page' => ['nullable', 'in:20,50,100,all'],
+            'search' => ['nullable', 'string', 'max:200'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'shift_page' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $perPage = (string) ($input['per_page'] ?? '20');
+        $search = trim($input['search'] ?? '');
+        $needle = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
+        $pagination = $shiftPagination = null;
+        $searchTransactions = function ($q) use ($search, $needle) {
+            if ($search === '') return;
+            $hasBranch = $q->getModel() instanceof HendhysTransaction;
+            $q->where(function ($q) use ($needle, $hasBranch) {
+                $q->whereRaw("LOWER(transaction_number) LIKE ? ESCAPE '!'", [$needle])
+                    ->orWhereRaw("LOWER(customer_name) LIKE ? ESCAPE '!'", [$needle])
+                    ->orWhereHas('creator', fn ($u) => $u->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$needle]))
+                    ->orWhereHas('details', fn ($d) => $d->whereRaw("LOWER(product_name) LIKE ? ESCAPE '!'", [$needle]));
+                if ($hasBranch) $q->orWhereHas('branch', fn ($b) => $b->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$needle]));
+            });
+        };
+        $paginateShifts = function ($q, $map) use ($perPage, $search, $needle) {
+            if ($search !== '') $q->where(function ($q) use ($needle) {
+                $q->whereRaw("LOWER(note) LIKE ? ESCAPE '!'", [$needle])
+                    ->orWhereHas('user', fn ($u) => $u->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$needle]))
+                    ->orWhereHas('branch', fn ($b) => $b->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$needle]));
+            });
+            return $this->paginateDetail($q->latest('id'), $perPage, $map, 'shift_page');
+        };
         $trends = [];
         if ($mode === 'omset') {
             Carbon::setLocale('id');
@@ -703,24 +443,28 @@ class DashboardController extends Controller
                 $title = 'Semua Unit Bisnis';
                 $jihansQuery = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
                 $dateFilter($jihansQuery);
-                $jihans = $jihansQuery->latest('id')->take(50)->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"));
-
+                $searchTransactions($jihansQuery);
                 $hendhysQuery = HendhysTransaction::with(['creator', 'branch', 'details'])->where('status', 'paid');
                 $dateFilter($hendhysQuery);
-                $hendhys = $hendhysQuery->latest('id')->take(50)->get()->map(fn($t) => $mapTransaction($t, $t->branch?->name ?? 'Hendhys Produksi (Pusat)'));
+                $searchTransactions($hendhysQuery);
+                // IDs are only unique within each business unit. Paginate keys from
+                // both tables, then hydrate just that page while retaining its order.
+                $keys = (clone $jihansQuery)->select('id', 'created_at', DB::raw("'jihans' as entity"))->toBase()
+                    ->unionAll((clone $hendhysQuery)->select('id', 'created_at', DB::raw("'hendhys' as entity"))->toBase());
+                $combined = DB::query()->fromSub($keys, 'transactions')
+                    ->orderByDesc('created_at')->orderByDesc('id')->orderBy('entity');
+                [$references, $pagination] = $this->paginateDetail($combined, $perPage, fn ($r) => $r);
+                $jRows = JihansTransaction::with(['creator', 'details'])->whereIn('id', $references->where('entity', 'jihans')->pluck('id'))->get()->keyBy('id');
+                $hRows = HendhysTransaction::with(['creator', 'branch', 'details'])->whereIn('id', $references->where('entity', 'hendhys')->pluck('id'))->get()->keyBy('id');
+                $list = $references->map(function ($r) use ($jRows, $hRows, $mapTransaction) {
+                    $t = $r->entity === 'jihans' ? $jRows[$r->id] : $hRows[$r->id];
+                    return $mapTransaction($t, $r->entity === 'jihans' ? "Jihan's Food" : ($t->branch?->name ?? 'Hendhys Produksi (Pusat)'));
+                });
 
-                $list = collect($jihans)->concat($hendhys)->sortByDesc('id')->values();
-
-                // Shifts
-                $sJihansQ = CashierShift::with(['user', 'branch'])->where('entity', 'jihans');
-                $dateFilterShift($sJihansQ);
-                $sJihans = $sJihansQ->latest('id')->take(50)->get()->map(fn($s) => $mapShift($s, "Jihan's Food"));
-
-                $sHendhysQ = CashierShift::with(['user', 'branch'])->where('entity', 'hendhys');
-                $dateFilterShift($sHendhysQ);
-                $sHendhys = $sHendhysQ->latest('id')->take(50)->get()->map(fn($s) => $mapShift($s, $s->branch?->name ?? 'Hendhys Pusat'));
-
-                $shifts = collect($sJihans)->concat($sHendhys)->sortByDesc('id')->values();
+                $shiftQ = CashierShift::with(['user', 'branch'])->whereIn('entity', ['jihans', 'hendhys']);
+                $dateFilterShift($shiftQ);
+                [$shifts, $shiftPagination] = $paginateShifts($shiftQ, fn ($s) => $mapShift($s,
+                    $s->entity === 'jihans' ? "Jihan's Food" : ($s->branch?->name ?? 'Hendhys Produksi (Pusat)')));
                 $totalJihansOmset = (clone $jihansQuery)->sum('grand_total');
                 $totalHendhysOmset = (clone $hendhysQuery)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalJihansOmset + $totalHendhysOmset, 0, ',', '.');
@@ -733,11 +477,12 @@ class DashboardController extends Controller
                 $title = "Jihan's Food";
                 $query = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, "Jihan's Food"))->values();
+                $searchTransactions($query);
+                [$list, $pagination] = $this->paginateDetail($query->latest('id'), $perPage, fn ($t) => $mapTransaction($t, "Jihan's Food"));
                 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'jihans');
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, "Jihan's Food"))->values();
+                [$shifts, $shiftPagination] = $paginateShifts($shiftQ, fn ($s) => $mapShift($s, "Jihan's Food"));
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
@@ -748,11 +493,12 @@ class DashboardController extends Controller
                 $title = 'Hendhys Pusat';
                 $query = HendhysTransaction::with(['creator', 'details'])->whereNull('branch_id')->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'))->values();
+                $searchTransactions($query);
+                [$list, $pagination] = $this->paginateDetail($query->latest('id'), $perPage, fn ($t) => $mapTransaction($t, 'Hendhys Produksi (Pusat)'));
 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->whereNull('branch_id');
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'))->values();
+                [$shifts, $shiftPagination] = $paginateShifts($shiftQ, fn ($s) => $mapShift($s, 'Hendhys Produksi (Pusat)'));
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
@@ -766,11 +512,12 @@ class DashboardController extends Controller
                 
                 $query = HendhysTransaction::with(['creator', 'details'])->where('branch_id', $branchId)->where('status', 'paid');
                 $dateFilter($query);
-                $list = $query->latest('id')->get()->map(fn($t) => $mapTransaction($t, $title))->values();
+                $searchTransactions($query);
+                [$list, $pagination] = $this->paginateDetail($query->latest('id'), $perPage, fn ($t) => $mapTransaction($t, $title));
 
                 $shiftQ = CashierShift::with(['user'])->where('entity', 'hendhys')->where('branch_id', $branchId);
                 $dateFilterShift($shiftQ);
-                $shifts = $shiftQ->latest('id')->get()->map(fn($s) => $mapShift($s, $title))->values();
+                [$shifts, $shiftPagination] = $paginateShifts($shiftQ, fn ($s) => $mapShift($s, $title));
                 $totalOmset = (clone $query)->sum('grand_total');
                 $subtitle = 'Total Omset: Rp ' . number_format($totalOmset, 0, ',', '.');
 
@@ -781,7 +528,7 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('Owner/Detail', [
-            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->overview(),
+            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->summaryForRequest($request),
             'mode' => $mode,
             'unit' => $unit,
             'title' => $title,
@@ -789,8 +536,130 @@ class DashboardController extends Controller
             'list' => $list,
             'shifts' => $shifts,
             'filter' => $filter,
-            'trends' => $trends
+            'trends' => $trends,
+            'pagination' => $pagination, 'shifts_pagination' => $shiftPagination,
+            'search' => $search, 'per_page' => $perPage,
         ]);
+    }
+
+    private function stockDetail(\Illuminate\Http\Request $request, string $unit, string $filter)
+    {
+        $input = $request->validate([
+            'per_page' => ['nullable', 'in:20,50,100,all'],
+            'search' => ['nullable', 'string', 'max:200'],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $perPage = (string) ($input['per_page'] ?? '20');
+        $search = trim($input['search'] ?? '');
+        // Escape wildcard characters so a product code containing % or _ is searchable literally.
+        $needle = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
+        $match = fn ($q, $column) => $q->whereRaw("LOWER($column) LIKE ? ESCAPE '!'", [$needle]);
+
+        if ($unit === 'movements') {
+            $title = 'Mutasi Pergerakan Stok';
+            $query = JihansGudangStockMovement::with(['product', 'creator'])->latest('id');
+            if ($search !== '') {
+                $query->where(function ($q) use ($match, $needle) {
+                    $match($q, 'notes');
+                    $q->orWhereHas('product', function ($p) use ($match, $needle) {
+                        $match($p, 'name');
+                        $p->orWhereRaw("LOWER(code) LIKE ? ESCAPE '!'", [$needle]);
+                    })->orWhereHas('creator', fn ($u) => $match($u, 'name'));
+                });
+            }
+            $map = fn ($m) => [
+                'id' => $m->id, 'date' => $m->created_at->toDateTimeString(),
+                'product_name' => $m->product?->name ?? '-', 'type' => $m->type,
+                'quantity' => (int) $m->quantity, 'notes' => $m->notes, 'user' => $m->creator?->name ?? '-',
+            ];
+            $subtitle = ''; // Filled from the paginator's count below.
+        } elseif ($unit === 'po') {
+            $title = 'Purchase Order Supplier';
+            $query = PurchaseOrder::with(['supplier', 'creator'])->latest('id');
+            if ($search !== '') {
+                $query->where(function ($q) use ($match) {
+                    $match($q, 'po_number');
+                    $q->orWhereHas('supplier', fn ($s) => $match($s, 'name'))
+                        ->orWhereHas('creator', fn ($u) => $match($u, 'name'));
+                });
+            }
+            $map = fn ($po) => [
+                'id' => $po->id, 'po_number' => $po->po_number, 'supplier' => $po->supplier?->name ?? '-',
+                'date' => $po->date?->toDateString() ?? '-', 'status' => $po->status,
+                'total_amount' => (float) $po->total_amount, 'user' => $po->creator?->name ?? '-',
+            ];
+            $subtitle = '';
+        } else {
+            $query = DB::table('master_products as p')->leftJoin('master_units as u', 'p.unit_id', '=', 'u.id');
+            $quantity = 'COALESCE(s.quantity, 0)';
+            $isBranch = str_starts_with($unit, 'hendhys_cabang_');
+            if ($unit === 'gudang') {
+                $title = 'Gudang Utama';
+                // Include archived products that still have stock, as in the warehouse product relation.
+                $query->join('jihans_gudang_stock as s', 'p.id', '=', 's.product_id');
+            } elseif ($unit === 'retail') {
+                $title = "Stok Penjualan Jihan’s";
+                $query->leftJoin('jihans_retail_stock as s', 'p.id', '=', 's.product_id')
+                    ->where('p.status', 'active')
+                    ->where(fn ($q) => $q->where('p.visible_jihans', 1)->orWhereNotNull('s.quantity'));
+            } elseif ($unit === 'hendhys_pusat' || $isBranch) {
+                $query->where('p.status', 'active')->where('p.visible_hendhys', true);
+                if ($isBranch) {
+                    $branchId = substr($unit, strlen('hendhys_cabang_'));
+                    $branch = Branch::findOrFail($branchId);
+                    $title = $branch->name;
+                    $query->leftJoin('hendhys_stock_branch as s', fn ($join) => $join->on('p.id', '=', 's.product_id')->where('s.branch_id', $branchId))
+                        ->where(fn ($q) => $q->where('s.quantity', '>', 0)->orWhere('s.quantity_return', '>', 0));
+                } else {
+                    $title = 'Hendhys Produksi (Pusat)';
+                    $query->leftJoin('hendhys_stock_pusat as s', 'p.id', '=', 's.product_id')->where('s.quantity', '>', 0);
+                }
+            } else {
+                abort(404);
+            }
+            if ($search !== '') {
+                $query->where(function ($q) use ($match, $needle) {
+                    $match($q, 'p.name');
+                    $q->orWhereRaw("LOWER(p.code) LIKE ? ESCAPE '!'", [$needle]);
+                });
+            }
+            $subtitle = number_format((clone $query)->sum(DB::raw($quantity)), 0, ',', '.').' Item';
+            $query->select('p.code', 'p.name', DB::raw("$quantity as quantity"), 'u.abbreviation as unit');
+            if ($isBranch) $query->addSelect(DB::raw('COALESCE(s.quantity_return, 0) as quantity_return'));
+            $query->orderByRaw("CASE WHEN $quantity > 0 THEN 0 ELSE 1 END")->orderBy('p.name')->orderBy('p.id');
+            $map = fn ($s) => [
+                'code' => $s->code, 'name' => $s->name, 'quantity' => (int) $s->quantity,
+                'unit' => $s->unit ?? 'PCS',
+            ] + ($isBranch ? ['quantity_return' => (int) $s->quantity_return] : []);
+        }
+
+        [$list, $pagination] = $this->paginateDetail($query, $perPage, $map);
+        if ($unit === 'movements' || $unit === 'po') $subtitle = $pagination['total'].($unit === 'po' ? ' PO' : ' Mutasi');
+        return Inertia::render('Owner/Detail', [
+            'production_monitor' => function () use ($request, $unit, $list) {
+                $monitor = app(\App\Services\ProductionStockMonitor::class);
+                $summary = $monitor->summaryForRequest($request);
+                if ($unit === 'hendhys_pusat') {
+                    $codes = array_flip($list->pluck('code')->all());
+                    $summary['stocks'] = array_values(array_filter($monitor->overviewForRequest($request)['stocks'], fn ($row) => isset($codes[$row['code']])));
+                }
+                return $summary;
+            },
+            'mode' => 'stock', 'unit' => $unit, 'filter' => $filter, 'title' => $title, 'subtitle' => $subtitle,
+            'list' => $list, 'shifts' => [], 'trends' => [], 'pagination' => $pagination,
+            'search' => $search, 'per_page' => $perPage,
+        ]);
+    }
+
+    private function paginateDetail($query, string $perPage, callable $map, string $pageName = 'page'): array
+    {
+        if ($perPage === 'all') {
+            $list = $query->get()->map($map)->values();
+            $total = $list->count();
+            return [$list, ['total' => $total, 'from' => $total ? 1 : null, 'to' => $total ?: null, 'links' => []]];
+        }
+        $paginator = $query->paginate((int) $perPage, ['*'], $pageName)->onEachSide(1)->withQueryString();
+        return [$paginator->getCollection()->map($map)->values(), \Illuminate\Support\Arr::except($paginator->toArray(), ['data'])];
     }
 
     public function shiftDetail($id)

@@ -133,6 +133,61 @@ class OperationsTest extends TestCase
         $this->get(route('gudang.po.index'))->assertForbidden();
     }
 
+    public function test_owner_dismissal_survives_navigation_and_refresh_without_resolving_stock(): void
+    {
+        $owner = $this->user(); $product = $this->product();
+        HendhysStockPusat::create(['product_id' => $product->id, 'quantity' => 3, 'unit_id' => $product->unit_id]);
+        Carbon::setTestNow('2026-08-03 17:00:00');
+        $id = 'production_stock_2026-08-03';
+        $this->actingAs($owner)->get(route('owner.production.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.items.0.id', $id)->where('notifications.dismissed_production_alerts', []));
+        $this->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertOk()->assertJsonPath('dismissed_alert_id', $id);
+        $this->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertOk();
+        $this->get(route('return-stock.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.items.0.id', $id)->where('notifications.dismissed_production_alerts', [$id]));
+        $headers = ['X-Inertia' => 'true', 'X-Inertia-Version' => hash_file('xxh128', public_path('build/manifest.json')),
+            'X-Inertia-Partial-Component' => 'Owner/Production/Index', 'X-Inertia-Partial-Data' => 'notifications'];
+        $this->get(route('owner.production.index'), $headers)->assertOk()
+            ->assertJsonPath('props.notifications.dismissed_production_alerts', [$id])
+            ->assertJsonPath('props.notifications.items.0.id', $id);
+        $this->assertDatabaseHas('hendhys_stock_pusat', ['product_id' => $product->id, 'quantity' => 3]);
+        $this->assertDatabaseHas('production_stock_alerts', ['product_id' => $product->id, 'resolved_at' => null, 'quantity' => 3]);
+    }
+
+    public function test_dismissal_is_specific_to_owner_and_clears_after_logout_and_new_login(): void
+    {
+        $owner = $this->user(); $other = $this->user(); $id = 'production_stock_2026-08-03';
+        $this->actingAs($owner)->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertOk();
+        $this->actingAs($other)->get(route('owner.production.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.dismissed_production_alerts', []));
+        $this->actingAs($owner)->get(route('owner.production.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.dismissed_production_alerts', [$id]));
+        $this->post(route('logout'))->assertRedirect(route('login'));
+        $this->post(route('login'), ['email' => $owner->email, 'password' => 'password'])->assertSessionHasNoErrors()->assertRedirect();
+        $this->get(route('owner.production.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.dismissed_production_alerts', []));
+    }
+
+    public function test_dismissal_rejects_non_owner_and_invalid_ids_and_does_not_hide_a_new_warning(): void
+    {
+        $id = 'production_stock_2026-08-03';
+        $this->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertUnauthorized();
+        foreach (['super_admin', 'admin_hendhys', 'kasir_hendhys', 'admin_jihans', 'kasir_jihans'] as $role) {
+            $this->actingAs($this->user($role))->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertForbidden();
+        }
+        $owner = $this->user(); $this->actingAs($owner);
+        foreach ([[], ['alert_id' => 'gudang_low_stock'], ['alert_id' => ['invalid']]] as $data) {
+            $this->postJson(route('owner.production-alert.dismiss'), $data)->assertUnprocessable()->assertJsonValidationErrors('alert_id');
+        }
+        $this->postJson(route('owner.production-alert.dismiss'), ['alert_id' => $id])->assertOk();
+        $product = $this->product();
+        Carbon::setTestNow('2026-08-04 17:00:00');
+        HendhysStockPusat::create(['product_id' => $product->id, 'quantity' => 6, 'unit_id' => $product->unit_id]);
+        $this->get(route('owner.production.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.items.0.id', 'production_stock_2026-08-04')
+            ->where('notifications.dismissed_production_alerts', [$id]));
+    }
+
     public function test_jihans_warehouse_and_outlet_stocks_are_separate_from_hendhys(): void
     {
         $j = $this->product('jihans'); $h = $this->product();

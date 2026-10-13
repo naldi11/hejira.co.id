@@ -43,7 +43,7 @@ class OperationsController extends Controller
 
         return Inertia::render('Owner/Production/Index', [
             'records' => $records, 'filters' => $filters,
-            'production_monitor' => fn () => $monitor->overview(),
+            'production_monitor' => fn () => $monitor->overviewForRequest($request),
             'jihans_stocks' => fn () => $monitor->stocks('jihans'),
         ]);
     }
@@ -70,7 +70,7 @@ class OperationsController extends Controller
                 'number' => $production->production_number ?? $production->session_number,
                 'type' => $production->type, 'prediction' => $production->prediction_snapshot,
             ],
-            'production_monitor' => fn () => $monitor->overview(),
+            'production_monitor' => fn () => $monitor->overviewForRequest($request),
             'jihans_stocks' => fn () => $monitor->stocks('jihans'),
         ]);
     }

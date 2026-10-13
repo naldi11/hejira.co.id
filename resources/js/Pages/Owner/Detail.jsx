@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import Pagination from '@/Components/Pagination';
+import { useEffect, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
@@ -180,12 +181,16 @@ function ShiftCard({ row, showBranch }) {
     );
 }
 
-export default function Detail({ mode, unit, title, subtitle, list, shifts, filter, trends, production_monitor }) {
-    const [searchQuery, setSearchQuery] = useState('');
+export default function Detail({ mode, unit, title, subtitle, list, shifts, filter, trends, production_monitor, pagination, shifts_pagination, search = '', per_page = '20' }) {
+    const [searchQuery, setSearchQuery] = useState(search);
+    useEffect(() => setSearchQuery(search), [search, unit]);
+    const loadDetail = (overrides = {}) => router.get(route('owner.dashboard.detail'), { mode, unit, filter, search: searchQuery, per_page, ...overrides }, { preserveState: true, preserveScroll: true });
     const [activeTab, setActiveTab] = useState('transactions');
 
+    const currentPagination = mode === 'omset' && activeTab === 'shifts' ? shifts_pagination : pagination;
+
     const handleFilterChange = (newFilter) => {
-        router.get(route('owner.dashboard.detail'), { mode, unit, filter: newFilter }, { preserveState: true, preserveScroll: true });
+        router.get(route('owner.dashboard.detail'), { mode, unit, filter: newFilter, search: searchQuery, per_page }, { preserveState: true, preserveScroll: true });
     };
 
     const getStockCardType = () => {
@@ -196,7 +201,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
     };
 
     const getFilteredTransactions = () => {
-        if (!searchQuery) return list;
+        if (pagination || !searchQuery) return list;
         const q = searchQuery.toLowerCase();
         return list.filter(item =>
             (item.name && item.name.toLowerCase().includes(q)) ||
@@ -213,6 +218,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
 
     const getFilteredShifts = () => {
         if (!shifts) return [];
+        if (shifts_pagination) return shifts;
         if (!searchQuery) return shifts;
         const q = searchQuery.toLowerCase();
         return shifts.filter(item => 
@@ -255,8 +261,8 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                 {[
                                     { id: 'all', label: 'Semua' },
                                     { id: 'today', label: 'Hari Ini' },
-                                    { id: 'week', label: 'Minggu Ini' },
-                                    { id: 'month', label: 'Bulan Ini' }
+                                    { id: 'this_week', label: 'Minggu Ini' },
+                                    { id: 'this_month', label: 'Bulan Ini' }
                                 ].map(f => (
                                     <button
                                         key={f.id}
@@ -310,8 +316,8 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                 >
                                     <option value="all">Semua Waktu</option>
                                     <option value="today">Hari Ini</option>
-                                    <option value="week">Minggu Ini</option>
-                                    <option value="month">Bulan Ini</option>
+                                    <option value="this_week">Minggu Ini</option>
+                                    <option value="this_month">Bulan Ini</option>
                                     {filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) && (
                                         <option value={filter}>
                                             {new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -344,8 +350,9 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                         <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
                             <Icon name="trending_up" className="text-blue-500" /> Tren Omset 
-                            {filter === 'today' ? ' (Hari Ini)' : filter === 'week' ? ' (Minggu Ini)' : filter === 'month' ? ' (Bulan Ini)' : (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) ? ` (${new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })})` : ' (Tahun Ini)'}
+                            {filter === 'today' ? ' (Hari Ini)' : filter === 'this_week' ? ' (Minggu Ini)' : filter === 'this_month' ? ' (Bulan Ini)' : (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) ? ` (${new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })})` : ' (Tahun Ini)'}
                         </h3>
+                        {search && <p className="mb-3 text-xs text-slate-500">Grafik menampilkan seluruh omzet pada periode ini, tanpa filter pencarian.</p>}
                         <div className="w-full">
                             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto">
                                 <line x1="20" y1="10" x2={chartWidth - 20} y2="10" stroke="#f1f5f9" strokeDasharray="3" />
@@ -379,18 +386,27 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                     </div>
                 )}
 
-                {/* Search input */}
-                <div className="relative">
-                    <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]" />
-                    <input
-                        type="text"
-                        placeholder="Cari data..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-gray-850 dark:bg-white/[0.02] dark:text-white"
-                    />
-                </div>
-
+                {/* Search is applied on the server before pagination. */}
+                <form onSubmit={(e) => { e.preventDefault(); loadDetail(); }} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-white/[0.02]">
+                    <div className="flex flex-wrap items-end gap-3">
+                        <label className="min-w-0 flex-1 basis-56 text-sm font-medium text-slate-600 dark:text-gray-300">
+                            Cari data
+                            <input type="search" placeholder={unit === 'movements' ? 'Produk, kode, petugas, atau catatan' : 'Cari nama, kode, atau nomor dokumen'} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} maxLength={200} className="mt-1 w-full rounded-xl border-slate-200 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white" />
+                        </label>
+                        <>
+                            <label className="text-sm font-medium text-slate-600 dark:text-gray-300">
+                                Data per halaman
+                                <select value={per_page} onChange={(e) => loadDetail({ per_page: e.target.value })} className="mt-1 block w-36 rounded-xl border-slate-200 py-2.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                                    <option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Semua</option>
+                                </select>
+                            </label>
+                            <button type="submit" className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Cari</button>
+                            {search && <button type="button" onClick={() => loadDetail({ search: '' })} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-brand-600 dark:text-brand-400">Reset</button>}
+                        </>
+                    </div>
+                    {currentPagination && <p className="mt-3 text-xs text-slate-500 dark:text-gray-400">Menampilkan {currentPagination.from ?? 0}–{currentPagination.to ?? 0} dari {formatQty(currentPagination.total)} data{search ? ` untuk “${search}”` : ''}. Pencarian mencakup seluruh data.</p>}
+                    {per_page === 'all' && <p className="mt-2 text-xs text-slate-500 dark:text-gray-400">Semua data ditampilkan; pemuatan dapat lebih lama jika riwayat sangat banyak.</p>}
+                </form>
                 {/* Tabs for Omset Mode */}
                 {mode === 'omset' && (
                     <div className="flex gap-2">
@@ -417,7 +433,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                 <Icon name="receipt_long" className="text-blue-500 dark:text-blue-400 text-[18px]" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-blue-800 dark:text-blue-400 text-sm">Total Transaksi</h3>
+                                <h3 className="font-bold text-blue-800 dark:text-blue-400 text-sm">Total Transaksi di Halaman Ini</h3>
                                 <p className="text-xs text-blue-600/70 dark:text-blue-400/70">{filteredTransactions.length} Transaksi</p>
                             </div>
                         </div>
@@ -444,7 +460,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                             if (filter === 'today' || !filter) {
                                 return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
                             }
-                            if (filter === 'week') {
+                            if (filter === 'this_week') {
                                 const d = new Date();
                                 const day = d.getDay();
                                 const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -453,7 +469,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                 end.setDate(end.getDate() + 6);
                                 return `${start.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
                             }
-                            if (filter === 'month') {
+                            if (filter === 'this_month') {
                                 return new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
                             }
                             if (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -472,8 +488,8 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                             <Icon name="account_balance_wallet" className="text-emerald-500 dark:text-emerald-400 text-[18px]" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Total Akumulasi Shift</h3>
-                                            <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">Dari total keseluruhan {filteredShifts.length} riwayat laci</p>
+                                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm">Total Shift di Halaman Ini</h3>
+                                            <p className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 uppercase">{filteredShifts.length} riwayat laci pada halaman ini</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -536,6 +552,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                         ))
                     )}
                 </div>
+                {currentPagination && <Pagination links={currentPagination.links} />}
             </div>
         </OwnerLayout>
     );

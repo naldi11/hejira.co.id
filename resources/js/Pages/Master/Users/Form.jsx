@@ -89,7 +89,18 @@ export default function UserForm({ branches = [], roles = [], entity_roles = {},
                     <p className={hintClass}>Isi data untuk masuk, pilih unit usaha, lalu tentukan pekerjaan pengguna. Penjelasan hak akses akan membantu Anda memilih peran.</p>
                     <p className="mt-2 text-xs text-gray-500">Kolom bertanda <span className="text-rose-500">*</span> wajib diisi.</p>
                 </div>
-                <form onSubmit={submit} className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
+                <div className={`${cardClass} sticky top-40 z-20 flex flex-wrap items-center justify-between gap-3 p-4 lg:top-24`} aria-label="Tombol simpan akun">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                        <p>{isEdit ? 'Simpan setelah selesai mengubah data akun.' : 'Simpan setelah data akun dan hak akses lengkap.'}</p>
+                        {incomplete && <p className="mt-1 text-amber-700 dark:text-amber-400">{invalidBranch ? 'Perbaiki pilihan cabang untuk mengaktifkan tombol simpan.' : 'Pilih unit usaha dan peran yang sesuai untuk mengaktifkan tombol simpan.'}</p>}
+                        {Object.keys(errors).length > 0 && <p role="alert" className="mt-1 text-rose-600">Perubahan belum tersimpan. Periksa isian yang ditandai di bawah.</p>}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-3">
+                        <Link href={route(routePrefix + 'users.index')} className="rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300">Kembali ke daftar</Link>
+                        <Button type="submit" form="user-account-form" disabled={processing || incomplete}>{processing ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Akun'}</Button>
+                    </div>
+                </div>
+                <form id="user-account-form" onSubmit={submit} className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
                     <div className="space-y-6 xl:col-span-2">
                         <section className={`${cardClass} p-5 sm:p-6`} aria-labelledby="account-heading">
                             <h2 id="account-heading" className="text-lg font-semibold text-gray-900 dark:text-white">1. Data untuk masuk</h2>

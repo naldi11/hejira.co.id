@@ -11,6 +11,16 @@ export default function Index({ entries, balances, branches, filters }) {
     return <Layout pageTitle="Stok Rusak / Retur"><Head title="Stok Rusak / Retur" /><div className="mx-auto max-w-6xl space-y-6 text-gray-800 dark:text-gray-200">
         <div><h1 className="text-2xl font-bold">Stok Rusak / Retur</h1><p className="mt-2 text-gray-500">Barang retur yang sudah diterima, dipisahkan dari stok siap jual. Tidak bisa dijual, diproduksi, didistribusikan, atau dipakai untuk mutasi cabang.</p></div>
         <div className="rounded-xl bg-red-50 p-4 text-red-800">Simpan fisik barang ini terpisah dan beri label nomor retur. Saldo siap jual dan Stock Opname tidak mencakup stok ini. Retur yang masih dalam perjalanan belum masuk saldo di bawah.</div>
+        <details className={panel}>
+            <summary className="cursor-pointer font-semibold text-brand-600 dark:text-brand-400">Apa itu stok retur dan bagaimana membacanya?</summary>
+            <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                <p>Retur adalah barang yang dikembalikan cabang ke Gudang Utama atau Hendhys Produksi. Daftar ini mencatat barang yang sudah diterima dan dipisahkan dari barang yang boleh dijual atau dipakai.</p>
+                <p><strong>Contoh:</strong> cabang mengirim kembali 10 PCS brownies rusak. Setelah penerima mengonfirmasi 10 PCS, barang masuk daftar ini di lokasi penerima. Stok siap jual di lokasi penerima tidak bertambah.</p>
+                <p><strong>Kondisi:</strong> Rusak untuk barang cacat; Kedaluwarsa / basi untuk barang yang tidak layak; Retur lain untuk kondisi yang belum jelas. Retur ke Hendhys Produksi tetap dipisahkan, termasuk retur lama yang kondisinya belum dapat dipastikan. Retur kondisi bagus yang diterima Gudang menambah stok siap jual dan tidak masuk daftar ini.</p>
+                <p><strong>Saldo sesuai filter:</strong> jumlah penerimaan retur dikelompokkan per produk, satuan, kondisi, dan lokasi. Angka berubah mengikuti pencarian serta rentang tanggal yang dipilih. Ini bukan stok siap jual atau sisa produksi yang belum dikirim.</p>
+                <p><strong>Untuk pengecekan:</strong> buka “Lihat detail penelusuran” untuk melihat nomor retur, cabang asal, pengirim, penerima, jumlah, kondisi, waktu penerimaan, alasan, dan catatan pemeriksaan. Data retur lama diberi tanda bila informasi belum tercatat.</p>
+            </div>
+        </details>
         <form className={`${panel} grid gap-3 sm:grid-cols-2 lg:grid-cols-3`} onSubmit={e => { e.preventDefault(); router.get(route('return-stock.index'), f); }}>
             <input className={input} aria-label="Cari stok retur" placeholder="Produk, nomor retur, cabang, alasan, petugas" value={f.search} onChange={e => set({ ...f, search: e.target.value })} />
             <select className={input} aria-label="Kondisi" value={f.condition} onChange={e => set({ ...f, condition: e.target.value })}><option value="">Semua kondisi</option>{Object.entries(labels).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select>

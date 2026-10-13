@@ -1,0 +1,371 @@
+{
+  "date": "2026-10-13",
+  "notes": [
+    "Request benchmarks use isolated SQLite fixture data and do not measure browser rendering or production HTTP latency.",
+    "Wall-clock timings vary with machine load; query counts and response sizes are repeatable structural measurements.",
+    "MySQL measurements are read-only SELECT/EXPLAIN on the local operational database; medians exclude connection setup and a warmup run."
+  ],
+  "fixture": {
+    "products": 500,
+    "movements": 9000,
+    "production_lots": 5500,
+    "active_lots": 500
+  },
+  "request_environment": "PHP 8.3.30 / isolated SQLite :memory:",
+  "requests": {
+    "owner_dashboard": {
+      "before": [
+        {
+          "request_ms": 46157.4,
+          "query_count": 565,
+          "sql_ms": 261.57,
+          "json_bytes": 307931,
+          "slowest_query_ms": 52.01
+        },
+        {
+          "request_ms": 38502.73,
+          "query_count": 564,
+          "sql_ms": 227.93,
+          "json_bytes": 307931,
+          "slowest_query_ms": 46.1
+        },
+        {
+          "request_ms": 44975.94,
+          "query_count": 564,
+          "sql_ms": 184.47,
+          "json_bytes": 307931,
+          "slowest_query_ms": 36.15
+        }
+      ],
+      "after": [
+        {
+          "request_ms": 1089.15,
+          "query_count": 33,
+          "sql_ms": 92.21,
+          "json_bytes": 2293,
+          "slowest_query_ms": 36.83
+        },
+        {
+          "request_ms": 396.42,
+          "query_count": 31,
+          "sql_ms": 51.32,
+          "json_bytes": 2293,
+          "slowest_query_ms": 12.11
+        },
+        {
+          "request_ms": 426.45,
+          "query_count": 31,
+          "sql_ms": 45.68,
+          "json_bytes": 2293,
+          "slowest_query_ms": 12.53
+        }
+      ]
+    },
+    "owner_movements": {
+      "before": [
+        {
+          "request_ms": 35032.03,
+          "query_count": 31,
+          "sql_ms": 98.21,
+          "json_bytes": 132416,
+          "slowest_query_ms": 27.71
+        },
+        {
+          "request_ms": 35482.51,
+          "query_count": 31,
+          "sql_ms": 98.95,
+          "json_bytes": 132416,
+          "slowest_query_ms": 29.78
+        },
+        {
+          "request_ms": 35007.2,
+          "query_count": 31,
+          "sql_ms": 92.1,
+          "json_bytes": 132416,
+          "slowest_query_ms": 25.68
+        }
+      ],
+      "after": [
+        {
+          "request_ms": 875.09,
+          "query_count": 16,
+          "sql_ms": 42.78,
+          "json_bytes": 6338,
+          "slowest_query_ms": 8.44
+        },
+        {
+          "request_ms": 798.86,
+          "query_count": 16,
+          "sql_ms": 44.98,
+          "json_bytes": 6338,
+          "slowest_query_ms": 16.25
+        },
+        {
+          "request_ms": 963.06,
+          "query_count": 16,
+          "sql_ms": 47.08,
+          "json_bytes": 6338,
+          "slowest_query_ms": 22.54
+        }
+      ]
+    },
+    "warehouse_stock": {
+      "before": [
+        {
+          "request_ms": 55.55,
+          "query_count": 15,
+          "sql_ms": 3.63,
+          "json_bytes": 6802,
+          "slowest_query_ms": 1.19
+        },
+        {
+          "request_ms": 27.76,
+          "query_count": 14,
+          "sql_ms": 3.4,
+          "json_bytes": 6802,
+          "slowest_query_ms": 1.35
+        },
+        {
+          "request_ms": 27.39,
+          "query_count": 14,
+          "sql_ms": 3.43,
+          "json_bytes": 6802,
+          "slowest_query_ms": 1.28
+        }
+      ],
+      "after": [
+        {
+          "request_ms": 403.18,
+          "query_count": 14,
+          "sql_ms": 19.58,
+          "json_bytes": 6805,
+          "slowest_query_ms": 5.66
+        },
+        {
+          "request_ms": 281.07,
+          "query_count": 13,
+          "sql_ms": 24.51,
+          "json_bytes": 6805,
+          "slowest_query_ms": 7.84
+        },
+        {
+          "request_ms": 237.53,
+          "query_count": 13,
+          "sql_ms": 21.64,
+          "json_bytes": 6805,
+          "slowest_query_ms": 10.05
+        }
+      ]
+    },
+    "master_products": {
+      "before": [
+        {
+          "request_ms": 44.53,
+          "query_count": 12,
+          "sql_ms": 2.45,
+          "json_bytes": 10241,
+          "slowest_query_ms": 0.6
+        },
+        {
+          "request_ms": 30.49,
+          "query_count": 12,
+          "sql_ms": 2.36,
+          "json_bytes": 10241,
+          "slowest_query_ms": 0.59
+        },
+        {
+          "request_ms": 29.55,
+          "query_count": 12,
+          "sql_ms": 2.49,
+          "json_bytes": 10241,
+          "slowest_query_ms": 0.63
+        }
+      ],
+      "after": [
+        {
+          "request_ms": 451.05,
+          "query_count": 11,
+          "sql_ms": 23.28,
+          "json_bytes": 10244,
+          "slowest_query_ms": 8.04
+        },
+        {
+          "request_ms": 184.42,
+          "query_count": 11,
+          "sql_ms": 10.27,
+          "json_bytes": 10244,
+          "slowest_query_ms": 3.11
+        },
+        {
+          "request_ms": 519.01,
+          "query_count": 11,
+          "sql_ms": 15.83,
+          "json_bytes": 10244,
+          "slowest_query_ms": 5
+        }
+      ]
+    }
+  },
+  "local_mysql_queries": {
+    "before": {
+      "movements_page_20": {
+        "median_ms": 2.502,
+        "plan": [
+          {
+            "table": "jihans_gudang_stock_movements",
+            "type": "index",
+            "possible_keys": null,
+            "key": "PRIMARY",
+            "rows": 20,
+            "Extra": "Backward index scan"
+          }
+        ]
+      },
+      "movements_count": {
+        "median_ms": 10.982,
+        "plan": [
+          {
+            "table": "jihans_gudang_stock_movements",
+            "type": "index",
+            "possible_keys": null,
+            "key": "gudang_stock_movements_created_at_index",
+            "rows": 8892,
+            "Extra": "Using index"
+          }
+        ]
+      },
+      "active_production_lots": {
+        "median_ms": 2.118,
+        "plan": [
+          {
+            "table": "production_lots",
+            "type": "ref",
+            "possible_keys": "production_lots_entity_production_id_product_id_unique,production_lots_entity_product_id_remaining_index",
+            "key": "production_lots_entity_product_id_remaining_index",
+            "rows": 1,
+            "Extra": "Using index condition; Using where"
+          }
+        ]
+      },
+      "owner_sales": {
+        "median_ms": 28.797,
+        "plan": [
+          {
+            "table": "hendhys_transactions",
+            "type": "ALL",
+            "possible_keys": null,
+            "key": null,
+            "rows": 11503,
+            "Extra": "Using where"
+          }
+        ]
+      },
+      "pending_requests": {
+        "median_ms": 1.876,
+        "plan": [
+          {
+            "table": "gudang_transfer_requests",
+            "type": "index",
+            "possible_keys": "gudang_transfer_requests_from_entity_status_index",
+            "key": "gudang_transfer_requests_from_entity_status_index",
+            "rows": 6,
+            "Extra": "Using where; Using index"
+          }
+        ]
+      },
+      "incoming_transfers": {
+        "median_ms": 5.368,
+        "plan": [
+          {
+            "table": "gudang_transfer_out",
+            "type": "ref",
+            "possible_keys": "gudang_transfer_out_to_entity_date_index",
+            "key": "gudang_transfer_out_to_entity_date_index",
+            "rows": 308,
+            "Extra": "Using where"
+          }
+        ]
+      }
+    },
+    "after": {
+      "movements_page_20": {
+        "median_ms": 3.124,
+        "plan": [
+          {
+            "table": "jihans_gudang_stock_movements",
+            "type": "index",
+            "possible_keys": null,
+            "key": "PRIMARY",
+            "rows": 20,
+            "Extra": "Backward index scan"
+          }
+        ]
+      },
+      "movements_count": {
+        "median_ms": 11.175,
+        "plan": [
+          {
+            "table": "jihans_gudang_stock_movements",
+            "type": "index",
+            "possible_keys": null,
+            "key": "gudang_stock_movements_created_at_index",
+            "rows": 8892,
+            "Extra": "Using index"
+          }
+        ]
+      },
+      "active_production_lots": {
+        "median_ms": 2.922,
+        "plan": [
+          {
+            "table": "production_lots",
+            "type": "ref",
+            "possible_keys": "production_lots_entity_production_id_product_id_unique,production_lots_entity_product_id_remaining_index,nav_lots_remaining_index",
+            "key": "production_lots_entity_product_id_remaining_index",
+            "rows": 1,
+            "Extra": "Using index condition; Using where"
+          }
+        ]
+      },
+      "owner_sales": {
+        "median_ms": 2.315,
+        "plan": [
+          {
+            "table": "hendhys_transactions",
+            "type": "range",
+            "possible_keys": "nav_hendhys_sales_index",
+            "key": "nav_hendhys_sales_index",
+            "rows": 1,
+            "Extra": "Using index condition"
+          }
+        ]
+      },
+      "pending_requests": {
+        "median_ms": 3.069,
+        "plan": [
+          {
+            "table": "gudang_transfer_requests",
+            "type": "ref",
+            "possible_keys": "gudang_transfer_requests_from_entity_status_index,nav_requests_status_index",
+            "key": "nav_requests_status_index",
+            "rows": 1,
+            "Extra": "Using index"
+          }
+        ]
+      },
+      "incoming_transfers": {
+        "median_ms": 2.963,
+        "plan": [
+          {
+            "table": "gudang_transfer_out",
+            "type": "ref",
+            "possible_keys": "gudang_transfer_out_to_entity_date_index,nav_transfers_pending_index",
+            "key": "nav_transfers_pending_index",
+            "rows": 19,
+            "Extra": "Using index"
+          }
+        ]
+      }
+    }
+  }
+}

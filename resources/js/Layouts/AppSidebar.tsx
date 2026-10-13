@@ -3,7 +3,6 @@ import { Link, usePage } from "@inertiajs/react";
 
 import Icon from "@/Components/Icon";
 import { useSidebar } from "../context/SidebarContext";
-import SidebarWidget from "./SidebarWidget";
 
 export type NavItem = {
   name: string;
@@ -106,7 +105,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
   };
 
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-2">
       {items.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
@@ -114,7 +113,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
               aria-expanded={openSubmenu?.type === menuType && openSubmenu?.index === index}
               aria-controls={`submenu-${menuType}-${index}`}
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group ${
+              title={nav.name}
+              className={`menu-item group min-h-11 text-left ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "menu-item-active"
                   : "menu-item-inactive"
@@ -125,7 +125,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
               }`}
             >
               <span
-                className={`menu-item-icon-size  ${
+                className={`menu-item-icon-size shrink-0  ${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
@@ -134,11 +134,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                 {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text">{nav.name}</span>
+                <span className="menu-item-text min-w-0 flex-1 text-left leading-5">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <Icon name="expand_more"
-                  className={`text-[20px] ml-auto transition-transform duration-200 ${
+                  className={`text-[20px] ml-auto shrink-0 transition-transform duration-200 ${
                     openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
                       ? "rotate-180 text-brand-500"
@@ -152,12 +152,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
               <Link
                 href={nav.path}
                 aria-current={isActive(nav.path) ? "page" : undefined}
-                className={`menu-item group ${
+                title={nav.name}
+                className={`menu-item group min-h-11 text-left ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                 }`}
               >
                 <span
-                  className={`menu-item-icon-size ${
+                  className={`menu-item-icon-size shrink-0 ${
                     isActive(nav.path)
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
@@ -166,7 +167,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">{nav.name}</span>
+                  <span className="menu-item-text min-w-0 flex-1 text-left leading-5">{nav.name}</span>
                 )}
               </Link>
             )
@@ -177,6 +178,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;
               }}
+              aria-hidden={!(openSubmenu?.type === menuType && openSubmenu?.index === index)}
               className="overflow-hidden transition-all duration-300"
               style={{
                 height:
@@ -185,11 +187,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                     : "0px",
               }}
             >
-              <ul className="mt-2 space-y-1 ml-9">
+              <ul className="mt-1 space-y-1 ml-4 border-l border-gray-200 pl-3 dark:border-gray-700">
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
+                      tabIndex={openSubmenu?.type === menuType && openSubmenu?.index === index ? undefined : -1}
                       aria-current={isActive(subItem.path) ? "page" : undefined}
                       className={`menu-dropdown-item ${
                         isActive(subItem.path)
@@ -197,8 +200,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                           : "menu-dropdown-item-inactive"
                       }`}
                     >
-                      {subItem.name}
-                      <span className="flex items-center gap-1 ml-auto">
+                      <span className="min-w-0 flex-1 text-left leading-5">{subItem.name}</span>
+                      {(subItem.new || subItem.pro) && <span className="flex shrink-0 items-center gap-1 ml-auto">
                         {subItem.new && (
                           <span
                             className={`ml-auto ${
@@ -221,7 +224,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                             pro
                           </span>
                         )}
-                      </span>
+                      </span>}
                     </Link>
                   </li>
                 ))}
@@ -235,7 +238,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-[calc(100dvh-4rem)] lg:h-dvh transition-all duration-300 ease-in-out z-50 border-r border-gray-200
         w-[290px] ${
           isExpanded || isHovered
             ? "lg:w-[290px]"
@@ -247,18 +250,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex ${
+        className={`shrink-0 py-6 flex ${
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="min-w-0 flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex flex-col">
+            <div className="min-w-0 flex flex-col">
               <span className="text-xl font-extrabold tracking-wide bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200 leading-tight">
                 {brand.full}
               </span>
               {props?.auth?.user?.branch?.name && (
-                <span className="text-[11px] font-semibold text-slate-450 dark:text-gray-400 mt-1 uppercase tracking-wider block">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-gray-400 mt-1 uppercase tracking-wider block">
                   📍 {props.auth.user.branch.name}
                 </span>
               )}
@@ -270,12 +273,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
           )}
         </Link>
       </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6">
         <nav className="mb-6">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                className={`mb-3 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered
                     ? "lg:justify-center"
                     : "justify-start"
@@ -292,7 +295,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
               {othersItems.length > 0 && (
                 <div className="">
                   <h2
-                    className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                    className={`mb-3 text-xs uppercase flex leading-[20px] text-gray-400 ${
                       !isExpanded && !isHovered
                         ? "lg:justify-center"
                         : "justify-start"

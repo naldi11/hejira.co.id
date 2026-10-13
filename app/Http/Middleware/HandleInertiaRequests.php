@@ -25,6 +25,11 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $pendingCount = function () use ($request) {
+            $key = 'hejira.gudang_pending';
+            if (!$request->attributes->has($key)) $request->attributes->set($key, TransferRequest::where('status', 'pending')->count());
+            return $request->attributes->get($key);
+        };
 
         return [
             ...parent::share($request),
@@ -39,7 +44,8 @@ class HandleInertiaRequests extends Middleware
                     'branch' => $user ? (function() use ($user) {
                         $branchId = session('active_branch_id') ?: $user->branch_id;
                         if (!$branchId) return null;
-                        $branch = \App\Models\Branch::find($branchId);
+                        $branch = $user->relationLoaded('branch') && $user->branch?->id == $branchId
+                            ? $user->branch : \App\Models\Branch::find($branchId);
                         return $branch ? [
                             'id'   => $branch->id,
                             'name' => $branch->name,
@@ -57,10 +63,13 @@ class HandleInertiaRequests extends Middleware
 
             // Dynamic system notifications shared with front-end components
             'notifications' => [
+                'dismissed_production_alerts' => fn () => $user && $user->hasRole('owner')
+                    ? $request->session()->get(\App\Http\Controllers\Owner\ProductionAlertController::SESSION_KEY.'.'.$user->id, [])
+                    : [],
                 'gudang_pending' => fn () => $user && $user->hasAnyRole(['super_admin', 'owner'])
-                    ? TransferRequest::where('status', 'pending')->count()
+                    ? $pendingCount()
                     : 0,
-                'items' => function() use ($user) {
+                'items' => function() use ($user, $request, $pendingCount) {
                     if (!$user) return [];
 
                     $items = [];
@@ -72,7 +81,7 @@ class HandleInertiaRequests extends Middleware
 
                     if ($isAdminGudang || $isOwner) {
                         // 1. Pending transfer requests from outlets
-                        $trCount = TransferRequest::where('status', 'pending')->count();
+                        $trCount = $pendingCount();
                         if ($trCount > 0) {
                             $items[] = [
                                 'id' => 'gudang_tr_pending',
@@ -265,7 +274,7 @@ class HandleInertiaRequests extends Middleware
                     }
 
                     if ($isOwner) {
-                        $alert = app(\App\Services\ProductionStockMonitor::class)->overview()['alert'];
+                        $alert = app(\App\Services\ProductionStockMonitor::class)->overviewForRequest($request)['alert'];
                         if ($alert) array_unshift($items, $alert);
                     }
 

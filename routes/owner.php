@@ -14,6 +14,7 @@ Route::middleware(['auth', 'role:owner'])
 
         Route::get('/purchase-orders/{purchaseOrder}', [\App\Http\Controllers\Owner\OperationsController::class, 'purchaseOrder'])->name('po.show');
         Route::get('/production', [\App\Http\Controllers\Owner\OperationsController::class, 'index'])->name('production.index');
+        Route::post('/production-alert/dismiss', [\App\Http\Controllers\Owner\ProductionAlertController::class, 'dismiss'])->name('production-alert.dismiss');
         Route::get('/production-writeoffs', [\App\Http\Controllers\Owner\ProductionWriteoffController::class, 'index'])->name('production-writeoffs.index');
         Route::post('/production-writeoffs', [\App\Http\Controllers\Owner\ProductionWriteoffController::class, 'store'])->name('production-writeoffs.store');
         Route::post('/production-writeoffs/bulk', [\App\Http\Controllers\Owner\ProductionWriteoffController::class, 'bulk'])->name('production-writeoffs.bulk');
