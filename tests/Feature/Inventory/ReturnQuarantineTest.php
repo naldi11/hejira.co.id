@@ -5,7 +5,8 @@ namespace Tests\Feature\Inventory;
 use App\Models\{Branch, Product, ProductCategory, Unit, User, GudangReturn, GudangReturnDetail, HendhysReturnFromBranch};
 use App\Services\ReturnQuarantine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\{DB, Schema};
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -134,6 +135,95 @@ class ReturnQuarantineTest extends TestCase
         $this->assertDatabaseHas('return_quarantine_entries', ['return_number' => $r->return_number, 'legacy' => true, 'quantity' => 5]);
         $this->assertEquals($balance, DB::table('hendhys_stock_branch')->value('quantity'));
         app(ReturnQuarantine::class)->record('gudang', $r->fresh(), true); $this->assertDatabaseCount('return_quarantine_entries', 1);
+    }
+
+    public function test_pending_migration_resumes_partial_columns_and_preserves_existing_data(): void
+    {
+        [$p, $b, $u, $r] = $this->sendGudang(); $this->stock($p, 'jihans_gudang_stock', 7);
+        $this->receive($r, 'Rusak (Defect)');
+        $stocks = DB::table('jihans_gudang_stock')->get()->toJson();
+        $branchStocks = DB::table('hendhys_stock_branch')->get()->toJson();
+        $movements = DB::table('jihans_gudang_stock_movements')->get()->toJson();
+        $migrationName = '2026_10_13_040000_add_return_quarantine_tracking';
+        $migration = require database_path('migrations/'.$migrationName.'.php');
+        $migration->down();
+
+        // Reproduce a MySQL interruption after some individual ALTER statements
+        // committed, while the migration is still absent from the ledger.
+        Schema::table('gudang_returns', fn (Blueprint $t) => $t->string('origin_name')->nullable());
+        Schema::table('hendhys_returns_from_branch', fn (Blueprint $t) => $t->timestamp('received_at')->nullable());
+        Schema::table('gudang_return_details', fn (Blueprint $t) => $t->string('product_name')->nullable());
+        Schema::table('hendhys_return_details', fn (Blueprint $t) => $t->string('unit_name')->nullable());
+        DB::table('gudang_returns')->where('id', $r->id)->update(['origin_name' => 'Asal yang sudah tersimpan']);
+        DB::table('gudang_return_details')->where('return_id', $r->id)->update(['product_name' => 'Nama produk yang sudah tersimpan']);
+        $returns = DB::table('gudang_returns')->get()->toArray();
+        DB::table('migrations')->where('migration', $migrationName)->delete();
+
+        $this->artisan('migrate', ['--path' => 'database/migrations/'.$migrationName.'.php', '--force' => true])->assertExitCode(0);
+        foreach (['gudang_returns', 'hendhys_returns_from_branch'] as $table) {
+            $this->assertTrue(Schema::hasColumns($table, ['origin_name', 'sender_name']));
+        }
+        foreach (['gudang_return_details', 'hendhys_return_details'] as $table) {
+            $this->assertTrue(Schema::hasColumns($table, ['product_name', 'product_code', 'unit_name']));
+        }
+        $this->assertTrue(Schema::hasColumn('hendhys_returns_from_branch', 'received_at'));
+        $this->assertTrue(Schema::hasColumns('gudang_return_details', ['sent_condition', 'receiving_notes']));
+        $this->assertDatabaseHas('gudang_returns', ['id' => $r->id, 'origin_name' => 'Asal yang sudah tersimpan', 'status' => 'received']);
+        $this->assertDatabaseHas('return_quarantine_entries', ['return_id' => $r->id, 'origin_name' => 'Asal yang sudah tersimpan', 'product_name' => 'Nama produk yang sudah tersimpan', 'quantity' => 5, 'legacy' => true]);
+        foreach ($returns as $before) {
+            $after = DB::table('gudang_returns')->where('id', $before->id)->first();
+            foreach ((array) $before as $column => $value) $this->assertEquals($value, $after->{$column});
+        }
+        $this->assertSame($stocks, DB::table('jihans_gudang_stock')->get()->toJson());
+        $this->assertSame($branchStocks, DB::table('hendhys_stock_branch')->get()->toJson());
+        $this->assertSame($movements, DB::table('jihans_gudang_stock_movements')->get()->toJson());
+        $this->assertSame(1, DB::table('migrations')->where('migration', $migrationName)->count());
+        $this->artisan('migrate', ['--path' => 'database/migrations/'.$migrationName.'.php', '--force' => true])->assertExitCode(0);
+        $this->assertDatabaseCount('return_quarantine_entries', 1);
+    }
+
+    public function test_migration_resumes_partial_backfill_without_duplicating_or_overwriting_receipts(): void
+    {
+        [$p1, $b1, $u1, $r1] = $this->sendGudang(); $this->stock($p1, 'jihans_gudang_stock', 7);
+        $this->receive($r1, 'Rusak (Defect)');
+        [$p2, $b2, $u2, $r2] = $this->sendGudang('jihans', 'Kadaluwarsa'); $this->stock($p2, 'jihans_gudang_stock', 8);
+        $this->receive($r2, 'Kadaluwarsa');
+        DB::table('return_quarantine_entries')->where('return_id', $r2->id)->delete();
+        $existing = (array) DB::table('return_quarantine_entries')->first();
+        $stocks = DB::table('jihans_gudang_stock')->get()->toJson();
+        $movements = DB::table('jihans_gudang_stock_movements')->get()->toJson();
+        $migration = require database_path('migrations/2026_10_13_040000_add_return_quarantine_tracking.php');
+
+        $migration->up(); $migration->up();
+
+        $this->assertDatabaseCount('return_quarantine_entries', 2);
+        $this->assertEquals($existing, (array) DB::table('return_quarantine_entries')->where('id', $existing['id'])->first());
+        $this->assertDatabaseHas('return_quarantine_entries', ['return_id' => $r2->id, 'condition' => 'expired', 'quantity' => 5, 'legacy' => true]);
+        $this->assertSame($stocks, DB::table('jihans_gudang_stock')->get()->toJson());
+        $this->assertSame($movements, DB::table('jihans_gudang_stock_movements')->get()->toJson());
+    }
+
+    public function test_migration_restores_indexes_after_table_creation_was_interrupted(): void
+    {
+        [$p, $b, $u, $r] = $this->sendGudang(); $this->stock($p, 'jihans_gudang_stock', 7);
+        $this->receive($r, 'Rusak (Defect)');
+        DB::table('return_quarantine_entries')->delete();
+        Schema::table('return_quarantine_entries', function (Blueprint $t) {
+            $t->dropUnique(['source_type', 'detail_id']);
+            $t->dropIndex(['destination_key', 'product_id']);
+            $t->dropIndex(['origin_branch_id']);
+        });
+        $migration = require database_path('migrations/2026_10_13_040000_add_return_quarantine_tracking.php');
+
+        $migration->up(); $migration->up();
+
+        $this->assertTrue(Schema::hasIndex('return_quarantine_entries', ['source_type', 'detail_id'], 'unique'));
+        $this->assertTrue(Schema::hasIndex('return_quarantine_entries', ['destination_key', 'product_id']));
+        $this->assertTrue(Schema::hasIndex('return_quarantine_entries', ['origin_branch_id']));
+        $this->assertDatabaseCount('return_quarantine_entries', 1);
+        $this->assertDatabaseHas('return_quarantine_entries', ['return_id' => $r->id, 'quantity' => 5, 'legacy' => true]);
+        $this->assertDatabaseHas('jihans_gudang_stock', ['product_id' => $p->id, 'quantity' => 7]);
+        $this->assertDatabaseCount('jihans_gudang_stock_movements', 1);
     }
     public function test_quarantined_quantity_cannot_be_dispatched_and_opname_only_counts_saleable_stock(): void
     {
