@@ -10,9 +10,11 @@ use App\Models\JihansRetailStock;
 use App\Models\JihansTransaction;
 use App\Models\Product;
 use App\Services\ActivityLogService;
+use App\Services\CheckoutService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class PosController extends Controller
@@ -20,7 +22,8 @@ class PosController extends Controller
     public function __construct(
         private NumberGeneratorService $numbers,
         private StockService $stock,
-        private ActivityLogService $logger
+        private ActivityLogService $logger,
+        private CheckoutService $checkout
     ) {}
 
     public function index()
@@ -127,22 +130,30 @@ class PosController extends Controller
             return response()->json(['error' => $error], 422);
         }
 
-        // Jumlahkan per produk: satu produk bisa muncul di dua baris keranjang,
-        // dan mengecek tiap baris sendiri-sendiri meloloskan total melebihi stok.
-        $neededPerProduct = [];
-        foreach ($data['items'] as $item) {
-            $neededPerProduct[$item['product_id']] =
-                ($neededPerProduct[$item['product_id']] ?? 0) + (int) $item['quantity'];
-        }
-
-        foreach ($neededPerProduct as $productId => $needed) {
-            $available = (int) round((float) (JihansRetailStock::where('product_id', $productId)->value('quantity') ?? 0));
-            if ($needed > $available) {
-                return response()->json(['error' => "Stok produk tidak mencukupi untuk item dengan ID {$productId}."], 422);
+        $transaction = $this->checkout->run(JihansTransaction::class, $data, function () use ($data) {
+            $pending = null;
+            if (!empty($data['pending_id'])) {
+                $pending = \App\Models\JihansPendingTransaction::whereKey($data['pending_id'])->lockForUpdate()->first();
+                if (!$pending) {
+                    throw ValidationException::withMessages(['pending_id' => 'Transaksi pending sudah tidak tersedia.']);
+                }
             }
-        }
 
-        $transaction = DB::transaction(function () use ($data) {
+            // Jumlahkan per produk: satu produk bisa muncul di dua baris keranjang,
+            // dan mengecek tiap baris sendiri-sendiri meloloskan total melebihi stok.
+            $neededPerProduct = [];
+            foreach ($data['items'] as $item) {
+                $neededPerProduct[$item['product_id']] =
+                    ($neededPerProduct[$item['product_id']] ?? 0) + (int) $item['quantity'];
+            }
+
+            foreach ($neededPerProduct as $productId => $needed) {
+                $available = (int) round((float) (JihansRetailStock::where('product_id', $productId)->value('quantity') ?? 0));
+                if ($needed > $available) {
+                    throw ValidationException::withMessages(['items' => "Stok produk tidak mencukupi untuk item dengan ID {$productId}."]);
+                }
+            }
+
             $trx = JihansTransaction::create([
                 'transaction_number' => $this->numbers->generateYearly('JHS-INV', 'jihans_transactions', 'transaction_number'),
                 'date'               => $data['transaction_date'] ?? now()->toDateString(),
@@ -191,9 +202,7 @@ class PosController extends Controller
             // tersimpan, di dalam transaksi DB yang sama. Sebelumnya frontend
             // menghapusnya lebih dulu, sehingga keranjang bisa hilang permanen
             // bila kasir menyegarkan halaman sebelum checkout.
-            if (!empty($data['pending_id'])) {
-                \App\Models\JihansPendingTransaction::whereKey($data['pending_id'])->delete();
-            }
+            $pending?->delete();
 
             $this->logger->log('create', 'jihans.pos', "Transaksi POS Kasir Jihan's: {$trx->transaction_number}", $trx);
 

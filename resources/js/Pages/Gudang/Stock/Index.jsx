@@ -1,10 +1,10 @@
+import StockOpnameAccess, { useOpnameActive } from '@/Components/StockOpnameAccess';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import { formatQty } from '@/lib/format';
-import AdjustModal from './AdjustModal';
 import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
@@ -61,7 +61,7 @@ function StockFilters({ initial, onReload }) {
 }
 
 /** One product card in the stock grid. */
-function StockCard({ item, onAdjust }) {
+function StockCard({ item, onAdjust, canOpname }) {
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] flex flex-col justify-between hover:border-brand-300 dark:hover:border-brand-800 hover:shadow-md transition-all">
             <div>
@@ -69,8 +69,7 @@ function StockCard({ item, onAdjust }) {
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                         <h3 
-                            className="font-bold text-gray-800 dark:text-white/90 truncate hover:text-brand-500 dark:hover:text-brand-400 hover:underline cursor-pointer" 
-                            onClick={() => onAdjust(item)} 
+                            className="font-bold text-gray-800 dark:text-white/90 truncate"
                             title={item.name}
                         >
                             {item.name}
@@ -126,13 +125,14 @@ function StockCard({ item, onAdjust }) {
             <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
                 <Button
                     type="button"
-                    onClick={() => onAdjust(item)}
+                    disabled={!canOpname}
+                    onClick={() => canOpname && onAdjust(item)}
                     size="sm"
                     variant="outline"
-                    startIcon={<Icon name="edit_note" className="text-[18px]" />}
+                    startIcon={<Icon name={canOpname ? "edit_note" : "lock"} className="text-[18px]" />}
                     className="w-full"
                 >
-                    Opname
+                    {canOpname ? "Opname (sesi Owner)" : "SO terkunci"}
                 </Button>
             </div>
         </div>
@@ -166,22 +166,22 @@ function SkeletonCards() {
     );
 }
 
-export default function StockIndex({ stocks, units, filters }) {
+export default function StockIndex({ stocks, units, filters, opnameAccess }) {
     const [loading, setLoading] = useState(false);
-    const [adjusting, setAdjusting] = useState(null); // selected product or null
 
     const reload = (params) => {
         router.get(route('gudang.stock.index'), params, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
-            only: ['stocks', 'filters'],
+            only: ['stocks', 'filters', 'opnameAccess'],
             onStart: () => setLoading(true),
             onFinish: () => setLoading(false),
         });
     };
 
     const rows = stocks.data;
+    const canOpname = useOpnameActive(opnameAccess?.can_count, opnameAccess?.session);
 
     return (
         <GudangLayout title="Stok Gudang Utama" pageTitle="Inventori Gudang">
@@ -191,7 +191,7 @@ export default function StockIndex({ stocks, units, filters }) {
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Stok Gudang Utama</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Monitoring saldo inventori dan penyesuaian fisik (Stock Opname)</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Lihat saldo stok. Stock opname hanya melalui sesi yang dibuka Owner.</p>
                     </div>
                     <Link href={route('gudang.stock.movements')}>
                         <Button variant="outline" size="sm" startIcon={<Icon name="history" className="text-[18px]" />}>
@@ -199,6 +199,8 @@ export default function StockIndex({ stocks, units, filters }) {
                         </Button>
                     </Link>
                 </div>
+
+                <StockOpnameAccess access={opnameAccess} />
 
                 {/* Filter Card */}
                 <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] shadow-theme-xs">
@@ -218,7 +220,7 @@ export default function StockIndex({ stocks, units, filters }) {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {rows.map((item) => (
-                            <StockCard key={item.id} item={item} onAdjust={setAdjusting} />
+                            <StockCard key={item.id} item={item} canOpname={canOpname} onAdjust={() => router.get(route('stock-opname.show', opnameAccess.session.id))} />
                         ))}
                     </div>
                 )}
@@ -231,7 +233,6 @@ export default function StockIndex({ stocks, units, filters }) {
                 )}
             </div>
 
-            <AdjustModal product={adjusting} onClose={() => setAdjusting(null)} />
         </GudangLayout>
     );
 }

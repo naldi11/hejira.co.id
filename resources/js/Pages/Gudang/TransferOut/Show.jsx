@@ -81,7 +81,7 @@ export default function TransferOutShow({ transfer }) {
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {(transfer.details ?? []).map((item, i) => (
                                     <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
-                                        <td className="px-6 py-4.5 font-bold text-gray-800 dark:text-white/90">{item.product}</td>
+                                        <td className="px-6 py-4.5 font-bold text-gray-800 dark:text-white/90">{item.product}<div className="mt-2 space-y-1 text-xs font-normal text-gray-500">{(item.production_lots ?? []).map((lot, index) => <p key={index}>{lot.number || 'Stok tanpa nomor produksi'}: {lot.quantity} {item.unit}</p>)}</div></td>
                                         <td className="px-4 py-4.5 text-center font-bold text-gray-700 dark:text-gray-300 tabular-nums">{formatQty(item.quantity)}</td>
                                         <td className="px-4 py-4.5 text-center text-gray-500 dark:text-gray-400 font-semibold">{item.unit}</td>
                                         <td className="px-6 py-4.5 text-right text-gray-550 dark:text-gray-400 font-semibold tabular-nums">{formatRupiah(item.hpp_price)}</td>

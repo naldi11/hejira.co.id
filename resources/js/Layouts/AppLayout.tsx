@@ -19,7 +19,7 @@ const LayoutContent: React.FC<{ children?: React.ReactNode, navItems?: NavItem[]
         <Backdrop />
       </div>
       <div
-        className={`flex-1 transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 print:bg-white print:text-black print:ml-0 print:p-0 ${
+        className={`min-w-0 flex-1 transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 print:bg-white print:text-black print:ml-0 print:p-0 ${
           isExpanded || isHovered ? "lg:ml-[290px] print:ml-0" : "lg:ml-[90px] print:ml-0"
         }`}
       >

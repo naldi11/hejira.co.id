@@ -60,6 +60,7 @@ class HendhysPosTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 50000,
                 'customer_name'     => 'Umum',
@@ -111,6 +112,7 @@ class HendhysPosTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 0,
                 'items'             => [],

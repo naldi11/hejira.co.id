@@ -1,4 +1,6 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
+import ProductionLotSelect from '@/Components/ProductionLotSelect';
 import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
@@ -6,16 +8,15 @@ import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function TransferOutCreate({ products, branches, transferRequest }) {
+export default function TransferOutCreate({ products, branches, transferRequest, productionLots }) {
     const fromRequest = !!transferRequest;
 
     const { data, setData, post, processing, errors } = useForm({
         request_id: transferRequest?.id ?? null,
         to_entity: transferRequest?.from_entity ?? '',
         branch_id: transferRequest?.from_entity === 'hendhys' ? (transferRequest?.branch_id ?? '') : '',
-        date: todayISO(),
+        date: todayWib(),
         notes: '',
         items: fromRequest ? transferRequest.items.map((it) => ({ ...it })) : [],
     });
@@ -27,7 +28,7 @@ export default function TransferOutCreate({ products, branches, transferRequest 
     const onProductChange = (i, productId) => {
         const p = products.find((x) => String(x.id) === String(productId));
         setItem(i, p
-            ? { product_id: p.id, product_name: p.name, stock: p.stock, unit_id: p.unit_id, unit_name: p.unit_name, hpp_price: p.hpp }
+            ? { production_lot_id: '', product_id: p.id, product_name: p.name, stock: p.stock, unit_id: p.unit_id, unit_name: p.unit_name, hpp_price: p.hpp }
             : { product_id: '', product_name: '', stock: 0, unit_id: '', unit_name: '', hpp_price: 0 });
     };
 
@@ -157,6 +158,7 @@ export default function TransferOutCreate({ products, branches, transferRequest 
                                                     ) : (
                                                         <SelectField options={products.map((p) => ({ value: p.id, label: `${p.name} (Stok: ${p.stock})` }))} value={item.product_id} onChange={(v) => onProductChange(i, v)} placeholder="Pilih produk..." required />
                                                     )}
+                                                    <ProductionLotSelect lots={productionLots} item={item} onChange={value => setItem(i, { production_lot_id: value })} error={errors[`items.${i}.production_lot_id`]} />
                                                 </td>
                                                 {fromRequest && (
                                                     <td className="px-4 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 tabular-nums">
@@ -192,7 +194,7 @@ export default function TransferOutCreate({ products, branches, transferRequest 
                     <div className="flex gap-3 items-start border-t border-gray-150 bg-gray-50/50 p-5 dark:border-gray-850 dark:bg-white/[0.01] text-xs font-semibold text-gray-500 dark:text-gray-400 leading-relaxed">
                         <Icon name="info" className="shrink-0 text-[16px] text-brand-500" />
                         <p>
-                            <strong>Catatan Sistem:</strong> Menyimpan transfer keluar akan otomatis <strong>mengurangi stok Gudang Utama</strong> dan <strong>menambah stok di entitas tujuan</strong> menggunakan harga HPP terakhir.
+                            <strong>Catatan Sistem:</strong> Menyimpan transfer keluar akan otomatis <strong>mengurangi stok Gudang Utama</strong> dan <strong>menambah stok tujuan setelah penerimaan dikonfirmasi</strong> menggunakan harga HPP terakhir.
                         </p>
                     </div>
                 </div>

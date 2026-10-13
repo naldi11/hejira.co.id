@@ -16,6 +16,7 @@ class TransferOutResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $sources = $this->resource->relationLoaded('details') ? app(\App\Services\ProductionLots::class)->dispatchSources('transfer_out', $this->id) : [];
         return [
             'id'              => $this->id,
             'transfer_number' => $this->transfer_number,
@@ -30,6 +31,7 @@ class TransferOutResource extends JsonResource
                 'request_number' => $this->request->request_number,
             ] : null),
             'details'         => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
+                'production_lots' => $sources[$d->id] ?? [],
                 'id'                => $d->id,
                 'product'           => $d->product?->name ?? '(Produk Dihapus)',
                 'quantity'          => (int) $d->quantity,

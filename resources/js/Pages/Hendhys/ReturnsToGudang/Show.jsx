@@ -17,6 +17,7 @@ export default function ReturnsToGudangShow({ return: ret }) {
                         <div>
                             <h2 className="font-mono text-xl font-bold text-gray-800 dark:text-white/90">{ret.return_number}</h2>
                             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Dikirim {formatDate(ret.date)} · Oleh {ret.creator ?? '-'}</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dicatat di sistem: {ret.recorded_at ?? '-'}</p>
                         </div>
                         <StatusBadge status={ret.status} />
                     </div>

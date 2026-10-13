@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -7,7 +8,7 @@ export default function Form({ karyawans, products, type, warning, targetDate, p
     const isPrediksi = type === 'prediksi';
 
     // State for basic info
-    const [date, setDate] = useState(isEdit ? production.date : (targetDate || new Date().toISOString().slice(0, 10)));
+    const [date, setDate] = useState(isEdit ? production.date : (targetDate || todayWib()));
     const [notes, setNotes] = useState(isEdit ? (production.notes || '') : '');
 
     // State for which products are selected for the matrix

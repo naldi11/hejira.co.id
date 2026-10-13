@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -7,7 +8,7 @@ const route = window.route;
 
 export default function TransferRequestsCreate({ products, units }) {
     const { data, setData, post, processing, errors } = useForm({ 
-        date: new Date().toISOString().slice(0, 10), 
+        date: todayWib(),
         notes: '', 
         items: [{ product_id: '', quantity: 1, unit_id: '' }] 
     });

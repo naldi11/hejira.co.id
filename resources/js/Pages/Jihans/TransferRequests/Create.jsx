@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
@@ -5,12 +6,11 @@ import SelectField from '@/Components/SelectField';
 
 const route = window.route;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 const blankItem = () => ({ product_id: '', quantity: '', unit_id: '' });
 
 export default function JihansTransferRequestCreate({ products, units }) {
     const { data, setData, post, processing, errors } = useForm({
-        date: todayISO(),
+        date: todayWib(),
         notes: '',
         items: [blankItem()],
     });

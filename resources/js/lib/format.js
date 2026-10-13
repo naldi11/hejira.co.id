@@ -16,6 +16,7 @@ export function formatRupiah(value) {
 export function formatDate(value) {
     if (!value) return '-';
     return new Date(value).toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
         day: '2-digit',
         month: 'short',
         year: 'numeric',

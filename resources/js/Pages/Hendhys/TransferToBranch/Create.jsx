@@ -1,4 +1,6 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
+import ProductionLotSelect from '@/Components/ProductionLotSelect';
 import SelectField from '@/Components/SelectField';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -6,12 +8,12 @@ import { formatQty } from '@/lib/format';
 
 const route = window.route;
 
-export default function TransferToBranchCreate({ branches, products, branchRequest }) {
+export default function TransferToBranchCreate({ branches, products, branchRequest, productionLots }) {
     const initial = branchRequest
         ? {
               request_id: branchRequest.id,
               branch_id:  branchRequest.branch_id,
-              date:       new Date().toISOString().slice(0, 10),
+              date:       todayWib(),
               notes:      '',
               items:      branchRequest.details.map(d => ({
                   product_id: d.product_id,
@@ -22,7 +24,7 @@ export default function TransferToBranchCreate({ branches, products, branchReque
           }
         : {
               branch_id: '',
-              date:      new Date().toISOString().slice(0, 10),
+              date:      todayWib(),
               notes:     '',
               items:     [{ product_id: '', quantity: 1, unit_id: '' }],
           };
@@ -40,6 +42,7 @@ export default function TransferToBranchCreate({ branches, products, branchReque
     const onProductChange = (i, productId) => {
         const p = products?.find(x => String(x.id) === String(productId));
         const items = [...data.items];
+        items[i].production_lot_id = '';
         items[i].product_id = productId;
         items[i].unit_id = p ? p.unit_id : '';
         setData('items', items);
@@ -173,13 +176,14 @@ export default function TransferToBranchCreate({ branches, products, branchReque
                                                         placeholder="-- Pilih Produk --"
                                                     />
                                                 )}
+                                                <ProductionLotSelect lots={productionLots} item={item} onChange={value => updateItem(i, 'production_lot_id', value)} error={errors[`items.${i}.production_lot_id`]} />
                                             </td>
 
                                             {/* Qty */}
                                             <td className="px-4 py-4">
                                                 <input
                                                     type="number"
-                                                    min="0"
+                                                    min="1"
                                                     required
                                                     value={item.quantity}
                                                     onChange={(e) => updateItem(i, 'quantity', e.target.value)}

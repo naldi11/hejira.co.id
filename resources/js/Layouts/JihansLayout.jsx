@@ -4,99 +4,58 @@ import FlashToasts from '@/Components/FlashToasts';
 import AppLayout from './AppLayout';
 
 const route = window.route;
+const group = (name, icon, subItems) => ({ name, icon: <Icon name={icon} className="text-[22px]" />, subItems });
 
 export default function JihansLayout({ pageTitle, children }) {
     const { auth } = usePage().props;
     const roles = auth?.user?.roles || [];
     const isKasir = roles.includes('kasir_jihans');
-    const isAdmin = roles.includes('admin_jihans') || roles.includes('super_admin') || roles.includes('owner');
-    const isSuperAdmin = roles.includes('super_admin');
+    const isAdmin = roles.includes('admin_jihans') || roles.includes('super_admin');
+    const isOwner = roles.includes('owner');
 
-    const navItems = [
-        {
-            name: "Dashboard",
-            icon: <Icon name="dashboard" className="text-[22px]" />,
-            path: route('jihans.dashboard')
-        }
-    ];
+    const navItems = [{ name: 'Dashboard', icon: <Icon name="dashboard" className="text-[22px]" />, path: route('jihans.dashboard') }];
+    const sales = isKasir ? [
+        { name: 'Kasir / Catat Penjualan', path: route('jihans.pos.index') },
+        { name: 'Transaksi Belum Selesai', path: route('jihans.pending.index') },
+        { name: 'Riwayat Penjualan', path: route('jihans.transactions.index') },
+        { name: 'Laporan Uang Kasir', path: route('jihans.reports.laci') },
+    ] : [{ name: 'Riwayat Penjualan', path: route('jihans.transactions.index') }];
+    if (!isKasir || roles.includes('super_admin')) sales.push({ name: 'Laporan Penjualan', path: route('jihans.reports.index') });
+    navItems.push(group('Penjualan', 'point_of_sale', sales));
 
-    if (isKasir) {
-        const subItems = [
-            { name: 'POS Kasir', path: route('jihans.pos.index') },
-            { name: 'Transaksi Pending', path: route('jihans.pending.index') },
-            { name: 'Riwayat Transaksi', path: route('jihans.transactions.index') },
-            { name: 'Laporan Laci', path: route('jihans.reports.laci') },
-        ];
-        if (isSuperAdmin) {
-            subItems.push({ name: 'Laporan Bisnis', path: route('jihans.reports.index') });
-        }
-        navItems.push({
-            name: 'Kasir & Penjualan',
-            icon: <Icon name="point_of_sale" className="text-[22px]" />,
-            subItems: subItems,
-        });
-    } else {
-        navItems.push({
-            name: 'Penjualan & Laporan',
-            icon: <Icon name="point_of_sale" className="text-[22px]" />,
-            subItems: [
-                { name: 'Riwayat Transaksi', path: route('jihans.transactions.index') },
-                { name: 'Laporan Bisnis', path: route('jihans.reports.index') },
-            ],
-        });
-    }
-
-    if (isAdmin) {
-        navItems.push({
-            name: 'Manufaktur',
-            icon: <Icon name="factory" className="text-[22px]" />,
-            subItems: [
-                { name: 'Prediksi Produksi', path: route('jihans.production.prediksi.create') },
-                { name: 'Data Produksi', path: route('jihans.production.index') },
-            ],
-        });
-    }
-
-    const inventorySubItems = [
-        { name: 'Stok Tersedia', path: route('jihans.stock.index') }
-    ];
+    if (isAdmin) navItems.push(group('Produksi', 'factory', [
+        { name: 'Rencana Produksi (Prediksi)', path: route('jihans.production.prediksi.create') },
+        { name: 'Catatan & Hasil Produksi', path: route('jihans.production.index') },
+    ]));
+    navItems.push(group('Stok & Opname', 'inventory_2', [
+        { name: 'Stok Penjualan Bersama', path: route('jihans.stock.index') },
+        { name: 'Riwayat Keluar Masuk Stok', path: route('jihans.stock.movements') },
+        { name: 'Hitung Stok Fisik (Opname)', path: route('stock-opname.index') },
+        { name: 'Riwayat SO', path: route('stock-opname.history') },
+    ]));
 
     if (isKasir || isAdmin) {
-        inventorySubItems.push({ name: 'Request ke Gudang', path: route('jihans.transfer-requests.index') });
-        inventorySubItems.push({ name: 'Return ke Gudang', path: route('jihans.returns-to-gudang.index') });
-        inventorySubItems.push({ name: 'Terima dari Hendhys', path: route('jihans.transfer-from-hendhys.index') });
-        inventorySubItems.push({ name: 'Retur ke Hendhys', path: route('jihans.returns-to-hendhys.index') });
+        navItems.push(group('Permintaan & Penerimaan', 'move_to_inbox', [
+            { name: 'Minta & Terima Barang Gudang', path: route('jihans.transfer-requests.index') },
+            { name: 'Terima dari Hendhys Produksi', path: route('jihans.transfer-from-hendhys.index') },
+        ]));
+        const outgoing = [];
+        if (!isOwner) outgoing.push({ name: 'Mutasi Stok ke Cabang Hendhys', path: route('branch-transfers.index') });
+        outgoing.push(
+            { name: 'Kembalikan Barang ke Gudang', path: route('jihans.returns-to-gudang.index') },
+            { name: 'Kembalikan ke Hendhys Produksi', path: route('jihans.returns-to-hendhys.index') },
+        );
+        navItems.push(group('Pengiriman & Retur', 'local_shipping', outgoing));
     }
 
-    navItems.push({
-        name: "Inventori Jihan's",
-        icon: <Icon name="inventory" className="text-[22px]" />,
-        subItems: inventorySubItems,
-    });
-
-    navItems.push({
-        name: "Cetak Label QR",
-        icon: <Icon name="qr_code_scanner" className="text-[22px]" />,
-        path: route('products.qr'),
-    });
-
-    if (isAdmin) {
-        navItems.push({
-            name: 'Master Data',
-            icon: <Icon name="database" className="text-[22px]" />,
-            subItems: [
-                { name: 'Daftar Produk', path: route('jihans.master.products.index') },
-                { name: 'Pelanggan', path: route('jihans.master.customers.index') },
-                { name: 'Karyawan', path: route('jihans.master.karyawan.index') },
-            ],
-        });
-    }
-
-
-    return (
-        <AppLayout navItems={navItems} pageTitle={pageTitle ?? "Dashboard Jihan's Food"}>
-            <FlashToasts />
-            {children}
-        </AppLayout>
+    const data = [];
+    if (isAdmin) data.push(
+        { name: 'Produk', path: route('jihans.master.products.index') },
+        { name: 'Pelanggan', path: route('jihans.master.customers.index') },
+        { name: 'Karyawan', path: route('jihans.master.karyawan.index') },
     );
+    data.push({ name: 'Cetak Label Produk', path: route('products.qr') });
+    navItems.push(group('Data & Label', 'database', data));
+
+    return <AppLayout navItems={navItems} pageTitle={pageTitle ?? "Dashboard Jihan's Food"}><FlashToasts />{children}</AppLayout>;
 }

@@ -358,6 +358,7 @@ class DashboardController extends Controller
         // 5. PO List
         $poList = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->take(50)->get()
             ->map(fn($po) => [
+                'id' => $po->id,
                 'po_number' => $po->po_number,
                 'supplier' => $po->supplier?->name ?? '-',
                 'date' => $po->date ? $po->date->toDateString() : '-',
@@ -396,6 +397,7 @@ class DashboardController extends Controller
         )->sum('grand_total');
 
         return Inertia::render('Owner/Dashboard', [
+            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->overview(),
             'period'        => $period,
             'periodLabel'   => self::PERIODS[$period],
             'periodRange'   => $this->periodDescription($range),
@@ -554,6 +556,7 @@ class DashboardController extends Controller
                 $title = 'Mutasi Pergerakan Stok';
                 $list = JihansGudangStockMovement::with(['product', 'creator'])->latest('id')->get()
                     ->map(fn($m) => [
+                        'id' => $m->id,
                         'date' => $m->created_at->toDateTimeString(),
                         'product_name' => $m->product?->name ?? '-',
                         'type' => $m->type,
@@ -566,6 +569,7 @@ class DashboardController extends Controller
                 $title = 'Purchase Order Supplier';
                 $list = PurchaseOrder::with(['supplier', 'creator'])->latest('id')->get()
                     ->map(fn($po) => [
+                        'id' => $po->id,
                         'po_number' => $po->po_number,
                         'supplier' => $po->supplier?->name ?? '-',
                         'date' => $po->date ? $po->date->toDateString() : '-',
@@ -777,6 +781,7 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('Owner/Detail', [
+            'production_monitor' => fn () => app(\App\Services\ProductionStockMonitor::class)->overview(),
             'mode' => $mode,
             'unit' => $unit,
             'title' => $title,

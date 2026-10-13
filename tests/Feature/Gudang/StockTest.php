@@ -101,7 +101,7 @@ class StockTest extends TestCase
             );
     }
 
-    public function test_adjust_updates_balance_and_records_movement(): void
+    public function test_legacy_adjust_cannot_bypass_owner_session(): void
     {
         $product = $this->makeProduct(stock: 10);
 
@@ -112,22 +112,14 @@ class StockTest extends TestCase
                 'quantity'   => 7,
                 'notes'      => 'Stock opname bulanan',
             ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
+            ->assertForbidden();
 
-        $this->assertSame(7, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
+        $this->assertSame(10, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
 
-        $this->assertDatabaseHas('jihans_gudang_stock_movements', [
-            'product_id'      => $product->id,
-            'source'          => 'adjustment',
-            'type'            => 'out',
-            'quantity'        => 3,
-            'quantity_before' => 10,
-            'quantity_after'  => 7,
-        ]);
+        $this->assertDatabaseCount('jihans_gudang_stock_movements', 0);
     }
 
-    public function test_adjust_requires_notes(): void
+    public function test_disabled_adjustment_rejects_missing_notes(): void
     {
         $product = $this->makeProduct(stock: 10);
 
@@ -138,13 +130,13 @@ class StockTest extends TestCase
                 'quantity'   => 7,
                 'notes'      => '',
             ])
-            ->assertSessionHasErrors('notes');
+            ->assertForbidden();
 
-        // Balance must remain untouched when validation fails.
+        // The disabled endpoint must leave the balance untouched.
         $this->assertSame(10, (int) JihansGudangStock::where('product_id', $product->id)->value('quantity'));
     }
 
-    public function test_adjust_rejects_negative_quantity(): void
+    public function test_disabled_adjustment_rejects_negative_quantity(): void
     {
         $product = $this->makeProduct(stock: 10);
 
@@ -155,7 +147,7 @@ class StockTest extends TestCase
                 'quantity'   => -3,
                 'notes'      => 'invalid',
             ])
-            ->assertSessionHasErrors('quantity');
+            ->assertForbidden();
     }
 
     public function test_user_without_gudang_role_is_forbidden(): void

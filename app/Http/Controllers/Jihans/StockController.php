@@ -9,6 +9,7 @@ use App\Models\JihansRetailStockMovement;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\StockOpname;
 
 class StockController extends Controller
 {
@@ -40,6 +41,7 @@ class StockController extends Controller
 
         return Inertia::render('Jihans/Stock/Index', [
             'stocks'  => ProductStockResource::collection($stocks),
+            'opnameAccess' => app(StockOpname::class)->accessForStock($request->user(), 'jihans-retail'),
             'filters' => $request->only('search', 'jenis', 'low_stock'),
         ]);
     }

@@ -16,7 +16,8 @@ class HendhysGudangReturnResource extends JsonResource
         return [
             'id'            => $this->id,
             'return_number' => $this->return_number,
-            'date'          => $this->date,
+            'date'          => $this->date?->toDateString(),
+            'recorded_at'   => $this->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s \W\I\B'),
             'status'        => $this->status,
             'notes'         => $this->notes,
             'from_entity'   => $this->from_entity,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, usePage } from "@inertiajs/react";
 
 import Icon from "@/Components/Icon";
@@ -38,10 +38,23 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const isActive = useCallback(
-    (path: string) => url === path,
-    [url]
-  );
+  // Inertia supplies relative URLs while Ziggy may supply absolute URLs.
+  // Prefer the most specific route, including its declared tab parameters.
+  const activePath = useMemo(() => {
+    const current = new URL(url, "http://navigation.local");
+    const paths = [...navItems, ...othersItems].flatMap(nav =>
+      nav.subItems ? nav.subItems.map(item => item.path) : nav.path ? [nav.path] : []
+    );
+    return paths.map(path => {
+      const target = new URL(path, "http://navigation.local");
+      const base = target.pathname.replace(/\/$/, "") || "/";
+      const matchesPath = current.pathname === target.pathname ||
+        (base !== "/" && current.pathname.startsWith(`${base}/`));
+      const matchesQuery = Array.from(target.searchParams).every(([key, value]) => current.searchParams.get(key) === value);
+      return { path, matches: matchesPath && matchesQuery, score: base.length * 1000 + target.search.length };
+    }).filter(item => item.matches).sort((a, b) => b.score - a.score)[0]?.path;
+  }, [url, navItems, othersItems]);
+  const isActive = useCallback((path: string) => path === activePath, [activePath]);
 
   useEffect(() => {
     let submenuMatched = false;
@@ -77,7 +90,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
         }));
       }
     }
-  }, [openSubmenu]);
+  }, [openSubmenu, isExpanded, isHovered, isMobileOpen]);
 
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
     setOpenSubmenu((prevOpenSubmenu) => {
@@ -98,6 +111,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
         <li key={nav.name}>
           {nav.subItems ? (
             <button
+              aria-expanded={openSubmenu?.type === menuType && openSubmenu?.index === index}
+              aria-controls={`submenu-${menuType}-${index}`}
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
@@ -136,6 +151,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
             nav.path && (
               <Link
                 href={nav.path}
+                aria-current={isActive(nav.path) ? "page" : undefined}
                 className={`menu-item group ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                 }`}
@@ -157,6 +173,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
           )}
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
+              id={`submenu-${menuType}-${index}`}
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;
               }}
@@ -173,6 +190,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
+                      aria-current={isActive(subItem.path) ? "page" : undefined}
                       className={`menu-dropdown-item ${
                         isActive(subItem.path)
                           ? "menu-dropdown-item-active"

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
+import { DeadlineAlert } from './Production/StockMonitor';
 import { formatRupiah, formatQty } from '@/lib/format';
 
 /* ─── Stock Card (mobile-first card list item) ───────────────────────────── */
-function StockItemCard({ row, type }) {
+function StockItemCard({ row, type, overdue = false }) {
     if (type === 'movements') {
         return (
             <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
@@ -18,6 +19,9 @@ function StockItemCard({ row, type }) {
                     <p className="font-bold text-slate-800 dark:text-white/90 text-sm truncate">{row.product_name}</p>
                     <p className="text-xs text-slate-400 mt-0.5">{row.date} · {row.user}</p>
                     {row.notes && <p className="text-xs text-slate-500 mt-1 truncate">{row.notes}</p>}
+                    <Link href={route('owner.movements.show', row.id)} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400" aria-label={`Lihat detail mutasi ${row.product_name}`}>
+                        Lihat detail mutasi <span aria-hidden="true">→</span>
+                    </Link>
                 </div>
                 <span className={`text-base font-black ${row.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>
                     {formatQty(row.quantity)}
@@ -40,6 +44,7 @@ function StockItemCard({ row, type }) {
                     <span className="text-xs text-slate-400">{row.date} · {row.user}</span>
                     <span className="font-black text-slate-900 dark:text-white">{formatRupiah(row.total_amount)}</span>
                 </div>
+                <Link href={route('owner.po.show', row.id)} className="mt-3 inline-block text-sm font-semibold text-indigo-600">Lihat rincian PO →</Link>
             </div>
         );
     }
@@ -65,13 +70,14 @@ function StockItemCard({ row, type }) {
 
     // Default: stock biasa (gudang, retail, hendhys_pusat)
     return (
-        <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className={`flex items-center justify-between rounded-xl border p-4 shadow-sm ${overdue ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30' : 'border-slate-100 bg-white dark:border-gray-800 dark:bg-white/[0.03]'}`}>
             <div>
                 <p className="font-mono text-[10px] text-slate-400">{row.code}</p>
                 <p className="font-semibold text-slate-800 dark:text-white/90 text-sm mt-0.5">{row.name}</p>
             </div>
             <div className="text-right">
-                <p className="text-lg font-black text-slate-900 dark:text-white">{formatQty(row.quantity)}</p>
+                <p className={`text-lg font-black ${overdue ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-white'}`}>{formatQty(row.quantity)}</p>
+                {overdue && <p className="text-xs font-semibold text-red-700 dark:text-red-300">Lewat batas 17.00 WIB</p>}
                 <p className="text-[10px] text-slate-400">{row.unit}</p>
             </div>
         </div>
@@ -174,7 +180,7 @@ function ShiftCard({ row, showBranch }) {
     );
 }
 
-export default function Detail({ mode, unit, title, subtitle, list, shifts, filter, trends }) {
+export default function Detail({ mode, unit, title, subtitle, list, shifts, filter, trends, production_monitor }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('transactions');
 
@@ -227,6 +233,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
             <Head title={`Detail — ${title}`} />
 
             <div className="space-y-6 max-w-3xl mx-auto">
+                <DeadlineAlert monitor={production_monitor} />
                 {/* Header Card */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-slate-200 dark:border-gray-800 dark:bg-white/[0.02] p-5 rounded-2xl shadow-sm gap-4">
                     <div className="flex items-center gap-3">
@@ -507,7 +514,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                 <p className="text-sm">Tidak ada data yang cocok dengan pencarian.</p>
                             </div>
                         ) : filteredTransactions.map((row, idx) => (
-                            <StockItemCard key={idx} row={row} type={getStockCardType()} />
+                            <StockItemCard key={idx} row={row} type={getStockCardType()} overdue={unit === 'hendhys_pusat' && production_monitor?.stocks?.some(stock => stock.code === row.code && stock.overdue)} />
                         ))
                     ) : activeTab === 'transactions' ? (
                         filteredTransactions.length === 0 ? (

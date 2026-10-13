@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -6,12 +7,11 @@ import { formatQty } from '@/lib/format';
 
 const route = window.route;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 const CONDITIONS = ['Rusak', 'Kadaluwarsa', 'Tidak Sesuai', 'Kelebihan Stok', 'Lainnya'];
 const blankItem = () => ({ product_id: '', quantity: '', unit_id: '', unit_name: '', stock: 0, condition: CONDITIONS[0], notes: '' });
 
 export default function JihansReturnsCreate({ products, units }) {
-    const { data, setData, post, processing, errors } = useForm({ date: todayISO(), notes: '', items: [blankItem()] });
+    const { data, setData, post, processing, errors } = useForm({ date: todayWib(), notes: '', items: [blankItem()] });
 
     const setItem = (i, patch) => setData('items', data.items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
     const addItem = () => setData('items', [...data.items, blankItem()]);

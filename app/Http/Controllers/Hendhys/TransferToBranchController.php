@@ -235,7 +235,7 @@ class TransferToBranchController extends Controller
                             $detail->product_id,
                             $detail->unit_id,
                             $selisih,
-                            'return_receiving',
+                            'transfer_shortfall',
                             $transferOut->id,
                             $user->id,
                             "Selisih penerimaan dari {$transferOut->transfer_number}"
@@ -311,6 +311,7 @@ class TransferToBranchController extends Controller
 
             return Inertia::render('Hendhys/TransferToBranch/Create', [
                 'branchRequest' => $brData,
+                'productionLots' => app(\App\Services\ProductionLots::class)->choices('hendhys'),
             ]);
         }
 
@@ -341,6 +342,7 @@ class TransferToBranchController extends Controller
         return Inertia::render('Hendhys/TransferToBranch/Create', [
             'branches' => $branches,
             'products' => $products,
+            'productionLots' => app(\App\Services\ProductionLots::class)->choices('hendhys'),
         ]);
     }
 
@@ -362,8 +364,15 @@ class TransferToBranchController extends Controller
             'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
+            'items.*.production_lot_id' => 'nullable|integer|exists:production_lots,id',
             'items.*.detail_id' => 'nullable|exists:hendhys_branch_request_details,id',
         ]);
+
+        foreach ($request->items as $item) {
+            if ((int) Product::findOrFail($item['product_id'])->unit_id !== (int) $item['unit_id']) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['items' => 'Satuan harus sesuai dengan produk yang dipilih.']);
+            }
+        }
 
         try {
             DB::transaction(function () use ($request) {
@@ -402,7 +411,7 @@ class TransferToBranchController extends Controller
                         }
 
                         // 2. Buat detail transfer
-                        HendhysTransferToBranchDetail::create([
+                        $transferDetail = HendhysTransferToBranchDetail::create([
                             'transfer_id' => $transfer->id,
                             'product_id' => $item['product_id'],
                             'quantity' => $qtyApproved,
@@ -428,7 +437,9 @@ class TransferToBranchController extends Controller
                             null, // Pusat
                             'transfer_to_branch',
                             $transfer->id,
-                            auth()->id()
+                            auth()->id(),
+                            $item['production_lot_id'] ?? null,
+                            $transferDetail->id
                         );
                     }
                 }
@@ -578,7 +589,7 @@ class TransferToBranchController extends Controller
                             $detail->unit_id,
                             $selisih,
                             null, // null = Pusat
-                            'return_from_branch',
+                            'transfer_shortfall',
                             $transferToBranch->id,
                             $user->id
                         );

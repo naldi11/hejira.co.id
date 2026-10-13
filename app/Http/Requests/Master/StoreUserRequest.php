@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Master;
 
+use App\Models\User;
+use App\Rules\UserBranch;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUserRequest extends FormRequest
@@ -16,52 +18,55 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $entityRoles = [
-            // super_admin mengawasi Gudang Utama + seluruh unit, jadi ia ditempatkan
-            // pada entity 'all' (dan 'gudang' tetap diterima untuk kompatibilitas).
-            'all'     => ['super_admin', 'owner'],
-            'gudang'  => ['super_admin'],
-            'hendhys' => ['kasir_hendhys', 'admin_hendhys'],
-            'jihans'  => ['kasir_jihans', 'admin_jihans'],
-            'owner'   => ['owner'],
-        ];
+        $entityRoles = config('user_access.entity_roles');
 
         return [
-            'name'      => ['required', 'string', 'max:100'],
-            'email'     => ['required', 'string', 'email', 'max:100', 'unique:master_users,email'],
-            'password'  => ['required', 'string', 'min:8', 'confirmed'],
-            'entity'    => ['required', 'in:gudang,jihans,hendhys,all'],
+            'name' => ['required', 'string', 'max:100'],
+            'email' => ['required', 'string', 'email', 'max:100', 'unique:master_users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'entity' => ['required', 'in:gudang,jihans,hendhys,all'],
             'branch_id' => [
+                'bail',
                 'nullable',
-                'exists:master_branches,id',
-                function ($attribute, $value, $fail) {
-                    if ($value) {
-                        $branch = \App\Models\Branch::find($value);
-                        if ($branch && $branch->entity !== $this->input('entity')) {
-                            $fail("Cabang penempatan tidak sesuai dengan entitas bisnis.");
-                        }
-                    }
-                }
+                'integer',
+                new UserBranch($this->input('entity')),
             ],
-            'role'      => [
+            'role' => [
                 'required',
                 'exists:roles,name',
                 // Owner hanya boleh lahir dari seeder. Penjagaan ini di sisi server,
                 // bukan sekadar menyembunyikan pilihannya di form — supaya request
                 // yang dikirim langsung pun tetap ditolak.
                 function ($attribute, $value, $fail) {
-                    if ($value === \App\Models\User::ROLE_OWNER) {
+                    if ($value === User::ROLE_OWNER) {
                         $fail('Akun owner tidak dapat dibuat dari sini. Role ini hanya bisa ditetapkan lewat seeder.');
                     }
                 },
                 function ($attribute, $value, $fail) use ($entityRoles) {
                     $entity = $this->input('entity');
-                    if (isset($entityRoles[$entity]) && !in_array($value, $entityRoles[$entity])) {
-                        $fail("Role yang dipilih tidak sesuai dengan entitas bisnis.");
+                    if (is_string($entity) && isset($entityRoles[$entity]) && ! in_array($value, $entityRoles[$entity], true)) {
+                        $fail('Pilih peran yang sesuai dengan unit usaha pengguna.');
                     }
-                }
+                },
             ],
             'is_active' => ['boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Isi nama lengkap pengguna.',
+            'email.required' => 'Isi email yang akan digunakan untuk masuk.',
+            'email.email' => 'Masukkan alamat email yang valid.',
+            'email.unique' => 'Email ini sudah digunakan pengguna lain.',
+            'password.required' => 'Buat kata sandi untuk pengguna.',
+            'password.min' => 'Kata sandi harus terdiri dari minimal 8 karakter.',
+            'password.confirmed' => 'Kedua kata sandi harus sama.',
+            'entity.required' => 'Pilih unit usaha terlebih dahulu.',
+            'entity.in' => 'Pilih unit usaha yang tersedia.',
+            'role.required' => 'Pilih peran pengguna.',
+            'role.exists' => 'Peran ini tidak tersedia. Pilih peran lain.',
         ];
     }
 }

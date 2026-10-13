@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 
 class StockService
 {
-    public function __construct(private NumberGeneratorService $numbers) {}
+    public function __construct(private NumberGeneratorService $numbers, private ProductionLots $lots) {}
 
     /**
      * Baca saldo stok sebagai bilangan bulat.
@@ -58,6 +58,19 @@ class StockService
         int    $referenceId,
         ?int   $userId = null,
         ?string $notes = null
+    ): void
+    {
+        DB::transaction(fn () => $this->performCreditJihansGudang($productId, $unitId, $qty, $source, $referenceId, $userId, $notes));
+    }
+
+    private function performCreditJihansGudang(
+        int    $productId,
+        int    $unitId,
+        int    $qty,
+        string $source,
+        int    $referenceId,
+        ?int   $userId = null,
+        ?string $notes = null
     ): void {
         $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
@@ -68,12 +81,13 @@ class StockService
         $before = $this->readQty($stock->quantity);
         $after  = $before + $qty;
 
+        $this->lots->credit('jihans', $productId, $unitId, $before, $qty, $source, $referenceId);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         JihansGudangStockMovement::create([
             'product_id'      => $productId,
             'type'            => 'in',
-            'source'          => $source,
+            'source'          => $source === 'transfer_shortfall' ? 'return_receiving' : $source,
             'reference_id'    => $referenceId,
             'quantity'        => $qty,
             'quantity_before' => $before,
@@ -90,7 +104,23 @@ class StockService
         string $source,
         int    $referenceId,
         ?int   $userId = null,
-        ?string $notes = null
+        ?string $notes = null,
+        ?int $lotId = null,
+        ?int $detailId = null
+    ): void
+    {
+        DB::transaction(fn () => $this->performDebitJihansGudang($productId, $qty, $source, $referenceId, $userId, $notes, $lotId, $detailId));
+    }
+
+    private function performDebitJihansGudang(
+        int    $productId,
+        int    $qty,
+        string $source,
+        int    $referenceId,
+        ?int   $userId = null,
+        ?string $notes = null,
+        ?int $lotId = null,
+        ?int $detailId = null
     ): void {
         $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
@@ -102,6 +132,7 @@ class StockService
         $this->assertSufficient($productId, $before, $qty, 'stok gudang');
         $after  = $before - $qty;
 
+        $this->lots->debit('jihans', $productId, $stock->unit_id, $before, $qty, $source, $referenceId, $userId, $lotId, $detailId);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         JihansGudangStockMovement::create([
@@ -153,6 +184,17 @@ class StockService
         int    $newQty,
         ?int   $userId = null,
         ?string $notes = null
+    ): void
+    {
+        DB::transaction(fn () => $this->performAdjustJihansGudang($productId, $unitId, $newQty, $userId, $notes));
+    }
+
+    private function performAdjustJihansGudang(
+        int    $productId,
+        int    $unitId,
+        int    $newQty,
+        ?int   $userId = null,
+        ?string $notes = null
     ): void {
         $stock = JihansGudangStock::firstOrCreate(
             ['product_id' => $productId],
@@ -166,6 +208,8 @@ class StockService
         $diff   = $newQty - $before;
         $type   = $diff >= 0 ? 'in' : 'out';
 
+        if ($diff > 0) $this->lots->credit('jihans', $productId, $unitId, $before, $diff, 'adjustment', null);
+        if ($diff < 0) $this->lots->debit('jihans', $productId, $unitId, $before, -$diff, 'adjustment', null, $userId);
         $stock->update(['quantity' => $newQty, 'last_updated' => now()]);
 
         JihansGudangStockMovement::create([
@@ -195,7 +239,10 @@ class StockService
                     $this->readQty($detail->quantity),
                     'transfer_out',
                     $transfer->id,
-                    $userId
+                    $userId,
+                    null,
+                    $detail->production_lot_id,
+                    $detail->id
                 );
             }
         });
@@ -300,6 +347,10 @@ class StockService
 
     public function creditHendhys(int $productId, int $unitId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
     {
+        DB::transaction(fn () => $this->performCreditHendhys($productId, $unitId, $qty, $branchId, $source, $refId, $userId));
+    }
+
+    private function performCreditHendhys(int $productId, int $unitId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void {
         $isPusat = true;
         if ($branchId) {
             $branch = Branch::find($branchId);
@@ -324,9 +375,10 @@ class StockService
 
         $before = $this->readQty($stock->quantity);
         $after  = $before + $qty;
+        if ($isPusat) $this->lots->credit('hendhys', $productId, $unitId, $before, $qty, $source, $refId);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
-        $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
+        $this->recordHendhysMovement($branchId, $productId, 'in', $source === 'pos_void' ? 'adjustment' : ($source === 'transfer_shortfall' ? 'return_from_branch' : $source), $refId, $qty, $before, $after, $userId);
     }
 
     public function creditHendhysReturn(int $productId, int $unitId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
@@ -361,8 +413,12 @@ class StockService
         $this->recordHendhysMovement($branchId, $productId, 'in', $source, $refId, $qty, $before, $after, $userId);
     }
 
-    public function debitHendhys(int $productId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId): void
+    public function debitHendhys(int $productId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId, ?int $lotId = null, ?int $detailId = null): void
     {
+        DB::transaction(fn () => $this->performDebitHendhys($productId, $qty, $branchId, $source, $refId, $userId, $lotId, $detailId));
+    }
+
+    private function performDebitHendhys(int $productId, int $qty, ?int $branchId, string $source, ?int $refId, ?int $userId, ?int $lotId = null, ?int $detailId = null): void {
         $isPusat = true;
         if ($branchId) {
             $branch = Branch::find($branchId);
@@ -388,6 +444,7 @@ class StockService
         $before = $this->readQty($stock->quantity);
         $this->assertSufficient($productId, $before, $qty, $isPusat ? 'stok pusat Hendhys' : 'stok cabang Hendhys');
         $after  = $before - $qty;
+        if ($isPusat) $this->lots->debit('hendhys', $productId, $stock->unit_id, $before, $qty, $source, $refId, $userId, $lotId, $detailId);
         $stock->update(['quantity' => $after, 'last_updated' => now()]);
 
         $this->recordHendhysMovement($branchId, $productId, 'out', $source, $refId, $qty, $before, $after, $userId);

@@ -19,7 +19,7 @@ class StorePosTransactionRequest extends FormRequest
         return [
             // Bila penjualan berasal dari transaksi tertahan, pendingnya dihapus
             // di dalam transaksi DB yang sama — bukan lebih dulu di frontend.
-            'pending_id'         => ['nullable', 'integer', 'exists:hendhys_pending_transactions,id'],
+            'pending_id'         => ['nullable', 'integer', 'min:1'],
             'customer_name'      => ['nullable', 'string', 'max:150'],
             'customer_type'      => ['nullable', 'string'],
             'customer_phone'     => ['nullable', 'string', 'max:20'],
@@ -41,7 +41,8 @@ class StorePosTransactionRequest extends FormRequest
             'subtotal'           => ['required', 'numeric', 'min:0'],
             'discount_amount'    => ['nullable', 'numeric', 'min:0'],
             'grand_total'        => ['required', 'numeric', 'min:0'],
-            'amount_paid'        => ['required', 'numeric', 'min:0'],
+            'checkout_key'       => [$this->routeIs('*.pos.store') ? 'required' : 'nullable', 'uuid'],
+            'amount_paid'        => ['required', 'numeric', 'min:0', 'gte:grand_total'],
             'ppn_type'           => ['nullable', 'string', 'in:none,include,exclude'],
             'tax_amount'         => ['nullable', 'numeric', 'min:0'],
             'other_costs'        => ['nullable', 'numeric', 'min:0'],

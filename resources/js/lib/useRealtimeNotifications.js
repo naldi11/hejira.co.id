@@ -12,8 +12,8 @@ import Swal from 'sweetalert2';
  * `jobs` tanpa pernah sampai ke layar siapa pun.
  *
  * Hook ini degradasi dengan aman: bila `window.Echo` tidak ada (VITE_REVERB_APP_KEY
- * belum diisi), hook tidak melakukan apa-apa dan aplikasi tetap berjalan seperti
- * biasa dengan notifikasi berbasis props Inertia.
+ * belum diisi), notifikasi berbasis props Inertia tetap bekerja. Untuk Owner,
+ * polling 60 detik juga memeriksa batas distribusi produksi tanpa broadcast.
  */
 
 // Channel yang boleh didengar tiap role. Harus konsisten dengan otorisasi
@@ -53,7 +53,7 @@ function showToast(payload) {
 }
 
 export default function useRealtimeNotifications() {
-    const { auth } = usePage().props;
+    const { auth, notifications } = usePage().props;
     const userId = auth?.user?.id ?? null;
     const roles = auth?.user?.roles ?? [];
     const branchType = auth?.user?.branch?.type ?? null;
@@ -64,7 +64,30 @@ export default function useRealtimeNotifications() {
 
     // router.reload dipanggil dari callback; simpan di ref agar callback stabil.
     const refreshRef = useRef(null);
-    refreshRef.current = () => router.reload({ only: ['notifications'] });
+    refreshRef.current = () => router.reload({ only: roles.includes('owner') ? ['notifications', 'production_monitor', 'jihans_stocks', 'distributions', 'batch_stock'] : ['notifications'], async: true });
+
+    // Check deadline and branch receipts even when no broadcast connection exists.
+    useEffect(() => {
+        if (!userId || !rolesKey.split(',').some(role => ['owner', 'super_admin', 'admin_hendhys', 'kasir_hendhys', 'admin_jihans', 'kasir_jihans'].includes(role))) return;
+        const refresh = () => { if (!document.hidden) refreshRef.current?.(); };
+        const timer = window.setInterval(refresh, 60000);
+        document.addEventListener('visibilitychange', refresh);
+        return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
+    }, [userId, rolesKey]);
+
+    const stockAlert = notifications?.items?.find(item => item.id?.startsWith('production_stock_'));
+    useEffect(() => {
+        if (!stockAlert || !userId) return;
+        const key = `production-alert:${userId}:${stockAlert.id}`;
+        try {
+            if (sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key, 'shown');
+        } catch { /* Badge tetap berfungsi jika penyimpanan browser dibatasi. */ }
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: stockAlert.title, text: stockAlert.message, showConfirmButton: false, timer: 10000, timerProgressBar: true, didOpen: el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => router.visit(stockAlert.path));
+        } });
+    }, [userId, stockAlert?.id]);
 
     useEffect(() => {
         if (!userId || !window.Echo) return;

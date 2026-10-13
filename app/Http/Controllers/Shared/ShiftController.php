@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CashierShift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class ShiftController extends Controller
@@ -139,6 +140,7 @@ class ShiftController extends Controller
         ]);
 
         $user = auth()->user();
+        abort_if($request->entity !== $this->routeEntity($request), 403, 'Entitas shift tidak sesuai.');
         $query = \App\Models\CashierShift::with('user')
             ->where('entity', $request->entity);
 
@@ -171,12 +173,8 @@ class ShiftController extends Controller
             }
         });
 
-        if (!$user->hasRole("admin_{$request->entity}") && !$user->hasRole("super_admin_{$request->entity}")) {
-            if ($user->branch && $user->branch->type !== 'pusat') {
-                $query->where('branch_id', $user->branch_id);
-            } else {
-                $query->whereNull('branch_id');
-            }
+        if (!$user->hasRole(["admin_{$request->entity}", 'super_admin'])) {
+            $query->where('user_id', $user->id);
         }
 
         $shifts = $query->orderBy('opened_at', 'desc')->take(100)->get()->map(function($shift) {
@@ -194,12 +192,8 @@ class ShiftController extends Controller
      */
     public function show(CashierShift $shift)
     {
-        $user = auth()->user();
-        
-        // Ensure cashier can only see their own shifts
-        if (($user->hasRole('kasir_hendhys') || $user->hasRole('kasir_jihans')) && $shift->user_id !== $user->id) {
-            abort(403, 'Unauthorized.');
-        }
+        abort_if($shift->entity !== $this->routeEntity(request()), 403, 'Entitas shift tidak sesuai.');
+        Gate::authorize('view', $shift);
 
         $entity = $shift->entity;
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
@@ -281,5 +275,10 @@ class ShiftController extends Controller
             'transactions' => $transactions,
             'sold_items' => $soldItems
         ]);
+    }
+
+    private function routeEntity(Request $request): string
+    {
+        return $request->routeIs('jihans.*') ? 'jihans' : 'hendhys';
     }
 }

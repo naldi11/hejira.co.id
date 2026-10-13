@@ -255,6 +255,20 @@ class HandleInertiaRequests extends Middleware
                         }
                     }
 
+                    if (!$isOwner && \Illuminate\Support\Facades\Schema::hasTable('branch_stock_transfers')) {
+                        $pending = app(\App\Services\BranchStockTransfers::class)->pendingIncomingCount($user);
+                        if ($pending > 0) $items[] = [
+                            'id' => 'branch_mutation_pending', 'title' => 'Mutasi antar cabang belum selesai',
+                            'message' => "Ada {$pending} mutasi yang menunggu konfirmasi penerimaan atau masih diterima sebagian.",
+                            'path' => route('branch-transfers.index'), 'icon' => 'local_shipping', 'type' => 'info', 'time' => 'Menunggu penerimaan',
+                        ];
+                    }
+
+                    if ($isOwner) {
+                        $alert = app(\App\Services\ProductionStockMonitor::class)->overview()['alert'];
+                        if ($alert) array_unshift($items, $alert);
+                    }
+
                     return $items;
                 }
             ],

@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -5,7 +6,7 @@ import Icon from '@/Components/Icon';
 import { formatQty } from '@/lib/format';
 const route = window.route;
 export default function ReturnsToGudangCreate({ products, units }) {
-    const { data, setData, post, processing, errors } = useForm({ date: new Date().toISOString().slice(0, 10), notes: '', items: [{ product_id: '', quantity: 1, unit_id: '', condition: 'baik', notes: '' }] });
+    const { data, setData, post, processing, errors } = useForm({ date: todayWib(), notes: '', items: [{ product_id: '', quantity: 1, unit_id: '', condition: 'baik', notes: '' }] });
     const addItem = () => setData('items', [...data.items, { product_id: '', quantity: 1, unit_id: '', condition: 'baik', notes: '' }]);
     const removeItem = (i) => setData('items', data.items.filter((_, idx) => idx !== i));
     const updateItem = (i, field, value) => { const items = [...data.items]; items[i][field] = value; if (field === 'product_id') { const p = products.find(pr => pr.id == value); if (p) items[i].unit_id = p.unit_id; } setData('items', items); };

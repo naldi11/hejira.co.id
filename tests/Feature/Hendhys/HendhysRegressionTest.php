@@ -69,6 +69,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 250000,
                 'customer_name'     => 'Umum',
@@ -94,6 +95,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 125000,
                 'customer_name'     => 'Umum',
@@ -119,6 +121,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 150000,
                 'customer_name'     => 'Umum',
@@ -146,6 +149,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 1,
                 'customer_name'     => 'Umum',
@@ -220,7 +224,7 @@ class HendhysRegressionTest extends TestCase
             'pending_number' => 'PEND-HND-01',
             'date' => today(),
             'created_by' => $user->id,
-            'branch_id' => $user->branch_id,
+            'branch_id' => null, // Pending pusat disimpan tanpa branch_id.
             'entity' => 'hendhys',
             'customer_name' => 'Umum',
             'customer_type' => 'Pelanggan Individual',
@@ -229,6 +233,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($user)
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'pending_id'        => $pending->id,
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 250000,
@@ -258,7 +263,7 @@ class HendhysRegressionTest extends TestCase
             'pending_number' => 'PEND-HND-02',
             'date' => today(),
             'created_by' => $user->id,
-            'branch_id' => $user->branch_id,
+            'branch_id' => null, // Pending pusat disimpan tanpa branch_id.
             'entity' => 'hendhys',
             'customer_name' => 'Umum',
             'customer_type' => 'Pelanggan Individual',
@@ -267,6 +272,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($user)
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'pending_id'        => $pending->id,
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 25000,
@@ -294,6 +300,7 @@ class HendhysRegressionTest extends TestCase
 
         $this->actingAs($this->pusatKasir())
             ->postJson(route('hendhys.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'payment_method_id' => $payment->id,
                 'amount_paid'       => 62500,
                 'customer_name'     => 'Umum',

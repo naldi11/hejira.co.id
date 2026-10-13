@@ -3,19 +3,17 @@
 namespace App\Http\Controllers\Gudang;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Gudang\StockAdjustRequest;
 use App\Http\Requests\Gudang\StockIndexRequest;
 use App\Http\Resources\Gudang\ProductStockResource;
 use App\Http\Resources\Gudang\StockMovementResource;
 use App\Http\Resources\UnitResource;
 use App\Models\JihansGudangStockMovement;
-use App\Models\Product;
 use App\Models\Unit;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Services\StockOpname;
 
 class StockController extends Controller
 {
@@ -35,6 +33,7 @@ class StockController extends Controller
 
         return Inertia::render('Gudang/Stock/Index', [
             'stocks'  => ProductStockResource::collection($stocks),
+            'opnameAccess' => app(StockOpname::class)->accessForStock($request->user(), 'gudang'),
             'units'   => UnitResource::collection(Unit::orderBy('name')->get()),
             'filters' => [
                 'search'    => $filters['search'] ?? '',
@@ -58,27 +57,9 @@ class StockController extends Controller
         ]);
     }
 
-    public function adjust(StockAdjustRequest $request)
+    public function adjust(Request $request)
     {
-        $data    = $request->validated();
-        $product = Product::findOrFail($data['product_id']);
-
-        // Wajib dibungkus transaksi: adjustJihansGudang menimpa saldo dengan nilai
-        // absolut dan mengunci barisnya (lockForUpdate). Tanpa transaksi, lock itu
-        // langsung lepas sehingga penyesuaian bisa menimpa penjualan/transfer yang
-        // terjadi di sela baca-tulis.
-        DB::transaction(function () use ($data) {
-            $this->stock->adjustJihansGudang(
-                $data['product_id'],
-                $data['unit_id'],
-                $data['quantity'],
-                auth()->id(),
-                $data['notes'],
-            );
-        });
-
-        $this->logger->log('update', 'gudang.stock', "Adjustment stok: {$product->name} → {$data['quantity']}", null);
-
-        return back()->with('success', "Stok {$product->name} berhasil disesuaikan.");
+        // The legacy endpoint cannot bypass an owner-opened session.
+        abort(403, 'Penyesuaian stok harus melalui menu Stock Opname dalam sesi yang dibuka owner.');
     }
 }

@@ -12,18 +12,23 @@ use App\Models\HendhysTransaction;
 use App\Models\HendhysTransactionDetail;
 use App\Models\HendhysTransactionPayment;
 use App\Services\ActivityLogService;
+use App\Services\CheckoutService;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PosController extends Controller
 {
     public function __construct(
         private NumberGeneratorService $numbers,
         private StockService $stockService,
-        private ActivityLogService $logger
+        private ActivityLogService $logger,
+        private CheckoutService $checkout
     ) {}
 
     public function index()
@@ -179,6 +184,10 @@ class PosController extends Controller
 
         $computed = $this->recalculateTotals($request);
 
+        if ((float) $request->amount_paid < $computed['grand_total']) {
+            throw ValidationException::withMessages(['amount_paid' => 'Pembayaran kurang dari total tagihan.']);
+        }
+
         // Tolak (bukan diam-diam menimpa) bila total kiriman klien menyimpang:
         // kasir harus melihat error, bukan struk dengan angka berbeda dari yang
         // ditampilkan saat transaksi. Toleransi Rp 1 untuk galat pembulatan.
@@ -194,9 +203,18 @@ class PosController extends Controller
         }
 
         try {
-            $transaction = DB::transaction(function () use ($request, $computed) {
+            $transaction = $this->checkout->run(HendhysTransaction::class, $request->validated(), function () use ($request, $computed) {
                 $user = auth()->user();
                 $branchId = $user->branch?->type === 'cabang' ? $user->branch_id : null;
+                $pending = null;
+                if ($request->filled('pending_id')) {
+                    $pending = \App\Models\HendhysPendingTransaction::whereKey($request->pending_id)
+                        ->lockForUpdate()->first();
+                    if (!$pending) {
+                        throw ValidationException::withMessages(['pending_id' => 'Transaksi pending sudah tidak tersedia.']);
+                    }
+                    abort_if($pending->branch_id !== $branchId, 403, 'Pending bukan milik cabang aktif.');
+                }
 
                 // Validasi ketersediaan stok SEBELUM transaksi ditulis, supaya kasir
                 // mendapat pesan yang jelas alih-alih penjualan lolos diam-diam.
@@ -304,21 +322,18 @@ class PosController extends Controller
 
 
                 // Hapus transaksi tertahan HANYA setelah penjualannya tersimpan.
-                if ($request->filled('pending_id')) {
-                    \App\Models\HendhysPendingTransaction::whereKey($request->pending_id)->delete();
-                }
+                $pending?->delete();
+
+                // Log wajib berhasil sebelum penjualan dan pemotongan stok di-commit.
+                $this->logger->log(
+                    'create',
+                    'hendhys_pos',
+                    "Transaksi POS {$transaction->transaction_number} sebesar {$transaction->grand_total}",
+                    $transaction
+                );
 
                 return $transaction;
             });
-
-            // Penjualan adalah aksi paling perlu diaudit; sebelumnya POS Hendhys
-            // sama sekali tidak tercatat di activity log (POS Jihans sudah).
-            $this->logger->log(
-                'create',
-                'hendhys_pos',
-                "Transaksi POS {$transaction->transaction_number} sebesar {$transaction->grand_total}",
-                $transaction
-            );
 
             return response()->json([
                 'success' => true,
@@ -331,27 +346,21 @@ class PosController extends Controller
                 'success' => false,
                 'error' => $e->getMessage()
             ], 422);
+        } catch (ValidationException|HttpException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             report($e);
 
             return response()->json([
                 'success' => false,
-                'error' => 'Gagal memproses transaksi: ' . $e->getMessage()
+                'error' => 'Gagal memproses transaksi. Silakan coba kembali.'
             ], 500);
         }
     }
 
     public function receipt(\Illuminate\Http\Request $request, HendhysTransaction $transaction)
     {
-        $user = auth()->user();
-        // User tanpa branch diperlakukan sebagai pusat (konsisten dengan index()).
-        $isPusat = !$user->branch || $user->branch->type === 'pusat';
-        if (!$isPusat && $transaction->branch_id !== $user->branch_id) {
-            abort(403);
-        }
-        if ($isPusat && $transaction->branch_id !== null) {
-            abort(403);
-        }
+        Gate::authorize('view', $transaction);
 
         $transaction->load(['details.unit', 'payments.method', 'creator', 'customer', 'branch']);
         $paperSize = $request->input('paper_size', '58');
@@ -360,6 +369,7 @@ class PosController extends Controller
 
     public function invoice(HendhysTransaction $transaction)
     {
+        Gate::authorize('view', $transaction);
         $transaction->load(['details.unit', 'payments.method', 'creator']);
         return view('hendhys.pos.invoice', compact('transaction'));
     }

@@ -182,8 +182,11 @@ class ProductionController extends Controller
                 }
 
                 if ($existingPrediksi) {
+                    $existingPrediksi->prediction_snapshot = \App\Services\ProductionSnapshot::capture($existingPrediksi, 'hendhys');
                     $existingPrediksi->details()->delete();
                     $existingPrediksi->update([
+                        'date' => $request->date,
+                        'created_by' => auth()->id(),
                         'type'  => 'aktual',
                         'notes' => $request->notes,
                     ]);

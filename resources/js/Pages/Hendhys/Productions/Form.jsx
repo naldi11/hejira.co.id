@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ export default function ProductionsForm({ products, units, type = 'aktual', form
     })) || [{ product_id: '', quantity_produced: 1, unit_id: '', search_text: '' }];
 
     const { data, setData, post, put, processing, errors } = useForm({ 
-        date: targetDate || production?.date || new Date().toISOString().slice(0, 10), 
+        date: targetDate || production?.date || todayWib(),
         notes: production?.notes || '', 
         prediction_id: prediction_id || '',
         items: initialItems

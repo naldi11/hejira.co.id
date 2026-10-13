@@ -3,11 +3,14 @@ import { useState, useMemo, useEffect } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import Swal from 'sweetalert2';
+import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import { formatRupiah, formatQty } from '@/lib/format';
 
 const route = window.route;
 
 export default function PosIndex({ products, paymentMethods }) {
+    const { auth } = usePage().props;
+    const checkoutScope = `hendhys:${auth.user.id}:${auth.user.branch?.id ?? 'pusat'}`;
     const [search, setSearch] = useState('');
     const [cart, setCart] = useState([]);
     
@@ -257,6 +260,8 @@ export default function PosIndex({ products, paymentMethods }) {
             }))
         };
 
+        payload.checkout_key = checkoutKey(checkoutScope, payload);
+
         fetch(route('hendhys.pos.store'), {
             method: 'POST',
             headers: {
@@ -269,6 +274,7 @@ export default function PosIndex({ products, paymentMethods }) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                clearCheckoutKey(checkoutScope);
                 localStorage.removeItem('hendhys_resume_cart');
                 setPendingId(null);
                 setCart([]);

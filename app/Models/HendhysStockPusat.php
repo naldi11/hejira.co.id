@@ -25,6 +25,6 @@ class HendhysStockPusat extends Model
         ];
     }
 
-    public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class); }
+    public function product(): BelongsTo { return $this->belongsTo(HendhysProduct::class)->withTrashed(); }
     public function unit(): BelongsTo    { return $this->belongsTo(HendhysUnit::class); }
 }

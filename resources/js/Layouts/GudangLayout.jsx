@@ -1,4 +1,3 @@
-import { usePage } from '@inertiajs/react';
 import Icon from '@/Components/Icon';
 import FlashToasts from '@/Components/FlashToasts';
 import AppLayout from './AppLayout';
@@ -6,9 +5,6 @@ import AppLayout from './AppLayout';
 const route = window.route;
 
 export default function GudangLayout({ title, pageTitle, children }) {
-    const { notifications } = usePage().props;
-    const gudangPending = notifications?.gudang_pending ?? 0;
-
     const navItems = [
         {
             name: "Dashboard",
@@ -16,30 +12,49 @@ export default function GudangLayout({ title, pageTitle, children }) {
             path: route('gudang.dashboard')
         },
         {
-            name: "Data Master",
-            icon: <Icon name="database" className="text-[22px]" />,
+            name: "Mutasi Stok Antar Cabang",
+            icon: <Icon name="swap_horiz" className="text-[22px]" />,
+            path: route('branch-transfers.index')
+        },
+        {
+            name: "Pembelian",
+            icon: <Icon name="shopping_cart" className="text-[22px]" />,
             subItems: [
-                { name: "Supplier", path: route('master.suppliers.index') },
-                { name: "Produk", path: route('master.products.index') },
-                { name: "Cabang", path: route('master.branches.index') },
-                { name: "Manajemen Pengguna", path: route('master.users.index') }
+                { name: "Pesanan ke Supplier (PO)", path: route('gudang.po.index') },
+                { name: "Terima Barang dari Supplier", path: route('gudang.receiving.index') }
             ]
         },
         {
-            name: "Cetak Label QR",
-            icon: <Icon name="qr_code_scanner" className="text-[22px]" />,
-            path: route('products.qr')
+            name: "Stok & Opname",
+            icon: <Icon name="inventory_2" className="text-[22px]" />,
+            subItems: [
+                { name: "Lihat Stok Gudang", path: route('gudang.stock.index') },
+                { name: "Hitung Stok Fisik (Opname)", path: route('stock-opname.index') },
+                { name: "Riwayat SO", path: route('stock-opname.history') }
+            ]
         },
         {
-            name: "Inventori",
-            icon: <Icon name="inventory" className="text-[22px]" />,
+            name: "Pengiriman Barang",
+            icon: <Icon name="local_shipping" className="text-[22px]" />,
             subItems: [
-                { name: "Purchase Order", path: route('gudang.po.index') },
-                { name: "Penerimaan Barang", path: route('gudang.receiving.index') },
-                { name: "Stok Gudang", path: route('gudang.stock.index') },
-                { name: "Transfer Request", path: route('gudang.transfer-requests.index') },
-                { name: "Transfer Keluar", path: route('gudang.transfer-out.index') },
-                { name: "Penerimaan Retur", path: route('gudang.returns.index') }
+                { name: "Permintaan Barang ke Gudang", path: route('gudang.transfer-requests.index') },
+                { name: "Kirim Barang dari Gudang", path: route('gudang.transfer-out.index') }
+            ]
+        },
+        {
+            name: "Retur Barang",
+            icon: <Icon name="assignment_return" className="text-[22px]" />,
+            path: route('gudang.returns.index')
+        },
+        {
+            name: "Data & Pengguna",
+            icon: <Icon name="database" className="text-[22px]" />,
+            subItems: [
+                { name: "Produk", path: route('master.products.index') },
+                { name: "Supplier", path: route('master.suppliers.index') },
+                { name: "Cabang", path: route('master.branches.index') },
+                { name: "Akun Pengguna", path: route('master.users.index') },
+                { name: "Cetak Label Produk", path: route('products.qr') }
             ]
         }
     ];

@@ -1,5 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
+import { DeadlineAlert } from './Production/StockMonitor';
 import Icon from '@/Components/Icon';
 import { formatRupiah, formatQty } from '@/lib/format';
 
@@ -56,7 +57,7 @@ function InfoBox({ icon, color, title, value, sub, onClick }) {
 }
 
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
-export default function OwnerDashboard({ stats, trends, period, periodLabel, periodRange, periodOptions }) {
+export default function OwnerDashboard({ stats, trends, period, periodLabel, periodRange, periodOptions, production_monitor }) {
     // Navigate to detail page
     const openStockDetail = (unit) => {
         router.visit(route('owner.dashboard.detail', { mode: 'stock', unit }));
@@ -91,6 +92,12 @@ export default function OwnerDashboard({ stats, trends, period, periodLabel, per
             <Head title="Owner — Konsolidasi" />
 
             <div className="space-y-6">
+                <DeadlineAlert monitor={production_monitor} />
+                <Link href={route('owner.production.index')} className="block rounded-2xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-800 dark:bg-indigo-950/30">
+                    <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-200">Produksi Jihan’s & Hendhys</h2>
+                    <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300">Lihat prediksi, hasil aktual, dan sisa stok. Distribusi Hendhys wajib selesai pukul 17.00 WIB.</p>
+                    <p className="mt-3 text-sm font-semibold text-indigo-700 dark:text-indigo-300">Buka rincian produksi dan stok →</p>
+                </Link>
                 {/* ── STOK Section ───────────────────────────────────────── */}
                 <div className="rounded-2xl border border-blue-105 bg-white p-6 shadow-sm dark:border-blue-950/30 dark:bg-white/[0.02]">
                     <div className="mb-5 flex items-center gap-2">

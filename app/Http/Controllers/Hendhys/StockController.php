@@ -10,6 +10,7 @@ use App\Models\HendhysStockMovement;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\StockOpname;
 
 class StockController extends Controller
 {
@@ -96,6 +97,7 @@ class StockController extends Controller
                 'branchStocks'     => HendhysStockResource::collection($branchStocks),
                 'selectedBranchId' => $selectedBranchId,
                 'isPusat'          => true,
+                'opnameAccess' => app(StockOpname::class)->accessForStock($user, $isPusat ? 'hendhys-pusat' : 'branch-'.$user->branch_id),
                 'filters'          => $request->only('search', 'branch_id', 'low_stock'),
             ]);
         } else {
@@ -130,6 +132,7 @@ class StockController extends Controller
             return Inertia::render('Hendhys/Stock/Index', [
                 'stocks'  => HendhysStockResource::collection($stocks),
                 'isPusat' => false,
+                'opnameAccess' => app(StockOpname::class)->accessForStock($user, $isPusat ? 'hendhys-pusat' : 'branch-'.$user->branch_id),
                 'filters' => $request->only('search', 'low_stock'),
             ]);
         }

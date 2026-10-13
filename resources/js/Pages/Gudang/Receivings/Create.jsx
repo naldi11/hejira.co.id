@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,6 @@ import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 const blankItem = () => ({ product_id: '', product_name: '', quantity_bagus: 1, quantity_rusak: 0, ordered_qty: 0, unit_id: '', unit_name: 'PCS', hpp_price: 0, batch_number: '', expired_date: '', notes: '' });
 
 function itemsFromPo(po) {
@@ -25,7 +25,7 @@ export default function ReceivingCreate({ suppliers, products, purchaseOrders, s
     const { data, setData, post, processing, errors, transform } = useForm({
         po_id: initialPo?.id ?? '',
         supplier_id: initialPo?.supplier_id ?? '',
-        date: todayISO(),
+        date: todayWib(),
         notes: '',
         received_by_name: '',
         supplier_rep_name: '',

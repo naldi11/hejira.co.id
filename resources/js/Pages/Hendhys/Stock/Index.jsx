@@ -1,3 +1,4 @@
+import StockOpnameAccess from '@/Components/StockOpnameAccess';
 import { Head, Link, router } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
@@ -142,7 +143,7 @@ function BranchStockCard({ item }) {
     );
 }
 
-export default function HendhysStockIndex({ stocks, branches, branchStocks, selectedBranchId, isPusat, filters }) {
+export default function HendhysStockIndex({ stocks, branches, branchStocks, selectedBranchId, isPusat, filters, opnameAccess }) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ 
         search: filters.search ?? '', 
@@ -163,7 +164,7 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                 preserveState: true, 
                 preserveScroll: true, 
                 replace: true, 
-                only: ['stocks', 'branchStocks', 'filters', 'selectedBranchId'], 
+                only: ['stocks', 'branchStocks', 'filters', 'selectedBranchId', 'opnameAccess'],
                 onStart: () => setLoading(true), 
                 onFinish: () => setLoading(false) 
             }
@@ -184,6 +185,8 @@ export default function HendhysStockIndex({ stocks, branches, branchStocks, sele
                         <Icon name="history" className="text-[20px]" /> Kartu Stok
                     </Link>
                 </div>
+
+                <StockOpnameAccess access={opnameAccess} />
 
                 {/* Tabs */}
                 <div className="flex gap-2">

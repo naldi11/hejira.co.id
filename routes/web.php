@@ -25,6 +25,24 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->group(function() {
+    Route::middleware('role:super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
+        Route::get('/branch-transfers', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.index');
+        Route::get('/branch-transfers/history', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.history');
+        Route::get('/branch-transfers/create', [\App\Http\Controllers\BranchStockTransferController::class, 'create'])->name('branch-transfers.create');
+        Route::post('/branch-transfers', [\App\Http\Controllers\BranchStockTransferController::class, 'store'])->name('branch-transfers.store');
+        Route::get('/branch-transfers/{transfer}', [\App\Http\Controllers\BranchStockTransferController::class, 'show'])->whereNumber('transfer')->name('branch-transfers.show');
+        Route::post('/branch-transfers/{transfer}/receive', [\App\Http\Controllers\BranchStockTransferController::class, 'receive'])->whereNumber('transfer')->name('branch-transfers.receive');
+        Route::post('/branch-transfers/{transfer}/cancel', [\App\Http\Controllers\BranchStockTransferController::class, 'cancel'])->whereNumber('transfer')->name('branch-transfers.cancel');
+    });
+    Route::middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
+        Route::get('/stock-opname', [\App\Http\Controllers\StockOpnameController::class, 'index'])->name('stock-opname.index');
+        Route::get('/stock-opname/history', [\App\Http\Controllers\StockOpnameController::class, 'history'])->name('stock-opname.history');
+        Route::get('/stock-opname/results/{count}', [\App\Http\Controllers\StockOpnameController::class, 'result'])->whereNumber('count')->name('stock-opname.result');
+        Route::get('/stock-opname/{session}', [\App\Http\Controllers\StockOpnameController::class, 'show'])->whereNumber('session')->name('stock-opname.show');
+        Route::post('/stock-opname/{session}/counts', [\App\Http\Controllers\StockOpnameController::class, 'count'])->whereNumber('session')->name('stock-opname.count');
+        Route::post('/owner/stock-opname', [\App\Http\Controllers\StockOpnameController::class, 'open'])->middleware('role:owner')->name('owner.stock-opname.open');
+        Route::post('/owner/stock-opname/{session}/close', [\App\Http\Controllers\StockOpnameController::class, 'close'])->middleware('role:owner')->whereNumber('session')->name('owner.stock-opname.close');
+    });
     Route::get('/api/notifications/counts', [\App\Http\Controllers\Api\NotificationController::class, 'getCounts'])->name('api.notifications.counts');
     Route::get('/select-branch', [\App\Http\Controllers\Auth\BranchSelectionController::class, 'show'])->name('select-branch');
     Route::post('/select-branch', [\App\Http\Controllers\Auth\BranchSelectionController::class, 'select'])->name('select-branch.post');

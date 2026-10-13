@@ -55,6 +55,7 @@ class JihansPosTest extends TestCase
 
         $response = $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',

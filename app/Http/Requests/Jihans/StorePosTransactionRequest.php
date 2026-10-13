@@ -25,7 +25,7 @@ class StorePosTransactionRequest extends FormRequest
             // dihapus di dalam transaksi DB yang sama — bukan lebih dulu di
             // frontend. Kalau dihapus di depan, keranjang bisa lenyap permanen
             // saat kasir refresh halaman sebelum sempat checkout.
-            'pending_id'         => ['nullable', 'integer', 'exists:jihans_pending_transactions,id'],
+            'pending_id'         => ['nullable', 'integer', 'min:1'],
             'customer_id'        => ['nullable', 'exists:master_customers,id'],
             'customer_name'      => ['nullable', 'string', 'max:150'],
             'customer_type'      => ['nullable', 'string'],
@@ -37,7 +37,8 @@ class StorePosTransactionRequest extends FormRequest
             'tax_amount'         => ['required', 'numeric', 'min:0'],
             'other_costs'        => ['required', 'numeric', 'min:0'],
             'grand_total'        => ['required', 'numeric', 'min:0'],
-            'amount_paid'        => ['required', 'numeric', 'min:0'],
+            'checkout_key'       => [$this->routeIs('*.pos.store') ? 'required' : 'nullable', 'uuid'],
+            'amount_paid'        => ['required', 'numeric', 'min:0', 'gte:grand_total'],
             'reference_number'   => ['nullable', 'string', 'max:100'],
             'notes'              => ['nullable', 'string'],
             'items'              => ['required', 'array', 'min:1'],

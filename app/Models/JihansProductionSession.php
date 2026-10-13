@@ -14,6 +14,7 @@ class JihansProductionSession extends Model
     protected $casts = [
         'date' => 'date',
         'overridden_at' => 'datetime',
+        'prediction_snapshot' => 'array',
     ];
 
     public function details()

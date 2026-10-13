@@ -19,7 +19,8 @@ class GudangReturnResource extends JsonResource
         return [
             'id'                => $this->id,
             'return_number'     => $this->return_number,
-            'date'              => $this->date,
+            'date'              => $this->date?->toDateString(),
+            'recorded_at'   => $this->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s \W\I\B'),
             'from_entity'       => $this->from_entity,
             'from_entity_label' => $this->from_entity_label,
             'branch'            => $this->whenLoaded('branch', fn () => $this->branch?->name),

@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
@@ -7,7 +8,6 @@ import Button from '@/Components/ui/button/Button';
 
 const route = window.route;
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
 const blankItem = () => ({ product_id: '', unit_id: '', quantity: 1, price: 0, notes: '', search_text: '' });
 
 export default function PurchaseOrderForm({ suppliers, products, units, po = null }) {
@@ -16,7 +16,7 @@ export default function PurchaseOrderForm({ suppliers, products, units, po = nul
     const { data, setData, post, put, processing, errors } = useForm({
         supplier_id: po?.supplier_id ?? '',
         supplier_search_text: isEdit ? (suppliers.find((s) => String(s.id) === String(po.supplier_id))?.name ?? '') : '',
-        date: po?.date ?? todayISO(),
+        date: po?.date ?? todayWib(),
         notes: po?.notes ?? '',
         items: isEdit
             ? po.details.map((d) => {

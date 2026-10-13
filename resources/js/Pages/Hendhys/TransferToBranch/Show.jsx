@@ -78,7 +78,7 @@ export default function TransferToBranchShow({ transfer: t }) {
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                     {t.details?.map((d, i) => (
                                         <tr key={i} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
-                                            <td className="px-6 py-4 font-semibold text-gray-800 dark:text-white/90">{d.product}</td>
+                                            <td className="px-6 py-4 font-semibold text-gray-800 dark:text-white/90">{d.product}<div className="mt-2 space-y-1 text-xs font-normal text-gray-500">{(d.production_lots ?? []).map((lot, index) => <p key={index}>{lot.number || 'Stok tanpa nomor produksi'}: {lot.quantity} {d.unit}</p>)}</div></td>
                                             <td className="px-6 py-4 text-center font-bold text-gray-900 dark:text-white">{formatQty(d.quantity)}</td>
                                             <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
                                                 {d.received_quantity !== null ? formatQty(d.received_quantity) : '-'}

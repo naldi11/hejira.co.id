@@ -21,6 +21,8 @@ class HendhysStockMovementResource extends JsonResource
             'quantity'     => (int) $this->quantity,
             'source'       => $this->source,
             'reference_id' => $this->reference_id,
+            'branch_transfer_id' => $this->branch_transfer_id,
+            'source_label' => $this->branch_transfer_id ? 'Mutasi antar cabang' : null,
             'notes'        => $this->notes,
             'branch_id'    => $this->branch_id,
             'operator'     => $this->whenLoaded('creator', fn () => $this->creator?->name ?? 'Sistem'),

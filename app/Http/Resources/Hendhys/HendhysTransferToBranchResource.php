@@ -13,6 +13,7 @@ class HendhysTransferToBranchResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $sources = $this->resource->relationLoaded('details') ? app(\App\Services\ProductionLots::class)->dispatchSources('transfer_to_branch', $this->id) : [];
         return [
             'id'              => $this->id,
             'transfer_number' => $this->transfer_number,
@@ -27,6 +28,7 @@ class HendhysTransferToBranchResource extends JsonResource
             'receive_kendala' => $this->receive_kendala,
 
             'details' => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
+                'production_lots' => $sources[$d->id] ?? [],
                 'id'                => $d->id,
                 'product'           => $d->product?->name ?? '-',
                 'product_code'      => $d->product?->code ?? '-',

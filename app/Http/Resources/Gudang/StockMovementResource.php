@@ -21,6 +21,7 @@ class StockMovementResource extends JsonResource
             'quantity'     => (int) $this->quantity,
             'source'       => $this->source,
             'reference_id' => $this->reference_id,
+            'branch_transfer_id' => $this->branch_transfer_id,
             'doc_number'   => $this->document_number,
             'notes'        => $this->notes,
             'operator'     => $this->whenLoaded('creator', fn () => $this->creator?->name ?? 'Sistem'),

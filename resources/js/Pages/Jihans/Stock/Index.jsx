@@ -1,3 +1,4 @@
+import StockOpnameAccess from '@/Components/StockOpnameAccess';
 import { Head, Link, router } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import { useState } from 'react';
@@ -12,7 +13,7 @@ const route = window.route;
 
 const JENIS = ['frozen', 'tortilla', 'bakery', 'bahan_baku', 'aksesoris', 'minuman', 'snack', 'selai', 'property', 'lainnya'];
 
-export default function JihansStockIndex({ stocks, filters }) {
+export default function JihansStockIndex({ stocks, filters, opnameAccess }) {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ 
         search: filters.search ?? '', 
@@ -30,7 +31,7 @@ export default function JihansStockIndex({ stocks, filters }) {
                 jenis: form.jenis || undefined,
                 low_stock: form.low_stock ? '1' : undefined
             },
-            { preserveState: true, preserveScroll: true, replace: true, only: ['stocks', 'filters'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
+            { preserveState: true, preserveScroll: true, replace: true, only: ['stocks', 'filters', 'opnameAccess'], onStart: () => setLoading(true), onFinish: () => setLoading(false) });
     };
 
     return (
@@ -47,6 +48,8 @@ export default function JihansStockIndex({ stocks, filters }) {
                         <Icon name="history" className="text-[18px]" /> Kartu Stok
                     </Link>
                 </div>
+
+                <StockOpnameAccess access={opnameAccess} />
 
                 {/* Tabs */}
                 <div className="flex gap-2">

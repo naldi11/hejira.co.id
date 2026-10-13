@@ -43,6 +43,7 @@ export default function ReturnShow({ return: ret }) {
                             <div>
                                 <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">{ret.return_number}</h2>
                                 <p className="mt-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500">Tanggal Kirim: {formatDate(ret.date)}</p>
+                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dicatat di sistem: {ret.recorded_at ?? '-'}</p>
                             </div>
                             <div className="text-right">
                                 <p className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550">Status Retur</p>

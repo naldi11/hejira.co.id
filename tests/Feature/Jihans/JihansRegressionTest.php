@@ -62,6 +62,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',
@@ -88,6 +89,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',
@@ -114,6 +116,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',
@@ -141,6 +144,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',
@@ -221,6 +225,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($user)
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'pending_id'       => $pending->id,
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
@@ -259,6 +264,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($user)
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'pending_id'       => $pending->id,
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
@@ -286,6 +292,7 @@ class JihansRegressionTest extends TestCase
 
         $this->actingAs($this->kasirJihans())
             ->postJson(route('jihans.pos.store'), [
+                'checkout_key' => (string) \Illuminate\Support\Str::uuid(),
                 'transaction_date' => now()->toDateString(),
                 'customer_name'    => 'Pelanggan Umum',
                 'customer_type'    => 'Pelanggan Retail',

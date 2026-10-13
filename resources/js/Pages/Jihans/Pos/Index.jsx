@@ -1,9 +1,11 @@
-import { Head, Link } from '@inertiajs/react';
+import { todayWib } from '@/lib/date';
+import { Head, Link, usePage } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
 import { useEffect, useMemo, useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 import Swal from 'sweetalert2';
+import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import { formatRupiah } from '@/lib/format';
 import SearchModal from './SearchModal';
 import PaymentModal from './PaymentModal';
@@ -11,14 +13,15 @@ import PaymentModal from './PaymentModal';
 const route = window.route;
 const axios = window.axios;
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
-const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export default function PosIndex({ products, customers, editTransaction }) {
+    const { auth } = usePage().props;
+    const checkoutScope = `jihans:${auth.user.id}:${auth.user.branch?.id ?? 'pusat'}`;
     const [cart, setCart] = useState([]);
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [customerType, setCustomerType] = useState('Pelanggan Retail');
-    const [date, setDate] = useState(todayISO());
+    const [date, setDate] = useState(todayWib());
     const [notes, setNotes] = useState('');
     const [extraDiscount, setExtraDiscount] = useState(0);
     const [pendingId, setPendingId] = useState(null);
@@ -87,7 +90,7 @@ export default function PosIndex({ products, customers, editTransaction }) {
             setCustomerType(editTransaction.customer_type ?? 'Pelanggan Retail');
             setCustomerId(editTransaction.customer_id ?? '');
             setCustomerName(editTransaction.customer_name ?? '');
-            setDate(editTransaction.date ?? todayISO());
+            setDate(editTransaction.date ?? todayWib());
             setNotes(editTransaction.notes ?? '');
             setExtraDiscount(editTransaction.extra_discount ?? 0);
             setPpnType(editTransaction.ppn_type ?? 'none');
@@ -231,12 +234,15 @@ export default function PosIndex({ products, customers, editTransaction }) {
                 items: buildItems(),
             };
             
+            if (!isEditMode) payload.checkout_key = checkoutKey(checkoutScope, payload);
+
             const req = isEditMode 
                 ? axios.put(route('jihans.pos.update', editTransaction.id), payload, { headers: { 'X-CSRF-TOKEN': csrf() } })
                 : axios.post(route('jihans.pos.store'), payload, { headers: { 'X-CSRF-TOKEN': csrf() } });
             
             const { data } = await req;
             if (data.success) {
+                if (!isEditMode) clearCheckoutKey(checkoutScope);
                 // Aman dibersihkan: penjualannya sudah tersimpan.
                 localStorage.removeItem('jihans_resume_cart');
                 window.location.href = data.redirect;

@@ -168,7 +168,7 @@ class TransferFromHendhysController extends Controller
                             $detail->unit_id,
                             $selisih,
                             null, // null = Pusat Hendhys
-                            'return_from_branch',
+                            'transfer_shortfall',
                             $transferFromHendhy->id,
                             $user->id
                         );

@@ -10,6 +10,7 @@ use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class TransactionController extends Controller
@@ -72,6 +73,7 @@ class TransactionController extends Controller
     public function show(\Illuminate\Http\Request $request, $id)
     {
         $transaction = HendhysTransaction::with(['details.product', 'details.unit', 'creator', 'customer', 'branch', 'payments'])->findOrFail($id);
+        Gate::authorize('view', $transaction);
         $paperSize = $request->input('paper_size', '58');
 
         return view('hendhys.pos.receipt', compact('transaction', 'paperSize'));
@@ -135,7 +137,7 @@ class TransactionController extends Controller
                         $detail->unit_id,
                         (int) $detail->quantity,
                         $transaction->branch_id,
-                        'adjustment',
+                        'pos_void',
                         $transaction->id,
                         $user->id
                     );

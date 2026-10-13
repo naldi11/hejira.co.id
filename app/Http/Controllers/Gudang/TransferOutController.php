@@ -96,12 +96,19 @@ class TransferOutController extends Controller
             'products'        => $products,
             'branches'        => $branches,
             'transferRequest' => $transferRequest,
+            'productionLots' => app(\App\Services\ProductionLots::class)->choices('jihans'),
         ]);
     }
 
     public function store(StoreTransferOutRequest $request)
     {
         $data = $request->validated();
+
+        foreach ($data['items'] as $item) {
+            if ((int) Product::findOrFail($item['product_id'])->unit_id !== (int) $item['unit_id']) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['items' => 'Satuan harus sesuai dengan produk yang dipilih.']);
+            }
+        }
 
         // Pra-cek stok untuk memberi pesan ramah sebelum transaksi dibuka.
         // Penjaga sebenarnya ada di StockService::debitJihansGudang yang membaca
@@ -119,7 +126,9 @@ class TransferOutController extends Controller
 
         // Block self-produced products from being transferred out of the warehouse.
         $producedNames = Product::whereIn('id', collect($data['items'])->pluck('product_id'))
-            ->where('source_type', 'produced')->pluck('name');
+            ->where('source_type', 'produced')
+            ->whereNotIn('id', DB::table('production_lots')->where('entity', 'jihans')->whereNotNull('production_id')->select('product_id'))
+            ->pluck('name');
 
         if ($producedNames->isNotEmpty()) {
             return back()->withInput()->withErrors([
@@ -138,17 +147,21 @@ class TransferOutController extends Controller
                 'created_by'      => auth()->id(),
             ]);
 
+            $dispatchDetails = [];
             foreach ($data['items'] as $item) {
-                $transfer->details()->create([
+                $detail = $transfer->details()->create([
                     'product_id' => $item['product_id'],
                     'quantity'   => $item['quantity'],
                     'unit_id'    => $item['unit_id'],
                     'hpp_price'  => $item['hpp_price'],
                     'total'      => $item['quantity'] * $item['hpp_price'],
                 ]);
+                // Transient selection; the durable allocation is recorded by StockService.
+                $detail->production_lot_id = $item['production_lot_id'] ?? null;
+                $dispatchDetails[] = $detail;
             }
 
-            $transfer->load('details');
+            $transfer->setRelation('details', collect($dispatchDetails));
             $this->stock->processTransferOut($transfer);
 
             $this->logger->log('create', 'gudang.transfer_out', "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);

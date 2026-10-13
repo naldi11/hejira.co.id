@@ -11,11 +11,12 @@ class HendhysProduction extends Model
     protected $table = 'hendhys_productions';
 
     protected $fillable = [
-        'production_number', 'type', 'date', 'total_items', 'notes', 'created_by', 'overridden_at'
+        'production_number', 'type', 'date', 'total_items', 'notes', 'created_by', 'overridden_at', 'prediction_snapshot'
     ];
 
     protected $casts = [
         'overridden_at' => 'datetime',
+        'prediction_snapshot' => 'array',
         'date' => 'date',
     ];
 

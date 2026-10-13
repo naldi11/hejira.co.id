@@ -1,3 +1,4 @@
+import { todayWib } from '@/lib/date';
 import { Head, Link } from '@inertiajs/react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
@@ -71,7 +72,7 @@ export default function HendhysDashboard({ stats, recentTransactions, lowStocks 
                             </div>
                             <div className="border-t border-gray-100 p-3 text-center dark:border-gray-800">
                                 <Link 
-                                    href={route('hendhys.transactions.index', { date: new Date().toISOString().split('T')[0] })}
+                                    href={route('hendhys.transactions.index', { date: todayWib() })}
                                     className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
                                 >
                                     Lihat Semua Transaksi Hari Ini →

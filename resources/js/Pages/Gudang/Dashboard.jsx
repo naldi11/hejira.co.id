@@ -13,10 +13,11 @@ const STAT_CARDS = [
 ];
 
 const QUICK_ACTIONS = [
-    { label: 'Stok Opname', icon: 'inventory', route: 'gudang.stock.index', desc: 'Lakukan penyesuaian & cek stok fisik' },
+    { label: 'Mutasi Stok Antar Cabang', icon: 'swap_horiz', route: 'branch-transfers.index', desc: 'Lihat pengiriman dan penerimaan antar cabang' },
+    { label: 'Stok Opname', icon: 'inventory', route: 'stock-opname.index', desc: 'Hitung stok setelah Owner membuka sesi' },
     { label: 'Buat PO', icon: 'add_shopping_cart', route: 'gudang.po.create', desc: 'Pesan stok barang baru ke supplier' },
     { label: 'Terima Barang', icon: 'input', route: 'gudang.receiving.create', desc: 'Verifikasi & catat kiriman supplier' },
-    { label: 'Kirim Barang', icon: 'output', route: 'gudang.transfer-out.index', desc: 'Kirim mutasi stok barang ke cabang' },
+    { label: 'Kirim Barang dari Gudang', icon: 'output', route: 'gudang.transfer-out.index', desc: 'Kirim stok gudang ke unit usaha atau cabang' },
 ];
 
 const COLOR_MAP = {

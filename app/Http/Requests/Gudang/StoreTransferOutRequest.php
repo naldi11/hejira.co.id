@@ -26,6 +26,7 @@ class StoreTransferOutRequest extends FormRequest
             'items.*.product_id' => ['required', 'exists:master_products,id'],
             'items.*.quantity'   => ['required', 'integer', 'min:1'],
             'items.*.unit_id'    => ['required', 'exists:master_units,id'],
+            'items.*.production_lot_id' => ['nullable', 'integer', 'exists:production_lots,id'],
             'items.*.hpp_price'  => ['required', 'numeric', 'min:0'],
         ];
     }

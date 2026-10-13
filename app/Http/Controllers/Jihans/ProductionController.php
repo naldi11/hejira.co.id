@@ -173,11 +173,14 @@ class ProductionController extends Controller
             }
 
             if ($existingPrediksi) {
-                // Hapus detail lama untuk diganti
+                // Simpan rencana awal sebelum rincian diganti dengan hasil aktual.
+                $existingPrediksi->prediction_snapshot = \App\Services\ProductionSnapshot::capture($existingPrediksi, 'jihans');
                 $existingPrediksi->details()->delete();
 
                 // Perbarui sesi prediksi menjadi aktual
                 $existingPrediksi->update([
+                    'date' => $request->date,
+                    'created_by' => auth()->id(),
                     'type'              => 'aktual',
                     'notes'             => $request->notes,
                 ]);
