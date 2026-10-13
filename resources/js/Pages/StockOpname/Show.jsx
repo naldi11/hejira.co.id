@@ -1,3 +1,4 @@
+import SessionActions, { SessionState } from './SessionActions';
 import StockOpnameResultCard from '@/Components/StockOpnameResultCard';
 import { useOpnameActive } from '@/Components/StockOpnameAccess';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -23,27 +24,21 @@ function CountForm({ product, session, onClose }) {
         <div className="flex flex-wrap gap-3"><button disabled={form.processing || !form.data.confirmed || diff === null} className={button}>Simpan hasil hitung</button><button type="button" disabled={form.processing} className="px-4 py-3" onClick={onClose}>Tutup form</button></div>
     </form>;
 }
-function CloseForm({ session }) {
-    const form = useForm({ confirmed: false });
-    return <form className="mt-4 space-y-3" onSubmit={e => { e.preventDefault(); form.post(route('owner.stock-opname.close', session.id)); }}>
-        <Errors errors={form.errors} /><label className="flex gap-3"><input type="checkbox" checked={form.data.confirmed} onChange={e => form.setData('confirmed', e.target.checked)} />Hentikan akses opname lokasi ini. Hasil yang sudah disimpan tetap berlaku.</label>
-        <button className="rounded-lg bg-red-600 px-4 py-3 text-white disabled:opacity-50" disabled={form.processing || !form.data.confirmed}>Tutup sesi sekarang</button>
-    </form>;
-}
-export default function Show({ session, products, counts, isOwner, description, canCount: permitted, filters }) {
+export default function Show({ session, products, counts, isOwner, description, canCount: permitted, filters, events = [] }) {
     const canCount = useOpnameActive(permitted, session);
     const [selected, select] = useState(null);
     const [search, setSearch] = useState(filters.search);
     const counted = new Map(counts.map(c => [Number(c.product_id), c]));
     return <Layout><Head title={`Opname #${session.id}`} /><div className="mx-auto max-w-5xl space-y-6 text-gray-800 dark:text-gray-200">
         <Link className="text-brand-500" href={route('stock-opname.index')}>← Daftar sesi stock opname</Link>
-        <div className={panel}><div className="flex flex-wrap justify-between gap-2"><h1 className="text-xl font-bold">Opname #{session.id} · {session.location_name}</h1><strong className={session.active ? 'text-green-600' : 'text-gray-500'}>{session.state_label}</strong></div>
+        <div className={panel}><div className="flex flex-wrap justify-between gap-2"><h1 className="text-xl font-bold">Opname #{session.id} · {session.location_name}</h1><SessionState session={session} /></div>
             <p className="mt-3 rounded-lg bg-amber-50 p-3 text-amber-800">{description}</p>
             <p className="mt-3">Instruksi: {session.notes}</p><p className="mt-2 text-sm text-gray-500">Dibuka {session.opened_at} oleh {session.opened_by_name}. Akses berakhir {session.expires_at}.</p>
             {session.closed_at && <p className="mt-2 text-sm">Ditutup {session.closed_at} oleh {session.closed_by_name}.</p>}
-            {isOwner && session.status !== 'closed' && <CloseForm session={session} />}
-            {!isOwner && !canCount && <p className="mt-4 text-red-600">Akses hitung fisik tidak aktif. Minta owner membuka sesi baru untuk lokasi ini.</p>}
+            {isOwner && <SessionActions key={session.expires_at_iso + session.status} session={session} />}
+            {!isOwner && !canCount && <p className="mt-4 text-red-600">Akses hitung fisik tidak aktif. Minta Owner membuka kembali sesi ini untuk melanjutkan produk yang belum dihitung.</p>}
         </div>
+        {events.length > 0 && <section className={`${panel} space-y-3`}><h2 className="font-bold">Riwayat akses Owner</h2>{events.map(e => <div className="border-b border-gray-100 pb-3 text-sm dark:border-gray-800" key={e.id}><strong>{({ open: 'Sesi dibuka', close: 'Sesi ditutup', reopen: 'Sesi dibuka kembali' })[e.action]}</strong><p>{e.created_at} · {e.owner_name}</p>{e.expires_at && <p>Batas waktu: {e.expires_at}</p>}{e.previous_expires_at && <p>Batas waktu sebelumnya: {e.previous_expires_at}</p>}{e.previous_closed_at && <p>Sebelumnya ditutup {e.previous_closed_at} oleh {e.previous_closed_by_name}.</p>}{e.notes && <p>Alasan / instruksi: {e.notes}</p>}</div>)}</section>}
         <section id="hasil-so-sesi" className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-lg font-bold">Hasil SO sesi ini · {counts.length} produk</h2><Link className="text-sm text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Cari seluruh hasil sesi ini →</Link></div>
             <p className="text-sm text-gray-500">Sebelum dan sesudah di bawah adalah saldo saat SO disimpan. Klik produk untuk melihat petugas, alasan, izin Owner, dan jejak penyesuaian.</p>
             {counts.length === 0 ? <p>Belum ada hasil SO yang disimpan dalam sesi ini.</p> : counts.slice(0, 5).map(c => <StockOpnameResultCard key={c.id} count={c} />)}

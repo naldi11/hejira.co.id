@@ -21,7 +21,8 @@ class ReceiveReturnRequest extends FormRequest
         return [
             'items'                     => ['required', 'array', 'min:1'],
             'items.*.received_quantity' => ['required', 'integer', 'min:0'],
-            'items.*.condition'         => ['required', 'string', 'max:100'],
+            'items.*.receiving_notes' => ['nullable', 'string', 'max:1000'],
+            'items.*.condition'         => ['required', 'in:Bagus (Siap Jual),Rusak (Defect),Kadaluwarsa'],
         ];
     }
 }

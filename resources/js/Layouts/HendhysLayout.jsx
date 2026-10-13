@@ -33,6 +33,7 @@ export default function HendhysLayout({ pageTitle, children }) {
         { name: 'Riwayat Keluar Masuk Stok', path: route('hendhys.stock.movements') },
         { name: 'Hitung Stok Fisik (Opname)', path: route('stock-opname.index') },
         { name: 'Riwayat SO', path: route('stock-opname.history') },
+        { name: 'Stok Rusak / Retur', path: route('return-stock.index') },
     ]));
 
     const incoming = [{ name: 'Minta Barang ke Gudang', path: route('hendhys.transfer-requests.index') }];

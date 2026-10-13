@@ -30,7 +30,8 @@ export default function GudangLayout({ title, pageTitle, children }) {
             subItems: [
                 { name: "Lihat Stok Gudang", path: route('gudang.stock.index') },
                 { name: "Hitung Stok Fisik (Opname)", path: route('stock-opname.index') },
-                { name: "Riwayat SO", path: route('stock-opname.history') }
+                { name: "Riwayat SO", path: route('stock-opname.history') },
+                { name: 'Stok Rusak / Retur', path: route('return-stock.index') }
             ]
         },
         {

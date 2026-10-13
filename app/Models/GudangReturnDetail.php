@@ -11,6 +11,7 @@ class GudangReturnDetail extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'sent_condition', 'receiving_notes', 'product_name', 'product_code', 'unit_name', 'condition', 'notes',
         'return_id', 'product_id', 'quantity', 'unit_id',
         'received_quantity', 'condition', 'notes'
     ];

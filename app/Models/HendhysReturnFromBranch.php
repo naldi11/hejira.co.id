@@ -11,6 +11,7 @@ class HendhysReturnFromBranch extends Model
     protected $table = 'hendhys_returns_from_branch';
 
     protected $fillable = [
+        'origin_name', 'sender_name', 'received_at',
         'return_number', 'branch_id', 'date', 'status', 
         'notes', 'created_by', 'received_by'
     ];

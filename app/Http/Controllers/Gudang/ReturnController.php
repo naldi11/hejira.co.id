@@ -9,6 +9,8 @@ use App\Models\GudangReturn;
 use App\Models\GudangReturnDetail;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
+use App\Services\ReturnQuarantine;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -54,10 +56,18 @@ class ReturnController extends Controller
 
         try {
             DB::transaction(function () use ($request, $return) {
+                $return = GudangReturn::whereKey($return->id)->lockForUpdate()->firstOrFail();
+                if ($return->status !== 'sent') return;
                 $userId = auth()->id();
+                $details = $return->details()->lockForUpdate()->get()->keyBy('id');
+                $ids = array_map('intval', array_keys($request->validated('items'))); sort($ids);
+                $expected = $details->keys()->map(fn ($id) => (int) $id)->sort()->values()->all();
+                if ($ids !== $expected) throw ValidationException::withMessages(['items' => 'Daftar barang harus tepat sesuai retur ini. Muat ulang halaman.']);
 
                 foreach ($request->validated('items') as $detailId => $itemData) {
-                    $detail = GudangReturnDetail::findOrFail($detailId);
+                    $detail = $details->get((int) $detailId);
+                    $sentCondition = $detail->sent_condition ?? $detail->condition;
+                    if (ReturnQuarantine::condition($sentCondition) !== 'good' && $itemData['condition'] === 'Bagus (Siap Jual)') throw ValidationException::withMessages(["items.{$detailId}.condition" => 'Barang rusak, kedaluwarsa, atau kondisi belum jelas wajib masuk Stok Rusak / Retur, bukan stok siap jual.']);
 
                     if ($itemData['received_quantity'] > $detail->quantity) {
                         throw new \Exception("Jumlah yang diterima tidak boleh melebihi jumlah yang dikirim ({$detail->quantity}).");
@@ -66,6 +76,7 @@ class ReturnController extends Controller
                     $detail->update([
                         'received_quantity' => $itemData['received_quantity'],
                         'condition'         => $itemData['condition'],
+                        'receiving_notes' => $itemData['receiving_notes'] ?? null,
                     ]);
 
                     if ($itemData['received_quantity'] > 0 && $itemData['condition'] === 'Bagus (Siap Jual)') {
@@ -99,11 +110,15 @@ class ReturnController extends Controller
                     'received_at' => now(),
                 ]);
 
+                app(ReturnQuarantine::class)->record('gudang', $return->fresh());
+
                 $this->logger->log('receive', 'gudang.return', "Menerima retur barang: {$return->return_number}", $return);
             });
 
             return redirect()->route('gudang.returns.index')
-                ->with('success', 'Retur barang berhasil diterima dan dimasukkan kembali ke stok Gudang Utama.');
+                ->with('success', 'Retur diterima. Barang rusak / kedaluwarsa masuk stok terpisah yang tidak dapat dijual atau dikirim.');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal memproses penerimaan retur: ' . $e->getMessage());
         }

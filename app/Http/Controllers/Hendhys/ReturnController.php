@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\ReturnQuarantine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -71,17 +72,19 @@ class ReturnController extends Controller
 
         $request->validate([
             'date' => 'required|date',
-            'notes' => 'nullable|string',
+            'notes' => 'required|string|min:5|max:1000',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
-            'items.*.condition' => 'required|in:rusak,basi,lainnya',
+            'items.*.condition' => 'required|in:rusak,basi,kadaluarsa,kadaluwarsa,lainnya',
+            'items.*.notes' => 'nullable|string|max:1000',
         ]);
 
         try {
             DB::transaction(function () use ($request, $user) {
                 $ret = HendhysReturnFromBranch::create([
+                    ...ReturnQuarantine::origin($user),
                     'return_number' => $this->numbers->generateYearly('RET-HND', 'hendhys_returns_from_branch', 'return_number'),
                     'branch_id' => $user->branch_id,
                     'date' => $request->date,
@@ -101,11 +104,13 @@ class ReturnController extends Controller
                     }
 
                     HendhysReturnDetail::create([
+                        ...ReturnQuarantine::itemSnapshot((int) $item['product_id'], (int) $item['unit_id']),
                         'return_id' => $ret->id,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_id' => $item['unit_id'],
-                        'condition' => $item['condition']
+                        'condition' => $item['condition'],
+                        'notes' => $item['notes'] ?? null
                     ]);
 
                     // Potong stok cabang
@@ -139,13 +144,14 @@ class ReturnController extends Controller
 
         return Inertia::render('Hendhys/Returns/Show', [
             'return' => new HendhysReturnResource($return),
+            'canReceive' => $user->hasRole('admin_hendhys') && $user->branch?->type === 'pusat',
         ]);
     }
 
     public function receive(Request $request, HendhysReturnFromBranch $return)
     {
         $user = auth()->user();
-        if ($user->branch && $user->branch->type !== 'pusat') {
+        if (!$user->hasRole('admin_hendhys') || $user->branch?->type !== 'pusat') {
             abort(403, 'Hanya Pusat yang dapat mengkonfirmasi penerimaan retur.');
         }
 
@@ -155,7 +161,10 @@ class ReturnController extends Controller
 
         try {
             DB::transaction(function () use ($return, $user) {
+                $return = HendhysReturnFromBranch::whereKey($return->id)->lockForUpdate()->firstOrFail();
+                if ($return->status !== 'sent') return;
                 $return->update([
+                    'received_at' => now(),
                     'status' => 'received',
                     'received_by' => $user->id
                 ]);
@@ -171,6 +180,7 @@ class ReturnController extends Controller
                         $user->id
                     );
                 }
+                app(ReturnQuarantine::class)->record('hendhys', $return->fresh());
             });
 
             return back()->with('success', 'Retur barang dari cabang berhasil diterima dan dimasukkan ke Stok Return Pusat.');

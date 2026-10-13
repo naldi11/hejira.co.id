@@ -20,7 +20,8 @@ class JihansMiscTest extends TestCase
     private function kasirJihans(): User
     {
         Role::findOrCreate('kasir_jihans', 'web');
-        $user = User::factory()->create(['entity' => 'jihans']);
+        $branch = \App\Models\Branch::firstOrCreate(['code' => 'JHS-TEST'], ['name' => 'Cabang Jihan Uji', 'entity' => 'jihans', 'type' => 'cabang', 'is_active' => true]);
+        $user = User::factory()->create(['entity' => 'jihans', 'branch_id' => $branch->id]);
         $user->assignRole('kasir_jihans');
 
         return $user;
@@ -29,7 +30,8 @@ class JihansMiscTest extends TestCase
     private function adminJihans(): User
     {
         Role::findOrCreate('admin_jihans', 'web');
-        $user = User::factory()->create(['entity' => 'jihans']);
+        $branch = \App\Models\Branch::firstOrCreate(['code' => 'JHS-TEST'], ['name' => 'Cabang Jihan Uji', 'entity' => 'jihans', 'type' => 'cabang', 'is_active' => true]);
+        $user = User::factory()->create(['entity' => 'jihans', 'branch_id' => $branch->id]);
         $user->assignRole('admin_jihans');
 
         return $user;
@@ -70,6 +72,7 @@ class JihansMiscTest extends TestCase
         $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
                 'date'  => now()->toDateString(),
+                'notes' => 'Kemasan rusak setelah diperiksa.',
                 'items' => [['product_id' => $product->id, 'quantity' => 5, 'unit_id' => $unit->id, 'condition' => 'Rusak']],
             ])
             ->assertRedirect(route('jihans.returns-to-gudang.index'));
@@ -92,6 +95,7 @@ class JihansMiscTest extends TestCase
         $this->actingAs($this->adminJihans())
             ->post(route('jihans.returns-to-gudang.store'), [
                 'date'  => now()->toDateString(),
+                'notes' => 'Kemasan rusak setelah diperiksa.',
                 'items' => [['product_id' => $product->id, 'quantity' => 10, 'unit_id' => $unit->id, 'condition' => 'Rusak']],
             ])
             ->assertSessionHas('error');

@@ -1,3 +1,4 @@
+import ReturnNotice from '@/Components/ReturnNotice';
 import { Head, Link, useForm } from '@inertiajs/react';
 import GudangLayout from '@/Layouts/GudangLayout';
 import Icon from '@/Components/Icon';
@@ -12,9 +13,9 @@ const CONDITIONS = ['Bagus (Siap Jual)', 'Rusak (Defect)', 'Kadaluwarsa'];
 export default function ReturnShow({ return: ret }) {
     const isSent = ret.status === 'sent';
 
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         items: Object.fromEntries(
-            ret.details.map((d) => [d.id, { received_quantity: d.quantity, condition: CONDITIONS[0] }]),
+            ret.details.map((d) => [d.id, { received_quantity: d.quantity, condition: d.condition_kind === 'good' ? CONDITIONS[0] : d.condition_kind === 'expired' ? CONDITIONS[2] : CONDITIONS[1], receiving_notes: '' }]),
         ),
     });
 
@@ -36,6 +37,8 @@ export default function ReturnShow({ return: ret }) {
             <Head title={ret.return_number} />
 
             <div className="mx-auto max-w-5xl space-y-6">
+                <ReturnNotice received errors={errors} />
+                <Link href={route('return-stock.index', { search: ret.return_number })} className="text-brand-500 underline">Lihat Stok Rusak / Retur untuk nomor ini →</Link>
                 <form onSubmit={submit} className="space-y-6">
                     {/* Header Panel */}
                     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
@@ -54,7 +57,7 @@ export default function ReturnShow({ return: ret }) {
                         <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
                             <div>
                                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-450 dark:text-gray-550">Asal Pengirim</p>
-                                <p className="text-sm font-bold text-gray-850 dark:text-white/90">{ret.from_entity_label}</p>
+                                <p className="text-sm font-bold text-gray-850 dark:text-white/90">{ret.from_entity_label} · {ret.origin_name}</p>
                                 <p className="mt-1 text-xs font-semibold text-gray-400 dark:text-gray-500">Dibuat oleh: {ret.creator ?? '-'}</p>
                             </div>
                             <div>
@@ -85,11 +88,11 @@ export default function ReturnShow({ return: ret }) {
                                     {ret.details.map((detail, i) => (
                                         <tr key={detail.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4.5 text-xs text-gray-400 dark:text-gray-500 font-semibold">{i + 1}</td>
-                                            <td className="px-6 py-4.5 font-bold text-gray-800 dark:text-white/90">{detail.product}</td>
+                                            <td className="px-6 py-4.5 font-bold text-gray-800 dark:text-white/90">{detail.product}<p className="mt-1 text-xs font-normal text-gray-500">Kondisi kirim: {detail.sent_condition || detail.condition || 'Belum tercatat'}</p><p className="text-xs font-normal text-gray-500">{detail.notes}</p></td>
                                             <td className="px-4 py-4.5 text-right font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{formatQty(detail.quantity)}</td>
                                             <td className="px-4 py-3 text-right">
                                                 {isSent ? (
-                                                    <input type="number" step="0.001" min="0" max={detail.quantity} required
+                                                    <input type="number" step="1" min="0" max={detail.quantity} required
                                                         value={data.items[detail.id].received_quantity}
                                                         onChange={(e) => setItem(detail.id, 'received_quantity', e.target.value)}
                                                         className={cellInput} />
@@ -102,7 +105,7 @@ export default function ReturnShow({ return: ret }) {
                                                     <select required value={data.items[detail.id].condition}
                                                         onChange={(e) => setItem(detail.id, 'condition', e.target.value)}
                                                         className={cellSelect}>
-                                                        {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                                                        {CONDITIONS.filter(c => detail.condition_kind === 'good' || c !== CONDITIONS[0]).map((c) => <option key={c} value={c}>{c}</option>)}
                                                     </select>
                                                 ) : (
                                                     <span className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-850 px-2.5 py-1 text-xs font-bold uppercase text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
@@ -117,12 +120,13 @@ export default function ReturnShow({ return: ret }) {
                             </table>
                         </div>
 
+                        {isSent && <div className="space-y-3 p-6"><h3 className="font-bold">Catatan pemeriksaan penerima</h3>{ret.details.map(d => <label className="block text-sm" key={d.id}>{d.product}<input maxLength={1000} className="mt-2 w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800" placeholder="Contoh: kemasan sobek, kedaluwarsa 12 Oktober; sesuai pemeriksaan fisik." value={data.items[d.id].receiving_notes} onChange={e => setItem(d.id, 'receiving_notes', e.target.value)} /></label>)}</div>}
                         {/* Footer Action Card */}
                         {isSent ? (
                             <div className="flex flex-col items-start justify-between gap-4 border-t border-brand-100 bg-brand-50/10 p-6 dark:border-brand-900/20 dark:bg-brand-500/5 sm:flex-row sm:items-center">
                                 <div className="space-y-1">
                                     <p className="text-sm font-bold text-brand-700 dark:text-brand-400">Konfirmasi Penerimaan Retur</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Stok Gudang Utama akan otomatis bertambah sesuai jumlah kuantitas yang diterima.</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Hanya barang bagus yang menambah stok siap jual. Barang rusak / kedaluwarsa masuk Stok Rusak / Retur.</p>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Link href={route('gudang.returns.index')} className="inline-flex items-center gap-2 rounded-xl border border-gray-250 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-bold text-gray-750 dark:text-gray-300 shadow-sm hover:bg-gray-55 dark:hover:bg-gray-700 transition-colors">

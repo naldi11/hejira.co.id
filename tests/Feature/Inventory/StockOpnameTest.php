@@ -408,4 +408,55 @@ class StockOpnameTest extends TestCase
         file_put_contents($path.'/gudang-closed.html', $this->actingAs($admin)->get(route('gudang.stock.index'))->assertOk()->getContent());
 
     }
+    public function test_owner_reopens_expired_session_and_continues_same_counts_with_audit(): void
+    {
+        $p = $this->product(); $this->stock($p); $other = $this->product(); $this->stock($other);
+        $id = $this->open(); $admin = $this->user('super_admin', 'gudang');
+        $this->actingAs($admin)->post(route('stock-opname.count', $id), $this->countData($p))->assertSessionHas('success');
+        $this->travelTo(\Carbon\Carbon::parse('2026-10-12 17:01', 'Asia/Jakarta'));
+        $this->post(route('stock-opname.count', $id), $this->countData($other))->assertSessionHasErrors('session_id');
+        $data = ['request_key' => (string) Str::uuid(), 'expires_at' => '2026-10-12T19:00', 'notes' => 'Hitungan belum selesai, lanjutkan produk lainnya.', 'confirmed' => true];
+        $this->post(route('owner.stock-opname.reopen', $id), $data)->assertForbidden();
+        $owner = $this->user('owner');
+        $this->actingAs($owner)->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHas('success');
+        $this->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHas('success');
+        $this->assertDatabaseCount('stock_opname_sessions', 1);
+        $this->assertDatabaseCount('stock_opname_session_events', 2);
+        $this->assertDatabaseCount('stock_opname_counts', 1);
+        $this->assertDatabaseHas('stock_opname_session_events', ['session_id' => $id, 'action' => 'reopen', 'previous_expires_at' => '2026-10-12 17:00:00', 'owner_id' => $owner->id]);
+        $this->actingAs($admin)->post(route('stock-opname.count', $id), $this->countData($other))->assertSessionHas('success');
+        $this->post(route('stock-opname.count', $id), $this->countData($p, 2))->assertSessionHasErrors('product_id');
+        $this->assertDatabaseCount('stock_opname_counts', 2);
+        $this->assertDatabaseHas('jihans_gudang_stock', ['product_id' => $p->id, 'quantity' => 7]);
+        $this->get(route('stock-opname.show', $id))->assertInertia(fn (Assert $p) => $p->where('canCount', true)->has('counts', 2)->has('events', 2));
+    }
+
+    public function test_closed_session_reopens_without_erasing_owner_close_history(): void
+    {
+        $id = $this->open(); $owner = $this->user('owner');
+        $this->actingAs($owner)->post(route('owner.stock-opname.close', $id), ['confirmed' => true])->assertSessionHas('success');
+        $this->post(route('owner.stock-opname.close', $id), ['confirmed' => true])->assertSessionHas('success');
+        $this->assertDatabaseCount('stock_opname_session_events', 2);
+        $data = ['request_key' => (string) Str::uuid(), 'expires_at' => '2026-10-12T20:00', 'notes' => 'Petugas melanjutkan penghitungan yang tersisa.', 'confirmed' => true];
+        $this->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHas('success');
+        $this->assertDatabaseHas('stock_opname_session_events', ['session_id' => $id, 'action' => 'close', 'owner_name' => $owner->name]);
+        $this->assertDatabaseHas('stock_opname_session_events', ['session_id' => $id, 'action' => 'reopen', 'previous_closed_by_name' => $owner->name]);
+        $this->assertDatabaseHas('stock_opname_sessions', ['id' => $id, 'status' => 'open', 'closed_at' => null]);
+    }
+
+    public function test_reopen_requires_new_future_expiry_confirmation_and_no_conflicting_shared_session(): void
+    {
+        $id = $this->open(); $this->travelTo(\Carbon\Carbon::parse('2026-10-12 17:01', 'Asia/Jakarta'));
+        $owner = $this->user('owner');
+        $data = ['request_key' => (string) Str::uuid(), 'expires_at' => '2026-10-12T16:00', 'notes' => 'Lanjut menghitung semua produk.', 'confirmed' => true];
+        $this->actingAs($owner)->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHasErrors('expires_at');
+        $data['expires_at'] = '2026-10-12T20:00'; $data['confirmed'] = false;
+        $this->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHasErrors('confirmed');
+        $new = $this->openData(); $new['expires_at'] = '2026-10-12T21:00';
+        $this->post(route('owner.stock-opname.open'), $new)->assertSessionHas('success');
+        $data['confirmed'] = true;
+        $this->post(route('owner.stock-opname.reopen', $id), $data)->assertSessionHasErrors('expires_at');
+        $this->assertDatabaseCount('stock_opname_session_events', 2);
+    }
+
 }

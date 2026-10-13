@@ -1,3 +1,4 @@
+import SessionActions, { SessionState } from './SessionActions';
 import { Head, Link, useForm } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import Layout, { panel, input, button, Errors } from './Layout';
@@ -8,7 +9,7 @@ function OpenForm({ locations }) {
     const chosen = locations.find(l => l.key === form.data.location_key);
     return <form className={`${panel} space-y-4`} onSubmit={e => { e.preventDefault(); form.post(route('owner.stock-opname.open')); }}>
         <h2 className="text-lg font-bold">Buka akses stock opname</h2>
-        <p className="text-sm text-gray-500">Pilih satu lokasi dan batas waktu dalam WIB. Anda dapat membuka sesi terpisah untuk lokasi lain. Hanya owner yang dapat membuka dan menutup sesi.</p>
+        <p className="text-sm text-gray-500">Pilih satu lokasi dan batas waktu dalam WIB. Anda dapat membuka sesi terpisah untuk lokasi lain. Hanya Owner yang dapat membuka dan menutup sesi. Untuk melanjutkan sesi yang waktunya habis, gunakan tombol “Buka kembali & lanjutkan SO” pada sesi di bawah.</p>
         <Errors errors={form.errors} />
         <label className="block">Lokasi yang diberi akses
             <select required className={`${input} mt-2`} value={form.data.location_key} onChange={e => form.setData('location_key', e.target.value)}>
@@ -36,11 +37,12 @@ export default function Index({ locations, sessions, isOwner }) {
         {!isOwner && locations.length === 0 && <div className={panel}>Tidak ada lokasi yang sesuai akun Anda. Pilih cabang aktif yang sesuai penempatan Anda.</div>}
         <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Sesi dan riwayat</h2>
             {sessions.data.length === 0 && <p className="text-gray-500">Belum ada sesi stock opname untuk lokasi ini.</p>}
-            {sessions.data.map(s => <Link key={s.id} href={route('stock-opname.show', s.id)} className="block rounded-xl border border-gray-200 p-4 hover:border-brand-500 dark:border-gray-700">
-                <div className="flex flex-wrap justify-between gap-2"><strong>#{s.id} · {s.location_name}</strong><span className={s.active ? 'text-green-600' : 'text-gray-500'}>{s.state_label}</span></div>
+            {sessions.data.map(s => <div key={s.id} className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                <div className="flex flex-wrap justify-between gap-2"><strong>#{s.id} · {s.location_name}</strong><SessionState session={s} /></div>
                 <p className="mt-2 text-sm">Dibuka {s.opened_at} oleh {s.opened_by_name} · Batas waktu {s.expires_at}</p>
-                <p className="mt-2 text-sm text-brand-500">{isOwner ? 'Lihat hasil dan kelola sesi →' : s.active ? 'Mulai hitung fisik →' : 'Lihat riwayat →'}</p>
-            </Link>)}<Pagination links={sessions.links} />
+                <Link href={route('stock-opname.show', s.id)} className="mt-2 inline-block text-sm text-brand-500 underline">{isOwner ? 'Lihat hasil dan kelola sesi →' : s.active ? 'Mulai hitung fisik →' : 'Lihat riwayat →'}</Link>
+                {isOwner && <SessionActions key={s.expires_at_iso + s.status} session={s} />}
+            </div>)}<Pagination links={sessions.links} />
         </div>
     </div></Layout>;
 }

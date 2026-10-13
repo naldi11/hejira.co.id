@@ -23,22 +23,27 @@ class GudangReturnResource extends JsonResource
             'recorded_at'   => $this->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s \W\I\B'),
             'from_entity'       => $this->from_entity,
             'from_entity_label' => $this->from_entity_label,
-            'branch'            => $this->whenLoaded('branch', fn () => $this->branch?->name),
+            'origin_name' => $this->origin_name ?? $this->branch?->name ?? 'Cabang belum tercatat',
+            'branch'            => $this->whenLoaded('branch', fn () => $this->origin_name ?? $this->branch?->name),
             'status'            => $this->status,
             'notes'             => $this->notes,
             'details_count'     => $this->whenCounted('details'),
 
-            'creator'           => $this->whenLoaded('creator', fn () => $this->creator?->name),
+            'creator'           => $this->whenLoaded('creator', fn () => $this->sender_name ?? $this->creator?->name),
             'receiver'          => $this->whenLoaded('receiver', fn () => $this->receiver?->name),
             'received_at'       => $this->when(isset($this->received_at), fn () => $this->received_at?->format('d M Y H:i')),
 
             'details'           => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'id'                => $d->id,
-                'product'           => $d->product?->name ?? '-',
-                'unit'              => $d->unit?->abbreviation ?? 'PCS',
+                'product'           => $d->product_name ?? $d->product?->name ?? '-',
+                'unit'              => $d->unit_name ?? $d->unit?->abbreviation ?? 'PCS',
                 'quantity'          => (int) $d->quantity,
                 'received_quantity' => $d->received_quantity !== null ? (int) $d->received_quantity : null,
                 'condition'         => $d->condition,
+                'sent_condition' => $d->sent_condition,
+                'receiving_notes' => $d->receiving_notes,
+                'condition_kind' => \App\Services\ReturnQuarantine::condition($d->sent_condition ?? $d->condition),
+                'notes' => $d->notes,
             ])),
         ];
     }

@@ -113,6 +113,7 @@ class StockOpname
                 'opened_at' => now(), 'expires_at' => $expires, 'status' => 'open',
             ]);
             $this->logger->log('create', 'stock_opname', "Owner membuka sesi opname #{$id}: {$location['name']}");
+            DB::table('stock_opname_session_events')->insert(['session_id' => $id, 'action' => 'open', 'owner_id' => $owner->id, 'owner_name' => $owner->name, 'expires_at' => $expires, 'notes' => trim($data['notes']), 'created_at' => now()]);
             return $id;
         });
     }
@@ -124,8 +125,35 @@ class StockOpname
             $session = DB::table('stock_opname_sessions')->where('id', $id)->lockForUpdate()->first();
             abort_unless($session, 404);
             if ($session->status === 'closed') return;
+            DB::table('stock_opname_session_events')->insert(['session_id' => $id, 'action' => 'close', 'owner_id' => $owner->id, 'owner_name' => $owner->name, 'previous_status' => $session->status, 'previous_expires_at' => $session->expires_at, 'created_at' => now()]);
             DB::table('stock_opname_sessions')->where('id', $id)->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => $owner->id, 'closed_by_name' => $owner->name]);
             $this->logger->log('update', 'stock_opname', "Owner menutup sesi opname #{$id}: {$session->location_name}");
+        });
+    }
+
+    public function reopen(int $id, array $data, User $owner): void
+    {
+        abort_unless($owner->hasRole('owner'), 403);
+        $initial = DB::table('stock_opname_sessions')->where('id', $id)->first();
+        abort_unless($initial, 404);
+        $this->location($initial->location_key);
+        DB::transaction(function () use ($id, $data, $owner, $initial) {
+            DB::table('stock_opname_locations')->where('key', $initial->stock_key)->lockForUpdate()->first();
+            $s = DB::table('stock_opname_sessions')->where('id', $id)->lockForUpdate()->first();
+            $expires = Carbon::parse($data['expires_at'], 'Asia/Jakarta');
+            $notes = trim($data['notes']);
+            if (mb_strlen($notes) < 5) throw ValidationException::withMessages(['notes' => 'Tuliskan alasan pembukaan kembali, minimal 5 karakter.']);
+            $old = DB::table('stock_opname_session_events')->where('request_key', $data['request_key'])->first();
+            if ($old) {
+                if ($old->session_id != $id || $old->owner_id != $owner->id || $old->notes !== $notes || !Carbon::parse($old->expires_at)->equalTo($expires)) throw ValidationException::withMessages(['expires_at' => 'Permintaan telah digunakan. Muat ulang halaman.']);
+                return;
+            }
+            if ($expires->lte(now())) throw ValidationException::withMessages(['expires_at' => 'Batas waktu baru harus setelah waktu sekarang.']);
+            if ($this->active($s)) throw ValidationException::withMessages(['expires_at' => 'Sesi ini masih aktif. Tutup sesi terlebih dahulu.']);
+            if (DB::table('stock_opname_sessions')->where('stock_key', $s->stock_key)->where('id', '<>', $id)->where('status', 'open')->where('expires_at', '>', now())->exists()) throw ValidationException::withMessages(['expires_at' => 'Ada sesi lain yang aktif untuk saldo ini. Tutup sesi tersebut dahulu.']);
+            DB::table('stock_opname_session_events')->insert(['session_id' => $id, 'request_key' => $data['request_key'], 'action' => 'reopen', 'owner_id' => $owner->id, 'owner_name' => $owner->name, 'previous_status' => $s->status, 'previous_closed_at' => $s->closed_at, 'previous_closed_by' => $s->closed_by, 'previous_closed_by_name' => $s->closed_by_name, 'previous_expires_at' => $s->expires_at, 'expires_at' => $expires, 'notes' => $notes, 'created_at' => now()]);
+            DB::table('stock_opname_sessions')->where('id', $id)->update(['status' => 'open', 'expires_at' => $expires, 'closed_at' => null, 'closed_by' => null, 'closed_by_name' => null]);
+            $this->logger->log('update', 'stock_opname', "Owner membuka kembali sesi opname #{$id}: {$s->location_name}");
         });
     }
 
@@ -154,7 +182,7 @@ class StockOpname
             abort_unless($this->allowed($user, $session), 403, 'Sesi opname bukan untuk lokasi Anda.');
             $location = $this->location($session->location_key);
             abort_unless($this->allowed($user, $location), 403);
-            if (!$this->active($session)) throw ValidationException::withMessages(['session_id' => 'Sesi opname ditutup atau kedaluwarsa. Minta owner membuka sesi baru.']);
+            if (!$this->active($session)) throw ValidationException::withMessages(['session_id' => 'Sesi opname ditutup atau waktunya habis. Minta Owner membuka kembali sesi ini untuk melanjutkan.']);
             $product = Product::with('unit')->findOrFail($data['product_id']);
             $previous = DB::table('stock_opname_counts')->where('session_id', $id)->where('product_id', $product->id)->first();
             if ($previous) {

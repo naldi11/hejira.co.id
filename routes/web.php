@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function() {
         Route::post('/branch-transfers/{transfer}/cancel', [\App\Http\Controllers\BranchStockTransferController::class, 'cancel'])->whereNumber('transfer')->name('branch-transfers.cancel');
     });
     Route::middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
+        Route::get('/return-stock', [\App\Http\Controllers\ReturnStockController::class, 'index'])->name('return-stock.index');
+        Route::get('/return-stock/{entry}', [\App\Http\Controllers\ReturnStockController::class, 'show'])->whereNumber('entry')->name('return-stock.show');
         Route::get('/stock-opname', [\App\Http\Controllers\StockOpnameController::class, 'index'])->name('stock-opname.index');
         Route::get('/stock-opname/history', [\App\Http\Controllers\StockOpnameController::class, 'history'])->name('stock-opname.history');
         Route::get('/stock-opname/results/{count}', [\App\Http\Controllers\StockOpnameController::class, 'result'])->whereNumber('count')->name('stock-opname.result');
@@ -42,6 +44,7 @@ Route::middleware('auth')->group(function() {
         Route::post('/stock-opname/{session}/counts', [\App\Http\Controllers\StockOpnameController::class, 'count'])->whereNumber('session')->name('stock-opname.count');
         Route::post('/owner/stock-opname', [\App\Http\Controllers\StockOpnameController::class, 'open'])->middleware('role:owner')->name('owner.stock-opname.open');
         Route::post('/owner/stock-opname/{session}/close', [\App\Http\Controllers\StockOpnameController::class, 'close'])->middleware('role:owner')->whereNumber('session')->name('owner.stock-opname.close');
+        Route::post('/owner/stock-opname/{session}/reopen', [\App\Http\Controllers\StockOpnameController::class, 'reopen'])->middleware('role:owner')->whereNumber('session')->name('owner.stock-opname.reopen');
     });
     Route::get('/api/notifications/counts', [\App\Http\Controllers\Api\NotificationController::class, 'getCounts'])->name('api.notifications.counts');
     Route::get('/select-branch', [\App\Http\Controllers\Auth\BranchSelectionController::class, 'show'])->name('select-branch');

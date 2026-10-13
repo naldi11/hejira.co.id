@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\ReturnQuarantine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -24,7 +25,7 @@ class ReturnToHendhysController extends Controller
 
     public function index(Request $request)
     {
-        $q = HendhysReturnFromBranch::with(['branch', 'creator', 'receiver'])
+        $q = HendhysReturnFromBranch::with(['branch', 'creator', 'receiver'])->where('branch_id', auth()->user()->branch_id)
             ->whereHas('branch', function ($query) {
                 $query->where('entity', 'jihans');
             });
@@ -77,22 +78,24 @@ class ReturnToHendhysController extends Controller
 
         $request->validate([
             'date' => 'required|date',
-            'notes' => 'nullable|string',
+            'notes' => 'required|string|min:5|max:1000',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
-            'items.*.condition' => 'required|in:rusak,basi,lainnya',
+            'items.*.condition' => 'required|in:rusak,basi,kadaluarsa,kadaluwarsa,lainnya',
+            'items.*.notes' => 'nullable|string|max:1000',
         ]);
 
         try {
             DB::transaction(function () use ($request, $user) {
-                $branchId = $user->branch_id ?? \App\Models\Branch::where('entity', 'jihans')->value('id');
+                $branchId = $user->branch_id;
                 if (!$branchId) {
                     throw new \RuntimeException('Cabang Jihan\'s belum dikonfigurasi. Hubungi admin untuk menetapkan entity cabang.');
                 }
 
                 $ret = HendhysReturnFromBranch::create([
+                    ...ReturnQuarantine::origin($user),
                     'return_number' => $this->numbers->generateYearly('RET-HND', 'hendhys_returns_from_branch', 'return_number'),
                     'branch_id' => $branchId,
                     'date' => $request->date,
@@ -111,11 +114,13 @@ class ReturnToHendhysController extends Controller
                     }
 
                     HendhysReturnDetail::create([
+                        ...ReturnQuarantine::itemSnapshot((int) $item['product_id'], (int) $item['unit_id']),
                         'return_id' => $ret->id,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_id' => $item['unit_id'],
-                        'condition' => $item['condition']
+                        'condition' => $item['condition'],
+                        'notes' => $item['notes'] ?? null
                     ]);
 
                     // Potong stok Jihan's Retail
@@ -140,7 +145,7 @@ class ReturnToHendhysController extends Controller
     public function show(HendhysReturnFromBranch $returnsToHendhy)
     {
         $returnsToHendhy->load('branch');
-        if ($returnsToHendhy->branch?->entity !== 'jihans') {
+        if ($returnsToHendhy->branch?->entity !== 'jihans' || $returnsToHendhy->branch_id !== auth()->user()->branch_id) {
             abort(403, 'Akses ditolak.');
         }
 

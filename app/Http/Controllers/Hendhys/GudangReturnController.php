@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\ReturnQuarantine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -90,18 +91,19 @@ class GudangReturnController extends Controller
 
         $request->validate([
             'date' => 'required|date',
-            'notes' => 'nullable|string',
+            'notes' => 'required|string|min:5|max:1000',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_id' => 'required|exists:master_units,id',
-            'items.*.condition' => 'required|string|max:100',
+            'items.*.condition' => 'required|in:baik,rusak,kadaluarsa,kadaluwarsa,Rusak,Bagus (Siap Jual),Rusak (Defect),Kadaluwarsa',
             'items.*.notes' => 'nullable|string',
         ]);
 
         try {
             DB::transaction(function () use ($request, $user, $isPusat) {
                 $ret = GudangReturn::create([
+                    ...ReturnQuarantine::origin($user),
                     'return_number' => $this->numbers->generateYearly('RET-HND-GDG', 'gudang_returns', 'return_number'),
                     'from_entity' => 'hendhys',
                     'branch_id' => $user->branch_id,
@@ -124,11 +126,13 @@ class GudangReturnController extends Controller
                     }
 
                     GudangReturnDetail::create([
+                        ...ReturnQuarantine::itemSnapshot((int) $item['product_id'], (int) $item['unit_id']),
                         'return_id' => $ret->id,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
                         'unit_id' => $item['unit_id'],
                         'condition' => $item['condition'],
+                        'sent_condition' => $item['condition'],
                         'notes' => $item['notes'] ?? null
                     ]);
 

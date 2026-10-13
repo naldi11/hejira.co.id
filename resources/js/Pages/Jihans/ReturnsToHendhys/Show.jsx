@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 import StatusBadge from '@/Components/StatusBadge';
@@ -7,17 +7,12 @@ import { formatQty } from '@/lib/format';
 const route = window.route;
 
 export default function ReturnsShow({ return: r }) {
-    const handleReceive = () => { 
-        if (confirm('Konfirmasi penerimaan retur ini?')) {
-            router.post(route('jihans.returns-to-hendhys.receive', r.id)); 
-        }
-    };
-
     return (
         <JihansLayout pageTitle={`Detail Return ${r.return_number}`}>
             <Head title={`Return ${r.return_number}`} />
             
             <div className="mx-auto max-w-4xl space-y-6">
+                <Link className="inline-block text-brand-500 underline" href={route('return-stock.index', { search: r.return_number })}>Lihat Stok Rusak / Retur untuk nomor ini →</Link>
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-250 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
                         <div>
@@ -76,11 +71,7 @@ export default function ReturnsShow({ return: r }) {
                         <Icon name="arrow_back" className="text-[20px]" /> Kembali ke Daftar
                     </Link>
 
-                    {r.status === 'sent' && (
-                        <button onClick={handleReceive} className="inline-flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-755 text-white px-6 py-2.5 text-sm font-bold shadow-sm transition-colors">
-                            <Icon name="check_circle" className="text-[20px]" /> Terima Return
-                        </button>
-                    )}
+
                 </div>
             </div>
         </JihansLayout>

@@ -1,3 +1,4 @@
+import ReturnNotice from '@/Components/ReturnNotice';
 import { todayWib } from '@/lib/date';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SelectField from '@/Components/SelectField';
@@ -7,7 +8,7 @@ import { formatQty } from '@/lib/format';
 
 const route = window.route;
 
-const CONDITIONS = ['Rusak', 'Kadaluwarsa', 'Tidak Sesuai', 'Kelebihan Stok', 'Lainnya'];
+const CONDITIONS = ['Rusak', 'Kadaluwarsa', 'Bagus (Siap Jual)'];
 const blankItem = () => ({ product_id: '', quantity: '', unit_id: '', unit_name: '', stock: 0, condition: CONDITIONS[0], notes: '' });
 
 export default function JihansReturnsCreate({ products, units }) {
@@ -35,6 +36,7 @@ export default function JihansReturnsCreate({ products, units }) {
                     <Icon name="arrow_back" className="text-[18px]" /> Kembali ke Daftar Retur
                 </Link>
 
+                <ReturnNotice errors={errors} />
                 {errors.items && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">{errors.items}</div>}
 
                 <form onSubmit={submit} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
@@ -44,8 +46,8 @@ export default function JihansReturnsCreate({ products, units }) {
                             <input type="date" required value={data.date} onChange={(e) => setData('date', e.target.value)} className={field} />
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Catatan</label>
-                            <input type="text" value={data.notes} onChange={(e) => setData('notes', e.target.value)} placeholder="Alasan umum retur..." className={field} />
+                            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Alasan retur (wajib)</label>
+                            <input type="text" required minLength={5} maxLength={1000} value={data.notes} onChange={(e) => setData('notes', e.target.value)} placeholder="Alasan umum retur..." className={field} />
                         </div>
                     </div>
 

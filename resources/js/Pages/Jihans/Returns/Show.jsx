@@ -13,6 +13,7 @@ export default function JihansReturnShow({ return: ret }) {
 
             <div className="mx-auto max-w-4xl space-y-6">
 
+                <Link className="inline-block text-brand-500 underline" href={route('return-stock.index', { search: ret.return_number })}>Lihat Stok Rusak / Retur untuk nomor ini →</Link>
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-250 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
                         <div>

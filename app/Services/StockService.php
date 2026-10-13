@@ -499,22 +499,8 @@ class StockService
             ->visibleInGudang()
             ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
             ->select('master_products.*', 'jihans_gudang_stock.quantity as current_stock')
-            ->selectRaw("
-                (SELECT COALESCE(SUM(grd.received_quantity), 0)
-                 FROM gudang_return_details grd
-                 JOIN gudang_returns gr ON grd.return_id = gr.id
-                 WHERE grd.product_id = master_products.id
-                   AND gr.status = 'received'
-                   AND grd.condition = 'Rusak (Defect)') as returned_defect_stock
-            ")
-            ->selectRaw("
-                (SELECT COALESCE(SUM(grd.received_quantity), 0)
-                 FROM gudang_return_details grd
-                 JOIN gudang_returns gr ON grd.return_id = gr.id
-                 WHERE grd.product_id = master_products.id
-                   AND gr.status = 'received'
-                   AND grd.condition = 'Kadaluwarsa') as returned_expired_stock
-            ")
+            ->selectRaw("(SELECT COALESCE(SUM(q.quantity), 0) FROM return_quarantine_entries q WHERE q.product_id = master_products.id AND q.destination_key = 'gudang' AND q.condition IN ('damaged', 'other')) as returned_defect_stock")
+            ->selectRaw("(SELECT COALESCE(SUM(q.quantity), 0) FROM return_quarantine_entries q WHERE q.product_id = master_products.id AND q.destination_key = 'gudang' AND q.condition = 'expired') as returned_expired_stock")
             ->where('master_products.status', 'active')
             ->where('master_products.product_type', 'INV')
             ->when($search, fn ($q, $s) => $q->where(fn ($w) => $w

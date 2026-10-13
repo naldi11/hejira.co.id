@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Services\NumberGeneratorService;
 use App\Services\StockService;
+use App\Services\ReturnQuarantine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -25,7 +26,7 @@ class GudangReturnController extends Controller
 
     public function index(Request $request)
     {
-        $returns = GudangReturn::where('from_entity', 'jihans')
+        $returns = GudangReturn::where('from_entity', 'jihans')->where('branch_id', auth()->user()->branch_id)
             ->with(['creator', 'receiver'])->withCount('details')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('search'), fn ($q) => $q->where('return_number', 'like', "%{$request->search}%"))
@@ -54,14 +55,16 @@ class GudangReturnController extends Controller
     public function store(StoreGudangReturnRequest $request)
     {
         $data = $request->validated();
-        $userId = auth()->id();
+        $user = auth()->user();
+        $userId = $user->id;
 
         try {
-            DB::transaction(function () use ($data, $userId) {
+            DB::transaction(function () use ($data, $userId, $user) {
                 $ret = GudangReturn::create([
+                    ...ReturnQuarantine::origin($user),
                     'return_number' => $this->numbers->generateYearly('RET-JHS-GDG', 'gudang_returns', 'return_number'),
                     'from_entity'   => 'jihans',
-                    'branch_id'     => null,
+                    'branch_id'     => $user->branch_id,
                     'date'          => $data['date'],
                     'status'        => 'sent',
                     'notes'         => $data['notes'] ?? null,
@@ -75,11 +78,13 @@ class GudangReturnController extends Controller
                     }
 
                     GudangReturnDetail::create([
+                        ...ReturnQuarantine::itemSnapshot((int) $item['product_id'], (int) $item['unit_id']),
                         'return_id'  => $ret->id,
                         'product_id' => $item['product_id'],
                         'quantity'   => $item['quantity'],
                         'unit_id'    => $item['unit_id'],
                         'condition'  => $item['condition'],
+                        'sent_condition' => $item['condition'],
                         'notes'      => $item['notes'] ?? null,
                     ]);
 
@@ -96,7 +101,7 @@ class GudangReturnController extends Controller
 
     public function show(GudangReturn $returns_to_gudang)
     {
-        abort_if($returns_to_gudang->from_entity !== 'jihans', 403, 'Akses ditolak.');
+        abort_if($returns_to_gudang->from_entity !== 'jihans' || $returns_to_gudang->branch_id !== auth()->user()->branch_id, 403, 'Akses ditolak.');
 
         $returns_to_gudang->load(['creator', 'receiver', 'details.product.unit', 'details.unit']);
 

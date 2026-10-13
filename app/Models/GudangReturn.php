@@ -11,6 +11,7 @@ class GudangReturn extends Model
     protected $table = 'gudang_returns';
 
     protected $fillable = [
+        'origin_name', 'sender_name', 'received_at',
         'return_number', 'from_entity', 'branch_id', 'date',
         'status', 'notes', 'created_by', 'received_by', 'received_at'
     ];

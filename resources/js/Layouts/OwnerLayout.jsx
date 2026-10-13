@@ -9,6 +9,7 @@ export default function OwnerLayout({ pageTitle, children }) {
     const navItems = [
         { name: 'Sesi Stock Opname', icon: <Icon name="balance" className="text-[22px]" />, path: route('stock-opname.index') },
         { name: 'Riwayat SO', icon: <Icon name="history" className="text-[22px]" />, path: route('stock-opname.history') },
+        { name: 'Stok Rusak / Retur', icon: <Icon name="assignment_return" className="text-[22px]" />, path: route('return-stock.index') },
         {
             name: "Konsolidasi Utama",
             icon: <Icon name="dashboard" className="text-[22px]" />,

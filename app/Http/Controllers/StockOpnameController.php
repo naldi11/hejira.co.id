@@ -115,6 +115,16 @@ class StockOpnameController extends Controller
         return back()->with('success', 'Sesi ditutup. Hasil opname dan riwayat tetap tersimpan.');
     }
 
+    public function reopen(Request $request, int $session)
+    {
+        $data = $request->validate([
+            'request_key' => ['required', 'uuid'], 'expires_at' => ['required', 'date_format:Y-m-d\TH:i'],
+            'notes' => ['required', 'string', 'min:5', 'max:1000'], 'confirmed' => ['accepted'],
+        ]);
+        $this->opname->reopen($session, $data, $request->user());
+        return redirect()->route('stock-opname.show', $session)->with('success', 'Sesi SO dibuka kembali. Nomor sesi dan hasil sebelumnya tetap tersimpan.');
+    }
+
     public function show(Request $request, int $session)
     {
         $s = DB::table('stock_opname_sessions')->where('id', $session)->first();
@@ -136,6 +146,11 @@ class StockOpnameController extends Controller
             'isOwner' => $request->user()->hasRole('owner'), 'description' => $location['description'] ?? 'Lokasi sudah tidak aktif.',
             'canCount' => !$request->user()->hasRole('owner') && $this->opname->active($s) && $location !== null && $this->opname->allowed($request->user(), $location),
             'filters' => ['search' => $request->input('search', '')],
+            'events' => DB::table('stock_opname_session_events')->where('session_id', $session)->orderByDesc('id')->get()->map(function ($event) {
+                $row = (array) $event;
+                foreach (['created_at', 'previous_expires_at', 'expires_at', 'previous_closed_at'] as $field) $row[$field] = $event->$field ? \Carbon\Carbon::parse($event->$field)->format('d/m/Y H:i').' WIB' : null;
+                return $row;
+            }),
         ]);
     }
 

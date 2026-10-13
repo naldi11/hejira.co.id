@@ -32,6 +32,7 @@ export default function JihansLayout({ pageTitle, children }) {
         { name: 'Riwayat Keluar Masuk Stok', path: route('jihans.stock.movements') },
         { name: 'Hitung Stok Fisik (Opname)', path: route('stock-opname.index') },
         { name: 'Riwayat SO', path: route('stock-opname.history') },
+        { name: 'Stok Rusak / Retur', path: route('return-stock.index') },
     ]));
 
     if (isKasir || isAdmin) {
