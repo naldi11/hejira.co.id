@@ -28,6 +28,10 @@ export default function HendhysLayout({ pageTitle, children }) {
         { name: 'Rencana Produksi (Prediksi)', path: route('hendhys.productions.prediksi.create') },
         { name: 'Catatan & Hasil Produksi', path: route('hendhys.productions.index') },
     ]));
+    if (isKasir && !isAdmin && !isOwner) navItems.push(group('Pemakaian untuk Produksi', 'factory', [
+        { name: 'Gunakan Stok untuk Produksi', path: route('production-materials.create') },
+        { name: 'Riwayat Pemakaian Stok', path: route('production-materials.index') },
+    ]));
     navItems.push(group('Stok & Opname', 'inventory_2', [
         { name: isPusat ? 'Stok Pusat Produksi' : 'Stok Cabang Aktif', path: route('hendhys.stock.index') },
         { name: 'Riwayat Keluar Masuk Stok', path: route('hendhys.stock.movements') },

@@ -104,7 +104,7 @@ export default function StockMovements({ movements, filters }) {
                                                 <td className={`px-4 py-4 text-right font-bold tabular-nums ${isIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-605 dark:text-rose-400'}`}>{isIn ? '+' : '-'}{formatQty(m.quantity)}</td>
                                                 <td className="px-6 py-4">
                                                     <span className="block font-semibold text-xs text-gray-700 dark:text-gray-300">{m.source_label ?? SOURCE_LABELS[m.source] ?? m.source}</span>
-                                                    {m.production_material_id && <Link className="block text-xs text-brand-500 underline" href={route('production-materials.show', m.production_material_id)}>Lihat rincian barang produksi</Link>}
+
                                                     {m.doc_number ? (
                                                         <span className="text-[10px] font-bold text-brand-500 dark:text-brand-400">Doc: {m.doc_number}</span>
                                                     ) : m.reference_id ? (

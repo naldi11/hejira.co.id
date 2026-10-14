@@ -10,7 +10,12 @@ class ListPage
     {
         $input = $request->validate(['per_page' => ['nullable', 'in:20,50,100,all']]);
         $size = $input['per_page'] ?? '20';
-        return $query->paginate($size === 'all' ? max(1, (clone $query)->toBase()->getCountForPagination()) : (int) $size, ['*'], $pageName)->withQueryString();
+        if ($size === 'all') {
+            $countQuery = clone $query;
+            $base = method_exists($countQuery, 'toBase') ? $countQuery->toBase() : $countQuery;
+            $size = max(1, $base->getCountForPagination());
+        }
+        return $query->paginate((int) $size, ['*'], $pageName)->withQueryString();
     }
 
     public static function metadata($paginator): array

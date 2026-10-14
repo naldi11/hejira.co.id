@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function usePosCatalogue(url, initialProducts, initialPage) {
+export default function usePosCatalogue(url, initialProducts, initialPage, expectedBranchId) {
     const [query, setQueryValue] = useState('');
     const [page, setPage] = useState(1);
     const [products, setProducts] = useState(initialProducts);
@@ -18,12 +18,13 @@ export default function usePosCatalogue(url, initialProducts, initialPage) {
                 const response = await fetch(`${url}?${params}`, { signal: abort.signal, headers: { Accept: 'application/json' } });
                 if (!response.ok) throw new Error('Daftar produk belum berhasil dimuat. Coba cari kembali.');
                 const data = await response.json();
+                if (expectedBranchId && Number(data.branch_id) !== Number(expectedBranchId)) throw new Error('Cabang aktif berubah. Buka ulang form sebelum memilih barang.');
                 if (!abort.signal.aborted) { setProducts(data.products); setPagination(data.catalogue); }
             } catch (err) { if (!abort.signal.aborted) setError(err.message); }
             finally { if (!abort.signal.aborted) setLoading(false); }
         }, 250);
         return () => { clearTimeout(timer); abort.abort(); };
-    }, [url, query, page]);
+    }, [url, query, page, expectedBranchId]);
     return { products: loading || error ? [] : products, pagination, loading, error, query,
         setQuery: value => { if (value !== query) setLoading(true); setQueryValue(value); setPage(1); },
         setPage: value => { setLoading(true); setPage(value); } };

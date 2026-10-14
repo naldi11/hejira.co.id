@@ -43,14 +43,6 @@ export default function GudangLayout({ title, pageTitle, children }) {
             ]
         },
         {
-            name: "Barang untuk Produksi",
-            icon: <Icon name="factory" className="text-[22px]" />,
-            subItems: [
-                { name: "Catat Barang Produksi", path: route('production-materials.create') },
-                { name: "Riwayat Barang Produksi", path: route('production-materials.index') }
-            ]
-        },
-        {
             name: "Retur Barang",
             icon: <Icon name="assignment_return" className="text-[22px]" />,
             path: route('gudang.returns.index')

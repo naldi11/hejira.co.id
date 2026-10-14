@@ -17,7 +17,7 @@ return [
         'kasir_hendhys' => [
             'label' => 'Kasir Hendhys',
             'description' => 'Untuk petugas yang melayani penjualan di kasir Hendhys.',
-            'can' => ['Mencatat penjualan dan menyimpan transaksi tertunda saat shift aktif.', 'Membuka dan menutup shift sendiri, mencetak struk dan invoice.', 'Melihat stok, riwayat transaksi cabang aktif, dan mengunduh laporan.', 'Mengajukan permintaan barang, menerima kiriman, dan mencatat retur sesuai lokasi aktif.', 'Menghitung dan menyesuaikan stok cabang aktif hanya selama sesi stock opname yang dibuka Owner.', 'Melakukan mutasi antar cabang dan konfirmasi penerimaan sesuai akses cabang yang dikelola.'],
+            'can' => ['Mencatat penjualan dan menyimpan transaksi tertunda saat shift aktif.', 'Membuka dan menutup shift sendiri, mencetak struk dan invoice.', 'Melihat stok, riwayat transaksi cabang aktif, dan mengunduh laporan.', 'Mengajukan permintaan barang, menerima kiriman, dan mencatat retur sesuai lokasi aktif.', 'Menghitung dan menyesuaikan stok cabang aktif hanya selama sesi stock opname yang dibuka Owner.', 'Melakukan mutasi antar cabang dan konfirmasi penerimaan sesuai akses cabang yang dikelola.', 'Mencatat pemakaian barang untuk produksi langsung dari stok cabang aktif, melihat riwayat, dan membatalkan salah input.'],
             'cannot' => ['Mengelola akun pengguna atau data master produk, pelanggan, dan pemasok.', 'Mencatat produksi dan distribusi dari pusat.', 'Membatalkan penjualan melalui fitur pembatalan admin.', 'Mengakses operasional Jihan’s atau Gudang Utama.'],
         ],
         'admin_hendhys' => [
