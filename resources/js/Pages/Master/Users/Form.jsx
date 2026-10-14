@@ -53,14 +53,14 @@ export default function UserForm({ branches = [], roles = [], entity_roles = {},
         password: '',
         password_confirmation: '',
         entity: u?.entity ?? '',
-        branch_id: ['hendhys', 'jihans'].includes(u?.entity) ? u?.branch_id ?? '' : '',
+        branch_id: ['hendhys', 'jihans', 'izzi'].includes(u?.entity) ? u?.branch_id ?? '' : '',
         role: u?.role ?? '',
         is_active: u ? u.is_active : true,
     });
 
     const unit = unit_options.find((option) => option.value === data.entity);
     const role = role_descriptions[data.role];
-    const needsBranch = !isOwner && ['hendhys', 'jihans'].includes(data.entity);
+    const needsBranch = !isOwner && ['hendhys', 'jihans', 'izzi'].includes(data.entity);
     const filteredBranches = branches.filter((branch) => branch.entity === data.entity);
     const selectedBranch = filteredBranches.find((branch) => String(branch.id) === String(data.branch_id));
     const invalidBranch = needsBranch && !!data.branch_id && (!selectedBranch || !selectedBranch.is_active);
@@ -179,7 +179,7 @@ export default function UserForm({ branches = [], roles = [], entity_roles = {},
                                         {invalidBranch && <p className="mt-2 text-sm text-rose-600" role="alert">Cabang lama tidak tersedia atau tidak aktif. Pilih cabang aktif atau kosongkan pilihan.</p>}
                                         {err('branch_id')}
                                     </div>
-                                ) : data.entity && !isOwner && <p className="rounded-xl bg-gray-50 p-4 text-sm leading-relaxed text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">{data.entity === 'all' ? 'Akses administrasi mencakup Gudang Utama, Hendhys, dan Jihan’s. Akun ini tidak ditempatkan pada satu cabang.' : 'Akses administrasi hanya untuk Gudang Utama dan data master. Akun ini tidak memerlukan cabang.'}</p>}
+                                ) : data.entity && !isOwner && <p className="rounded-xl bg-gray-50 p-4 text-sm leading-relaxed text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">{data.entity === 'all' ? 'Akses administrasi mencakup Gudang Utama, Hendhys, Jihan’s, dan Izzi Kebab. Akun ini tidak ditempatkan pada satu cabang.' : 'Akses administrasi hanya untuk Gudang Utama dan data master. Akun ini tidak memerlukan cabang.'}</p>}
                                 <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                                     <label className="flex cursor-pointer items-start gap-3">
                                         <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="mt-1 h-5 w-5 rounded border-gray-300 text-brand-500" />

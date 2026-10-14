@@ -33,7 +33,7 @@ class BranchStockTransferController extends Controller
                     }
                     $w->orWhereExists(fn ($s) => $s->selectRaw('1')->from('branch_stock_transfer_items as i')
                         ->whereColumn('i.transfer_id', 'branch_stock_transfers.id')
-                        ->where(fn ($i) => $i->where('i.product_name', 'like', $term)->orWhere('i.product_code', 'like', $term)->orWhere('i.notes', 'like', $term)))
+                        ->where(fn ($i) => $i->where('i.product_name', 'like', $term)->orWhere('i.product_code', 'like', $term)->orWhere('i.notes', 'like', $term)->orWhere('i.to_product_name', 'like', $term)->orWhere('i.to_product_code', 'like', $term)))
                         ->orWhereExists(fn ($s) => $s->selectRaw('1')->from('branch_stock_transfer_receipts as r')
                             ->whereColumn('r.transfer_id', 'branch_stock_transfers.id')
                             ->where(fn ($r) => $r->where('r.physical_receiver_name', 'like', $term)->orWhere('r.received_by_name', 'like', $term)->orWhere('r.notes', 'like', $term)));
@@ -44,16 +44,18 @@ class BranchStockTransferController extends Controller
             ->when($request->filled('to_branch_id'), fn ($q) => $q->where('to_branch_id', $filters['to_branch_id']))
             ->when($request->filled('date_from'), fn ($q) => $q->where('date', '>=', $filters['date_from']))
             ->when($request->filled('date_to'), fn ($q) => $q->where('date', '<=', $filters['date_to']))
-            ->orderByDesc('date')->orderByDesc('id')->paginate(20)->withQueryString();
+            ->orderByDesc('date')->orderByDesc('id');
+        $query = \App\Support\ListPage::paginate($query, $request);
+        $filters['per_page'] = $request->input('per_page', '20');
         $items = DB::table('branch_stock_transfer_items')->whereIn('transfer_id', $query->pluck('id'))->orderBy('product_name')->get()->groupBy('transfer_id');
         $receivers = DB::table('branch_stock_transfer_receipts')->whereIn('transfer_id', $query->pluck('id'))->orderByDesc('id')->get()->groupBy('transfer_id');
         $query->through(fn ($t) => [...$this->transfers->serialize($t),
-            'items' => $items->get($t->id, collect())->map(fn ($i) => ['name' => $i->product_name, 'code' => $i->product_code, 'quantity' => (int) $i->quantity, 'unit' => $i->unit_name])->values(),
+            'items' => $items->get($t->id, collect())->map(fn ($i) => ['name' => $i->product_name, 'code' => $i->product_code, 'quantity' => $this->transfers->display($i->quantity, $i->quantity_scale), 'unit' => $i->unit_name, 'to_name' => $i->to_product_name ?? $i->product_name, 'to_quantity' => $this->transfers->display($i->destination_quantity ?? $i->quantity, $i->to_quantity_scale), 'to_unit' => $i->to_unit_name ?? $i->unit_name])->values(),
             'receiver_names' => $receivers->get($t->id, collect())->pluck('physical_receiver_name')->unique()->values(),
         ]);
         return Inertia::render('BranchTransfers/Index', [
             'transfers' => $query, 'filters' => $filters,
-            'branches' => $this->transfers->branches()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
+            'branches' => $this->transfers->branches()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'entity' => $b->entity]),
             'canCreate' => $this->transfers->sourceBranches($request->user())->isNotEmpty(),
             'isHistory' => $isHistory, 'today' => $today,
         ]);
@@ -66,22 +68,60 @@ class BranchStockTransferController extends Controller
         abort_if($sources->isEmpty(), 403, 'Pilih cabang aktif yang dapat Anda kelola.');
         $from = $request->filled('from_branch_id') ? $sources->firstWhere('id', (int) $request->from_branch_id) : $sources->first();
         abort_unless($from, 403);
-        $table = $from->entity === 'jihans' ? 'jihans_retail_stock' : 'hendhys_stock_branch';
-        $products = DB::table($table.' as s')->join('master_products as p', 'p.id', '=', 's.product_id')
-            ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')
-            ->leftJoin('master_units as su', 'su.id', '=', 's.unit_id')
-            ->whereNull('p.deleted_at')->where('p.status', 'active')->where('s.quantity', '>', 0)
-            ->when($from->entity === 'hendhys', fn ($q) => $q->where('s.branch_id', $from->id))
-            ->orderBy('p.name')->get(['p.id', 'p.name', 'p.code', 'p.unit_id', 's.unit_id as stock_unit_id', 'u.abbreviation as unit', 'su.abbreviation as stock_unit', 's.quantity'])
-            ->map(fn ($p) => [...(array) $p, 'quantity' => (int) round((float) $p->quantity),
-                'unit_matches' => $p->unit !== null && (int) $p->unit_id === (int) $p->stock_unit_id]);
+        $request->validate(['to_branch_id' => 'nullable|integer']);
+        $destinations = $this->transfers->branches()->where('id', '!=', $from->id)->values();
+        $to = $request->filled('to_branch_id') ? $destinations->firstWhere('id', $request->integer('to_branch_id')) : null;
+        abort_if($request->filled('to_branch_id') && !$to, 422);
+        $source = $this->sourceProducts($from)->simplePaginate(20);
+        $destination = $to ? $this->destinationProducts($to)->simplePaginate(20) : null;
         return Inertia::render('BranchTransfers/Create', [
-            'sources' => $sources->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'entity' => $b->entity]),
-            'destinations' => $this->transfers->branches()->where('entity', 'hendhys')->where('id', '!=', $from->id)->values()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]),
-            'from' => ['id' => $from->id, 'name' => $from->name, 'entity' => $from->entity], 'products' => $products,
-            'today' => now('Asia/Jakarta')->toDateString(),
-            'currentTime' => now('Asia/Jakarta')->format('H:i'),
+            'sources' => $sources->map(fn ($b) => $b->only(['id','name','entity'])),
+            'destinations' => $destinations->map(fn ($b) => $b->only(['id','name','entity'])),
+            'from' => $from->only(['id','name','entity']), 'to' => $to?->only(['id','name','entity']),
+            'products' => $source->getCollection()->map(fn ($p) => $this->sourceProduct($p, $from)),
+            'catalogue' => ['page' => 1, 'has_more' => $source->hasMorePages()],
+            'destinationProducts' => $destination?->items() ?? [],
+            'destinationCatalogue' => ['page' => 1, 'has_more' => $destination?->hasMorePages() ?? false],
+            'today' => now('Asia/Jakarta')->toDateString(), 'currentTime' => now('Asia/Jakarta')->format('H:i'),
         ]);
+    }
+    private function sourceProducts(Branch $branch, ?string $search = null)
+    {
+        $table = $this->transfers->stockTable($branch->entity);
+        return DB::table($table.' as s')->join('master_products as p', 'p.id', '=', 's.product_id')
+            ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')->leftJoin('master_units as su', 'su.id', '=', 's.unit_id')
+            ->whereNull('p.deleted_at')->where('p.status', 'active')->where('s.quantity', '>', 0)
+            ->when($branch->entity !== 'jihans', fn ($q) => $q->where('s.branch_id', $branch->id))
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', '%'.$search.'%')->orWhere('p.code', 'like', '%'.$search.'%')))
+            ->orderBy('p.name')->orderBy('p.id')->select('p.id','p.name','p.code','p.unit_id','s.unit_id as stock_unit_id','u.abbreviation as unit','su.abbreviation as stock_unit','s.quantity');
+    }
+    private function sourceProduct(object $p, Branch $b): array
+    {
+        return [...(array) $p, 'quantity' => $b->entity === 'izzi' ? $this->transfers->display($p->quantity, 1000) : (int) round((float) $p->quantity),
+            'unit_matches' => $p->unit !== null && (int) $p->unit_id === (int) $p->stock_unit_id];
+    }
+    private function destinationProducts(Branch $b, ?string $search = null)
+    {
+        return DB::table('master_products as p')->join('master_units as u', 'u.id', '=', 'p.unit_id')
+            ->whereNull('p.deleted_at')->where('p.status', 'active')
+            ->when($b->entity === 'izzi', fn ($q) => $q->whereExists(fn ($s) => $s->selectRaw('1')->from('izzi_ingredients as i')->whereColumn('i.product_id','p.id')))
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name','like','%'.$search.'%')->orWhere('p.code','like','%'.$search.'%')))
+            ->orderBy('p.name')->orderBy('p.id')->select('p.id','p.name','p.code','p.unit_id','u.abbreviation as unit');
+    }
+    public function sourceCatalogue(Request $request, Branch $branch)
+    {
+        abort_unless($this->transfers->canOperate($request->user(), $branch), 403);
+        $request->validate(['q'=>'nullable|string|max:100','catalog_page'=>'nullable|integer|min:1']);
+        $page = $this->sourceProducts($branch, $request->q)->simplePaginate(20, ['*'], 'catalog_page');
+        return response()->json(['products'=>$page->getCollection()->map(fn ($p) => $this->sourceProduct($p, $branch)), 'branch_id'=>$branch->id,
+            'catalogue'=>['page'=>$page->currentPage(),'has_more'=>$page->hasMorePages()]]);
+    }
+    public function destinationCatalogue(Request $request, Branch $branch)
+    {
+        abort_unless($this->transfers->sourceBranches($request->user())->isNotEmpty() && $this->transfers->branches()->contains('id', $branch->id), 403);
+        $request->validate(['q'=>'nullable|string|max:100','catalog_page'=>'nullable|integer|min:1']);
+        $page = $this->destinationProducts($branch, $request->q)->simplePaginate(20, ['*'], 'catalog_page');
+        return response()->json(['products'=>$page->items(),'branch_id'=>$branch->id,'catalogue'=>['page'=>$page->currentPage(),'has_more'=>$page->hasMorePages()]]);
     }
 
     public function store(Request $request)
@@ -100,7 +140,9 @@ class BranchStockTransferController extends Controller
             'reason' => 'required|string|min:5|max:1000', 'notes' => 'nullable|string|max:2000', 'courier_name' => 'nullable|string|max:255',
             'items' => 'required|array|min:1|max:100',
             'items.*.product_id' => ['required', 'integer', 'distinct', Rule::exists('master_products', 'id')->whereNull('deleted_at')->where('status', 'active')],
-            'items.*.quantity' => 'required|integer|min:1|max:999999999', 'items.*.notes' => 'nullable|string|max:500', 'confirmed' => 'accepted',
+            'items.*.quantity' => 'required|numeric|min:0.001|max:999999999',
+            'items.*.to_product_id' => ['nullable','integer', Rule::exists('master_products','id')->whereNull('deleted_at')->where('status','active')],
+            'items.*.conversion_from' => 'nullable|numeric|min:0.001|max:999999999', 'items.*.conversion_to' => 'nullable|numeric|min:0.001|max:999999999', 'items.*.notes' => 'nullable|string|max:500', 'confirmed' => 'accepted',
         ]);
         if (\Carbon\Carbon::parse($data['date'].' '.$data['occurred_time'], 'Asia/Jakarta')->gt(now())) {
             throw \Illuminate\Validation\ValidationException::withMessages(['occurred_time' => 'Waktu mutasi tidak boleh melewati waktu sekarang dalam WIB.']);
@@ -112,37 +154,36 @@ class BranchStockTransferController extends Controller
     public function show(Request $request, int $transfer)
     {
         $t = $this->transfers->findVisible($transfer, $request->user());
-        $details = DB::table('branch_stock_transfer_items')->where('transfer_id', $transfer)->orderBy('product_id')->get()->map(fn ($d) => [...(array) $d,
-            'quantity' => (int) $d->quantity, 'received_quantity' => (int) $d->received_quantity,
-            'remaining' => $t->status === 'cancelled' ? 0 : (int) ($d->quantity - $d->received_quantity),
-        ]);
+        $rawDetails = DB::table('branch_stock_transfer_items')->where('transfer_id', $transfer)->orderBy('product_id')->get();
+        $details = $rawDetails->map(fn ($d) => [...$this->transfers->serializeItem($d), 'remaining' => $t->status === 'cancelled' ? 0 : $this->transfers->display($d->quantity - $d->received_quantity, $d->quantity_scale)]);
         $receipts = DB::table('branch_stock_transfer_receipts')->where('transfer_id', $transfer)->orderByDesc('id')->get();
         $receiptItems = DB::table('branch_stock_transfer_receipt_items as ri')->join('branch_stock_transfer_items as i', 'i.id', '=', 'ri.transfer_item_id')
-            ->whereIn('ri.receipt_id', $receipts->pluck('id'))->get(['ri.receipt_id', 'ri.quantity', 'i.product_name', 'i.unit_name'])->groupBy('receipt_id');
+            ->whereIn('ri.receipt_id', $receipts->pluck('id'))->get(['ri.receipt_id', 'ri.quantity','ri.destination_quantity','i.quantity_scale','i.to_quantity_scale','i.product_name','i.unit_name','i.to_product_name','i.to_unit_name'])->groupBy('receipt_id');
         $receipts = $receipts->map(fn ($r) => [...(array) $r,
             'received_at' => \Carbon\Carbon::parse($r->received_at)->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB',
-            'items' => $receiptItems->get($r->id, collect())->values(),
+            'items' => $receiptItems->get($r->id, collect())->map(fn ($i) => [...(array) $i, 'quantity' => $this->transfers->display($i->quantity, $i->quantity_scale), 'destination_quantity' => $this->transfers->display($i->destination_quantity ?? $i->quantity, $i->to_quantity_scale), 'to_product_name' => $i->to_product_name ?? $i->product_name, 'to_unit_name' => $i->to_unit_name ?? $i->unit_name])->values(),
         ]);
         $from = Branch::find($t->from_branch_id); $to = Branch::find($t->to_branch_id);
         $movements = collect();
-        $tables = $t->from_entity === 'jihans' ? ['jihans_retail_stock_movements', 'hendhys_stock_movements'] : ['hendhys_stock_movements', 'jihans_retail_stock_movements'];
+        $tables = array_unique([$this->transfers->movementTable($t->from_entity), $this->transfers->movementTable($t->to_entity)]);
         foreach ($tables as $table) {
-            $movements = $movements->concat(DB::table($table.' as m')->leftJoin('master_products as p', 'p.id', '=', 'm.product_id')
-                ->where('branch_transfer_id', $transfer)->orderBy('m.id')->get(['m.*', 'p.name as current_product_name'])->map(function ($m) use ($table, $t, $details) {
-                    $item = $details->firstWhere('product_id', $m->product_id);
-                    $origin = $table === 'jihans_retail_stock_movements' || (int) $m->branch_id === (int) $t->from_branch_id;
-                    return ['id' => $table.'-'.$m->id, 'location' => $origin ? $t->from_branch_name : $t->to_branch_name,
-                        'product' => $item['product_name'] ?? $m->current_product_name, 'unit' => $item['unit_name'] ?? '',
-                        'before' => (int) $m->quantity_before, 'after' => (int) $m->quantity_after,
-                        'delta' => $m->type === 'out' ? -(int) $m->quantity : (int) $m->quantity,
-                        'notes' => $m->notes, 'sort_at' => \Carbon\Carbon::parse($m->created_at)->timestamp,
-                        'at' => \Carbon\Carbon::parse($m->created_at)->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB'];
-                }));
+            $movements = $movements->concat(DB::table($table.' as m')->where('branch_transfer_id', $transfer)->orderBy('m.id')->get()->map(function ($m) use ($table, $t, $rawDetails) {
+                $item = $m->branch_transfer_item_id ? $rawDetails->firstWhere('id', $m->branch_transfer_item_id) : $rawDetails->firstWhere('product_id', $m->product_id);
+                $origin = $m->branch_transfer_side ? $m->branch_transfer_side === 'from' : ($table === 'jihans_retail_stock_movements' ? $t->from_entity === 'jihans' : (int) $m->branch_id === (int) $t->from_branch_id);
+                $scale = $table === 'izzi_stock_movements' ? 1000 : 1;
+                return ['id' => $table.'-'.$m->id, 'location' => $origin ? $t->from_branch_name : $t->to_branch_name,
+                    'product' => $origin ? $item?->product_name : ($item?->to_product_name ?? $item?->product_name),
+                    'unit' => $origin ? $item?->unit_name : ($item?->to_unit_name ?? $item?->unit_name),
+                    'before' => $this->transfers->display($m->quantity_before, $scale), 'after' => $this->transfers->display($m->quantity_after, $scale),
+                    'delta' => $this->transfers->display($m->type === 'out' ? -$m->quantity : $m->quantity, $scale),
+                    'notes' => $m->notes, 'sort_at' => \Carbon\Carbon::parse($m->created_at)->timestamp,
+                    'at' => \Carbon\Carbon::parse($m->created_at)->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB'];
+            }));
         }
         return Inertia::render('BranchTransfers/Show', [
             'transfer' => $this->transfers->serialize($t), 'items' => $details, 'receipts' => $receipts,
             'stockChanges' => $movements->sortBy('sort_at')->values(),
-            'canReceive' => $to && $to->entity === 'hendhys' && $this->transfers->canOperate($request->user(), $to) && in_array($t->status, ['sent', 'partial'], true),
+            'canReceive' => $to && $to->entity === $t->to_entity && $this->transfers->canOperate($request->user(), $to) && in_array($t->status, ['sent', 'partial'], true),
             'canCancel' => $from && $from->entity === $t->from_entity && $this->transfers->canOperate($request->user(), $from) && $t->status === 'sent',
         ]);
     }
@@ -153,8 +194,8 @@ class BranchStockTransferController extends Controller
         $data = $request->validate([
             'request_key' => 'required|uuid', 'physical_receiver_name' => 'required|string|min:2|max:255', 'notes' => 'required|string|min:5|max:2000',
             'items' => 'required|array|min:1|max:100', 'items.*.id' => 'required|integer|distinct',
-            'items.*.expected_received_quantity' => 'required|integer|min:0',
-            'items.*.quantity' => 'required|integer|min:0|max:999999999', 'confirmed' => 'accepted',
+            'items.*.expected_received_quantity' => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|numeric|min:0|max:999999999', 'confirmed' => 'accepted',
         ]);
         $this->transfers->receive($transfer, $data, $request->user());
         return back()->with('success', 'Penerimaan dicatat. Hanya jumlah yang diterima ditambahkan ke stok tujuan.');

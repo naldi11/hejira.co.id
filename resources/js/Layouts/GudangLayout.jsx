@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import Icon from '@/Components/Icon';
 import FlashToasts from '@/Components/FlashToasts';
 import AppLayout from './AppLayout';
@@ -5,7 +6,9 @@ import AppLayout from './AppLayout';
 const route = window.route;
 
 export default function GudangLayout({ title, pageTitle, children }) {
+    const { auth } = usePage().props;
     const navItems = [
+        ...(auth.user.entity === 'all' ? [{ name: 'Izzi Kebab', icon: <Icon name="restaurant" className="text-[22px]" />, path: route('izzi.dashboard') }] : []),
         {
             name: "Dashboard",
             icon: <Icon name="dashboard" className="text-[22px]" />,

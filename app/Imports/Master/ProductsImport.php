@@ -119,6 +119,7 @@ class ProductsImport implements ToCollection, WithHeadingRow, \Maatwebsite\Excel
                     $product = Product::withTrashed()->where('name', $productName)->first();
                 }
 
+                if ($product && $product->entity_scope === 'izzi') throw new \RuntimeException('Bahan Izzi Kebab harus diatur melalui Bahan & Satuan Kemasan: '.$productName);
                 if ($product) {
                     $product->update([
                         'category_id'  => $category->id,

@@ -107,7 +107,7 @@ export default function JihansStockMovements({ movements, filters }) {
                                                 <td className={`px-6 py-4 text-right font-bold ${isIn ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                     {isIn ? '+' : '-'}{formatQty(m.quantity)}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-400">{m.branch_transfer_id ? <Link className="text-brand-500 underline" href={route('branch-transfers.show', m.branch_transfer_id)}>Lihat mutasi ke Hendhys</Link> : SOURCE_LABELS[m.source] ?? m.source}</td>
+                                                <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-400">{m.branch_transfer_id ? <Link className="text-brand-500 underline" href={route('branch-transfers.show', m.branch_transfer_id)}>Lihat mutasi antar cabang</Link> : SOURCE_LABELS[m.source] ?? m.source}</td>
                                                 <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-400">{m.operator}</td>
                                             </tr>
                                         );

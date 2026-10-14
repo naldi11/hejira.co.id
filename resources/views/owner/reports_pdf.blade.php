@@ -30,33 +30,33 @@
                 <th>Periode</th>
                 <th class="text-right">Jihan's Food</th>
                 <th class="text-right">Hendhys Brownies</th>
-                <th class="text-right">Total Omset</th>
+                <th class="text-right">Izzi Kebab (bersih)</th><th class="text-right">Total Omset</th>
             </tr>
         </thead>
         <tbody>
             @php 
                 $totalJihans = 0; 
-                $totalHendhys = 0; 
+                $totalHendhys = 0; $totalIzzi = 0;
                 $totalConsolidated = 0; 
             @endphp
             @foreach($data as $row)
                 @php
                     $totalJihans += $row['jihans'];
-                    $totalHendhys += $row['hendhys'];
+                    $totalHendhys += $row['hendhys']; $totalIzzi += $row['izzi'];
                     $totalConsolidated += $row['total'];
                 @endphp
                 <tr>
                     <td>{{ $row['label'] }}</td>
                     <td class="text-right">Rp {{ number_format($row['jihans'], 0, ',', '.') }}</td>
                     <td class="text-right">Rp {{ number_format($row['hendhys'], 0, ',', '.') }}</td>
-                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($row['izzi'], 0, ',', '.') }}</td><td class="text-right" style="font-weight: bold;">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td>TOTAL</td>
                 <td class="text-right">Rp {{ number_format($totalJihans, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($totalHendhys, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($totalConsolidated, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($totalIzzi, 0, ',', '.') }}</td><td class="text-right">Rp {{ number_format($totalConsolidated, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>

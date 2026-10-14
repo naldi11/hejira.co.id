@@ -3,12 +3,13 @@ import OwnerLayout from '@/Layouts/OwnerLayout';
 import GudangLayout from '@/Layouts/GudangLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import JihansLayout from '@/Layouts/JihansLayout';
+import IzziLayout from '@/Layouts/IzziLayout';
 
 export default function Layout({ children, pageTitle = 'Stock Opname' }) {
     const { auth } = usePage().props;
     const roles = auth?.user?.roles ?? [];
     const names = roles.map(r => typeof r === 'string' ? r : r.name);
-    const Shell = names.includes('owner') ? OwnerLayout : names.includes('super_admin') ? GudangLayout : auth?.user?.entity === 'hendhys' ? HendhysLayout : JihansLayout;
+    const Shell = names.includes('owner') ? OwnerLayout : names.includes('super_admin') ? GudangLayout : auth?.user?.entity === 'izzi' ? IzziLayout : auth?.user?.entity === 'hendhys' ? HendhysLayout : JihansLayout;
     return <Shell pageTitle={pageTitle}>{children}</Shell>;
 }
 

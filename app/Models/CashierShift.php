@@ -91,6 +91,7 @@ class CashierShift extends Model
      */
     public function calculateExpectedCashSoFar(): int
     {
+        if ($this->entity === 'izzi') return $this->starting_cash + app(\App\Services\Izzi\Sales::class)->shiftSummary($this)['tunai'];
         $entity = $this->entity;
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
@@ -114,6 +115,7 @@ class CashierShift extends Model
      */
     public function calculatePaymentSummary(): array
     {
+        if ($this->entity === 'izzi') return app(\App\Services\Izzi\Sales::class)->shiftSummary($this);
         $entity = $this->entity;
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
@@ -164,6 +166,8 @@ class CashierShift extends Model
      */
     public function calculateSalesSummary(): array
     {
+        if ($this->entity === 'izzi') return (array) \Illuminate\Support\Facades\DB::table('izzi_sales')->where('shift_id', $this->id)
+            ->selectRaw("COUNT(*) as jumlah_transaksi, SUM(total - net_total) as tot_potongan, 0 as tot_pajak, 0 as tot_biaya, SUM(net_total) as total")->first();
         $entity = $this->entity;
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
 

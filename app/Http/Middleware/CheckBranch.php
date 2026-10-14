@@ -12,7 +12,7 @@ class CheckBranch
     {
         $user = $request->user();
 
-        if ($user && $user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'kasir_jihans', 'admin_jihans'])) {
+        if ($user && $user->hasAnyRole(['kasir_hendhys', 'admin_hendhys', 'kasir_jihans', 'admin_jihans', 'kasir_izzi', 'admin_izzi'])) {
             $activeBranchId = session('active_branch_id');
 
             if ($activeBranchId) {

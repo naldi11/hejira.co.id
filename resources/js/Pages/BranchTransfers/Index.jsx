@@ -4,7 +4,7 @@ import Pagination from '@/Components/Pagination';
 import Layout, { panel, input, button } from '../StockOpname/Layout';
 const route = window.route;
 export default function Index({ transfers, branches, filters, canCreate, isHistory }) {
-    const defaults = { search: '', status: '', from_branch_id: '', to_branch_id: '', date_from: '', date_to: '' };
+    const defaults = { search: '', status: '', from_branch_id: '', to_branch_id: '', date_from: '', date_to: '', per_page:'20' };
     const [form, setForm] = useState({ ...defaults, ...Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value ?? ''])) });
     const set = (key, value) => setForm({ ...form, [key]: value });
     const indexRoute = isHistory ? 'branch-transfers.history' : 'branch-transfers.index';
@@ -22,7 +22,7 @@ export default function Index({ transfers, branches, filters, canCreate, isHisto
             <label className="text-sm">Cabang tujuan<select className={`${input} mt-2`} value={form.to_branch_id} onChange={e => set('to_branch_id', e.target.value)}><option value="">Semua cabang tujuan</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
             <label className="text-sm">Tanggal mutasi mulai<input type="date" className={`${input} mt-2`} value={form.date_from} onChange={e => set('date_from', e.target.value)} /></label>
             <label className="text-sm">Tanggal mutasi sampai<input type="date" min={form.date_from || undefined} className={`${input} mt-2`} value={form.date_to} onChange={e => set('date_to', e.target.value)} /></label>
-            <div className="flex items-end gap-3"><button className={button}>Cari mutasi</button><Link href={route(indexRoute)} className="py-3 text-brand-500">Reset</Link></div>
+            <label className="text-sm">Data per halaman<select className={`${input} mt-2`} value={form.per_page} onChange={e => set('per_page', e.target.value)}>{[['20','20'],['50','50'],['100','100'],['all','Semua']].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label><div className="flex items-end gap-3"><button className={button}>Cari mutasi</button><Link href={route(indexRoute)} className="py-3 text-brand-500">Reset</Link></div>
             <p className="text-sm text-gray-500 sm:col-span-2 lg:col-span-3">{isHistory ? 'Riwayat mencakup semua tanggal. Gunakan filter untuk menelusuri transaksi tertentu.' : 'Saat pertama dibuka, daftar menampilkan tanggal hari ini (WIB). Tanggal dapat diubah, atau buka Riwayat semua mutasi.'}</p>
         </form>
         <div className={`${panel} space-y-4`}>

@@ -155,6 +155,10 @@ class ProductController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $product = $this->getModelClass('Product', $info['scope'])::with('tieredPrices')->findOrFail($id);
+        if ($product->entity_scope === 'izzi') {
+            app(\App\Services\Izzi\Access::class)->manage($request->user());
+            return redirect()->route('izzi.ingredients')->with('error', 'Atur bahan Izzi melalui Bahan & Satuan Kemasan agar resep dan riwayatnya tetap benar.');
+        }
 
         $categories = $this->getModelClass('ProductCategory', $info['scope'])::orderBy('name')->get();
         $units = $this->getModelClass('Unit', $info['scope'])::orderBy('name')->get();
@@ -175,6 +179,10 @@ class ProductController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $product = $this->getModelClass('Product', $info['scope'])::with('tieredPrices')->findOrFail($id);
+        if ($product->entity_scope === 'izzi') {
+            app(\App\Services\Izzi\Access::class)->manage($request->user());
+            return redirect()->route('izzi.ingredients')->with('error', 'Atur bahan Izzi melalui Bahan & Satuan Kemasan agar resep dan riwayatnya tetap benar.');
+        }
         $tableName = 'master_products';
 
         $data = $request->validate([
@@ -253,6 +261,10 @@ class ProductController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $product = $this->getModelClass('Product', $info['scope'])::with('tieredPrices')->findOrFail($id);
+        if ($product->entity_scope === 'izzi') {
+            app(\App\Services\Izzi\Access::class)->manage($request->user());
+            return redirect()->route('izzi.ingredients')->with('error', 'Atur bahan Izzi melalui Bahan & Satuan Kemasan agar resep dan riwayatnya tetap benar.');
+        }
 
         $name = $product->name;
         $product->delete();

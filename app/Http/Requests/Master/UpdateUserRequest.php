@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:100', Rule::unique('master_users', 'email')->ignore($this->route('user')->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'entity' => ['required', 'in:gudang,jihans,hendhys,owner,all'],
+            'entity' => ['required', 'in:gudang,jihans,hendhys,izzi,owner,all'],
             'branch_id' => [
                 'bail',
                 'nullable',

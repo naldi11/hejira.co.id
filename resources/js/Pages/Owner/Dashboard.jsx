@@ -204,6 +204,7 @@ export default function OwnerDashboard({ stats, trends, period, periodLabel, per
                             value={formatRupiah(stats.hendhys_pusat_revenue)} label={`Omset ${periodLabel}`}
                             onClick={() => openOmsetDetail('hendhys_pusat')}
                         />
+                        <SubUnitCard icon="restaurant" color="text-indigo-500" title="Izzi Kebab" subtitle="Penjualan bersih setelah pembatalan" value={formatRupiah(stats.izzi_revenue || 0)} label={`Omset ${periodLabel}`} onClick={() => router.get(route('owner.reports'), { unit_bisnis:'izzi', periode:'bulanan', date_from:stats.izzi_date_from || undefined, date_to:stats.izzi_date_to || undefined })} />
                         {stats.stock.hendhys_cabang_list.map((cb) => (
                             <SubUnitCard
                                 key={cb.id}

@@ -100,6 +100,10 @@ class BranchController extends Controller
             $blockers[] = 'data return barang';
         }
 
+        if (\Illuminate\Support\Facades\DB::table('branch_stock_transfers')->where(fn ($q) => $q->where('from_branch_id', $branch->id)->orWhere('to_branch_id', $branch->id))->exists()) $blockers[] = 'riwayat mutasi antar cabang';
+        foreach (['izzi_stock','izzi_sales','izzi_receipts','izzi_stock_movements'] as $table) {
+            if (\Illuminate\Support\Facades\DB::table($table)->where('branch_id', $branch->id)->exists()) $blockers[] = 'stok atau riwayat Izzi Kebab';
+        }
         if (!empty($blockers)) {
             return back()->with('error',
                 "Cabang \"$name\" tidak bisa dihapus karena masih memiliki: " .

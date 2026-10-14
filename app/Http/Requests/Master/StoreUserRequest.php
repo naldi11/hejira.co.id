@@ -24,7 +24,7 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:master_users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'entity' => ['required', 'in:gudang,jihans,hendhys,all'],
+            'entity' => ['required', 'in:gudang,jihans,hendhys,izzi,all'],
             'branch_id' => [
                 'bail',
                 'nullable',

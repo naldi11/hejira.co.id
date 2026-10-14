@@ -53,6 +53,8 @@ class RolePermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
+        foreach (['admin_izzi', 'kasir_izzi'] as $name) Role::findOrCreate($name, 'web');
+
         // --- OWNER ---
         $owner = Role::firstOrCreate(['name' => 'owner', 'guard_name' => 'web']);
         $owner->syncPermissions([

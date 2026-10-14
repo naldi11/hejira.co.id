@@ -97,7 +97,7 @@ function TransactionCard({ row, showBranch }) {
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono font-bold text-xs text-slate-600 dark:text-white/80">{row.transaction_number}</span>
+                        <span className="font-mono font-bold text-xs text-slate-600 dark:text-white/80">{row.transaction_number}</span>{row.href && <Link href={row.href} className="text-indigo-600 text-sm underline">Lihat menu & bahan →</Link>}
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-green-100 text-green-700">{row.status}</span>
                     </div>
                     <p className="font-semibold text-slate-800 dark:text-white/90 text-sm mt-1">{row.customer || '-'}</p>

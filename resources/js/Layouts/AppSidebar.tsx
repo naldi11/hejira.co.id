@@ -17,6 +17,7 @@ interface AppSidebarProps {
 }
 
 const ENTITY_BRAND: Record<string, { full: string; short: string }> = {
+  izzi: { full: "Izzi Kebab", short: "IZ" },
   jihans:  { full: "Jihan's Food",      short: "JF" },
   hendhys: { full: "Hendhy's Brownies", short: "HB" },
   gudang:  { full: "HEJIRA",            short: "H"  },

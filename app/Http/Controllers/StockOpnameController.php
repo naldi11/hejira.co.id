@@ -84,17 +84,17 @@ class StockOpnameController extends Controller
         $current = DB::table($table.' as stock')->join('master_units as u', 'u.id', '=', 'stock.unit_id')
             ->where('stock.product_id', $c->product_id)->when($branchId, fn ($q) => $q->where('stock.branch_id', $branchId))
             ->first(['stock.quantity', 'u.abbreviation as unit']);
-        if ($current) $current->quantity = (int) round((float) $current->quantity);
+        if ($current) $current->quantity = $s->entity === 'izzi' ? \App\Services\Izzi\Quantity::display($current->quantity) : (int) round((float) $current->quantity);
         $movementQuery = DB::table($movementTable)->where('source', 'adjustment')->where('reference_id', $c->id)
             ->where('product_id', $c->product_id)->where('created_by', $c->counted_by)
             ->where('quantity_before', $c->quantity_before)->where('quantity_after', $c->quantity_after)
             ->where('notes', "Stock opname sesi #{$s->id}, hasil #{$c->id} — {$s->location_name}: ".$c->notes);
-        if ($movementTable === 'hendhys_stock_movements') $branchId ? $movementQuery->where('branch_id', $branchId) : $movementQuery->whereNull('branch_id');
+        if (in_array($movementTable, ['hendhys_stock_movements', 'izzi_stock_movements'], true)) $branchId ? $movementQuery->where('branch_id', $branchId) : $movementQuery->whereNull('branch_id');
         $direct = $c->stock_movement_table === $movementTable && $c->stock_movement_id !== null;
         if ($c->stock_movement_id !== null || $c->stock_movement_table !== null) $movementQuery->where('id', $direct ? $c->stock_movement_id : -1);
         $matches = $movementQuery->limit(2)->get();
         $movement = $matches->count() === 1 ? $matches->first() : null;
-        if ($movement) $movement = ['id' => $movement->id, 'type' => $movement->type, 'quantity' => (int) $movement->quantity,
+        if ($movement) $movement = ['id' => $movement->id, 'type' => $movement->type, 'quantity' => $s->entity === 'izzi' ? \App\Services\Izzi\Quantity::display($movement->quantity) : (int) $movement->quantity,
             'created_at' => \Carbon\Carbon::parse($movement->created_at)->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB',
             'verified_by' => $direct ? 'Tautan langsung hasil SO' : 'Jejak dokumen SO lama yang cocok', 'notes' => $movement->notes];
         $lots = $lotEntity ? DB::table('production_lot_outflows as o')->join('production_lots as l', 'l.id', '=', 'o.lot_id')
@@ -138,7 +138,7 @@ class StockOpnameController extends Controller
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', '%'.$request->string('search').'%')->orWhere('p.code', 'like', '%'.$request->string('search').'%')))
             ->select('p.id', 'p.name', 'p.code', 's.quantity', 'u.abbreviation as unit')
             ->orderBy('p.name')->paginate(20)->withQueryString();
-        $products->through(fn ($p) => array_merge((array) $p, ['quantity' => (int) round((float) $p->quantity)]));
+        $products->through(fn ($p) => array_merge((array) $p, ['quantity' => $s->entity === 'izzi' ? \App\Services\Izzi\Quantity::display($p->quantity) : (int) round((float) $p->quantity)]));
         $countQuery = DB::table('stock_opname_counts')->where('session_id', $session);
         $countTotal = (clone $countQuery)->count();
         $counts = (clone $countQuery)->orderByDesc('id')->limit(5)->get()->map(fn ($c) => $this->opname->serializeCount($c));
@@ -164,9 +164,10 @@ class StockOpnameController extends Controller
 
     public function count(Request $request, int $session)
     {
+        $izzi = DB::table('stock_opname_sessions')->where('id', $session)->value('entity') === 'izzi';
         $data = $request->validate([
             'product_id' => ['required', 'integer', Rule::exists('master_products', 'id')->whereNull('deleted_at')->where('status', 'active')],
-            'expected_quantity' => ['required', 'integer'], 'quantity' => ['required', 'integer', 'min:0', 'max:999999999'],
+            'expected_quantity' => ['required', $izzi ? 'numeric' : 'integer'], 'quantity' => ['required', $izzi ? 'numeric' : 'integer', 'min:0', 'max:999999999'],
             'notes' => ['required', 'string', 'min:5', 'max:1000'], 'confirmed' => ['accepted'],
         ]);
         $request->merge(['notes' => trim($data['notes'])]);

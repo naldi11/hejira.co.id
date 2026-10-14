@@ -44,8 +44,8 @@ class UserIndexTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Master/Users/Index')
                 ->where('role_descriptions.kasir_hendhys.label', config('user_access.roles.kasir_hendhys.label'))
                 ->where('role_descriptions.owner.label', 'Pemilik (Owner)')
-                ->where('unit_options.3.label', 'Semua unit usaha')
-                ->where('unit_options.4.label', 'Pemantauan seluruh unit')
+                ->where('unit_options.4.label', 'Semua unit usaha')
+                ->where('unit_options.5.label', 'Pemantauan seluruh unit')
                 ->where('users', fn ($users) => collect($users)->firstWhere('id', $target->id)['branch_details'] === [
                     'name' => 'Cabang Lama', 'code' => 'HB-OLD', 'type' => 'cabang', 'is_active' => false,
                 ])
@@ -66,7 +66,7 @@ class UserIndexTest extends TestCase
         $this->actingAs($admin)->get(route('master.users.index', ['entity' => 'hendhys', 'role' => 'kasir_hendhys', 'status' => 'aktif']))
             ->assertInertia(fn (Assert $page) => $page->has('users', 1)
                 ->where('users.0.id', $target->id)
-                ->has('unit_options', 4)
+                ->has('unit_options', 5)
                 ->where('filters.entity', 'hendhys')
                 ->where('totalUsers', 5));
     }

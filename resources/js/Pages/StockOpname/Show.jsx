@@ -9,12 +9,12 @@ const route = window.route;
 
 function CountForm({ product, session, onClose }) {
     const form = useForm({ product_id: product.id, expected_quantity: product.quantity, quantity: '', notes: '', confirmed: false });
-    const diff = form.data.quantity === '' ? null : Number(form.data.quantity) - product.quantity;
+    const diff = form.data.quantity === '' ? null : Number((Number(form.data.quantity) - Number(product.quantity)).toFixed(session.entity === 'izzi' ? 3 : 0));
     return <form className={`${panel} space-y-4 border-brand-300`} onSubmit={e => { e.preventDefault(); form.post(route('stock-opname.count', session.id), { preserveScroll: true, onSuccess: onClose }); }}>
         <h2 className="font-bold">Hitung fisik: {product.name}</h2><Errors errors={form.errors} />
         <p>Stok sistem saat halaman dibuka: <strong>{product.quantity} {product.unit}</strong></p>
         <label className="block">Jumlah yang benar-benar ada (stok siap jual / distribusi)
-            <input autoFocus required type="number" min="0" max="999999999" step="1" className={`${input} mt-2`} value={form.data.quantity} onChange={e => form.setData('quantity', e.target.value)} />
+            <input autoFocus required type="number" min="0" max="999999999" step={session.entity === 'izzi' ? '0.001' : '1'} className={`${input} mt-2`} value={form.data.quantity} onChange={e => form.setData('quantity', e.target.value)} />
         </label>
         {diff !== null && <p className={diff < 0 ? 'text-red-600' : 'text-green-600'}>Selisih: {diff > 0 ? '+' : ''}{diff} {product.unit}. Saldo sesudah disimpan: {form.data.quantity} {product.unit}.</p>}
         <label className="block">Catatan hasil hitung / alasan selisih

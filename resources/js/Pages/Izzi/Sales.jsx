@@ -1,0 +1,6 @@
+import { Head, Link } from '@inertiajs/react';
+import IzziLayout from '@/Layouts/IzziLayout';
+import { Navigation, panel, Search, Paging, money, status } from './Common';
+export default function Sales(props) {
+    return <IzziLayout pageTitle="Riwayat Penjualan Izzi"><Head title="Penjualan & Pembatalan" /><div className="space-y-5 text-gray-800 dark:text-gray-200"><h1 className="text-2xl font-bold">Penjualan & Pembatalan</h1><Navigation {...props} /><div className={`${panel} space-y-4`}><Search filters={props.filters} path="izzi.sales" branch={props.branch} dates /><div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">{props.summary.transactions} transaksi · Penjualan awal {money(props.summary.original_total)} · Setelah pembatalan {money(props.summary.net_total)}</div>{props.sales.data.map(s => <Link className="block space-y-2 rounded-xl border p-4 dark:border-gray-700" key={s.id} href={route('izzi.sales.show',{ sale:s.id, branch_id:props.branch.id })}><strong>{s.number}</strong><p>{s.time} · {s.actor_name} · {s.customer_name || 'Pelanggan umum'}</p><p>{status[s.status]} · Penjualan bersih {money(s.net_total)}</p><p className="text-sm text-brand-500">Lihat menu, resep saat penjualan, dan jejak pembatalan →</p></Link>)}<Paging rows={props.sales} /></div></div></IzziLayout>;
+}

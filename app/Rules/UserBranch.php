@@ -12,7 +12,7 @@ class UserBranch implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! in_array($this->entity, ['hendhys', 'jihans'], true)) {
+        if (! in_array($this->entity, ['hendhys', 'jihans', 'izzi'], true)) {
             $fail('Unit ini tidak memerlukan cabang. Kosongkan pilihan cabang.');
 
             return;

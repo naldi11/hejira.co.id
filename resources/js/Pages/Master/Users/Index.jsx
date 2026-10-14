@@ -131,7 +131,7 @@ export default function UsersIndex({ users = [], pagination, filters = {}, total
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {users.length === 0 ? <EmptyState colSpan={6} icon="group" message={hasFilter ? 'Tidak ada pengguna yang cocok. Coba ubah atau hapus filter.' : 'Belum ada pengguna. Mulai dengan membuat akun pengguna.'} /> : users.map((user) => {
                                     const branch = user.branch_details;
-                                    const needsBranch = ['hendhys', 'jihans'].includes(user.entity) && !user.roles.includes('owner');
+                                    const needsBranch = ['hendhys', 'jihans', 'izzi'].includes(user.entity) && !user.roles.includes('owner');
                                     return (
                                         <tr key={user.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-5 py-5">

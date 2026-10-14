@@ -23,14 +23,14 @@ class StockOpname
             'key' => 'hendhys-pusat', 'stock_key' => 'hendhys-pusat', 'entity' => 'hendhys', 'branch_id' => null,
             'name' => 'Hendhys Produksi / pusat', 'description' => 'Stok siap distribusi di pusat produksi Hendhys.',
         ]];
-        foreach (Branch::where('is_active', true)->whereIn('entity', ['hendhys', 'jihans'])->orderBy('name')->get() as $branch) {
+        foreach (Branch::where('is_active', true)->whereIn('entity', ['hendhys', 'jihans', 'izzi'])->orderBy('name')->get() as $branch) {
             if ($branch->entity === 'hendhys' && $branch->type === 'pusat') continue;
             $locations[] = [
                 'key' => 'branch-'.$branch->id, 'stock_key' => $branch->entity === 'jihans' ? 'jihans-retail' : 'branch-'.$branch->id,
                 'entity' => $branch->entity, 'branch_id' => $branch->id, 'name' => $branch->name,
                 'description' => $branch->entity === 'jihans'
                     ? 'Saldo penjualan bersama seluruh cabang Jihan’s. Hitung total stok seluruh lokasi yang masuk saldo ini; hasilnya mengubah saldo bersama.'
-                    : 'Hanya stok siap jual cabang ini. Saldo cabang lain dan stok retur tidak diubah.',
+                    : ($branch->entity === 'izzi' ? 'Hitung bahan Izzi Kebab dalam satuan dasar (gram, ml, atau satuan bahan). Hanya saldo bahan cabang ini yang diubah.' : 'Hanya stok siap jual cabang ini. Saldo cabang lain dan stok retur tidak diubah.'),
             ];
         }
         return $locations;
@@ -41,7 +41,7 @@ class StockOpname
         $l = (object) $location;
         if ($user->hasRole('owner')) return true;
         if ($user->hasRole('super_admin')) return in_array($user->entity, [$l->entity, 'all'], true);
-        if (!in_array($l->entity, ['hendhys', 'jihans'], true) || !$user->hasAnyRole(['kasir_'.$l->entity, 'admin_'.$l->entity])) return false;
+        if (!in_array($l->entity, ['hendhys', 'jihans', 'izzi'], true) || !$user->hasAnyRole(['kasir_'.$l->entity, 'admin_'.$l->entity])) return false;
         if ($user->entity !== $l->entity) return false;
         // Use the selected branch only after validating its entity and active state.
         $branch = Branch::find(session('active_branch_id') ?: $user->branch_id);
@@ -71,7 +71,7 @@ class StockOpname
     {
         $query = DB::table('stock_opname_sessions');
         if ($user->hasRole('owner')) return $query;
-        if ($user->hasRole('super_admin')) return $query->whereIn('entity', $user->entity === 'all' ? ['gudang', 'hendhys', 'jihans'] : [$user->entity]);
+        if ($user->hasRole('super_admin')) return $query->whereIn('entity', $user->entity === 'all' ? ['gudang', 'hendhys', 'jihans', 'izzi'] : [$user->entity]);
         $keys = collect($this->locations())->filter(fn ($l) => $this->allowed($user, $l))->pluck('key');
         return $query->whereIn('location_key', $keys);
     }
@@ -81,8 +81,8 @@ class StockOpname
         $row = (array) $count;
         $row['number'] = 'SO-'.str_pad((string) $count->id, 6, '0', STR_PAD_LEFT);
         $row['created_at'] = Carbon::parse($count->created_at)->timezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB';
-        foreach (['quantity_before', 'quantity_after', 'difference'] as $key) $row[$key] = (int) $count->$key;
-        $labels = ['super_admin' => 'Super Admin', 'admin_hendhys' => 'Admin Hendhys', 'kasir_hendhys' => 'Kasir Hendhys', 'admin_jihans' => 'Admin Jihan’s', 'kasir_jihans' => 'Kasir Jihan’s'];
+        foreach (['quantity_before', 'quantity_after', 'difference'] as $key) $row[$key] = (int) ($count->quantity_scale ?? 1) === 1000 ? \App\Services\Izzi\Quantity::display($count->$key) : (int) $count->$key;
+        $labels = ['admin_izzi' => 'Admin Izzi Kebab', 'kasir_izzi' => 'Kasir Izzi Kebab', 'super_admin' => 'Super Admin', 'admin_hendhys' => 'Admin Hendhys', 'kasir_hendhys' => 'Kasir Hendhys', 'admin_jihans' => 'Admin Jihan’s', 'kasir_jihans' => 'Kasir Jihan’s'];
         $row['role_label'] = $count->counted_by_role ? implode(', ', array_map(fn ($role) => $labels[$role] ?? $role, explode(',', $count->counted_by_role))) : null;
         return $row;
     }
@@ -159,6 +159,7 @@ class StockOpname
 
     public function table(object $session): array
     {
+        if ($session->entity === 'izzi') return ['izzi_stock', 'izzi_stock_movements', (int) $session->branch_id, null];
         return match ($session->stock_key) {
             'gudang' => ['jihans_gudang_stock', 'jihans_gudang_stock_movements', null, 'jihans'],
             'jihans-retail' => ['jihans_retail_stock', 'jihans_retail_stock_movements', null, null],
@@ -183,6 +184,12 @@ class StockOpname
             $location = $this->location($session->location_key);
             abort_unless($this->allowed($user, $location), 403);
             if (!$this->active($session)) throw ValidationException::withMessages(['session_id' => 'Sesi opname ditutup atau waktunya habis. Minta Owner membuka kembali sesi ini untuk melanjutkan.']);
+            $izzi = $session->entity === 'izzi';
+            if ($izzi) {
+                $data['expected_quantity'] = \App\Services\Izzi\Quantity::parse($data['expected_quantity'], 'expected_quantity', true);
+                $data['quantity'] = \App\Services\Izzi\Quantity::parse($data['quantity'], 'quantity', true);
+                if (!DB::table('izzi_ingredients')->where('product_id', $data['product_id'])->exists()) throw ValidationException::withMessages(['product_id' => 'Bahan tidak terdaftar di Izzi.']);
+            }
             $product = Product::with('unit')->findOrFail($data['product_id']);
             $previous = DB::table('stock_opname_counts')->where('session_id', $id)->where('product_id', $product->id)->first();
             if ($previous) {
@@ -202,7 +209,7 @@ class StockOpname
             $countId = DB::table('stock_opname_counts')->insertGetId([
                 'session_id' => $id, 'product_id' => $product->id, 'unit_id' => $stock->unit_id, 'product_name' => $product->name, 'product_code' => $product->code,
                 'unit_name' => $product->unit?->abbreviation ?? '-', 'quantity_before' => $before, 'quantity_after' => $after, 'difference' => $diff,
-                'notes' => trim($data['notes']), 'counted_by' => $user->id, 'counted_by_name' => $user->name,
+                'quantity_scale' => $izzi ? 1000 : 1, 'notes' => trim($data['notes']), 'counted_by' => $user->id, 'counted_by_name' => $user->name,
                 'counted_by_role' => $user->getRoleNames()->implode(','), 'created_at' => now(),
             ]);
             if ($lotEntity && $diff > 0) $this->lots->credit($lotEntity, $product->id, $stock->unit_id, $before, $diff, 'stock_opname', $countId);
@@ -213,7 +220,8 @@ class StockOpname
                 'type' => $diff < 0 ? 'out' : 'in', 'quantity' => abs($diff), 'quantity_before' => $before, 'quantity_after' => $after,
                 'notes' => "Stock opname sesi #{$id}, hasil #{$countId} — {$session->location_name}: ".trim($data['notes']), 'created_by' => $user->id, 'created_at' => now(),
             ];
-            if ($session->entity === 'hendhys') $movement['branch_id'] = $branchId;
+            if (in_array($session->entity, ['hendhys', 'izzi'], true)) $movement['branch_id'] = $branchId;
+            if ($izzi) { $movement['unit_id'] = $stock->unit_id; $movement['actor_name'] = $user->name; $movement['type'] = $diff === 0 ? 'same' : $movement['type']; }
             $movementId = DB::table($movements)->insertGetId($movement);
             DB::table('stock_opname_counts')->where('id', $countId)->update(['stock_movement_table' => $movements, 'stock_movement_id' => $movementId]);
             $this->logger->log('update', 'stock_opname', "Opname #{$id}: {$product->name}, {$before} → {$after}, petugas {$user->name}");

@@ -7,6 +7,7 @@ const route = window.route;
 
 export default function OwnerLayout({ pageTitle, children }) {
     const navItems = [
+        { name: 'Izzi Kebab', icon: <Icon name="restaurant" className="text-[22px]" />, path: route('izzi.dashboard') },
         { name: 'Konsolidasi Utama', icon: <Icon name="dashboard" className="text-[22px]" />, path: route('owner.dashboard') },
         {
             name: 'Produksi & Stok', icon: <Icon name="inventory_2" className="text-[22px]" />,

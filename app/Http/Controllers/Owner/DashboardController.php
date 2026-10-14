@@ -153,11 +153,14 @@ class DashboardController extends Controller
             ->selectRaw('date, SUM(grand_total) as total')
             ->pluck('total', 'date');
 
+        $izziSales = DB::table('izzi_sales')->where('created_at', '>=', today()->subDays(6)->startOfDay())
+            ->selectRaw('DATE(created_at) as date, SUM(net_total) as total')->groupBy('date')->pluck('total', 'date');
         $trends = $days->map(fn($d) => [
             'date' => Carbon::parse($d)->format('d M'),
             'jihans' => (float) ($jihansSales[$d] ?? 0),
             'hendhys' => (float) ($hendhysSales[$d] ?? 0),
-            'total' => (float) (($jihansSales[$d] ?? 0) + ($hendhysSales[$d] ?? 0)),
+            'izzi' => (float) ($izziSales[$d] ?? 0),
+            'total' => (float) (($jihansSales[$d] ?? 0) + ($hendhysSales[$d] ?? 0) + ($izziSales[$d] ?? 0)),
         ]);
 
         // Stock Calculation
@@ -215,6 +218,8 @@ class DashboardController extends Controller
             HendhysTransaction::where('status', 'paid')->whereNull('branch_id')
         )->sum('grand_total');
 
+        $izziRevenue = (float) DB::table('izzi_sales')->when($range, fn ($q) => $q->whereBetween('created_at', [$range[0]->copy()->startOfDay(), $range[1]->copy()->endOfDay()]))->sum('net_total');
+        $izziToday = (float) DB::table('izzi_sales')->where('created_at', '>=', today()->startOfDay())->where('created_at', '<', today()->addDay()->startOfDay())->sum('net_total');
         $jihansToday = (float) JihansTransaction::where('status', 'paid')->where('date', today()->toDateString())->sum('grand_total');
         $hendhysToday = (float) HendhysTransaction::where('status', 'paid')->where('date', today()->toDateString())->sum('grand_total');
 
@@ -232,11 +237,15 @@ class DashboardController extends Controller
                 'jihans_revenue'        => $jihansRevenue,
                 'hendhys_revenue'       => $hendhysRevenue,
                 'hendhys_pusat_revenue' => $hendhysPusatRevenue,
-                'total_revenue'         => $jihansRevenue + $hendhysRevenue,
+                'izzi_revenue' => $izziRevenue,
+                'izzi_date_from' => $range ? $range[0]->toDateString() : null,
+                'izzi_date_to' => $range ? $range[1]->toDateString() : null,
+                'total_revenue'         => $jihansRevenue + $hendhysRevenue + $izziRevenue,
 
                 'jihans_today'       => $jihansToday,
                 'hendhys_today'      => $hendhysToday,
-                'total_today'        => $jihansToday + $hendhysToday,
+                'izzi_today' => $izziToday,
+                'total_today'        => $jihansToday + $hendhysToday + $izziToday,
 
                 'stock' => [
                     'total' => $totalStock,
@@ -384,7 +393,7 @@ class DashboardController extends Controller
                 }
                 $trendQueryCallback = function($q) use ($targetDate) {
                     return $q->whereDate('date', $targetDate)
-                             ->selectRaw('HOUR(created_at) as h, SUM(grand_total) as total')
+                             ->selectRaw((DB::getDriverName() === 'sqlite' ? "CAST(strftime('%H', created_at) AS INTEGER)" : 'HOUR(created_at)').' as h, SUM(grand_total) as total')
                              ->groupBy('h')
                              ->pluck('total', 'h');
                 };
@@ -427,7 +436,7 @@ class DashboardController extends Controller
                 }
                 $trendQueryCallback = function($q) {
                     return $q->whereYear('date', now()->year)
-                             ->selectRaw('MONTH(date) as m, SUM(grand_total) as total')
+                             ->selectRaw((DB::getDriverName() === 'sqlite' ? "CAST(strftime('%m', date) AS INTEGER)" : 'MONTH(date)').' as m, SUM(grand_total) as total')
                              ->groupBy('m')
                              ->pluck('total', 'm');
                 };
@@ -447,32 +456,50 @@ class DashboardController extends Controller
                 $hendhysQuery = HendhysTransaction::with(['creator', 'branch', 'details'])->where('status', 'paid');
                 $dateFilter($hendhysQuery);
                 $searchTransactions($hendhysQuery);
+                $izziQuery = DB::query()->fromSub(DB::table('izzi_sales')
+                    ->when($isExactDate, fn ($q) => $q->where('created_at', '>=', $filter.' 00:00:00')->where('created_at', '<', Carbon::parse($filter)->addDay()->startOfDay()))
+                    ->when($range, fn ($q) => $q->whereBetween('created_at', [$range[0]->copy()->startOfDay(), $range[1]->copy()->endOfDay()]))
+                    ->select('*', DB::raw('DATE(created_at) as date'), DB::raw('net_total as grand_total')), 'izzi')
+                    ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('number', 'like', '%'.$search.'%')->orWhere('customer_name', 'like', '%'.$search.'%')->orWhere('actor_name', 'like', '%'.$search.'%')->orWhere('branch_name', 'like', '%'.$search.'%')));
                 // IDs are only unique within each business unit. Paginate keys from
                 // both tables, then hydrate just that page while retaining its order.
                 $keys = (clone $jihansQuery)->select('id', 'created_at', DB::raw("'jihans' as entity"))->toBase()
-                    ->unionAll((clone $hendhysQuery)->select('id', 'created_at', DB::raw("'hendhys' as entity"))->toBase());
+                    ->unionAll((clone $hendhysQuery)->select('id', 'created_at', DB::raw("'hendhys' as entity"))->toBase())
+                    ->unionAll((clone $izziQuery)->select('id', 'created_at', DB::raw("'izzi' as entity")));
                 $combined = DB::query()->fromSub($keys, 'transactions')
                     ->orderByDesc('created_at')->orderByDesc('id')->orderBy('entity');
                 [$references, $pagination] = $this->paginateDetail($combined, $perPage, fn ($r) => $r);
                 $jRows = JihansTransaction::with(['creator', 'details'])->whereIn('id', $references->where('entity', 'jihans')->pluck('id'))->get()->keyBy('id');
                 $hRows = HendhysTransaction::with(['creator', 'branch', 'details'])->whereIn('id', $references->where('entity', 'hendhys')->pluck('id'))->get()->keyBy('id');
-                $list = $references->map(function ($r) use ($jRows, $hRows, $mapTransaction) {
+                $iRows = DB::table('izzi_sales')->whereIn('id', $references->where('entity', 'izzi')->pluck('id'))->get()->keyBy('id');
+                $iLines = DB::table('izzi_sale_lines')->whereIn('sale_id', $iRows->keys())->get()->groupBy('sale_id');
+                $list = $references->map(function ($r) use ($jRows, $hRows, $iRows, $iLines, $mapTransaction) {
+                    if ($r->entity === 'izzi') {
+                        $t = $iRows[$r->id];
+                        return ['id' => $t->id, 'date' => Carbon::parse($t->created_at)->translatedFormat('d M Y, H:i').' WIB',
+                            'transaction_number' => $t->number, 'customer' => $t->customer_name, 'grand_total' => (float) $t->net_total,
+                            'status' => $t->status, 'type_unit' => 'Izzi Kebab · '.$t->branch_name, 'user' => $t->actor_name,
+                            'href' => route('izzi.sales.show', ['sale' => $t->id, 'branch_id' => $t->branch_id]),
+                            'details' => $iLines->get($t->id, collect())->map(fn ($l) => ['product_name' => $l->menu_name,
+                                'quantity' => $l->quantity - $l->cancelled_quantity, 'price' => (float) $l->price, 'total' => (float) (($l->quantity - $l->cancelled_quantity) * $l->price)])];
+                    }
                     $t = $r->entity === 'jihans' ? $jRows[$r->id] : $hRows[$r->id];
                     return $mapTransaction($t, $r->entity === 'jihans' ? "Jihan's Food" : ($t->branch?->name ?? 'Hendhys Produksi (Pusat)'));
                 });
 
-                $shiftQ = CashierShift::with(['user', 'branch'])->whereIn('entity', ['jihans', 'hendhys']);
+                $shiftQ = CashierShift::with(['user', 'branch'])->whereIn('entity', ['jihans', 'hendhys', 'izzi']);
                 $dateFilterShift($shiftQ);
                 [$shifts, $shiftPagination] = $paginateShifts($shiftQ, fn ($s) => $mapShift($s,
-                    $s->entity === 'jihans' ? "Jihan's Food" : ($s->branch?->name ?? 'Hendhys Produksi (Pusat)')));
+                    $s->entity === 'izzi' ? 'Izzi Kebab · '.$s->branch?->name : ($s->entity === 'jihans' ? "Jihan's Food" : ($s->branch?->name ?? 'Hendhys Produksi (Pusat)'))));
                 $totalJihansOmset = (clone $jihansQuery)->sum('grand_total');
                 $totalHendhysOmset = (clone $hendhysQuery)->sum('grand_total');
-                $subtitle = 'Total Omset: Rp ' . number_format($totalJihansOmset + $totalHendhysOmset, 0, ',', '.');
+                $subtitle = 'Total Omset: Rp ' . number_format($totalJihansOmset + $totalHendhysOmset + (clone $izziQuery)->sum('net_total'), 0, ',', '.');
 
                 // Trends
                 $jSales = $trendQueryCallback(JihansTransaction::where('status', 'paid'));
                 $hSales = $trendQueryCallback(HendhysTransaction::where('status', 'paid'));
-                $trends = $mapTrends($jSales, $hSales);
+                $iSales = $trendQueryCallback(DB::query()->fromSub(DB::table('izzi_sales')->select('created_at', DB::raw('DATE(created_at) as date'), DB::raw('net_total as grand_total')), 'sales'));
+                $trends = $mapTrends($jSales, collect($hSales)->map(fn ($v, $k) => $v + ($iSales[$k] ?? 0))->union($iSales)->all());
             } elseif ($unit === 'jihans_transactions') {
                 $title = "Jihan's Food";
                 $query = JihansTransaction::with(['creator', 'details'])->where('status', 'paid');
@@ -666,6 +693,7 @@ class DashboardController extends Controller
     {
         $shift = \App\Models\CashierShift::with(['user', 'branch'])->findOrFail($id);
         
+        if ($shift->entity === 'izzi') return redirect()->route('izzi.shifts', ['branch_id' => $shift->branch_id]);
         $transactionTable = $shift->entity === 'hendhys' ? 'hendhys_transactions' : 'jihans_transactions';
         $paymentTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_payments' : 'jihans_transaction_payments';
         $detailTable = $shift->entity === 'hendhys' ? 'hendhys_transaction_details' : 'jihans_transaction_details';

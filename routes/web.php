@@ -14,6 +14,7 @@ Route::get('/dashboard', function () {
     $user = auth()->user();
     if ($user->hasRole('owner'))                          return redirect()->route('owner.dashboard');
     if ($user->hasRole('super_admin'))                   return redirect()->route('gudang.dashboard');
+    if ($user->hasRole(['kasir_izzi', 'admin_izzi'])) return redirect()->route('izzi.dashboard');
     if ($user->hasRole(['kasir_jihans', 'admin_jihans'])) return redirect()->route('jihans.dashboard');
     if ($user->hasRole(['kasir_hendhys', 'admin_hendhys'])) return redirect()->route('hendhys.dashboard');
     
@@ -32,7 +33,9 @@ Route::middleware('auth')->group(function() {
         Route::get('/production-materials/{transaction}', [\App\Http\Controllers\ProductionMaterialController::class, 'show'])->whereNumber('transaction')->name('production-materials.show');
         Route::post('/production-materials/{transaction}/cancel', [\App\Http\Controllers\ProductionMaterialController::class, 'cancel'])->whereNumber('transaction')->name('production-materials.cancel');
     });
-    Route::middleware('role:super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
+    Route::middleware('role:super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans|admin_izzi|kasir_izzi')->group(function () {
+        Route::get('/branch-transfers/{branch}/source-products', [\App\Http\Controllers\BranchStockTransferController::class, 'sourceCatalogue'])->whereNumber('branch')->name('branch-transfers.source-products');
+        Route::get('/branch-transfers/{branch}/destination-products', [\App\Http\Controllers\BranchStockTransferController::class, 'destinationCatalogue'])->whereNumber('branch')->name('branch-transfers.destination-products');
         Route::get('/branch-transfers', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.index');
         Route::get('/branch-transfers/history', [\App\Http\Controllers\BranchStockTransferController::class, 'index'])->name('branch-transfers.history');
         Route::get('/branch-transfers/create', [\App\Http\Controllers\BranchStockTransferController::class, 'create'])->name('branch-transfers.create');
@@ -41,9 +44,9 @@ Route::middleware('auth')->group(function() {
         Route::post('/branch-transfers/{transfer}/receive', [\App\Http\Controllers\BranchStockTransferController::class, 'receive'])->whereNumber('transfer')->name('branch-transfers.receive');
         Route::post('/branch-transfers/{transfer}/cancel', [\App\Http\Controllers\BranchStockTransferController::class, 'cancel'])->whereNumber('transfer')->name('branch-transfers.cancel');
     });
-    Route::middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->group(function () {
-        Route::get('/return-stock', [\App\Http\Controllers\ReturnStockController::class, 'index'])->name('return-stock.index');
-        Route::get('/return-stock/{entry}', [\App\Http\Controllers\ReturnStockController::class, 'show'])->whereNumber('entry')->name('return-stock.show');
+    Route::middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans|admin_izzi|kasir_izzi')->group(function () {
+        Route::get('/return-stock', [\App\Http\Controllers\ReturnStockController::class, 'index'])->middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->name('return-stock.index');
+        Route::get('/return-stock/{entry}', [\App\Http\Controllers\ReturnStockController::class, 'show'])->whereNumber('entry')->middleware('role:owner|super_admin|admin_hendhys|kasir_hendhys|admin_jihans|kasir_jihans')->name('return-stock.show');
         Route::get('/stock-opname', [\App\Http\Controllers\StockOpnameController::class, 'index'])->name('stock-opname.index');
         Route::get('/stock-opname/history', [\App\Http\Controllers\StockOpnameController::class, 'history'])->name('stock-opname.history');
         Route::get('/stock-opname/results/{count}', [\App\Http\Controllers\StockOpnameController::class, 'result'])->whereNumber('count')->name('stock-opname.result');

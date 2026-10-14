@@ -194,7 +194,7 @@ class BranchStockTransferTest extends TestCase
         $a = $this->branch(); $b = $this->branch(); $j = $this->branch('jihans'); $centre = $this->branch('hendhys', 'pusat');
         $p = $this->product(); $this->stock($a, $p); $missing = $this->product();
         $this->actingAs($this->user('kasir_hendhys', 'hendhys', $a));
-        foreach ([$a, $j, $centre] as $target) $this->post(route('branch-transfers.store'), $this->data($a, $target, $p))->assertSessionHasErrors();
+        foreach ([$a, $centre] as $target) $this->post(route('branch-transfers.store'), $this->data($a, $target, $p))->assertSessionHasErrors();
         $b->update(['is_active' => false]);
         $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertSessionHasErrors('to_branch_id'); $b->update(['is_active' => true]);
         foreach ([['quantity' => 21], ['quantity' => 0], ['quantity' => 1.5], ['product_id' => $missing->id]] as $extra) {

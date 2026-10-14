@@ -36,7 +36,7 @@ export default function OwnerReports({ reportData, filters }) {
     };
 
     // Calculate chart details
-    const maxVal = Math.max(...reportData.map(d => Math.max(d.jihans, d.hendhys)), 1);
+    const maxVal = Math.max(...reportData.map(d => Math.max(d.jihans, d.hendhys, d.izzi || 0)), 1);
     const chartHeight = 150;
     const chartWidth = 600;
     const barWidth = Math.max(10, (chartWidth - 80) / Math.max(1, reportData.length));
@@ -59,7 +59,7 @@ export default function OwnerReports({ reportData, filters }) {
                             >
                                 <option value="all">Semua Unit Bisnis</option>
                                 <option value="jihans">Jihan's Food</option>
-                                <option value="hendhys">Hendhys Brownies</option>
+                                <option value="hendhys">Hendhys Brownies</option><option value="izzi">Izzi Kebab</option>
                             </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -117,11 +117,12 @@ export default function OwnerReports({ reportData, filters }) {
                                 {reportData.map((d, idx) => {
                                     const x = 50 + idx * barWidth;
                                     const hJihans = (d.jihans / maxVal) * (chartHeight - 40);
+                                    const hIzzi = ((d.izzi || 0) / maxVal) * (chartHeight - 40);
                                     const hHendhys = (d.hendhys / maxVal) * (chartHeight - 40);
 
                                     // Capped bar widths for neat layout
-                                    const singleBarWidth = Math.min(20, (barWidth - 16) / 2);
-                                    const totalPairWidth = singleBarWidth * 2 + 4;
+                                    const singleBarWidth = Math.min(20, Math.max(1, (barWidth - 12) / 3));
+                                    const totalPairWidth = singleBarWidth * 3 + 8;
                                     const startOffset = (barWidth - totalPairWidth) / 2;
 
                                     return (
@@ -147,6 +148,7 @@ export default function OwnerReports({ reportData, filters }) {
                                                 className="transition-all hover:opacity-90"
                                             />
                                             
+                                            <rect x={x + startOffset + 2 * (singleBarWidth + 4)} y={chartHeight - 20 - hIzzi} width={singleBarWidth} height={Math.max(1, hIzzi)} fill="#6366f1" rx="2"><title>Izzi: {formatRupiah(d.izzi || 0)}</title></rect>
                                             {/* Date/Label */}
                                             <text
                                                 x={x + barWidth / 2}
@@ -169,12 +171,13 @@ export default function OwnerReports({ reportData, filters }) {
                             </svg>
                             <div className="flex gap-4 justify-center mt-3 text-xs">
                                 <span className="flex items-center gap-1"><span className="h-3 w-3 bg-orange-500 rounded" /> Jihan's Food</span>
-                                <span className="flex items-center gap-1"><span className="h-3 w-3 bg-amber-500 rounded" /> Hendhys Brownies</span>
+                                <span className="flex items-center gap-1"><span className="h-3 w-3 bg-amber-500 rounded" /> Hendhys Brownies</span><span className="flex items-center gap-1"><span className="h-3 w-3 bg-indigo-500 rounded" /> Izzi Kebab</span>
                             </div>
                         </div>
                     </div>
                 )}
 
+                <p className="text-sm text-gray-500">Angka Izzi adalah penjualan bersih setelah pembatalan. Rincian menu, bahan, dan pembatalannya tersedia di menu Izzi Kebab.</p>
                 {/* Detail Table */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -202,17 +205,17 @@ export default function OwnerReports({ reportData, filters }) {
                                     <th className="px-4 py-3">Periode</th>
                                     <th className="px-4 py-3 text-right">Jihan's Food</th>
                                     <th className="px-4 py-3 text-right">Hendhys Brownies</th>
-                                    <th className="px-4 py-3 text-right">Total Omset</th>
+                                    <th className="px-4 py-3 text-right">Izzi Kebab (bersih)</th><th className="px-4 py-3 text-right">Total Omset</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-                                {reportData.length === 0 ? <EmptyState colSpan={4} icon="table_chart" message="Data omset kosong untuk filter ini." />
+                                {reportData.length === 0 ? <EmptyState colSpan={5} icon="table_chart" message="Data omset kosong untuk filter ini." />
                                     : reportData.map((row, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01]">
                                             <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white/90">{row.label}</td>
                                             <td className="px-4 py-3 text-right text-orange-600 dark:text-orange-400 font-medium">{formatRupiah(row.jihans)}</td>
                                             <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400 font-medium">{formatRupiah(row.hendhys)}</td>
-                                            <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatRupiah(row.total)}</td>
+                                            <td className="px-4 py-3 text-right text-indigo-600">{formatRupiah(row.izzi || 0)}</td><td className="px-4 py-3 text-right font-black text-slate-900 dark:text-white">{formatRupiah(row.total)}</td>
                                         </tr>
                                     ))}
                             </tbody>

@@ -62,6 +62,7 @@ export default function BranchForm({ branch = null, layout = 'GudangLayout', rou
                                 <select required value={data.entity} onChange={(e) => setData('entity', e.target.value)} className={inputClass}>
                                     <option value="hendhys">Hendhys Brownies</option>
                                     <option value="jihans">Jihan's</option>
+                                    <option value="izzi">Izzi Kebab</option>
                                     <option value="gudang">Gudang Pusat</option>
                                 </select>
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Menentukan modul mana yang dapat mengakses cabang ini.</p>

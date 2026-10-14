@@ -56,6 +56,7 @@ class AuthenticatedSessionController extends Controller
         // super_admin_* wajib ikut disebut di sini. Tanpa itu mereka jatuh ke
         // route('dashboard') yang lalu me-redirect lagi ke tujuan yang sama —
         // pemetaan ini dan yang di routes/web.php harus tetap sejalan.
+        if ($user->hasRole(['kasir_izzi', 'admin_izzi'])) return route('izzi.dashboard');
         if ($user->hasRole(['kasir_jihans', 'admin_jihans']))
             return route('jihans.dashboard');
         if ($user->hasRole(['admin_hendhys']))

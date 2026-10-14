@@ -55,10 +55,10 @@ class ReportController extends Controller
 
         $callback = function() use ($data) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Periode', 'Jihans Food', 'Hendhys Brownies', 'Total Omset']);
+            fputcsv($file, ['Periode', 'Jihans Food', 'Hendhys Brownies', 'Izzi Kebab (bersih)', 'Total Omset']);
 
             foreach ($data as $row) {
-                fputcsv($file, [$row['label'], $row['jihans'], $row['hendhys'], $row['total']]);
+                fputcsv($file, [$row['label'], $row['jihans'], $row['hendhys'], $row['izzi'], $row['total']]);
             }
 
             fclose($file);
@@ -71,6 +71,7 @@ class ReportController extends Controller
     {
         $jihans = collect();
         $hendhys = collect();
+        $izzi = collect();
 
         $isSqlite = DB::connection()->getDriverName() === 'sqlite';
 
@@ -108,13 +109,23 @@ class ReportController extends Controller
             $hendhys = $query->pluck('amount', 'label');
         }
 
-        $allLabels = $jihans->keys()->concat($hendhys->keys())->unique()->sortDesc();
+        if ($unit === 'all' || $unit === 'izzi') {
+            $query = DB::query()->fromSub(DB::table('izzi_sales')
+                ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom.' 00:00:00'))
+                ->when($dateTo, fn ($q) => $q->where('created_at', '<', \Carbon\Carbon::parse($dateTo)->addDay()->startOfDay()))
+                ->select('net_total', DB::raw('DATE(created_at) as date')), 'sales')
+                ->selectRaw($groupSql.', SUM(net_total) as amount');
+            if ($period !== 'keseluruhan') $query->groupBy('label');
+            $izzi = $query->pluck('amount', 'label');
+        }
+        $allLabels = $jihans->keys()->concat($hendhys->keys())->concat($izzi->keys())->unique()->sortDesc();
 
         return $allLabels->map(fn($label) => [
             'label' => $label,
             'jihans' => (float) ($jihans[$label] ?? 0),
             'hendhys' => (float) ($hendhys[$label] ?? 0),
-            'total' => (float) (($jihans[$label] ?? 0) + ($hendhys[$label] ?? 0)),
+            'izzi' => (float) ($izzi[$label] ?? 0),
+            'total' => (float) (($jihans[$label] ?? 0) + ($hendhys[$label] ?? 0) + ($izzi[$label] ?? 0)),
         ])->values()->all();
     }
 }

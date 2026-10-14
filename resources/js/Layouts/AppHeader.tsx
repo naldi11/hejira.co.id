@@ -7,6 +7,7 @@ import NotificationDropdown from "../Components/header/NotificationDropdown";
 import UserDropdown from "../Components/header/UserDropdown";
 
 const ENTITY_BRAND: Record<string, string> = {
+  izzi: "Izzi Kebab",
   jihans:  "Jihan's Food",
   hendhys: "Hendhy's Brownies",
   gudang:  "HEJIRA",
