@@ -30,3 +30,5 @@ backup_db/*.sql.gz
 backup_db/*.sql
 backup_db/backup_db_hejira.sh
 backup_db/download-backup.md
+/output/.izzi-tutorial-build/
+/output/excel-verification/

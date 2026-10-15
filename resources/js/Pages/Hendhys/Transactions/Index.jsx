@@ -5,7 +5,7 @@ import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import { SkeletonTableRows } from '@/Components/Skeleton';
-import { formatRupiah } from '@/lib/format';
+import { formatDate, formatRupiah } from '@/lib/format';
 import { FilterTransactionsModal } from '@/Components/FilterTransactionsModal';
 import VoidTransactionModal from '@/Components/VoidTransactionModal';
 
@@ -122,8 +122,8 @@ export default function HendhysTransactionsIndex({ transactions, filters }) {
                                         <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{t.transaction_number}</td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                                                <div>{t.date}</div>
-                                                <div className="text-xs text-gray-400">{t.time}</div>
+                                                <div>{formatDate(t.date)}</div>
+                                                <div className="text-xs text-gray-400">{t.time && `${t.time} WIB`}</div>
                                             </td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.customer_name}</td>
                                             <td className="px-6 py-4 text-right font-bold text-gray-800 dark:text-white/90">{formatRupiah(t.grand_total)}</td>

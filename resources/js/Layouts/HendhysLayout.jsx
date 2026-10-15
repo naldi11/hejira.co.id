@@ -50,7 +50,7 @@ export default function HendhysLayout({ pageTitle, children }) {
     navItems.push(group('Permintaan & Penerimaan', 'move_to_inbox', incoming));
 
     const outgoing = [];
-    if (!isPusat && !isOwner) outgoing.push({ name: 'Mutasi Stok Antar Cabang', path: route('branch-transfers.index') });
+    if (!isPusat && !isOwner) outgoing.push({ name: 'Mutasi Stok Cabang & Gudang', path: route('branch-transfers.index') });
     if (isAdmin && isPusat) outgoing.push({ name: 'Kirim ke Cabang / Jihan’s', path: route('hendhys.transfer-to-branch.index') });
     outgoing.push({ name: 'Kembalikan Barang ke Gudang', path: route('hendhys.returns-to-gudang.index') });
     if (!isPusat) outgoing.push({ name: 'Kembalikan ke Pusat Produksi', path: route('hendhys.returns.index') });

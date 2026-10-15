@@ -496,7 +496,9 @@ class StockService
     {
         return Product::query()
             ->with(['unit', 'category'])
-            ->visibleInGudang()
+            ->where(fn ($q) => $q->visibleInGudang()->orWhereExists(fn ($stock) => $stock
+                ->selectRaw('1')->from('jihans_gudang_stock as warehouse_balance')
+                ->whereColumn('warehouse_balance.product_id', 'master_products.id')->where('warehouse_balance.quantity', '>', 0)))
             ->leftJoin('jihans_gudang_stock', 'master_products.id', '=', 'jihans_gudang_stock.product_id')
             ->select('master_products.*', 'jihans_gudang_stock.quantity as current_stock')
             ->selectRaw("(SELECT COALESCE(SUM(q.quantity), 0) FROM return_quarantine_entries q WHERE q.product_id = master_products.id AND q.destination_key = 'gudang' AND q.condition IN ('damaged', 'other')) as returned_defect_stock")

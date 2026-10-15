@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/format';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -84,7 +85,7 @@ export default function TransferFromHendhysIndex({ transfers, filters }) {
                                     transfers.data.map((t) => (
                                         <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.01]">
                                             <td className="px-6 py-4 font-bold text-gray-800 dark:text-white/90">{t.transfer_number}</td>
-                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.date}</td>
+                                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300"><div>{formatDate(t.date)}</div>{t.recorded_at && <div className="mt-1 text-xs text-gray-400">Dicatat {t.recorded_at}</div>}</td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{t.creator ?? 'Gudang Hendhys'}</td>
                                             <td className="px-6 py-4 text-center">
                                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.status === 'sent' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400'}`}>

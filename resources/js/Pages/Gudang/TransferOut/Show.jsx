@@ -27,6 +27,7 @@ export default function TransferOutShow({ transfer }) {
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                     <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">{transfer.transfer_number}</h2>
                     <p className="mt-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500">Dikirim pada {formatDate(transfer.date)} oleh {transfer.creator ?? 'Sistem'}</p>
+                    {transfer.recorded_at && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dicatat {transfer.recorded_at}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

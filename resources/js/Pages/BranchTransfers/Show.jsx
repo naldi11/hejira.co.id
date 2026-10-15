@@ -27,10 +27,10 @@ function CancelForm({ transfer, onClose }) {
     </form>;
 }
 export default function Show({ transfer: t, items, receipts, canReceive, canCancel, stockChanges = [] }) {
-    const unitLabels = { jihans:'Jihan’s', hendhys:'Hendhys', izzi:'Izzi Kebab' };
+    const unitLabels = { gudang:'Gudang', jihans:'Jihan’s', hendhys:'Hendhys', izzi:'Izzi Kebab' };
     const afterReceipt = t.recording_mode === 'after_receipt';
     const [receive, openReceive] = useState(false); const [cancel, openCancel] = useState(false);
-    return <Layout pageTitle="Detail Mutasi Antar Cabang"><Head title={t.number} /><div className="mx-auto max-w-5xl space-y-6 text-gray-800 dark:text-gray-200">
+    return <Layout pageTitle="Detail Mutasi Cabang & Gudang"><Head title={t.number} /><div className="mx-auto max-w-5xl space-y-6 text-gray-800 dark:text-gray-200">
         <Link className="text-brand-500" href={route('branch-transfers.history')}>← Riwayat semua mutasi</Link>
         <div className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-2"><h1 className="text-2xl font-bold">{t.number}</h1><strong className={t.status === 'received' ? 'text-green-600' : t.status === 'partial' ? 'text-amber-600' : 'text-gray-500'}>{t.status_label}</strong></div>
             <p className="text-lg font-semibold">{unitLabels[t.from_entity]} · {t.from_branch_name} → {unitLabels[t.to_entity]} · {t.to_branch_name}</p>

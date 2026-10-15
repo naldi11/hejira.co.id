@@ -20,7 +20,7 @@ class StockMovementResource extends JsonResource
             'type'         => $this->type,
             'quantity'     => (int) $this->quantity,
             'source'       => $this->source,
-            'source_label' => $this->production_material_id ? 'Barang untuk produksi' : null,
+            'source_label' => $this->branch_transfer_id ? 'Mutasi stok' : ($this->production_material_id ? 'Barang untuk produksi' : null),
             'production_material_id' => $this->production_material_id,
             'reference_id' => $this->reference_id,
             'branch_transfer_id' => $this->branch_transfer_id,

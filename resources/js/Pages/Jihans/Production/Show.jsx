@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/format';
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -77,7 +78,7 @@ export default function Show({ production }) {
                     </div>
                     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Tanggal</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">{new Date(production.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatDate(production.date)}</p>
                     </div>
                     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Dibuat Oleh</p>

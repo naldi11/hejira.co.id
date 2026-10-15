@@ -1,3 +1,4 @@
+import { addCalendarDays } from '@/lib/date';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -48,9 +49,7 @@ export default function ReportMingguan({ rows, filters }) {
                                         const newDateFrom = e.target.value;
                                         let newDateTo = form.date_to;
                                         if (newDateFrom) {
-                                            const from = new Date(newDateFrom);
-                                            from.setDate(from.getDate() + 6);
-                                            newDateTo = from.toISOString().split('T')[0];
+                                            newDateTo = addCalendarDays(newDateFrom, 6);
                                         }
                                         setForm({...form, date_from: newDateFrom, date_to: newDateTo});
                                     }}

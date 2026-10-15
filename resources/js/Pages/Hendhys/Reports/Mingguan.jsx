@@ -1,3 +1,4 @@
+import { addCalendarDays } from '@/lib/date';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -18,9 +19,7 @@ export default function ReportMingguan({ rows, filters }) {
                                         const newDateFrom = e.target.value;
                                         let newDateTo = form.date_to;
                                         if (newDateFrom) {
-                                            const from = new Date(newDateFrom);
-                                            from.setDate(from.getDate() + 6);
-                                            newDateTo = from.toISOString().split('T')[0];
+                                            newDateTo = addCalendarDays(newDateFrom, 6);
                                         }
                                         setForm({...form, date_from: newDateFrom, date_to: newDateTo});
                                     }} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-white outline-none focus:border-amber-500 focus:ring-amber-500" /><span className="text-gray-400 dark:text-gray-500">s/d</span><input type="date" value={form.date_to} onChange={(e) => setForm({...form, date_to: e.target.value})} className="rounded-lg border-gray-300 py-2 text-sm dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white focus:border-amber-500 focus:ring-amber-500" /><button type="submit" className="rounded-lg bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-900">Filter</button></form></div>

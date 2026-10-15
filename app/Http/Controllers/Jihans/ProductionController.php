@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Jihans;
 
+use App\Exports\Jihans\ProductionRecapExport;
 use App\Http\Controllers\Controller;
 use App\Models\JihansProductionSession;
 use App\Models\JihansProductionSessionDetail;
@@ -9,11 +10,13 @@ use App\Models\Karyawan;
 use App\Models\Product;
 use App\Services\ActivityLogService;
 use App\Services\NumberGeneratorService;
+use App\Services\ProductionSnapshot;
 use App\Services\StockService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductionController extends Controller
 {
@@ -27,15 +30,21 @@ class ProductionController extends Controller
     {
         $q = JihansProductionSession::with(['creator'])->withCount('details');
 
-        if ($request->filled('date_from')) $q->where('date', '>=', $request->date_from);
-        if ($request->filled('date_to'))   $q->where('date', '<=', $request->date_to);
-        if ($request->filled('search'))    $q->where('session_number', 'like', '%' . $request->search . '%');
+        if ($request->filled('date_from')) {
+            $q->where('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $q->where('date', '<=', $request->date_to);
+        }
+        if ($request->filled('search')) {
+            $q->where('session_number', 'like', '%'.$request->search.'%');
+        }
 
         $sessions = $q->orderBy('date', 'desc')->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render('Jihans/Production/Index', [
-            'sessions' => $sessions, 
-            'filters' => $request->only('search', 'date_from', 'date_to')
+            'sessions' => $sessions,
+            'filters' => $request->only('search', 'date_from', 'date_to'),
         ]);
     }
 
@@ -44,7 +53,7 @@ class ProductionController extends Controller
         return Product::where('source_type', 'produced')
             ->where(function ($q) {
                 $q->where('entity_scope', 'jihans')
-                  ->orWhere('entity_scope', 'all');
+                    ->orWhere('entity_scope', 'all');
             })
             ->where('status', 'active')
             ->orderBy('name')
@@ -75,11 +84,11 @@ class ProductionController extends Controller
         }
 
         return Inertia::render('Jihans/Production/Form', [
-            'karyawans'  => $karyawans,
-            'products'   => $products,
-            'type'       => 'aktual',
+            'karyawans' => $karyawans,
+            'products' => $products,
+            'type' => 'aktual',
             'formAction' => route('jihans.production.store'),
-            'warning'    => null,
+            'warning' => null,
             'targetDate' => $existingPrediksi ? $existingPrediksi->date : $targetDate,
             'prediction_id' => $existingPrediksi ? $existingPrediksi->id : null,
             'production' => $existingPrediksi,
@@ -96,23 +105,23 @@ class ProductionController extends Controller
         $products = $this->getProductionProducts();
 
         return Inertia::render('Jihans/Production/Form', [
-            'karyawans'  => $karyawans,
-            'products'   => $products,
-            'type'       => 'prediksi',
+            'karyawans' => $karyawans,
+            'products' => $products,
+            'type' => 'prediksi',
             'formAction' => route('jihans.production.prediksi.store'),
-            'warning'    => null,
+            'warning' => null,
         ]);
     }
 
     public function storePrediksi(Request $request)
     {
         $request->validate([
-            'date'       => 'required|date',
-            'notes'      => 'nullable|string',
-            'details'    => 'required|array',
+            'date' => 'required|date',
+            'notes' => 'nullable|string',
+            'details' => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
-            'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|integer|min:0',
+            'details.*.product_id' => 'required|integer|exists:master_products,id',
+            'details.*.quantity' => 'required|integer|min:0',
         ]);
 
         $totalQty = collect($request->details)->sum('quantity');
@@ -122,19 +131,19 @@ class ProductionController extends Controller
 
         DB::transaction(function () use ($request) {
             $session = JihansProductionSession::create([
-                'session_number'    => $this->numbers->generateYearly('JHS-PRD', 'jihans_production_sessions', 'session_number'),
-                'type'              => 'prediksi',
-                'date'              => $request->date,
-                'notes'             => $request->notes,
-                'created_by'        => auth()->id(),
+                'session_number' => $this->numbers->generateYearly('JHS-PRD', 'jihans_production_sessions', 'session_number'),
+                'type' => 'prediksi',
+                'date' => $request->date,
+                'notes' => $request->notes,
+                'created_by' => auth()->id(),
             ]);
 
             foreach ($request->details as $detail) {
                 if ($detail['quantity'] > 0) {
                     $session->details()->create([
                         'karyawan_id' => $detail['karyawan_id'] ?? null,
-                        'product_id'  => $detail['product_id'],
-                        'quantity'    => $detail['quantity'],
+                        'product_id' => $detail['product_id'],
+                        'quantity' => $detail['quantity'],
                     ]);
                 }
             }
@@ -148,13 +157,13 @@ class ProductionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'date'       => 'required|date',
-            'notes'      => 'nullable|string',
+            'date' => 'required|date',
+            'notes' => 'nullable|string',
             'prediction_id' => 'nullable|integer|exists:jihans_production_sessions,id',
-            'details'    => 'required|array',
+            'details' => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
-            'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|integer|min:0',
+            'details.*.product_id' => 'required|integer|exists:master_products,id',
+            'details.*.quantity' => 'required|integer|min:0',
         ]);
 
         $totalQtyAll = collect($request->details)->sum('quantity');
@@ -174,24 +183,24 @@ class ProductionController extends Controller
 
             if ($existingPrediksi) {
                 // Simpan rencana awal sebelum rincian diganti dengan hasil aktual.
-                $existingPrediksi->prediction_snapshot = \App\Services\ProductionSnapshot::capture($existingPrediksi, 'jihans');
+                $existingPrediksi->prediction_snapshot = ProductionSnapshot::capture($existingPrediksi, 'jihans');
                 $existingPrediksi->details()->delete();
 
                 // Perbarui sesi prediksi menjadi aktual
                 $existingPrediksi->update([
                     'date' => $request->date,
                     'created_by' => auth()->id(),
-                    'type'              => 'aktual',
-                    'notes'             => $request->notes,
+                    'type' => 'aktual',
+                    'notes' => $request->notes,
                 ]);
                 $session = $existingPrediksi;
             } else {
                 $session = JihansProductionSession::create([
-                    'session_number'    => $this->numbers->generateYearly('JHS-PRD', 'jihans_production_sessions', 'session_number'),
-                    'type'              => 'aktual',
-                    'date'              => $request->date,
-                    'notes'             => $request->notes,
-                    'created_by'        => auth()->id(),
+                    'session_number' => $this->numbers->generateYearly('JHS-PRD', 'jihans_production_sessions', 'session_number'),
+                    'type' => 'aktual',
+                    'date' => $request->date,
+                    'notes' => $request->notes,
+                    'created_by' => auth()->id(),
                 ]);
             }
 
@@ -201,8 +210,8 @@ class ProductionController extends Controller
                 if ($detail['quantity'] > 0) {
                     $session->details()->create([
                         'karyawan_id' => $detail['karyawan_id'] ?? null,
-                        'product_id'  => $detail['product_id'],
-                        'quantity'    => $detail['quantity'],
+                        'product_id' => $detail['product_id'],
+                        'quantity' => $detail['quantity'],
                     ]);
 
                     $pid = $detail['product_id'];
@@ -212,11 +221,13 @@ class ProductionController extends Controller
             }
 
             // Tambah stok Jihans Gudang sejumlah Aktual
-            if (!empty($productQtyMap)) {
+            if (! empty($productQtyMap)) {
                 $products = Product::whereIn('id', array_keys($productQtyMap))->get()->keyBy('id');
                 foreach ($productQtyMap as $productId => $newQty) {
-                    if (!$products->has($productId) || $newQty <= 0) continue;
-                    
+                    if (! $products->has($productId) || $newQty <= 0) {
+                        continue;
+                    }
+
                     $this->stockService->creditJihansGudang(
                         $productId,
                         $products[$productId]->unit_id,
@@ -237,7 +248,7 @@ class ProductionController extends Controller
 
     public function editPrediksi(JihansProductionSession $production)
     {
-        if (!$production->isPrediksi() || $production->type === 'aktual') {
+        if (! $production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('jihans.production.index')->withErrors('Sesi ini bukan prediksi atau sudah diaktualisasi.');
         }
 
@@ -246,29 +257,29 @@ class ProductionController extends Controller
         $products = $this->getProductionProducts();
 
         return Inertia::render('Jihans/Production/Form', [
-            'karyawans'  => $karyawans,
-            'products'   => $products,
-            'type'       => 'prediksi',
+            'karyawans' => $karyawans,
+            'products' => $products,
+            'type' => 'prediksi',
             'formAction' => route('jihans.production.prediksi.update', $production->id),
-            'warning'    => null,
-            'isEdit'     => true,
-            'production' => $production
+            'warning' => null,
+            'isEdit' => true,
+            'production' => $production,
         ]);
     }
 
     public function updatePrediksi(Request $request, JihansProductionSession $production)
     {
-        if (!$production->isPrediksi() || $production->type === 'aktual') {
+        if (! $production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('jihans.production.index')->withErrors('Sesi ini tidak bisa diedit.');
         }
 
         $request->validate([
-            'date'       => 'required|date',
-            'notes'      => 'nullable|string',
-            'details'    => 'required|array',
+            'date' => 'required|date',
+            'notes' => 'nullable|string',
+            'details' => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
-            'details.*.product_id'  => 'required|integer|exists:master_products,id',
-            'details.*.quantity'    => 'required|integer|min:0',
+            'details.*.product_id' => 'required|integer|exists:master_products,id',
+            'details.*.quantity' => 'required|integer|min:0',
         ]);
 
         $totalQtyAll = collect($request->details)->sum('quantity');
@@ -287,8 +298,8 @@ class ProductionController extends Controller
                 if ($detail['quantity'] > 0) {
                     $production->details()->create([
                         'karyawan_id' => $detail['karyawan_id'] ?? null,
-                        'product_id'  => $detail['product_id'],
-                        'quantity'    => $detail['quantity'],
+                        'product_id' => $detail['product_id'],
+                        'quantity' => $detail['quantity'],
                     ]);
 
                     $pid = $detail['product_id'];
@@ -307,7 +318,7 @@ class ProductionController extends Controller
 
     public function destroyPrediksi(JihansProductionSession $production)
     {
-        if (!$production->isPrediksi() || $production->type === 'aktual') {
+        if (! $production->isPrediksi() || $production->type === 'aktual') {
             return redirect()->route('jihans.production.index')->withErrors('Sesi ini tidak bisa dihapus.');
         }
 
@@ -325,75 +336,82 @@ class ProductionController extends Controller
     public function show(JihansProductionSession $production)
     {
         $production->load(['details.karyawan', 'details.product', 'creator']);
+
         return Inertia::render('Jihans/Production/Show', ['production' => $production]);
     }
 
     public function recap(Request $request)
     {
-        $noFilter = !$request->filled('date_from') && !$request->filled('date_to') && !$request->filled('periode');
-
-        $periode = $request->periode;
-        if ($periode === 'hari') {
-            $dateFrom = Carbon::today()->startOfDay();
-            $dateTo   = Carbon::today()->endOfDay();
-        } elseif ($periode === 'minggu') {
-            $dateFrom = Carbon::now()->copy()->startOfWeek();
-            $dateTo   = Carbon::now()->copy()->endOfWeek();
-        } elseif ($periode === 'bulan') {
-            $dateFrom = Carbon::now()->copy()->startOfMonth();
-            $dateTo   = Carbon::now()->copy()->endOfMonth();
-        } else {
-            $dateFrom = $request->date_from ? Carbon::parse($request->date_from)->startOfDay() : null;
-            $dateTo   = $request->date_to ? Carbon::parse($request->date_to)->endOfDay() : null;
-        }
-
-        $query = JihansProductionSessionDetail::query()
-            ->join('jihans_production_sessions', 'jihans_production_sessions.id', '=', 'jihans_production_session_details.session_id')
-            ->join('master_products', 'master_products.id', '=', 'jihans_production_session_details.product_id')
-            ->where('jihans_production_sessions.type', 'aktual');
-
-        if ($dateFrom) $query->where('jihans_production_sessions.date', '>=', $dateFrom);
-        if ($dateTo)   $query->where('jihans_production_sessions.date', '<=', $dateTo);
-
-        $productTotals = $query->selectRaw('
-                master_products.name as product_name,
-                SUM(jihans_production_session_details.quantity) as total_qty
-            ')
-            ->groupBy('master_products.id', 'master_products.name')
-            ->orderBy('master_products.name')
-            ->get();
+        $data = $this->recapData($request);
 
         return Inertia::render('Jihans/Production/Recap', [
-            'productTotals' => $productTotals,
+            'productTotals' => $data['productTotals'],
             'filters' => $request->only('date_from', 'date_to', 'periode'),
-            'noFilter' => $noFilter,
+            'noFilter' => ! $request->filled('date_from') && ! $request->filled('date_to') && ! $request->filled('periode'),
         ]);
     }
 
     public function exportRecap(Request $request)
     {
-        $periode = $request->periode;
-        if ($periode === 'hari') {
-            $dateFrom = Carbon::today()->startOfDay();
-            $dateTo   = Carbon::today()->endOfDay();
-        } elseif ($periode === 'minggu') {
-            $dateFrom = Carbon::now()->copy()->startOfWeek();
-            $dateTo   = Carbon::now()->copy()->endOfWeek();
-        } elseif ($periode === 'bulan') {
-            $dateFrom = Carbon::now()->copy()->startOfMonth();
-            $dateTo   = Carbon::now()->copy()->endOfMonth();
-        } else {
-            $dateFrom = $request->date_from ? Carbon::parse($request->date_from)->startOfDay() : null;
-            $dateTo   = $request->date_to ? Carbon::parse($request->date_to)->endOfDay() : null;
+        $data = $this->recapData($request);
+        $productTotals = $data['productTotals'];
+        $filename = 'recap_produksi_jihans_'.$data['generatedAt']->format('Ymd_His');
+
+        if ($request->input('format') === 'xlsx') {
+            return Excel::download(new ProductionRecapExport(
+                $productTotals,
+                $data['dateFrom'],
+                $data['dateTo'],
+                $data['generatedAt'],
+                $request->input('periode'),
+            ), $filename.'.xlsx');
         }
+
+        return response()->streamDownload(function () use ($productTotals) {
+            $file = fopen('php://output', 'w');
+            fwrite($file, "\xEF\xBB\xBF"); // UTF-8 BOM
+            fputcsv($file, ['Nama Produk', 'Total Jumlah Produksi'], escape: '');
+
+            foreach ($productTotals as $row) {
+                fputcsv($file, [$row->product_name, (float) $row->total_qty], escape: '');
+            }
+            fclose($file);
+        }, $filename.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** One set of business-date bounds and aggregates for the screen and both downloads. */
+    private function recapData(Request $request): array
+    {
+        $request->validate([
+            'periode' => ['nullable', 'in:hari,minggu,bulan'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('date_from') ? ['after_or_equal:date_from'] : [])],
+            'format' => ['nullable', 'in:csv,xlsx'],
+        ]);
+
+        $generatedAt = Carbon::now('Asia/Jakarta');
+        [$dateFrom, $dateTo] = match ($request->input('periode')) {
+            'hari' => [$generatedAt->copy()->startOfDay(), $generatedAt->copy()->endOfDay()],
+            'minggu' => [$generatedAt->copy()->startOfWeek(Carbon::MONDAY), $generatedAt->copy()->endOfWeek(Carbon::SUNDAY)],
+            'bulan' => [$generatedAt->copy()->startOfMonth(), $generatedAt->copy()->endOfMonth()],
+            default => [
+                $request->filled('date_from') ? Carbon::parse($request->input('date_from'), 'Asia/Jakarta')->startOfDay() : null,
+                $request->filled('date_to') ? Carbon::parse($request->input('date_to'), 'Asia/Jakarta')->endOfDay() : null,
+            ],
+        };
 
         $query = JihansProductionSessionDetail::query()
             ->join('jihans_production_sessions', 'jihans_production_sessions.id', '=', 'jihans_production_session_details.session_id')
             ->join('master_products', 'master_products.id', '=', 'jihans_production_session_details.product_id')
             ->where('jihans_production_sessions.type', 'aktual');
 
-        if ($dateFrom) $query->where('jihans_production_sessions.date', '>=', $dateFrom);
-        if ($dateTo)   $query->where('jihans_production_sessions.date', '<=', $dateTo);
+        // The session date is a DATE, so compare dates rather than midnight timestamps.
+        if ($dateFrom) {
+            $query->whereDate('jihans_production_sessions.date', '>=', $dateFrom->toDateString());
+        }
+        if ($dateTo) {
+            $query->whereDate('jihans_production_sessions.date', '<=', $dateTo->toDateString());
+        }
 
         $productTotals = $query->selectRaw('
                 master_products.name as product_name,
@@ -401,28 +419,19 @@ class ProductionController extends Controller
             ')
             ->groupBy('master_products.id', 'master_products.name')
             ->orderBy('master_products.name')
+            ->orderBy('master_products.id')
             ->get();
 
-        $filename = 'recap_produksi_jihans_' . date('Ymd_His') . '.csv';
-
-        return response()->streamDownload(function () use ($productTotals) {
-            $file = fopen('php://output', 'w');
-            fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM
-            fputcsv($file, ['Nama Produk', 'Total Jumlah Produksi']);
-
-            foreach ($productTotals as $row) {
-                fputcsv($file, [$row->product_name, (float) $row->total_qty]);
-            }
-            fclose($file);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return compact('productTotals', 'dateFrom', 'dateTo', 'generatedAt');
     }
 
     public function printFaktur(JihansProductionSession $production)
     {
         $production->load(['details.karyawan', 'details.product', 'creator']);
+
         return Inertia::render('Jihans/Production/Show', [
             'production' => $production,
-            'autoPrint' => true
+            'autoPrint' => true,
         ]);
     }
 }

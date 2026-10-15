@@ -1,7 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import IzziLayout from '@/Layouts/IzziLayout';
 import { Navigation, panel, input, button, Errors, money, Paging, Search } from './Common';
-const time = v => v ? new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(v)) + ' WIB' : '—';
+import { formatDateTime as time } from '@/lib/format';
 export default function Shifts(props) {
     const cashier = usePage().props.auth.user.roles.includes('kasir_izzi');
     const open = useForm({ starting_cash: '' }); const close = useForm({ actual_cash: '', note: '' });

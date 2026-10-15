@@ -6,7 +6,7 @@ import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import StatusBadge from '@/Components/StatusBadge';
 import { SkeletonTableRows } from '@/Components/Skeleton';
-import { formatRupiah } from '@/lib/format';
+import { formatDate, formatTime, formatRupiah } from '@/lib/format';
 import { FilterTransactionsModal } from '@/Components/FilterTransactionsModal';
 import VoidTransactionModal from '@/Components/VoidTransactionModal';
 
@@ -14,8 +14,7 @@ const route = window.route;
 
 function dateParts(iso) {
     if (!iso) return ['-', ''];
-    const d = new Date(iso);
-    return [d.toLocaleDateString('id-ID'), d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })];
+    return [formatDate(iso, { month: '2-digit' }), formatTime(iso)];
 }
 
 export default function JihansTransactionsIndex({ transactions, filters }) {

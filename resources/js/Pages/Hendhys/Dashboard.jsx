@@ -58,7 +58,7 @@ export default function HendhysDashboard({ stats, recentTransactions, lowStocks 
                                         <div>
                                             <p className="font-medium text-gray-800 dark:text-white/90">{trx.transaction_number}</p>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {formatDate(trx.date)} {trx.time} • {trx.customer_name}
+                                                {formatDate(trx.date)} {trx.time && `${trx.time} WIB`} • {trx.customer_name}
                                                 <br />
                                                 Kasir: <span className="font-medium text-gray-700 dark:text-gray-300">{trx.cashier_name}</span>
                                             </p>

@@ -3,21 +3,11 @@ import { Head, Link } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
 import Modal from '@/Components/Modal';
-import { formatRupiah, formatQty } from '@/lib/format';
+import { formatDateTime, formatRupiah, formatQty } from '@/lib/format';
 
 export default function ShiftDetail({ shift, transactions, summary }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTransaction, setSelectedTransaction] = useState(null);
-
-    // Format date Helper
-    const formatDateTime = (dateString) => {
-        if (!dateString) return '-';
-        const d = new Date(dateString);
-        return d.toLocaleString('id-ID', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-    };
 
     // Filter transactions locally
     const filteredTransactions = transactions.filter(t => {

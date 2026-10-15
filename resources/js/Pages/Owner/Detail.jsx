@@ -4,7 +4,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
 import { DeadlineAlert } from './Production/StockMonitor';
-import { formatRupiah, formatQty } from '@/lib/format';
+import { formatDate, formatTime, formatRupiah, formatQty } from '@/lib/format';
+import { weekRangeWib } from '@/lib/date';
 
 /* ─── Stock Card (mobile-first card list item) ───────────────────────────── */
 function StockItemCard({ row, type, overdue = false }) {
@@ -162,12 +163,12 @@ function ShiftCard({ row, showBranch }) {
                     {showBranch && <p className="text-xs text-slate-400 mt-0.5">{row.type_unit}</p>}
                     <div className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
                         <Icon name="schedule" className="text-[14px] text-slate-400" />
-                        {new Date(row.opened_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - {isClosed ? new Date(row.closed_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Sekarang'}
+                        {formatTime(row.opened_at)} - {isClosed ? formatTime(row.closed_at) : 'Sekarang'}
                     </div>
                 </div>
                 <div className="text-right ml-auto flex flex-col justify-between h-full min-h-[50px]">
                     <p className="text-[11px] font-semibold text-slate-500 dark:text-gray-400">
-                        {new Date(row.opened_at).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {formatDate(row.opened_at, { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                     <div className="mt-auto pt-2">
                         <p className="text-[10px] text-slate-400 dark:text-gray-500">Total Omset :</p>
@@ -284,7 +285,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                     }`}>
                                         <Icon name="calendar_today" className="text-[14px]" />
                                         {filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)
-                                            ? new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            ? formatDate(filter, { day: '2-digit', month: 'short', year: 'numeric' })
                                             : 'Pilih Tanggal'}
                                         <input
                                             type="date"
@@ -320,7 +321,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                                     <option value="this_month">Bulan Ini</option>
                                     {filter && filter.match(/^\d{4}-\d{2}-\d{2}$/) && (
                                         <option value={filter}>
-                                            {new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                            {formatDate(filter, { day: '2-digit', month: 'long', year: 'numeric' })}
                                         </option>
                                     )}
                                 </select>
@@ -350,7 +351,7 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
                     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                         <h3 className="mb-4 font-bold text-slate-800 dark:text-white/95 flex items-center gap-2">
                             <Icon name="trending_up" className="text-blue-500" /> Tren Omset 
-                            {filter === 'today' ? ' (Hari Ini)' : filter === 'this_week' ? ' (Minggu Ini)' : filter === 'this_month' ? ' (Bulan Ini)' : (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) ? ` (${new Date(filter).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })})` : ' (Tahun Ini)'}
+                            {filter === 'today' ? ' (Hari Ini)' : filter === 'this_week' ? ' (Minggu Ini)' : filter === 'this_month' ? ' (Bulan Ini)' : (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) ? ` (${formatDate(filter, { day: '2-digit', month: 'long', year: 'numeric' })})` : ' (Tahun Ini)'}
                         </h3>
                         {search && <p className="mb-3 text-xs text-slate-500">Grafik menampilkan seluruh omzet pada periode ini, tanpa filter pencarian.</p>}
                         <div className="w-full">
@@ -458,22 +459,17 @@ export default function Detail({ mode, unit, title, subtitle, list, shifts, filt
 
                         const filterDateText = (() => {
                             if (filter === 'today' || !filter) {
-                                return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                                return formatDate(new Date(), { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
                             }
                             if (filter === 'this_week') {
-                                const d = new Date();
-                                const day = d.getDay();
-                                const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-                                const start = new Date(d.setDate(diff));
-                                const end = new Date(start);
-                                end.setDate(end.getDate() + 6);
-                                return `${start.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${end.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+                                const [start, end] = weekRangeWib();
+                                return `${formatDate(start, { month: '2-digit' })} - ${formatDate(end, { month: '2-digit' })}`;
                             }
                             if (filter === 'this_month') {
-                                return new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                                return formatDate(new Date(), { day: undefined, month: 'long', year: 'numeric' });
                             }
                             if (filter && filter.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                return new Date(filter).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                                return formatDate(filter, { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
                             }
                             return 'Semua Waktu';
                         })();

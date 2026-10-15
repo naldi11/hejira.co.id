@@ -16,7 +16,7 @@ export default function IzziLayout({ children, pageTitle = 'Izzi Kebab' }) {
     navItems.push(group('Penjualan & Riwayat', 'receipt_long', [{ name: 'Riwayat & Pembatalan', path: route('izzi.sales') }, { name: 'Rekap Laci Kasir', path: route('izzi.shifts') }]));
     const stock = [{ name: 'Stok Bahan Cabang Aktif', path: route('izzi.stock') }, { name: 'Riwayat Keluar Masuk', path: route('izzi.movements') }, { name: 'Riwayat Penerimaan Bahan', path: route('izzi.receipts') }, { name: 'Stock Opname (Izin Owner)', path: route('stock-opname.index') }, { name: 'Riwayat SO', path: route('stock-opname.history') }];
     if (roles.includes('admin_izzi')) stock.unshift({ name: 'Terima Bahan', path: route('izzi.receipts.create') });
-    stock.unshift({ name:'Mutasi Stok Antar Cabang', path:route('branch-transfers.index') });
+    stock.unshift({ name:'Mutasi Stok Cabang & Gudang', path:route('branch-transfers.index') });
     navItems.push(group('Stok & Penerimaan', 'inventory_2', stock));
     if (roles.includes('admin_izzi')) navItems.push(group('Menu & Resep', 'restaurant_menu', [{ name: 'Bahan & Satuan Kemasan', path: route('izzi.ingredients') }, { name: 'Menu, Harga & Gramasi', path: route('izzi.menus') }]));
     return <AppLayout navItems={navItems} pageTitle={pageTitle}><FlashToasts />{children}</AppLayout>;

@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
 import Icon from '@/Components/Icon';
 import StatusBadge from '@/Components/StatusBadge';
-import { formatQty } from '@/lib/format';
+import { formatDate, formatQty } from '@/lib/format';
 
 export default function TransferOutShow({ transfer: t }) {
     const route = window.route;
@@ -15,7 +15,8 @@ export default function TransferOutShow({ transfer: t }) {
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-255 bg-gray-50/50 p-6 dark:border-gray-800 dark:bg-white/[0.01]">
                         <div>
                             <h2 className="font-mono text-xl font-bold text-gray-800 dark:text-white/90">{t.transfer_number}</h2>
-                            <p className="mt-1 text-sm text-gray-550 dark:text-gray-400">Tanggal: {t.date} · Oleh {t.creator}</p>
+                            <p className="mt-1 text-sm text-gray-550 dark:text-gray-400">Tanggal: {formatDate(t.date)} · Oleh {t.creator}</p>
+                            {t.recorded_at && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dicatat {t.recorded_at}</p>}
                         </div>
                         <StatusBadge status={t.status} />
                     </div>

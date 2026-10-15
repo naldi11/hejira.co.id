@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Gudang;
 
+use App\Services\ProductionLots;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,32 +17,34 @@ class TransferOutResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $sources = $this->resource->relationLoaded('details') ? app(\App\Services\ProductionLots::class)->dispatchSources('transfer_out', $this->id) : [];
+        $sources = $this->resource->relationLoaded('details') ? app(ProductionLots::class)->dispatchSources('transfer_out', $this->id) : [];
+
         return [
-            'id'              => $this->id,
+            'id' => $this->id,
             'transfer_number' => $this->transfer_number,
-            'status'          => $this->status,
-            'date'            => $this->created_at ? $this->created_at->isoFormat('D MMMM YYYY, HH:mm') : \Carbon\Carbon::parse($this->date)->isoFormat('D MMMM YYYY'),
-            'to_entity'       => $this->to_entity,
-            'branch'          => $this->whenLoaded('branch', fn () => $this->branch?->name),
-            'creator'         => $this->whenLoaded('creator', fn () => $this->creator?->name),
-            'notes'           => $this->notes,
-            'request'         => $this->whenLoaded('request', fn () => $this->request ? [
-                'id'             => $this->request->id,
+            'status' => $this->status,
+            'date' => $this->date?->toDateString(),
+            'recorded_at' => $this->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s \W\I\B'),
+            'to_entity' => $this->to_entity,
+            'branch' => $this->whenLoaded('branch', fn () => $this->branch?->name),
+            'creator' => $this->whenLoaded('creator', fn () => $this->creator?->name),
+            'notes' => $this->notes,
+            'request' => $this->whenLoaded('request', fn () => $this->request ? [
+                'id' => $this->request->id,
                 'request_number' => $this->request->request_number,
             ] : null),
-            'details'         => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
+            'details' => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'production_lots' => $sources[$d->id] ?? [],
-                'id'                => $d->id,
-                'product'           => $d->product?->name ?? '(Produk Dihapus)',
-                'quantity'          => (int) $d->quantity,
+                'id' => $d->id,
+                'product' => $d->product?->name ?? '(Produk Dihapus)',
+                'quantity' => (int) $d->quantity,
                 'received_quantity' => $d->received_quantity !== null ? (int) $d->received_quantity : null,
-                'kondisi'           => $d->kondisi,
-                'unit'              => $d->unit?->abbreviation ?? '-',
-                'hpp_price'         => (float) $d->hpp_price,
-                'total'             => (float) $d->total,
+                'kondisi' => $d->kondisi,
+                'unit' => $d->unit?->abbreviation ?? '-',
+                'hpp_price' => (float) $d->hpp_price,
+                'total' => (float) $d->total,
             ])->values()->all()),
-            'grand_total'     => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')) ?? 0,
+            'grand_total' => $this->whenLoaded('details', fn () => (float) $this->details->sum('total')) ?? 0,
         ];
     }
 }

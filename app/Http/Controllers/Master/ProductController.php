@@ -242,7 +242,7 @@ class ProductController extends Controller
 
         $old = $product->toArray();
 
-        $product->update($data);
+        DB::transaction(fn () => $product->update($data));
         
         // Selalu sinkronkan harga bertingkat dengan isi form. saveTieredPrices()
         // menghapus lalu membuat ulang, jadi array kosong = semua tier dihapus.

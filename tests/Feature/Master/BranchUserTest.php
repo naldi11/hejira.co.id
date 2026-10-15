@@ -29,7 +29,7 @@ class BranchUserTest extends TestCase
         $this->actingAs($this->adminGudang())
             ->get(route('master.branches.index'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Master/Branches/Index')->has('branches.data', 1));
+            ->assertInertia(fn (Assert $page) => $page->component('Master/Branches/Index')->has('branches.data', 2));
     }
 
     public function test_branch_store_validates_and_persists(): void

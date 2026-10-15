@@ -5,7 +5,8 @@ import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
 import Modal from '@/Components/Modal';
 import Icon from '@/Components/Icon';
-import { formatRupiah } from '@/lib/format';
+import { formatDateTime, formatTime, formatRupiah } from '@/lib/format';
+import { todayWib, addCalendarDays, endOfMonth } from '@/lib/date';
 import axios from 'axios';
 import SelectField from '@/Components/SelectField';
 
@@ -24,10 +25,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
     const [exportDateFrom, setExportDateFrom] = useState('');
     const [exportDateTo, setExportDateTo] = useState('');
     const [exportPaperSize, setExportPaperSize] = useState('58');
-    const [exportMonth, setExportMonth] = useState(() => {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    });
+    const [exportMonth, setExportMonth] = useState(() => todayWib().slice(0, 7));
 
     const handleExport = () => {
         let url = '';
@@ -40,9 +38,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
         } else if (exportType === 'mingguan') {
             url = `${base}?date_from=${exportDateFrom}&date_to=${exportDateTo}`;
         } else if (exportType === 'bulanan') {
-            const [y, m] = exportMonth.split('-');
-            const lastDay = new Date(y, m, 0).getDate();
-            url = `${base}?date_from=${exportMonth}-01&date_to=${exportMonth}-${lastDay}`;
+            url = `${base}?date_from=${exportMonth}-01&date_to=${endOfMonth(exportMonth)}`;
         }
         url += (url.includes('?') ? '&' : '?') + `paper_size=${exportPaperSize}`;
         window.open(url, '_blank');
@@ -128,18 +124,6 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
         } finally {
             setDetailLoading(false);
         }
-    };
-
-    const formatDateTime = (dateStr) => {
-        if (!dateStr) return '-';
-        const d = new Date(dateStr);
-        return d.toLocaleString('id-ID', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     };
 
     return (
@@ -725,7 +709,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                                         detailData.transactions.map((tx) => (
                                                             <tr key={tx.id}>
                                                                 <td className="p-3 font-semibold">{tx.transaction_number}</td>
-                                                                <td className="p-3 text-xs text-gray-500">{new Date(tx.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
+                                                                <td className="p-3 text-xs text-gray-500">{formatTime(tx.created_at)}</td>
                                                                 <td className="p-3">{tx.customer_name}</td>
                                                                 <td className="p-3 text-right font-bold">{formatRupiah(tx.grand_total)}</td>
                                                             </tr>
@@ -901,9 +885,7 @@ export default function ReportLaci({ rows, filters, activeShift, auth }) {
                                     const val = e.target.value;
                                     setExportDateFrom(val);
                                     if (exportType === 'mingguan' && val) {
-                                        const from = new Date(val);
-                                        from.setDate(from.getDate() + 6);
-                                        setExportDateTo(from.toISOString().split('T')[0]);
+                                        setExportDateTo(addCalendarDays(val, 6));
                                     }
                                 }}
                                     onClick={e => e.target.showPicker?.()}

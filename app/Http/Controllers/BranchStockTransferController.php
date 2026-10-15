@@ -89,16 +89,16 @@ class BranchStockTransferController extends Controller
     {
         $table = $this->transfers->stockTable($branch->entity);
         return DB::table($table.' as s')->join('master_products as p', 'p.id', '=', 's.product_id')
-            ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')->leftJoin('master_units as su', 'su.id', '=', 's.unit_id')
+            ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')
             ->whereNull('p.deleted_at')->where('p.status', 'active')->where('s.quantity', '>', 0)
-            ->when($branch->entity !== 'jihans', fn ($q) => $q->where('s.branch_id', $branch->id))
+            ->when($this->transfers->hasBranchStock($branch->entity), fn ($q) => $q->where('s.branch_id', $branch->id))
             ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', '%'.$search.'%')->orWhere('p.code', 'like', '%'.$search.'%')))
-            ->orderBy('p.name')->orderBy('p.id')->select('p.id','p.name','p.code','p.unit_id','s.unit_id as stock_unit_id','u.abbreviation as unit','su.abbreviation as stock_unit','s.quantity');
+            ->orderBy('p.name')->orderBy('p.id')->select('p.id','p.name','p.code','p.unit_id','u.abbreviation as unit','s.quantity');
     }
     private function sourceProduct(object $p, Branch $b): array
     {
         return [...(array) $p, 'quantity' => $b->entity === 'izzi' ? $this->transfers->display($p->quantity, 1000) : (int) round((float) $p->quantity),
-            'unit_matches' => $p->unit !== null && (int) $p->unit_id === (int) $p->stock_unit_id];
+            'stock_unit_id' => $p->unit_id, 'stock_unit' => $p->unit, 'unit_matches' => $p->unit !== null];
     }
     private function destinationProducts(Branch $b, ?string $search = null)
     {
@@ -169,7 +169,7 @@ class BranchStockTransferController extends Controller
         foreach ($tables as $table) {
             $movements = $movements->concat(DB::table($table.' as m')->where('branch_transfer_id', $transfer)->orderBy('m.id')->get()->map(function ($m) use ($table, $t, $rawDetails) {
                 $item = $m->branch_transfer_item_id ? $rawDetails->firstWhere('id', $m->branch_transfer_item_id) : $rawDetails->firstWhere('product_id', $m->product_id);
-                $origin = $m->branch_transfer_side ? $m->branch_transfer_side === 'from' : ($table === 'jihans_retail_stock_movements' ? $t->from_entity === 'jihans' : (int) $m->branch_id === (int) $t->from_branch_id);
+                $origin = $m->branch_transfer_side ? $m->branch_transfer_side === 'from' : (in_array($table, ['jihans_retail_stock_movements', 'jihans_gudang_stock_movements']) ? $t->from_entity === ($table === 'jihans_gudang_stock_movements' ? 'gudang' : 'jihans') : (int) $m->branch_id === (int) $t->from_branch_id);
                 $scale = $table === 'izzi_stock_movements' ? 1000 : 1;
                 return ['id' => $table.'-'.$m->id, 'location' => $origin ? $t->from_branch_name : $t->to_branch_name,
                     'product' => $origin ? $item?->product_name : ($item?->to_product_name ?? $item?->product_name),

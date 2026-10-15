@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Hendhys;
 
+use App\Services\ProductionLots;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,33 +14,35 @@ class HendhysTransferToBranchResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $sources = $this->resource->relationLoaded('details') ? app(\App\Services\ProductionLots::class)->dispatchSources('transfer_to_branch', $this->id) : [];
+        $sources = $this->resource->relationLoaded('details') ? app(ProductionLots::class)->dispatchSources('transfer_to_branch', $this->id) : [];
+
         return [
-            'id'              => $this->id,
+            'id' => $this->id,
             'transfer_number' => $this->transfer_number,
-            'date'            => $this->created_at ? $this->created_at->isoFormat('D MMMM YYYY, HH:mm') : \Carbon\Carbon::parse($this->date)->isoFormat('D MMMM YYYY'),
-            'status'          => $this->status,
-            'notes'           => $this->notes,
-            'branch'          => $this->whenLoaded('branch', fn () => $this->branch?->name),
-            'branch_request'  => $this->whenLoaded('branchRequest', fn () => $this->branchRequest?->request_number),
-            'creator'         => $this->whenLoaded('creator', fn () => $this->creator?->name),
-            'receiver'        => $this->whenLoaded('receiver', fn () => $this->receiver?->name),
-            'receive_notes'   => $this->receive_notes,
+            'date' => $this->date?->toDateString(),
+            'recorded_at' => $this->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s \W\I\B'),
+            'status' => $this->status,
+            'notes' => $this->notes,
+            'branch' => $this->whenLoaded('branch', fn () => $this->branch?->name),
+            'branch_request' => $this->whenLoaded('branchRequest', fn () => $this->branchRequest?->request_number),
+            'creator' => $this->whenLoaded('creator', fn () => $this->creator?->name),
+            'receiver' => $this->whenLoaded('receiver', fn () => $this->receiver?->name),
+            'receive_notes' => $this->receive_notes,
             'receive_kendala' => $this->receive_kendala,
 
             'details' => $this->whenLoaded('details', fn () => $this->details->map(fn ($d) => [
                 'production_lots' => $sources[$d->id] ?? [],
-                'id'                => $d->id,
-                'product'           => $d->product?->name ?? '-',
-                'product_code'      => $d->product?->code ?? '-',
-                'quantity'          => (int) $d->quantity,
+                'id' => $d->id,
+                'product' => $d->product?->name ?? '-',
+                'product_code' => $d->product?->code ?? '-',
+                'quantity' => (int) $d->quantity,
                 'received_quantity' => $d->received_quantity !== null ? (int) $d->received_quantity : null,
-                'kondisi'           => $d->kondisi,
-                'unit'              => $d->unit?->abbreviation ?? 'PCS',
+                'kondisi' => $d->kondisi,
+                'unit' => $d->unit?->abbreviation ?? 'PCS',
             ])),
 
             'photos' => $this->whenLoaded('photos', fn () => $this->photos->map(fn ($p) => [
-                'id'   => $p->id,
+                'id' => $p->id,
                 'path' => $p->path,
             ])),
         ];

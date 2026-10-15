@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { useOpnameActive } from '@/Components/StockOpnameAccess';
-import { todayWib } from '@/lib/date';
+import { dateTimeLocalWib } from '@/lib/date';
 import { input, button, Errors } from './Layout';
 const route = window.route;
 
@@ -14,7 +14,7 @@ export default function SessionActions({ session }) {
     const active = useOpnameActive(session.active, session);
     const [action, setAction] = useState(null);
     const later = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const form = useForm({ request_key: crypto.randomUUID(), confirmed: false, notes: '', expires_at: `${todayWib(later)}T${later.toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' })}` });
+    const form = useForm({ request_key: crypto.randomUUID(), confirmed: false, notes: '', expires_at: dateTimeLocalWib(later) });
     const reopen = !active;
     return <div className="mt-4 space-y-3">
         <p className="text-sm text-gray-500">{reopen ? 'Lanjutkan sesi yang sama. Produk yang sudah dihitung tetap tersimpan; petugas melanjutkan produk yang belum dihitung.' : 'Sudah selesai menghitung? Tutup akses petugas sekarang. Hasil SO tetap tersimpan.'}</p>

@@ -15,12 +15,30 @@ class BranchStockTransfers
 
     public function branches()
     {
-        return Branch::where('is_active', true)->where('type', 'cabang')->whereIn('entity', ['hendhys', 'jihans', 'izzi'])->orderBy('name')->get();
+        $warehouse = Branch::where('is_active', true)->where('entity', 'gudang')->orderBy('id')->value('id');
+        return Branch::where('is_active', true)->where(fn ($q) => $q
+            ->where(fn ($b) => $b->where('type', 'cabang')->whereIn('entity', ['hendhys', 'jihans', 'izzi']))
+            ->orWhere(fn ($b) => $b->where('entity', 'gudang')->where('id', $warehouse)))
+            ->orderBy('name')->get();
+    }
+
+    public function isLocation(Branch $branch): bool
+    {
+        if (! $branch->is_active) return false;
+        if ($branch->entity === 'gudang') {
+            return (int) $branch->id === (int) Branch::where('is_active', true)->where('entity', 'gudang')->orderBy('id')->value('id');
+        }
+        return $branch->type === 'cabang' && in_array($branch->entity, ['hendhys', 'jihans', 'izzi'], true);
+    }
+
+    public function hasBranchStock(string $entity): bool
+    {
+        return in_array($entity, ['hendhys', 'izzi'], true);
     }
 
     public function canOperate(User $user, Branch $branch): bool
     {
-        if ($user->hasRole('owner') || !$branch->is_active || $branch->type !== 'cabang' || !in_array($branch->entity, ['hendhys','jihans','izzi'], true)) return false;
+        if ($user->hasRole('owner') || ! $this->isLocation($branch)) return false;
         if ($user->hasRole('super_admin')) return in_array($user->entity, [$branch->entity, 'all'], true);
         return $user->entity === $branch->entity
             && $user->hasAnyRole(['admin_'.$branch->entity, 'kasir_'.$branch->entity])
@@ -70,18 +88,18 @@ class BranchStockTransfers
 
     public function stockTable(string $entity): string
     {
-        return match ($entity) { 'jihans' => 'jihans_retail_stock', 'izzi' => 'izzi_stock', 'hendhys' => 'hendhys_stock_branch', default => abort(403) };
+        return match ($entity) { 'gudang' => 'jihans_gudang_stock', 'jihans' => 'jihans_retail_stock', 'izzi' => 'izzi_stock', 'hendhys' => 'hendhys_stock_branch', default => abort(403) };
     }
     public function movementTable(string $entity): string
     {
-        return match ($entity) { 'jihans' => 'jihans_retail_stock_movements', 'izzi' => 'izzi_stock_movements', 'hendhys' => 'hendhys_stock_movements', default => abort(403) };
+        return match ($entity) { 'gudang' => 'jihans_gudang_stock_movements', 'jihans' => 'jihans_retail_stock_movements', 'izzi' => 'izzi_stock_movements', 'hendhys' => 'hendhys_stock_movements', default => abort(403) };
     }
     public function scale(string $entity): int { return $entity === 'izzi' ? 1000 : 1; }
     public function display(int|string $quantity, int $scale = 1): int|string { return $scale === 1000 ? Quantity::display($quantity) : (int) $quantity; }
     public function parse(mixed $value, int $scale, bool $zero = false): int
     {
         $milli = Quantity::parse($value, 'items', $zero);
-        if ($scale === 1 && $milli % 1000) throw ValidationException::withMessages(['items' => 'Stok Jihan’s dan Hendhys harus dalam jumlah bulat sesuai satuan master. Gunakan jumlah atau konversi yang menghasilkan satuan utuh.']);
+        if ($scale === 1 && $milli % 1000) throw ValidationException::withMessages(['items' => 'Stok Gudang, Jihan’s, dan Hendhys harus dalam jumlah bulat sesuai satuan master. Gunakan jumlah atau konversi yang menghasilkan satuan utuh.']);
         return $scale === 1000 ? $milli : intdiv($milli, 1000);
     }
     public function converted(int $quantity, object $item): int
@@ -99,7 +117,7 @@ class BranchStockTransfers
     public function stockQuery(Branch $branch, ?int $product = null)
     {
         return DB::table($this->stockTable($branch->entity))
-            ->when($branch->entity !== 'jihans', fn ($q) => $q->where('branch_id', $branch->id))
+            ->when($this->hasBranchStock($branch->entity), fn ($q) => $q->where('branch_id', $branch->id))
             ->when($product !== null, fn ($q) => $q->where('product_id', $product));
     }
     private function move(Branch $branch, object $item, int $delta, object $transfer, User $user, string $event, string $side = 'from', ?int $receipt = null): void
@@ -109,26 +127,33 @@ class BranchStockTransfers
         $unitId = $destination ? ($item->to_unit_id ?? $item->unit_id) : $item->unit_id;
         $productName = $destination ? ($item->to_product_name ?? $item->product_name) : $item->product_name;
         $unitName = $destination ? ($item->to_unit_name ?? $item->unit_name) : $item->unit_name;
+        $master = Product::withTrashed()->with('unit')->findOrFail($productId);
+        $unitId = $master->unit_id;
+        $unitName = $master->unit?->abbreviation ?? $unitName;
         $table = $this->stockTable($branch->entity);
         $row = ['product_id' => $productId, 'unit_id' => $unitId, 'quantity' => 0, 'last_updated' => now()];
-        if ($branch->entity !== 'jihans') $row['branch_id'] = $branch->id;
+        if ($this->hasBranchStock($branch->entity)) $row['branch_id'] = $branch->id;
         if ($delta > 0) DB::table($table)->insertOrIgnore($row);
         $q = $this->stockQuery($branch, $productId); $stock = $q->lockForUpdate()->first();
         if (!$stock) throw ValidationException::withMessages(['items' => 'Kartu stok '.$productName.' belum tersedia di '.$branch->name.'. Mutasi tidak disimpan; saldo stok tidak berubah.']);
         if ((int) $stock->unit_id !== (int) $unitId) {
-            $stockUnit = DB::table('master_units')->where('id', $stock->unit_id)->value('abbreviation') ?? 'tidak diketahui';
-            throw ValidationException::withMessages(['items' => 'Satuan '.$productName.' di '.$branch->name.' adalah '.$stockUnit.', sedangkan satuan mutasi adalah '.$unitName.'. Periksa master produk dan kartu stok. Mutasi tidak disimpan; saldo stok tidak berubah.']);
+            $q->update(['unit_id' => $unitId]);
         }
         $before = $branch->entity === 'izzi' ? (int) $stock->quantity : $this->parse((string) (0 + $stock->quantity), 1, true);
         $after = $before + $delta; $max = $branch->entity === 'izzi' ? Quantity::MAX : 999999999;
         if ($after < 0) throw ValidationException::withMessages(['items' => 'Stok '.$productName.' tidak cukup. Tersedia '.$this->display($before, $this->scale($branch->entity)).' '.$unitName.'.']);
         if ($after > $max) throw ValidationException::withMessages(['items' => 'Saldo tujuan melebihi batas yang diizinkan.']);
+        if ($branch->entity === 'gudang') {
+            $lots = app(ProductionLots::class);
+            if ($delta < 0) $lots->debit('jihans', $productId, $unitId, $before, -$delta, 'branch_transfer', $transfer->id, $user->id, null, $item->id);
+            else $lots->credit('jihans', $productId, $unitId, $before, $delta, 'branch_transfer', $transfer->id);
+        }
         $q->update(['quantity' => $after, 'last_updated' => now()]);
         $movement = ['product_id' => $productId, 'source' => 'adjustment', 'reference_id' => $receipt ?? $transfer->id,
             'branch_transfer_id' => $transfer->id, 'branch_transfer_item_id' => $item->id, 'branch_transfer_side' => $side,
             'type' => $delta < 0 ? 'out' : 'in', 'quantity' => abs($delta), 'quantity_before' => $before, 'quantity_after' => $after,
             'notes' => "{$event} {$transfer->number}: {$transfer->from_branch_name} → {$transfer->to_branch_name}", 'created_by' => $user->id, 'created_at' => now()];
-        if ($branch->entity !== 'jihans') $movement['branch_id'] = $branch->id;
+        if ($this->hasBranchStock($branch->entity)) $movement['branch_id'] = $branch->id;
         if ($branch->entity === 'izzi') { $movement['unit_id'] = $unitId; $movement['actor_name'] = $user->name; }
         DB::table($this->movementTable($branch->entity))->insert($movement);
     }
@@ -174,8 +199,8 @@ class BranchStockTransfers
         $from = Branch::findOrFail($data['from_branch_id']);
         $to = Branch::findOrFail($data['to_branch_id']);
         abort_unless($this->canOperate($user, $from), 403, 'Anda hanya boleh mengirim dari cabang yang Anda kelola.');
-        if (!$to->is_active || $to->type !== 'cabang' || !in_array($to->entity, ['hendhys','jihans','izzi'], true) || $to->id === $from->id) {
-            throw ValidationException::withMessages(['to_branch_id' => 'Pilih cabang aktif Jihan’s, Hendhys, atau Izzi yang berbeda dari asal.']);
+        if (! $this->isLocation($to) || $to->id === $from->id) {
+            throw ValidationException::withMessages(['to_branch_id' => 'Pilih Gudang atau cabang aktif Jihan’s, Hendhys, atau Izzi yang berbeda dari asal.']);
         }
         $items = collect($data['items'])->map(fn ($i) => [
             'product_id' => (int) $i['product_id'], 'quantity' => $this->parse($i['quantity'], $this->scale($from->entity)), 'notes' => trim($i['notes'] ?? ''),
@@ -204,8 +229,8 @@ class BranchStockTransfers
             ]);
             $t = DB::table('branch_stock_transfers')->find($id);
             foreach ($items as $i) {
-                $product = Product::with('unit')->where('status', 'active')->findOrFail($i['product_id']);
-                $destination = Product::with('unit')->where('status', 'active')->findOrFail($i['to_product_id']);
+                $product = Product::with('unit')->where('status', 'active')->lockForUpdate()->findOrFail($i['product_id']);
+                $destination = Product::with('unit')->where('status', 'active')->lockForUpdate()->findOrFail($i['to_product_id']);
                 if ($to->entity === 'izzi' && !DB::table('izzi_ingredients')->where('product_id', $destination->id)->exists()) throw ValidationException::withMessages(['items' => 'Pilih bahan tujuan yang terdaftar pada Bahan Izzi Kebab. Barang asal tetap memakai master dan satuan asalnya.']);
                 if ($from->entity === 'izzi' && !DB::table('izzi_ingredients')->where('product_id', $product->id)->exists()) throw ValidationException::withMessages(['items' => 'Bahan asal belum terdaftar di Izzi.']);
                 if ((int) $destination->unit_id !== (int) $product->unit_id && !$i['explicit_conversion']) throw ValidationException::withMessages(['items' => 'Satuan asal dan tujuan berbeda. Isi jumlah acuan asal dan jumlah setara tujuan secara jelas.']);
@@ -247,7 +272,7 @@ class BranchStockTransfers
             $to = Branch::findOrFail($t->to_branch_id);
             $canRecord = $afterReceipt && $t->recording_mode === 'after_receipt' && (int) $t->sent_by === (int) $user->id
                 && $this->canOperate($user, Branch::findOrFail($t->from_branch_id));
-            abort_unless($to->entity === $t->to_entity && $to->is_active && $to->type === 'cabang'
+            abort_unless($to->entity === $t->to_entity && $this->isLocation($to)
                 && ($canRecord || (!$afterReceipt && $this->canOperate($user, $to))), 403, 'Hanya petugas berwenang yang boleh mencatat penerimaan.');
             $old = DB::table('branch_stock_transfer_receipts')->where('request_key', $data['request_key'])->first();
             if ($old) return $old->id;

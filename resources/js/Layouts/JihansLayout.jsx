@@ -41,7 +41,7 @@ export default function JihansLayout({ pageTitle, children }) {
             { name: 'Terima dari Hendhys Produksi', path: route('jihans.transfer-from-hendhys.index') },
         ]));
         const outgoing = [];
-        if (!isOwner) outgoing.push({ name: 'Mutasi Stok Antar Cabang', path: route('branch-transfers.index') });
+        if (!isOwner) outgoing.push({ name: 'Mutasi Stok Cabang & Gudang', path: route('branch-transfers.index') });
         outgoing.push(
             { name: 'Kembalikan Barang ke Gudang', path: route('jihans.returns-to-gudang.index') },
             { name: 'Kembalikan ke Hendhys Produksi', path: route('jihans.returns-to-hendhys.index') },

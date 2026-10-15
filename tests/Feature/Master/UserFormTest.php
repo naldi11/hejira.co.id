@@ -56,11 +56,12 @@ class UserFormTest extends TestCase
                 ->where('roles', fn ($roles) => ! in_array('owner', $roles->all(), true))
                 ->has('role_descriptions', 8)
                 ->where('role_descriptions', fn ($roles) => $roles->every(fn ($role) => ! empty($role['label']) && ! empty($role['description']) && ! empty($role['can']) && ! empty($role['cannot'])))
-                ->has('branches', 1)
-                ->where('branches.0.id', $branch->id)
-                ->where('branches.0.type', 'pusat')
-                ->where('branches.0.code', 'HB-01')
-                ->where('branches.0.is_active', true));
+                ->has('branches', 2)
+                ->where('branches.0.entity', 'gudang')
+                ->where('branches.1.id', $branch->id)
+                ->where('branches.1.type', 'pusat')
+                ->where('branches.1.code', 'HB-01')
+                ->where('branches.1.is_active', true));
     }
 
     public function test_super_admin_can_be_created_for_all_units_without_branch(): void
@@ -109,10 +110,11 @@ class UserFormTest extends TestCase
 
         $this->actingAs($admin)->get(route('master.users.edit', $target))->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Master/Users/Form')
-                ->has('branches', 1)
-                ->where('branches.0.id', $old->id)
-                ->where('branches.0.name', 'Hendhys Pusat')
-                ->where('branches.0.is_active', false));
+                ->has('branches', 2)
+                ->where('branches.0.entity', 'gudang')
+                ->where('branches.1.id', $old->id)
+                ->where('branches.1.name', 'Hendhys Pusat')
+                ->where('branches.1.is_active', false));
     }
 
     public function test_gudang_and_all_units_reject_branch_placement(): void

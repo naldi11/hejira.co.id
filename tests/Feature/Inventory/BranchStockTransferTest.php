@@ -170,7 +170,8 @@ class BranchStockTransferTest extends TestCase
         $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertForbidden();
         $this->post(route('branch-transfers.receive', $id), $this->receiveData($id, 7))->assertForbidden();
         $this->post(route('branch-transfers.cancel', $id), ['reason' => 'Pengiriman salah.', 'confirmed' => true])->assertForbidden();
-        $this->actingAs($this->user('super_admin', 'gudang'))->get(route('branch-transfers.create'))->assertForbidden();
+        $this->actingAs($this->user('super_admin', 'gudang'))->get(route('branch-transfers.create'))->assertOk();
+        $this->get(route('branch-transfers.create', ['from_branch_id' => $a->id]))->assertForbidden();
         $this->actingAs($this->user('owner'))->get(route('branch-transfers.index'))->assertForbidden();
         $this->get(route('branch-transfers.create'))->assertForbidden();
         $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertForbidden();
@@ -368,19 +369,20 @@ class BranchStockTransferTest extends TestCase
         $this->assertDatabaseCount('branch_stock_transfers', 0);
     }
 
-    public function test_completed_input_rolls_back_credit_and_daily_sequence_if_destination_unit_is_wrong(): void
+    public function test_failed_input_rolls_back_then_destination_card_follows_the_master_unit(): void
     {
         $a = $this->branch(); $b = $this->branch(); $p = $this->product(); $this->stock($a, $p); $this->stock($b, $p, 5);
         $wrong = Unit::create(['name' => 'Kotak', 'abbreviation' => 'BOX', 'entity_scope' => 'all']);
         DB::table('hendhys_stock_branch')->where('branch_id', $b->id)->update(['unit_id' => $wrong->id]);
         $this->actingAs($this->user('kasir_hendhys', 'hendhys', $a));
         $data = $this->data($a, $b, $p);
-        $this->post(route('branch-transfers.store'), $data)->assertSessionHasErrors('items');
+        $tooMuch = $data; $tooMuch['items'][0]['quantity'] = 21;
+        $this->post(route('branch-transfers.store'), $tooMuch)->assertSessionHasErrors('items');
         foreach (['branch_stock_transfers', 'branch_stock_transfer_receipts', 'branch_stock_transfer_items', 'branch_transfer_daily_sequences', 'hendhys_stock_movements'] as $table) $this->assertDatabaseCount($table, 0);
         $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $a->id, 'quantity' => 20]);
-        DB::table('hendhys_stock_branch')->where('branch_id', $b->id)->update(['unit_id' => $p->unit_id]);
         $this->post(route('branch-transfers.store'), $data)->assertSessionHas('success');
         $this->assertDatabaseHas('branch_stock_transfers', ['number' => 'MUT-20261012-0001']);
+        $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $b->id, 'unit_id' => $p->unit_id, 'quantity' => 12]);
     }
 
     public function test_mutation_uses_product_master_unit_for_hendhys_and_jihans_without_defaulting_to_pcs(): void
@@ -402,7 +404,7 @@ class BranchStockTransferTest extends TestCase
         }
     }
 
-    public function test_wrong_source_unit_is_visible_in_form_and_cannot_change_stocks_even_with_direct_post(): void
+    public function test_old_source_card_unit_is_normalized_to_the_product_master(): void
     {
         $pack = Unit::create(['name' => 'Kemasan', 'abbreviation' => 'PACK', 'entity_scope' => 'all']);
         foreach (['hendhys', 'jihans'] as $entity) {
@@ -411,14 +413,13 @@ class BranchStockTransferTest extends TestCase
             DB::table($table)->where('product_id', $p->id)->update(['unit_id' => $pack->id]);
             $this->actingAs($this->user('kasir_'.$entity, $entity, $a));
             $this->get(route('branch-transfers.create'))->assertInertia(fn (Assert $page) => $page
-                ->where('products.0.unit', 'PCS')->where('products.0.stock_unit', 'PACK')->where('products.0.unit_matches', false)->where('products.0.quantity', 20));
-            $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertSessionHasErrors('items')
-                ->assertSessionHas('errors', fn ($errors) => str_contains($errors->first('items'), $a->name)
-                    && str_contains($errors->first('items'), 'PACK') && str_contains($errors->first('items'), 'PCS'));
-            $this->assertDatabaseHas($table, ['product_id' => $p->id, 'unit_id' => $pack->id, 'quantity' => 20]);
-            $this->assertDatabaseMissing('hendhys_stock_branch', ['branch_id' => $b->id, 'product_id' => $p->id]);
+                ->where('products.0.unit', 'PCS')->where('products.0.stock_unit', 'PCS')->where('products.0.unit_matches', true)->where('products.0.quantity', 20));
+            $this->post(route('branch-transfers.store'), $this->data($a, $b, $p))->assertSessionHasNoErrors()->assertSessionHas('success');
+            $this->assertDatabaseHas($table, ['product_id' => $p->id, 'unit_id' => $p->unit_id, 'quantity' => 13]);
+            $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $b->id, 'product_id' => $p->id, 'unit_id' => $p->unit_id, 'quantity' => 7]);
         }
-        foreach (['branch_stock_transfers', 'branch_stock_transfer_receipts', 'branch_stock_transfer_items', 'branch_transfer_daily_sequences', 'hendhys_stock_movements', 'jihans_retail_stock_movements'] as $table) $this->assertDatabaseCount($table, 0);
+        $this->assertDatabaseCount('branch_stock_transfers', 2);
+        $this->assertDatabaseCount('branch_stock_transfer_receipts', 2);
     }
 
     public function test_history_searches_snapshots_receivers_items_and_notes_without_leaking_other_branches(): void

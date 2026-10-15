@@ -3,9 +3,10 @@ import { useState } from 'react';
 import OwnerLayout from '@/Layouts/OwnerLayout';
 import Icon from '@/Components/Icon';
 import EmptyState from '@/Components/EmptyState';
+import InputError from '@/Components/InputError';
 import { formatRupiah, formatQty } from '@/lib/format';
 
-export default function OwnerReports({ reportData, filters }) {
+export default function OwnerReports({ reportData, filters, errors = {} }) {
     const [form, setForm] = useState({
         unit_bisnis: filters.unit_bisnis ?? 'all',
         periode: filters.periode ?? 'bulanan',
@@ -26,13 +27,15 @@ export default function OwnerReports({ reportData, filters }) {
     const handleExport = (format) => {
         const queryParams = new URLSearchParams({
             format,
-            unit_bisnis: form.unit_bisnis,
-            periode: form.periode,
-            date_from: form.date_from || '',
-            date_to: form.date_to || '',
+            unit_bisnis: filters.unit_bisnis ?? 'all',
+            periode: filters.periode ?? 'bulanan',
+            date_from: filters.date_from || '',
+            date_to: filters.date_to || '',
         }).toString();
 
-        window.open(route('owner.reports.export') + '?' + queryParams, '_blank');
+        const url = route('owner.reports.export') + '?' + queryParams;
+        if (format === 'pdf') window.open(url, '_blank');
+        else window.location.href = url;
     };
 
     // Calculate chart details
@@ -87,6 +90,7 @@ export default function OwnerReports({ reportData, filters }) {
                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                 className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white min-w-[150px] cursor-pointer"
                             />
+                            <InputError message={errors.date_from} />
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-semibold text-slate-500 dark:text-gray-400">Sampai Tanggal</label>
@@ -97,6 +101,7 @@ export default function OwnerReports({ reportData, filters }) {
                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                 className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 outline-none dark:border-gray-700 bg-white dark:bg-gray-850 dark:text-white min-w-[150px] cursor-pointer"
                             />
+                            <InputError message={errors.date_to} />
                         </div>
                         <button type="submit" className="px-5 py-1.8 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg">Terapkan Filter</button>
                     </form>
@@ -182,7 +187,13 @@ export default function OwnerReports({ reportData, filters }) {
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                         <h3 className="font-bold text-slate-800 dark:text-white/95 text-lg flex items-center gap-2"><Icon name="table_view" className="text-teal-500" /> Rincian Data Omset</h3>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => handleExport('xlsx')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg transition"
+                            >
+                                <Icon name="table_view" className="text-[16px]" /> Ekspor Excel (.xlsx)
+                            </button>
                             <button 
                                 onClick={() => handleExport('pdf')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-650 hover:bg-red-700 text-white rounded-lg transition"
@@ -198,6 +209,7 @@ export default function OwnerReports({ reportData, filters }) {
                         </div>
                     </div>
 
+                    <p className="mb-3 text-xs text-slate-500 dark:text-gray-400">Ekspor mengikuti filter yang sudah diterapkan, dengan tanggal dalam WIB.</p>
                     <div className="custom-scrollbar overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 dark:bg-white/[0.02] text-xs font-semibold text-slate-500 dark:text-gray-400">

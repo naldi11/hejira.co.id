@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
+import InputError from '@/Components/InputError';
 
-export default function Recap({ productTotals, filters, noFilter }) {
+export default function Recap({ productTotals, filters, noFilter, errors = {} }) {
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [periode, setPeriode] = useState(filters.periode || '');
@@ -24,11 +25,11 @@ export default function Recap({ productTotals, filters, noFilter }) {
         router.get(route('jihans.production.recap'));
     };
 
-    const handleExport = () => {
-        const params = new URLSearchParams();
-        if (dateFrom) params.append('date_from', dateFrom);
-        if (dateTo) params.append('date_to', dateTo);
-        if (periode) params.append('periode', periode);
+    const handleExport = (format) => {
+        const params = new URLSearchParams({ format });
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        if (filters.periode) params.append('periode', filters.periode);
         window.location.href = `${route('jihans.production.recap.export')}?${params.toString()}`;
     };
 
@@ -44,14 +45,24 @@ export default function Recap({ productTotals, filters, noFilter }) {
                             Laporan total produksi aktual per produk.
                         </p>
                     </div>
-                    <div>
-                        <button
-                            onClick={handleExport}
-                            className="inline-flex items-center gap-2 rounded-lg bg-success-600 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-success-700 transition-colors"
-                        >
-                            <Icon name="download" className="text-[18px]" />
-                            Export Excel
-                        </button>
+                    <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                            <button
+                                onClick={() => handleExport('xlsx')}
+                                className="inline-flex items-center gap-2 rounded-lg bg-success-600 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-success-700 transition-colors"
+                            >
+                                <Icon name="table_view" className="text-[18px]" />
+                                Ekspor Excel (.xlsx)
+                            </button>
+                            <button
+                                onClick={() => handleExport('csv')}
+                                className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 transition-colors"
+                            >
+                                <Icon name="download" className="text-[18px]" />
+                                Ekspor CSV
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-right">Ekspor mengikuti filter yang sudah diterapkan (WIB).</p>
                     </div>
                 </div>
 
@@ -83,6 +94,7 @@ export default function Recap({ productTotals, filters, noFilter }) {
                                 onChange={(e) => { setDateFrom(e.target.value); setPeriode(''); }}
                                 className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white"
                             />
+                            <InputError message={errors.date_from} className="mt-1" />
                         </div>
                         <div className="w-full sm:w-auto">
                             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sampai Tanggal</label>
@@ -92,6 +104,7 @@ export default function Recap({ productTotals, filters, noFilter }) {
                                 onChange={(e) => { setDateTo(e.target.value); setPeriode(''); }}
                                 className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white"
                             />
+                            <InputError message={errors.date_to} className="mt-1" />
                         </div>
 
                         <div className="flex gap-2 w-full sm:w-auto">

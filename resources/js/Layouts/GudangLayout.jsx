@@ -15,7 +15,7 @@ export default function GudangLayout({ title, pageTitle, children }) {
             path: route('gudang.dashboard')
         },
         {
-            name: "Mutasi Stok Antar Cabang",
+            name: "Mutasi Stok Cabang & Gudang",
             icon: <Icon name="swap_horiz" className="text-[22px]" />,
             path: route('branch-transfers.index')
         },

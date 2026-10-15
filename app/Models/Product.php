@@ -10,6 +10,15 @@ class Product extends Model
 {
     use SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::updated(function (Product $product) {
+            if ($product->wasChanged('unit_id')) {
+                app(\App\Services\ProductStockUnits::class)->synchronize($product->id, $product->unit_id);
+            }
+        });
+    }
+
     protected $table = 'master_products';
 
     protected $fillable = [

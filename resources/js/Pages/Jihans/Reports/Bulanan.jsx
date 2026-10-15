@@ -1,3 +1,4 @@
+import { endOfMonth } from '@/lib/date';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import JihansLayout from '@/Layouts/JihansLayout';
@@ -48,12 +49,7 @@ export default function ReportBulanan({ rows, filters }) {
                                         const newDateFrom = e.target.value;
                                         let newDateTo = form.date_to;
                                         if (newDateFrom) {
-                                            const from = new Date(newDateFrom);
-                                            const year = from.getFullYear();
-                                            const month = from.getMonth() + 1;
-                                            const lastDay = new Date(year, month, 0).getDate();
-                                            const formattedMonth = month.toString().padStart(2, '0');
-                                            newDateTo = `${year}-${formattedMonth}-${lastDay}`;
+                                            newDateTo = endOfMonth(newDateFrom);
                                         }
                                         setForm({...form, date_from: newDateFrom, date_to: newDateTo});
                                     }}
