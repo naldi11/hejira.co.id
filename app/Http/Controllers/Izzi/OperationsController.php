@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Izzi;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Branch, CashierShift, User};
-use App\Services\Izzi\{Access, Inventory, Quantity, Sales};
+use App\Services\Izzi\{Access, Inventory, ProductCatalogue, Quantity, Sales};
 use App\Services\StockOpname;
 use App\Support\ListPage;
 use Carbon\Carbon;
@@ -42,12 +42,12 @@ class OperationsController extends Controller
             'recent' => DB::table('izzi_sales')->where('branch_id', $id)->orderByDesc('id')->limit(5)->get()->map(fn ($s) => [...(array) $s, 'time' => $this->time($s->created_at)])]);
     }
 
-    private function stocks(int $branchId, ?string $search = null)
+    private function stocks(int $branchId, ?string $search = null, bool $allProducts = false)
     {
-        return DB::table('izzi_ingredients as i')->join('master_products as p', 'p.id', '=', 'i.product_id')->join('master_units as u', 'u.id', '=', 'p.unit_id')
-            ->leftJoin('izzi_stock as s', fn ($j) => $j->on('s.product_id', '=', 'p.id')->where('s.branch_id', $branchId))->whereNull('p.deleted_at')
-            ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', '%'.$search.'%')->orWhere('p.code', 'like', '%'.$search.'%')))
-            ->select('p.id', 'p.name', 'p.code', 'p.status', 'u.abbreviation as unit', 'i.purchase_unit', 'i.purchase_factor', DB::raw('COALESCE(s.quantity, 0) as quantity'))->orderBy('p.name');
+        return app(ProductCatalogue::class)->query($search)
+            ->leftJoin('izzi_stock as s', fn ($j) => $j->on('s.product_id', '=', 'p.id')->where('s.branch_id', $branchId))
+            ->when(!$allProducts, fn ($q) => $q->where(fn ($w) => $w->whereNotNull('i.product_id')->orWhereNotNull('s.id')))
+            ->addSelect(DB::raw('COALESCE(s.quantity, 0) as quantity'));
     }
 
     public function stock(Request $request)
@@ -73,7 +73,7 @@ class OperationsController extends Controller
     public function receiveForm(Request $request)
     {
         $this->access->manage($request->user()); $context = $this->context($request);
-        $page = $this->stocks($context['branch']['id'])->where('p.status', 'active')->simplePaginate(20);
+        $page = $this->stocks($context['branch']['id'], null, true)->where('p.status', 'active')->simplePaginate(20);
         return Inertia::render('Izzi/Receive', $context + ['catalogue' => ['page' => 1, 'has_more' => $page->hasMorePages()], 'ingredients' => $page->getCollection()->map(fn ($s) => [...(array) $s, 'purchase_factor' => Quantity::display($s->purchase_factor)]),
             'today' => now('Asia/Jakarta')->toDateString(), 'currentTime' => now('Asia/Jakarta')->format('H:i')]);
     }
@@ -83,7 +83,7 @@ class OperationsController extends Controller
         $this->access->manage($request->user());
         $data = $request->validate(['branch_id' => 'required|integer|min:1', 'request_key' => 'required|uuid', 'date' => 'required|date_format:Y-m-d|before_or_equal:'.now('Asia/Jakarta')->toDateString(),
             'time' => 'required|date_format:H:i', 'origin' => 'required|string|min:2|max:255', 'notes' => 'required|string|min:5|max:1000', 'evidence_reference' => 'nullable|string|max:255',
-            'items' => 'required|array|min:1|max:100', 'items.*.product_id' => 'required|integer|distinct|exists:izzi_ingredients,product_id', 'items.*.quantity' => 'required', 'items.*.mode' => 'required|in:base,purchase']);
+            'items' => 'required|array|min:1|max:100', 'items.*.product_id' => 'required|integer|distinct|exists:master_products,id', 'items.*.quantity' => 'required', 'items.*.mode' => 'required|in:base,purchase']);
         if (Carbon::parse($data['date'].' '.$data['time'], 'Asia/Jakarta')->gt(now())) throw ValidationException::withMessages(['time' => 'Waktu penerimaan tidak boleh di masa depan.']);
         $this->inventory->receipt($data, $request->user());
         return redirect()->route('izzi.receipts', ['branch_id' => $data['branch_id']])->with('success', 'Penerimaan tersimpan dan stok bahan bertambah.');

@@ -234,10 +234,40 @@ yang diterima pada halaman stok Gudang.
 
 ## Tutorial Izzi Kebab
 
+### Master bahan bersama dan pengisian stok Izzi
+
+Izzi menggunakan `master_products` dan `master_units` yang sama dengan Gudang,
+Jihans, dan Hendhys. Halaman **Penyesuaian Bahan & Kemasan** menampilkan produk
+yang sudah ada; halaman tersebut hanya menyimpan pengaturan kemasan Izzi,
+tanpa membuat atau mengubah kode, nama, kategori, status, maupun satuan master.
+Isi kemasan dan takaran resep ditentukan pengguna. Tanpa pengaturan kemasan,
+penerimaan menggunakan satuan master secara langsung.
+
+Untuk mengisi stok Izzi dari Gudang, gunakan **Mutasi Stok Cabang & Gudang**,
+pilih **Gudang Utama** sebagai asal dan cabang Izzi sebagai tujuan. Pilihan
+**Izzi Kebab** pada **Kirim Barang dari Gudang** membuka formulir mutasi
+tersebut. Catat setelah barang diterima: penyimpanan mengurangi Gudang dan
+menambah saldo cabang Izzi dalam satu transaksi. Produk tujuan memakai ID
+serta satuan master yang sama; pendaftaran bahan Izzi terpisah tidak diperlukan.
+
+Pada **Menu, Harga & Gramasi**, pilih produk yang sama dengan yang diterima
+dari Gudang. Isi takaran per menu dalam satuan master yang tampil. Contoh:
+master KG dengan pemakaian 40 gram ditulis `0.04`; untuk master PACK, pengguna
+menentukan sendiri bagian PACK yang dipakai untuk satu menu. Resep dan produk
+lama tetap disimpan agar pengguna dapat menyesuaikannya tanpa padanan otomatis.
+
+**Terima Bahan** digunakan untuk penerimaan langsung dari pemasok. Penerimaan
+tersebut menambah stok Izzi saja. Barang dari Gudang dicatat melalui mutasi
+agar saldo kedua lokasi ikut berubah.
+
+`SharedProductStockTest` memverifikasi alur Gudang → stok Izzi → resep →
+penjualan → pembatalan → stok opname tanpa bahan terpisah, serta pengaturan
+kemasan dinamis tanpa perubahan pada master produk.
+
 Tutorial untuk pemula terdiri dari 41 slide dan tersedia dalam dua format:
 
-- [PowerPoint yang dapat diedit](output/tutorial-izzi/Panduan_Pemula_Izzi_Kebab_Lengkap.pptx)
-- [PDF untuk dibaca dan dibagikan](output/tutorial-izzi/Panduan_Pemula_Izzi_Kebab.pdf)
+- [PowerPoint yang dapat diedit](output/tutorial-izzi/Panduan_Pemula_Izzi_Kebab_Master_Bersama.pptx)
+- [PDF untuk dibaca dan dibagikan](output/tutorial-izzi/Panduan_Pemula_Izzi_Kebab_Master_Bersama.pdf)
 
 Tutorial menggunakan screenshot aplikasi dengan data latihan yang terpisah
 dari database operasional. Materinya mencakup admin dan kasir: bahan, satuan

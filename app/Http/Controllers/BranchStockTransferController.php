@@ -104,7 +104,6 @@ class BranchStockTransferController extends Controller
     {
         return DB::table('master_products as p')->join('master_units as u', 'u.id', '=', 'p.unit_id')
             ->whereNull('p.deleted_at')->where('p.status', 'active')
-            ->when($b->entity === 'izzi', fn ($q) => $q->whereExists(fn ($s) => $s->selectRaw('1')->from('izzi_ingredients as i')->whereColumn('i.product_id','p.id')))
             ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name','like','%'.$search.'%')->orWhere('p.code','like','%'.$search.'%')))
             ->orderBy('p.name')->orderBy('p.id')->select('p.id','p.name','p.code','p.unit_id','u.abbreviation as unit');
     }

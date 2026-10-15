@@ -188,7 +188,6 @@ class StockOpname
             if ($izzi) {
                 $data['expected_quantity'] = \App\Services\Izzi\Quantity::parse($data['expected_quantity'], 'expected_quantity', true);
                 $data['quantity'] = \App\Services\Izzi\Quantity::parse($data['quantity'], 'quantity', true);
-                if (!DB::table('izzi_ingredients')->where('product_id', $data['product_id'])->exists()) throw ValidationException::withMessages(['product_id' => 'Bahan tidak terdaftar di Izzi.']);
             }
             $product = Product::with('unit')->findOrFail($data['product_id']);
             $previous = DB::table('stock_opname_counts')->where('session_id', $id)->where('product_id', $product->id)->first();

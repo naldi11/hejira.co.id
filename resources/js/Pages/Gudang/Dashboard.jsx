@@ -13,7 +13,7 @@ const STAT_CARDS = [
 ];
 
 const QUICK_ACTIONS = [
-    { label: 'Mutasi Stok Antar Cabang', icon: 'swap_horiz', route: 'branch-transfers.index', desc: 'Lihat pengiriman dan penerimaan antar cabang' },
+    { label: 'Mutasi Stok Cabang & Gudang', icon: 'swap_horiz', route: 'branch-transfers.index', desc: 'Lihat perpindahan stok cabang dan Gudang' },
     { label: 'Stok Opname', icon: 'inventory', route: 'stock-opname.index', desc: 'Hitung stok setelah Owner membuka sesi' },
     { label: 'Buat PO', icon: 'add_shopping_cart', route: 'gudang.po.create', desc: 'Pesan stok barang baru ke supplier' },
     { label: 'Terima Barang', icon: 'input', route: 'gudang.receiving.create', desc: 'Verifikasi & catat kiriman supplier' },

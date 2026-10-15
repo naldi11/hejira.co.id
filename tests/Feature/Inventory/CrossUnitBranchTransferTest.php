@@ -35,15 +35,15 @@ class CrossUnitBranchTransferTest extends TestCase
         }
         $this->assertDatabaseCount('branch_stock_transfers',9);$this->assertDatabaseCount('branch_stock_transfer_receipts',9);
     }
-    public function test_package_to_izzi_grams_and_reverse_use_an_exact_snapshot_ratio(): void
+    public function test_other_business_units_preserve_explicit_cross_product_conversion(): void
     {
-        $a=$this->branch('hendhys');$b=$this->branch('izzi');$pack=$this->product('PACK',false);$gram=$this->product('gram');$this->stock($a,$pack,20);$this->stock($b,$gram,1000);$sa=$this->user('super_admin');
+        $a=$this->branch('hendhys');$b=$this->branch('jihans');$pack=$this->product('PACK',false);$gram=$this->product('gram');$this->stock($a,$pack,20);$this->stock($b,$gram,1000);$sa=$this->user('super_admin');
         $data=$this->data($a,$b,$pack,2);$data['items'][0]+=['to_product_id'=>$gram->id,'conversion_from'=>1,'conversion_to'=>2000];
         $this->as($sa)->post(route('branch-transfers.store'),$data)->assertSessionHasNoErrors()->assertSessionHas('success');$id=DB::table('branch_stock_transfers')->value('id');
-        $this->assertSame(18,$this->qty($a,$pack));$this->assertSame(5000000,$this->qty($b,$gram));
-        $this->get(route('branch-transfers.show',$id))->assertInertia(fn(Assert $v)=>$v->where('items.0.destination_quantity','4000')->where('items.0.conversion_from','1')->where('items.0.conversion_to','2000')->where('stockChanges.1.unit','gram')->where('stockChanges.1.before','1000')->where('stockChanges.1.after','5000'));
+        $this->assertSame(18,$this->qty($a,$pack));$this->assertSame(5000,$this->qty($b,$gram));
+        $this->get(route('branch-transfers.show',$id))->assertInertia(fn(Assert $v)=>$v->where('items.0.destination_quantity',4000)->where('items.0.conversion_from','1')->where('items.0.conversion_to','2000')->where('stockChanges.1.unit','gram')->where('stockChanges.1.before',1000)->where('stockChanges.1.after',5000));
         $reverse=$this->data($b,$a,$gram,2000);$reverse['items'][0]+=['to_product_id'=>$pack->id,'conversion_from'=>2000,'conversion_to'=>1];$this->post(route('branch-transfers.store'),$reverse)->assertSessionHasNoErrors()->assertSessionHas('success');
-        $this->assertSame(19,$this->qty($a,$pack));$this->assertSame(3000000,$this->qty($b,$gram));
+        $this->assertSame(19,$this->qty($a,$pack));$this->assertSame(3000,$this->qty($b,$gram));
         $this->get(route('branch-transfers.history',['search'=>$gram->code]))->assertInertia(fn(Assert $v)=>$v->has('transfers.data',2));
     }
     public function test_decimal_izzi_transfers_are_exact_and_do_not_truncate(): void
@@ -54,16 +54,16 @@ class CrossUnitBranchTransferTest extends TestCase
         $this->get(route('branch-transfers.show',$id))->assertInertia(fn(Assert $v)=>$v->where('items.0.quantity','0.125')->where('stockChanges.1.delta','0.125'));
         $data['request_key']=(string)Str::uuid();$data['items'][0]['quantity']='0.0001';$this->post(route('branch-transfers.store'),$data)->assertSessionHasErrors('items.0.quantity');$this->assertSame(125,$this->qty($b,$p));
     }
-    public function test_unsafe_conversion_missing_ingredient_or_wrong_card_roll_back_all_balances(): void
+    public function test_unsafe_conversion_and_wrong_card_handling_for_other_business_units(): void
     {
-        $a=$this->branch('hendhys');$b=$this->branch('izzi');$pack=$this->product('PACK',false);$gram=$this->product('gram');$this->stock($a,$pack,10);$sa=$this->user('super_admin');$base=$this->data($a,$b,$pack);
-        $this->as($sa)->post(route('branch-transfers.store'),$base)->assertSessionHasErrors('items');
+        $a=$this->branch('hendhys');$b=$this->branch('jihans');$pack=$this->product('PACK',false);$gram=$this->product('gram');$this->stock($a,$pack,10);$sa=$this->user('super_admin');$base=$this->data($a,$b,$pack);
+        $this->as($sa);
         $data=$base;$data['items'][0]['to_product_id']=$gram->id;$this->post(route('branch-transfers.store'),$data)->assertSessionHasErrors('items');
         $data['items'][0]+=['conversion_from'=>3,'conversion_to'=>1];$data['items'][0]['quantity']=1;$this->post(route('branch-transfers.store'),$data)->assertSessionHasErrors('items');
-        $this->assertDatabaseCount('branch_stock_transfers',0);$this->assertDatabaseCount('izzi_stock',0);$this->assertSame(10,$this->qty($a,$pack));
-        $data['items'][0]['conversion_from']=1;$data['items'][0]['conversion_to']=2000;$this->stock($b,$gram,1);$wrong=$this->product('PCS');DB::table('izzi_stock')->where('branch_id',$b->id)->update(['unit_id'=>$wrong->unit_id]);
-        $this->post(route('branch-transfers.store'),$data)->assertSessionHasNoErrors();$this->assertSame(9,$this->qty($a,$pack));$this->assertSame(2001000,$this->qty($b,$gram));$this->assertDatabaseCount('branch_stock_transfer_receipts',1);
-        $this->assertDatabaseHas('izzi_stock',['branch_id'=>$b->id,'product_id'=>$gram->id,'unit_id'=>$gram->unit_id]);
+        $this->assertDatabaseCount('branch_stock_transfers',0);$this->assertDatabaseCount('jihans_retail_stock',0);$this->assertSame(10,$this->qty($a,$pack));
+        $data['items'][0]['conversion_from']=1;$data['items'][0]['conversion_to']=2000;$this->stock($b,$gram,1);$wrong=$this->product('PCS');DB::table('jihans_retail_stock')->update(['unit_id'=>$wrong->unit_id]);
+        $this->post(route('branch-transfers.store'),$data)->assertSessionHasNoErrors();$this->assertSame(9,$this->qty($a,$pack));$this->assertSame(2001,$this->qty($b,$gram));$this->assertDatabaseCount('branch_stock_transfer_receipts',1);
+        $this->assertDatabaseHas('jihans_retail_stock',['product_id'=>$gram->id,'unit_id'=>$gram->unit_id]);
     }
     public function test_izzi_to_jihans_insufficient_stock_precision_and_permissions_are_enforced(): void
     {

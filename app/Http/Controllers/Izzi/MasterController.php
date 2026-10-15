@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Izzi;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Product, ProductCategory, Unit};
+use App\Models\Product;
 use App\Services\ActivityLogService;
-use App\Services\Izzi\{Access, Quantity};
+use App\Services\Izzi\{Access, ProductCatalogue, Quantity};
 use App\Support\ListPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,14 +14,11 @@ use Inertia\Inertia;
 
 class MasterController extends Controller
 {
-    public const UNITS = ['gram', 'ml', 'pcs', 'bungkus', 'sachet', 'porsi', 'potong', 'sdm', 'set'];
     public function __construct(private Access $access, private ActivityLogService $logger) {}
 
     public function ingredientQuery(?string $search = null)
     {
-        return DB::table('izzi_ingredients as i')->join('master_products as p', 'p.id', '=', 'i.product_id')->join('master_units as u', 'u.id', '=', 'p.unit_id')
-            ->whereNull('p.deleted_at')->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', '%'.$search.'%')->orWhere('p.code', 'like', '%'.$search.'%')))
-            ->select('p.id', 'p.name', 'p.code', 'p.status', 'u.abbreviation as unit', 'i.purchase_unit', 'i.purchase_factor')->orderBy('p.name')->orderBy('p.id');
+        return app(ProductCatalogue::class)->query($search);
     }
 
     public function ingredients(Request $request)
@@ -35,29 +32,29 @@ class MasterController extends Controller
         }
         $rows = ListPage::paginate($query, $request);
         $rows->through(fn ($p) => [...(array) $p, 'purchase_factor' => Quantity::display($p->purchase_factor)]);
-        return Inertia::render('Izzi/Ingredients', ['ingredients' => $rows, 'filters' => $request->only('search', 'per_page'), 'units' => self::UNITS]);
+        return Inertia::render('Izzi/Ingredients', ['ingredients' => $rows, 'filters' => $request->only('search', 'per_page')]);
     }
 
     public function saveIngredient(Request $request, ?int $product = null)
     {
         $this->access->manage($request->user());
-        $data = $request->validate(['name' => 'required|string|max:200', 'code' => ['required', 'string', 'max:20', Rule::unique('master_products', 'code')->ignore($product)],
-            'unit' => ['required', Rule::in(self::UNITS)], 'purchase_unit' => 'required|string|max:40', 'purchase_factor' => 'required', 'is_active' => 'required|boolean']);
+        $data = $request->validate([
+            'product_id' => [Rule::requiredIf($product === null), 'integer', Rule::exists('master_products', 'id')->whereNull('deleted_at')],
+            'name' => 'prohibited', 'code' => 'prohibited', 'unit' => 'prohibited', 'unit_id' => 'prohibited', 'is_active' => 'prohibited',
+            'purchase_unit' => 'required|string|max:40', 'purchase_factor' => 'required',
+        ]);
+        if ($product !== null && isset($data['product_id']) && $product !== (int) $data['product_id']) {
+            throw ValidationException::withMessages(['product_id' => 'Produk harus sama dengan produk yang sedang disesuaikan.']);
+        }
+        $product = $product ?? (int) $data['product_id'];
         $factor = Quantity::parse($data['purchase_factor'], 'purchase_factor');
         DB::transaction(function () use ($data, $factor, $product, $request) {
-            $unit = Unit::firstOrCreate(['name' => 'Izzi '.$data['unit'], 'entity_scope' => 'izzi'], ['abbreviation' => $data['unit']]);
-            $category = ProductCategory::firstOrCreate(['name' => 'Bahan Izzi Kebab', 'entity_scope' => 'all']);
-            $old = $product ? DB::table('izzi_ingredients')->where('product_id', $product)->lockForUpdate()->first() : null;
-            abort_if($product && !$old, 404);
-            $p = $product ? Product::whereKey($product)->lockForUpdate()->firstOrFail() : new Product();
-            if ($old && (int) $p->unit_id !== (int) $unit->id) throw ValidationException::withMessages(['unit' => 'Satuan dasar bahan sudah ditetapkan. Buat bahan baru bila satuan dasarnya berbeda agar resep dan riwayat tetap benar.']);
-            $p->fill(['name' => trim($data['name']), 'code' => trim($data['code']), 'unit_id' => $unit->id, 'category_id' => $category->id,
-                'entity_scope' => 'izzi', 'source_type' => 'purchased', 'product_type' => 'INV', 'status' => $data['is_active'] ? 'active' : 'discontinued', 'created_by' => $old ? $p->created_by : $request->user()->id]);
-            $p->save();
+            $p = Product::with('unit')->whereKey($product)->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $old = DB::table('izzi_ingredients')->where('product_id', $product)->lockForUpdate()->first();
             DB::table('izzi_ingredients')->updateOrInsert(['product_id' => $p->id], ['purchase_unit' => trim($data['purchase_unit']), 'purchase_factor' => $factor, 'updated_at' => now(), ...(!$old ? ['created_at' => now()] : [])]);
-            $this->logger->log($old ? 'update' : 'create', 'izzi_ingredient', $p->name.' · '.$data['unit'], $p, $old ? (array) $old : null, ['purchase_factor' => $data['purchase_factor']]);
+            $this->logger->log($old ? 'update' : 'create', 'izzi_ingredient', $p->name.' · '.$p->unit->abbreviation, $p, $old ? (array) $old : null, ['purchase_unit' => trim($data['purchase_unit']), 'purchase_factor' => $data['purchase_factor']]);
         });
-        return redirect()->route('izzi.ingredients')->with('success', 'Bahan dan konversi kemasan tersimpan.');
+        return redirect()->route('izzi.ingredients')->with('success', 'Penyesuaian kemasan Izzi tersimpan. Produk dan satuan tetap mengikuti master.');
     }
 
     public function menus(Request $request)
@@ -85,7 +82,7 @@ class MasterController extends Controller
         $this->access->manage($request->user());
         $data = $request->validate(['code' => ['required', 'string', 'max:40', Rule::unique('izzi_menus', 'code')->ignore($menu)], 'name' => 'required|string|max:200',
             'category' => 'required|string|max:80', 'price' => 'required|integer|min:0|max:1000000000', 'is_active' => 'required|boolean',
-            'recipe' => 'required|array|min:1|max:100', 'recipe.*.product_id' => 'required|integer|distinct|exists:izzi_ingredients,product_id', 'recipe.*.quantity' => 'required']);
+            'recipe' => 'required|array|min:1|max:100', 'recipe.*.product_id' => 'required|integer|distinct|exists:master_products,id', 'recipe.*.quantity' => 'required']);
         $recipe = collect($data['recipe'])->sortBy('product_id')->map(fn ($i) => ['product_id' => (int) $i['product_id'], 'quantity' => Quantity::parse($i['quantity'], 'recipe')])->values()->all();
         $id = DB::transaction(function () use ($data, $recipe, $menu, $request) {
             $old = $menu ? DB::table('izzi_menus')->where('id', $menu)->lockForUpdate()->first() : null; abort_if($menu && !$old, 404);

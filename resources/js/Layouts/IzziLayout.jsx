@@ -18,6 +18,6 @@ export default function IzziLayout({ children, pageTitle = 'Izzi Kebab' }) {
     if (roles.includes('admin_izzi')) stock.unshift({ name: 'Terima Bahan', path: route('izzi.receipts.create') });
     stock.unshift({ name:'Mutasi Stok Cabang & Gudang', path:route('branch-transfers.index') });
     navItems.push(group('Stok & Penerimaan', 'inventory_2', stock));
-    if (roles.includes('admin_izzi')) navItems.push(group('Menu & Resep', 'restaurant_menu', [{ name: 'Bahan & Satuan Kemasan', path: route('izzi.ingredients') }, { name: 'Menu, Harga & Gramasi', path: route('izzi.menus') }]));
+    if (roles.includes('admin_izzi')) navItems.push(group('Menu & Resep', 'restaurant_menu', [{ name: 'Penyesuaian Bahan & Kemasan', path: route('izzi.ingredients') }, { name: 'Menu, Harga & Gramasi', path: route('izzi.menus') }]));
     return <AppLayout navItems={navItems} pageTitle={pageTitle}><FlashToasts />{children}</AppLayout>;
 }

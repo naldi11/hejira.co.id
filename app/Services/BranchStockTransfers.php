@@ -231,8 +231,9 @@ class BranchStockTransfers
             foreach ($items as $i) {
                 $product = Product::with('unit')->where('status', 'active')->lockForUpdate()->findOrFail($i['product_id']);
                 $destination = Product::with('unit')->where('status', 'active')->lockForUpdate()->findOrFail($i['to_product_id']);
-                if ($to->entity === 'izzi' && !DB::table('izzi_ingredients')->where('product_id', $destination->id)->exists()) throw ValidationException::withMessages(['items' => 'Pilih bahan tujuan yang terdaftar pada Bahan Izzi Kebab. Barang asal tetap memakai master dan satuan asalnya.']);
-                if ($from->entity === 'izzi' && !DB::table('izzi_ingredients')->where('product_id', $product->id)->exists()) throw ValidationException::withMessages(['items' => 'Bahan asal belum terdaftar di Izzi.']);
+                if (($to->entity === 'izzi' || $from->entity === 'izzi') && $destination->id !== $product->id) {
+                    throw ValidationException::withMessages(['items' => 'Mutasi Izzi menggunakan produk master yang sama di asal dan tujuan. Tidak perlu membuat bahan atau produk tujuan baru.']);
+                }
                 if ((int) $destination->unit_id !== (int) $product->unit_id && !$i['explicit_conversion']) throw ValidationException::withMessages(['items' => 'Satuan asal dan tujuan berbeda. Isi jumlah acuan asal dan jumlah setara tujuan secara jelas.']);
                 if ($destination->id === $product->id && $i['conversion_from'] !== $i['conversion_to']) throw ValidationException::withMessages(['items' => 'Produk yang sama memiliki satuan master yang sama. Gunakan konversi 1 : 1.']);
                 $item = ['transfer_id' => $id, 'product_id' => $product->id, 'unit_id' => $product->unit_id,

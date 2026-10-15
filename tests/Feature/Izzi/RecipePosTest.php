@@ -1,7 +1,7 @@
 <?php
 namespace Tests\Feature\Izzi;
 
-use App\Models\{Branch, CashierShift, Product, User};
+use App\Models\{Branch, CashierShift, Product, ProductCategory, Unit, User};
 use App\Services\ActivityLogService;
 use App\Services\Izzi\Quantity;
 use Carbon\Carbon;
@@ -37,8 +37,11 @@ class RecipePosTest extends TestCase
     private function ingredient(string $unit='gram', string $factor='2000'): int
     {
         $code=Str::random(8);
-        $this->as($this->admin)->post(route('izzi.ingredients.store'), ['code'=>$code,'name'=>'Bahan '.$code,'unit'=>$unit,'purchase_unit'=>'Kemasan','purchase_factor'=>$factor,'is_active'=>true])->assertSessionHasNoErrors()->assertRedirect();
-        return (int) Product::where('code',$code)->value('id');
+        $masterUnit=Unit::firstOrCreate(['name'=>'Master '.$unit],['abbreviation'=>$unit,'entity_scope'=>'all']);
+        $category=ProductCategory::firstOrCreate(['name'=>'Bahan bersama'],['entity_scope'=>'all']);
+        $product=Product::create(['code'=>$code,'name'=>'Bahan '.$code,'unit_id'=>$masterUnit->id,'category_id'=>$category->id,'entity_scope'=>'all','status'=>'active','source_type'=>'purchased','product_type'=>'INV']);
+        $this->as($this->admin)->post(route('izzi.ingredients.store'), ['product_id'=>$product->id,'purchase_unit'=>'Kemasan','purchase_factor'=>$factor])->assertSessionHasNoErrors()->assertRedirect();
+        return $product->id;
     }
     private function menu(array $recipe, int $price=20000): int
     {
@@ -225,7 +228,7 @@ class RecipePosTest extends TestCase
         $this->as($sa)->post(route('master.users.store'),['name'=>'Kasir Izzi Baru','email'=>'kasir@izzi.test','password'=>'secret123','password_confirmation'=>'secret123','entity'=>'izzi','role'=>'kasir_izzi','branch_id'=>$this->branch->id,'is_active'=>true])->assertSessionHasNoErrors();
         $created=User::where('email','kasir@izzi.test')->firstOrFail();$this->assertTrue($created->hasRole('kasir_izzi'));
         $this->as($created)->get(route('dashboard'))->assertRedirect(route('izzi.dashboard'));
-        $id=$this->ingredient();$p=Product::find($id);$this->as($sa)->put(route('master.products.update',$id),['unit_id'=>999])->assertRedirect(route('izzi.ingredients'));$this->assertSame($p->unit_id,Product::find($id)->unit_id);
+        $id=$this->ingredient();$p=Product::find($id);$p->update(['entity_scope'=>'izzi']);$this->as($sa)->put(route('master.products.update',$id),['unit_id'=>999])->assertRedirect(route('izzi.ingredients'));$this->assertSame($p->unit_id,Product::find($id)->unit_id);
         $this->delete(route('master.products.destroy',$id))->assertRedirect(route('izzi.ingredients'));$this->assertNotNull(Product::find($id));
         $hnd=Branch::create(['code'=>'HND-SAFE','name'=>'Hendhys Uji','entity'=>'hendhys','type'=>'cabang','is_active'=>true]);
         $this->as($this->user('admin_hendhys','hendhys',$hnd))->put(route('hendhys.master.products.update',$id),[])->assertForbidden();

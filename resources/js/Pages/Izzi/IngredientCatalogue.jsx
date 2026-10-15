@@ -11,5 +11,5 @@ export function useIngredients(initial, page, selectedIds, selected = []) {
     return { catalogue, ingredients: [...choices.values()] };
 }
 export default function IngredientCatalogue({ catalogue }) {
-    return <div className="rounded-xl border p-3 dark:border-gray-700"><label className="block">Cari bahan di seluruh data<input type="search" className={input} placeholder="Nama atau kode bahan…" value={catalogue.query} onChange={e => catalogue.setQuery(e.target.value)} /></label><CataloguePages catalogue={catalogue} /></div>;
+    return <div className="rounded-xl border p-3 dark:border-gray-700"><label className="block">Cari bahan dari master produk bersama<input type="search" className={input} placeholder="Nama atau kode produk master…" value={catalogue.query} onChange={e => catalogue.setQuery(e.target.value)} /></label><CataloguePages catalogue={catalogue} /></div>;
 }

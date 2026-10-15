@@ -1,5 +1,5 @@
 import { todayWib } from '@/lib/date';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import ProductionLotSelect from '@/Components/ProductionLotSelect';
 import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
@@ -9,7 +9,7 @@ import Button from '@/Components/ui/button/Button';
 const route = window.route;
 
 
-export default function TransferOutCreate({ products, branches, transferRequest, productionLots }) {
+export default function TransferOutCreate({ products, branches, transferRequest, productionLots, izziTransferUrl }) {
     const fromRequest = !!transferRequest;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -81,10 +81,16 @@ export default function TransferOutCreate({ products, branches, transferRequest,
                                     {data.to_entity === 'hendhys' ? 'Hendhys (Cabang)' : 'Jihans (Produksi)'}
                                 </div>
                             ) : (
-                                <select value={data.to_entity} onChange={(e) => setData('to_entity', e.target.value)} required className={selectClass}>
+                                <select value={data.to_entity} onChange={(e) => {
+                                    if (e.target.value === 'izzi') {
+                                        if (data.items.length > 0 && !window.confirm('Buka mutasi Gudang ke Izzi? Item yang belum disimpan perlu dipilih kembali pada formulir baru.')) return;
+                                        router.visit(izziTransferUrl);
+                                    } else setData('to_entity', e.target.value);
+                                }} required className={selectClass}>
                                     <option value="">Pilih Tujuan</option>
                                     <option value="hendhys">Hendhys (Cabang/Outlet)</option>
                                     <option value="jihans">Jihans (Produksi)</option>
+                                    {izziTransferUrl && <option value="izzi">Izzi Kebab (Cabang/Outlet)</option>}
                                 </select>
                             )}
                             {errors.to_entity && <p className="mt-1.5 text-xs font-bold text-rose-600 dark:text-rose-455">{errors.to_entity}</p>}

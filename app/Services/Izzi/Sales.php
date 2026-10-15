@@ -35,8 +35,8 @@ class Sales
                 foreach ($recipe as $ingredient) $required[$ingredient['product_id']] = ($required[$ingredient['product_id']] ?? 0) + $ingredient['quantity'] * $item['quantity'];
             }
             if ((int) $data['amount_paid'] < $total || ($data['payment_type'] !== 'cash' && (int) $data['amount_paid'] !== $total)) throw ValidationException::withMessages(['amount_paid' => 'Pembayaran belum sesuai total. Pembayaran non-tunai harus tepat sesuai total.']);
-            $products = DB::table('izzi_ingredients as i')->join('master_products as p', 'p.id', '=', 'i.product_id')->join('master_units as u', 'u.id', '=', 'p.unit_id')
-                ->whereIn('p.id', array_keys($required))->whereNull('p.deleted_at')->where('p.status', 'active')->get(['p.*', 'u.abbreviation as unit_name'])->keyBy('id');
+            $products = app(ProductCatalogue::class)->query()->whereIn('p.id', array_keys($required))->where('p.status', 'active')
+                ->addSelect('u.abbreviation as unit_name')->lockForUpdate()->get()->keyBy('id');
             ksort($required); $stocks = [];
             foreach ($required as $id => $quantity) {
                 $p = $products->get($id);

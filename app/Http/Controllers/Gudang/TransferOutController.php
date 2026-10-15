@@ -57,8 +57,8 @@ class TransferOutController extends Controller
                 'hpp'   => (float) $p->hpp,
             ]);
 
-        $branches = Branch::where('is_active', true)
-            ->orderByRaw("FIELD(type,'pusat','cabang')")
+        $branches = Branch::where('is_active', true)->where('entity', 'hendhys')
+            ->orderByRaw("CASE WHEN type = 'pusat' THEN 0 ELSE 1 END")
             ->get()
             ->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'type' => $b->type]);
 
@@ -92,11 +92,19 @@ class TransferOutController extends Controller
             ];
         }
 
+        $mutations = app(\App\Services\BranchStockTransfers::class);
+        $warehouse = $mutations->sourceBranches($request->user())->firstWhere('entity', 'gudang');
+        $izziBranches = $mutations->branches()->where('entity', 'izzi');
+        $izziTransferUrl = $warehouse && $izziBranches->isNotEmpty()
+            ? route('branch-transfers.create', ['from_branch_id' => $warehouse->id,
+                ...($izziBranches->count() === 1 ? ['to_branch_id' => $izziBranches->first()->id] : [])]) : null;
+
         return Inertia::render('Gudang/TransferOut/Create', [
             'products'        => $products,
             'branches'        => $branches,
             'transferRequest' => $transferRequest,
             'productionLots' => app(\App\Services\ProductionLots::class)->choices('jihans'),
+            'izziTransferUrl' => $izziTransferUrl,
         ]);
     }
 

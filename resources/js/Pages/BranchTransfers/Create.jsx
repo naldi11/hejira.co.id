@@ -10,15 +10,15 @@ function DestinationPicker({ to, initial, page, selected, source, index, onPick 
     const catalogue = usePosCatalogue(route('branch-transfers.destination-products', to.id), initial, page, to.id);
     const choices = new Map(catalogue.products.map(p => [String(p.id), p]));
     if (selected) choices.set(String(selected.id), selected);
-    // A product already registered as an Izzi ingredient can be reused in another Izzi outlet.
-    if (source && to.entity !== 'izzi') choices.set(String(source.id), source);
+    if (source) choices.set(String(source.id), source);
     return <div className="space-y-2"><label className="block">Cari barang tujuan baris {index + 1}<input type="search" className={input} value={catalogue.query} onChange={e => catalogue.setQuery(e.target.value)} placeholder="Nama atau kode barang tujuan…" /></label><CataloguePages catalogue={catalogue} />
         <label className="block">Barang di cabang penerima baris {index + 1}<select required className={input} value={selected?.id || ''} onChange={e => onPick(choices.get(e.target.value))}><option value="">Pilih barang / bahan yang sama di tujuan</option>{[...choices.values()].map(p => <option value={p.id} key={p.id}>{p.name} · {p.code} · {p.unit}</option>)}</select></label>
-        <p className="text-sm text-gray-500">Pilih barang fisik yang sama. Jika tujuan Izzi, pilih bahan yang sudah didaftarkan pada Bahan & Satuan Kemasan.</p>
+        <p className="text-sm text-gray-500">Pilih barang fisik yang sama sesuai master tujuan.</p>
     </div>;
 }
 function Form({ sources, destinations, from, to, products, catalogue: page, destinationProducts, destinationCatalogue, today, currentTime }) {
     const { auth } = usePage().props;
+    const sharedMaster = from.entity === 'izzi' || to?.entity === 'izzi';
     const [loadingTarget, setLoadingTarget] = useState(false);
     const sourceCatalogue = usePosCatalogue(route('branch-transfers.source-products', from.id), products, page, from.id);
     const sourceBank = useRef(new Map(products.map(p => [String(p.id), p])));
@@ -29,7 +29,7 @@ function Form({ sources, destinations, from, to, products, catalogue: page, dest
     const changeItem = (index, key, value) => form.setData('items', form.data.items.map((item, i) => i === index ? { ...item, [key]: value } : item));
     const chooseSource = (index, id) => {
         const p = sourceBank.current.get(String(id));
-        const reuse = p && to && (to.entity !== 'izzi' || from.entity === 'izzi' || destinationProducts.some(d => Number(d.id) === Number(p.id)));
+        const reuse = p && to;
         if (reuse) targetBank.current.set(String(p.id), p);
         form.setData('items', form.data.items.map((r, i) => i === index ? { ...empty(), notes:r.notes, product_id:id, to_product_id:reuse ? p.id : '' } : r));
     };
@@ -38,7 +38,9 @@ function Form({ sources, destinations, from, to, products, catalogue: page, dest
         form.setData('items', form.data.items.map((r, i) => i === index ? { ...r, to_product_id:p?.id || '', conversion_from:'1', conversion_to:p && Number(p.unit_id) !== Number(source?.unit_id) ? '' : '1' } : r));
     };
     const changeDestination = id => {
-        form.setData(d => ({ ...d, to_branch_id:id, items:d.items.map(r => ({ ...r, to_product_id:'', conversion_from:'1', conversion_to:'1' })) }));
+        const destination = destinations.find(b => String(b.id) === String(id));
+        const shared = from.entity === 'izzi' || destination?.entity === 'izzi';
+        form.setData(d => ({ ...d, to_branch_id:id, items:d.items.map(r => ({ ...r, to_product_id:shared ? r.product_id : '', conversion_from:'1', conversion_to:'1' })) }));
         router.get(route('branch-transfers.create'), { from_branch_id:from.id, to_branch_id:id || undefined }, { preserveState:true, preserveScroll:true, onStart:()=>setLoadingTarget(true), onFinish:()=>setLoadingTarget(false) });
     };
     const blocked = form.data.items.some(i => i.product_id && !sourceBank.current.get(String(i.product_id))?.unit_matches);
@@ -60,12 +62,12 @@ function Form({ sources, destinations, from, to, products, catalogue: page, dest
             <label className="block">Petugas pengantar (opsional)<input maxLength={255} className={`${input} mt-2`} value={form.data.courier_name} onChange={e => form.setData('courier_name', e.target.value)} /></label>
             <label className="block">Catatan mutasi / kondisi saat diterima (opsional)<textarea maxLength={2000} className={`${input} mt-2`} value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} /></label>
         </div>
-        <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Barang yang telah diterima</h2><p className="text-sm text-gray-500">Satuan mengikuti master barang asal dan tujuan. Jika pencatatan barang atau satuannya berbeda, pilih barang tujuan dan isi konversi yang benar.</p>
+        <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Barang yang telah diterima</h2><p className="text-sm text-gray-500">{sharedMaster ? 'Pilih produk dari stok asal. Izzi menggunakan produk dan satuan master yang sama; jumlah tujuan mengikuti jumlah yang dipindahkan.' : 'Satuan mengikuti master barang asal dan tujuan. Jika pencatatan barang atau satuannya berbeda, pilih barang tujuan dan isi konversi yang benar.'}</p>
             <label className="block">Cari barang asal<input type="search" className={input} value={sourceCatalogue.query} onChange={e => sourceCatalogue.setQuery(e.target.value)} placeholder="Nama atau kode barang asal…" /></label><CataloguePages catalogue={sourceCatalogue} />
             {products.length === 0 && <p className="text-red-600">Belum ada stok siap jual di asal. Mutasi membutuhkan stok tersedia.</p>}
             {form.data.items.map((item, index) => {
                 const product = sourceBank.current.get(String(item.product_id));
-                const target = targetBank.current.get(String(item.to_product_id));
+                const target = sharedMaster ? product : targetBank.current.get(String(item.to_product_id));
                 const amount = Number(item.quantity || 0) * Number(item.conversion_to || 0) / Number(item.conversion_from || 1);
                 const differing = target && product && Number(target.id) !== Number(product.id);
                 return <div key={index} className="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-700"><div className="flex justify-between gap-3"><strong>Barang {index + 1}</strong>{form.data.items.length > 1 && <button type="button" className="text-red-600" onClick={() => form.setData('items', form.data.items.filter((_, i) => i !== index))}>Hapus baris</button>}</div>
@@ -73,7 +75,9 @@ function Form({ sources, destinations, from, to, products, catalogue: page, dest
                     {product && !product.unit_matches && <p role="alert" className="text-red-600">Satuan kartu stok {product.stock_unit} berbeda dari master {product.unit}. Periksa kartu stok sebelum mutasi.</p>}
                     <label className="block">Jumlah dipindahkan ({product?.unit || 'satuan asal'})<input required type="number" min={from.entity === 'izzi' ? '0.001' : '1'} step={from.entity === 'izzi' ? '0.001' : '1'} max={product?.quantity ?? 999999999} disabled={!product?.unit_matches} className={input} value={item.quantity} onChange={e => changeItem(index, 'quantity', e.target.value)} /></label>
                     {product?.unit_matches && <p className="text-sm text-gray-500">Tersedia {product.quantity} {product.unit} · Sisa asal {(Number(product.quantity) - Number(item.quantity || 0)).toLocaleString('id-ID',{maximumFractionDigits:3})} {product.unit}</p>}
-                    {product && to && !loadingTarget && <DestinationPicker key={`${to.id}-${index}`} to={to} initial={destinationProducts} page={destinationCatalogue} selected={target} source={product} index={index} onPick={p => chooseTarget(index, p, product)} />}
+                    {product && to && !loadingTarget && (sharedMaster
+                        ? <p className="rounded-lg bg-blue-50 p-3 text-blue-900">Produk tujuan sama: <strong>{product.name} · {product.code}</strong>. Stok Izzi memakai satuan master <strong>{product.unit}</strong>; produk dan jumlah tidak diganti ke bahan lain.</p>
+                        : <DestinationPicker key={`${to.id}-${index}`} to={to} initial={destinationProducts} page={destinationCatalogue} selected={target} source={product} index={index} onPick={p => chooseTarget(index, p, product)} />)}
                     {loadingTarget && <p>Memuat pilihan barang tujuan…</p>}
                     {differing && <div className="space-y-3 rounded-lg bg-blue-50 p-3 text-blue-900"><strong>Konversi barang yang sama</strong><p className="text-sm">Contoh: 1 PACK asal = 2000 gram tujuan. Untuk arah sebaliknya, isi 2000 gram asal = 1 PACK tujuan.</p><div className="grid grid-cols-2 gap-3"><label>Jumlah acuan asal ({product.unit})<input required type="number" min="0.001" step="0.001" className={input} value={item.conversion_from} onChange={e => changeItem(index, 'conversion_from', e.target.value)} /></label><label>Setara jumlah tujuan ({target.unit})<input required type="number" min="0.001" step="0.001" className={input} value={item.conversion_to} onChange={e => changeItem(index, 'conversion_to', e.target.value)} /></label></div><p>{item.conversion_from || '?'} {product.unit} = {item.conversion_to || '?'} {target.unit}</p></div>}
                     {target && <p className="font-semibold text-green-700">Tujuan menerima {amount.toLocaleString('id-ID',{maximumFractionDigits:3})} {target.unit} · {target.name}</p>}

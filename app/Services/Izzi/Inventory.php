@@ -65,9 +65,9 @@ class Inventory
                 'items' => '[]', 'created_by' => $user->id, 'actor_name' => $user->name, 'created_at' => now()]);
             $snapshots = [];
             foreach (collect($data['items'])->sortBy('product_id') as $item) {
-                $p = DB::table('izzi_ingredients as i')->join('master_products as p', 'p.id', '=', 'i.product_id')->join('master_units as u', 'u.id', '=', 'p.unit_id')
-                    ->where('p.id', $item['product_id'])->whereNull('p.deleted_at')->where('p.status', 'active')->first(['p.*', 'u.abbreviation as unit_name', 'i.purchase_unit', 'i.purchase_factor']);
-                if (!$p) throw ValidationException::withMessages(['items' => 'Bahan tidak aktif atau tidak terdaftar di Izzi.']);
+                $p = app(ProductCatalogue::class)->query()->where('p.id', $item['product_id'])->where('p.status', 'active')
+                    ->addSelect('u.abbreviation as unit_name')->lockForUpdate()->first();
+                if (!$p) throw ValidationException::withMessages(['items' => 'Pilih produk aktif yang sudah ada di master produk.']);
                 $amount = Quantity::parse($item['quantity'], 'items');
                 $factor = $item['mode'] === 'purchase' ? (int) $p->purchase_factor : Quantity::SCALE;
                 $quantity = Quantity::convert($amount, $factor); $stock = $this->stock($branch, $p, true); $after = (int) $stock->quantity + $quantity;
