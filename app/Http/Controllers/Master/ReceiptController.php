@@ -22,6 +22,7 @@ class ReceiptController extends Controller
     {
         $info = $this->getScopeInfo($request);
         $transferOut = TransferOut::with(['details.product', 'details.unit', 'branch', 'creator'])->findOrFail($id);
+        $transferOut->append('destination_label');
 
         app(\App\Services\TransferReceiving::class)->authorize($transferOut, $request->user());
         if ($transferOut->to_entity !== $info['scope']) {
@@ -29,7 +30,7 @@ class ReceiptController extends Controller
         }
 
         if ($transferOut->status !== 'sent') {
-            return redirect()->route($info['transferRoute'] . 'index')
+            return redirect()->route($info['transferRoute'] . 'index', $info['scope'] === 'izzi' ? ['branch_id' => $transferOut->branch_id] : [])
                 ->with('info', 'Transfer ini sudah dikonfirmasi sebelumnya.');
         }
 
@@ -50,19 +51,20 @@ class ReceiptController extends Controller
         $service->authorize($document, $request->user());
         $data = $request->validate(\App\Services\TransferReceiving::rules(true));
         $service->receive($document, $data, $request->user());
-        return redirect()->route($info['transferRoute'].'index')->with('success', 'Penerimaan dikonfirmasi. Hanya barang baik menambah stok jual; barang rusak dan selisih dicatat pada BAST.');
+        return redirect()->route($info['transferRoute'].'index', $info['scope'] === 'izzi' ? ['branch_id' => $document->branch_id] : [])->with('success', 'Penerimaan dikonfirmasi. Hanya barang baik menambah stok jual; barang rusak dan selisih dicatat pada BAST.');
     }
 
     public function print(Request $request, $id)
     {
         $info = $this->getScopeInfo($request);
-        $transferOut = TransferOut::with(['details.product', 'details.unit', 'branch', 'creator', 'receiver', 'photos'])
+        $transferOut = TransferOut::with(['details.product', 'details.unit', 'branch', 'creator', 'receiver', 'photos', 'receiptConfirmation.details'])
             ->findOrFail($id);
 
         app(\App\Services\TransferReceiving::class)->authorize($transferOut, $request->user());
         if ($transferOut->to_entity !== $info['scope']) {
             abort(403, 'Akses ditolak.');
         }
+        if ($info['scope'] === 'izzi') abort_unless($transferOut->status === 'received', 422, 'BAST tersedia setelah penerimaan dikonfirmasi.');
 
         return view('master.receipt.print', [
             'transferOut'  => $transferOut,
@@ -74,6 +76,13 @@ class ReceiptController extends Controller
     protected function getScopeInfo(Request $request): array
     {
         $prefix = $request->route()->getPrefix() ?? '';
+        if (str_contains($prefix, 'izzi')) {
+            return [
+                'scope' => 'izzi', 'route' => 'izzi.', 'transferRoute' => 'izzi.warehouse-shipments.',
+                'printRoute' => 'izzi.warehouse-shipments.bast', 'receiveRoute' => 'izzi.warehouse-shipments.receive',
+                'entity' => 'Izzi Kebab',
+            ];
+        }
         if (str_contains($prefix, 'hendhys')) {
             // 'layout' dihapus: key ini tidak pernah dibaca blade manapun, dan
             // nilainya ('layouts.hendhys') menunjuk file yang sudah tidak ada.

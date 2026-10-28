@@ -2,7 +2,7 @@ import { todayWib } from '@/lib/date';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
-import JihansLayout from '@/Layouts/JihansLayout';
+import JihansLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 
 export default function Form({ karyawans, products, type, warning, targetDate, prediction_id, isEdit = false, production = null, formAction }) {

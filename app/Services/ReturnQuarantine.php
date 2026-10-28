@@ -72,7 +72,11 @@ class ReturnQuarantine
         $branch = Branch::find(session('active_branch_id') ?: $user->branch_id);
         if (!$branch || !$branch->is_active || $branch->entity !== $user->entity) return $q->whereRaw('1 = 0');
         if ($user->hasRole('admin_hendhys') && $branch->type === 'pusat') return $q->where(fn ($w) => $w->where('destination_key', 'hendhys-pusat')->orWhere(fn ($own) => $own->where('origin_entity', 'hendhys')->where('origin_branch_id', $branch->id)));
-        $destination = $user->entity === 'jihans' ? 'jihans-retail' : ($branch->type === 'pusat' ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id);
+        $destination = match ($user->entity) {
+            'izzi' => 'izzi-branch-'.$branch->id,
+            'jihans' => 'jihans-retail',
+            default => $branch->type === 'pusat' ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id,
+        };
         return $q->where(fn ($w) => $w->where('destination_key', $destination)->orWhere(fn ($own) => $own->where('origin_entity', $user->entity)->where('origin_branch_id', $branch->id)));
     }
 
@@ -80,15 +84,19 @@ class ReturnQuarantine
     {
         $warehouse = $document instanceof \App\Models\TransferOut;
         $branch = $document->branch;
-        $destination = $entity === 'jihans' ? 'jihans-retail' : ($branch?->type === 'pusat' || !$branch ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id);
+        $destination = match ($entity) {
+            'izzi' => 'izzi-branch-'.$document->branch_id,
+            'jihans' => 'jihans-retail',
+            default => $branch?->type === 'pusat' || !$branch ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id,
+        };
         foreach ($receipt->details()->where('condition', 'rusak')->get() as $item) {
             $detail = $document->details->firstWhere('product_id', $item->product_id);
             DB::table('return_quarantine_entries')->insertOrIgnore([
                 'source_type' => $warehouse ? 'warehouse_receipt' : 'centre_receipt', 'return_id' => $document->id,
                 'detail_id' => $item->id, 'return_number' => $document->transfer_number, 'destination_key' => $destination,
                 'origin_entity' => $warehouse ? 'gudang' : 'hendhys', 'origin_name' => $warehouse ? 'Gudang Utama' : 'Hendhys Pusat',
-                'product_id' => $item->product_id, 'unit_id' => $detail->unit_id, 'product_name' => $detail->product?->name ?? 'Produk tidak tersedia',
-                'product_code' => $detail->product?->code, 'unit_name' => $detail->unit?->abbreviation ?? '-',
+                'product_id' => $item->product_id, 'unit_id' => $detail->unit_id, 'product_name' => $detail->product_name ?? $detail->product?->name ?? 'Produk tidak tersedia',
+                'product_code' => $detail->product_code ?? $detail->product?->code, 'unit_name' => $detail->unit_name ?? $detail->unit?->abbreviation ?? '-',
                 'quantity' => $item->actual_qty, 'condition' => 'damaged', 'received_condition' => 'rusak',
                 'reason' => $document->receive_notes, 'return_date' => now()->toDateString(), 'sent_by' => $document->created_by,
                 'received_by' => $user->id, 'received_by_name' => $user->name, 'received_at' => now(), 'recorded_at' => now(),

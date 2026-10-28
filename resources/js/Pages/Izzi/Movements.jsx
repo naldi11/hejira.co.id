@@ -8,6 +8,7 @@ const route = window.route;
 
 const labels = {
     receipt: 'Penerimaan Bahan',
+    transfer_gudang: 'Penerimaan Pengiriman Gudang',
     sale_consumption: 'Penjualan POS (Resep)',
     cancellation_restore: 'Batal Pesanan (Kembali)',
     cancellation_waste: 'Batal Pesanan (Terbuang)',

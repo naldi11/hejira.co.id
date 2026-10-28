@@ -14,6 +14,20 @@ export default function GudangLayout({ title, pageTitle, children }) {
             icon: <Icon name="dashboard" className="text-[22px]" />,
             path: route('gudang.dashboard')
         },
+        ...(['all', 'hendhys', 'jihans'].includes(auth?.user?.entity) ? [{
+            name: 'Hasil Produksi',
+            icon: <Icon name="factory" className="text-[22px]" />,
+            subItems: [
+                ...(['all', 'hendhys'].includes(auth.user.entity) ? [
+                    { name: 'Catat Hasil Produksi Hendhys', path: route('hendhys.productions.create') },
+                    { name: 'Riwayat Produksi Hendhys', path: route('hendhys.productions.index') },
+                ] : []),
+                ...(['all', 'jihans'].includes(auth.user.entity) ? [
+                    { name: 'Catat Hasil Produksi Jihan’s', path: route('jihans.production.create') },
+                    { name: 'Riwayat Produksi Jihan’s', path: route('jihans.production.index') },
+                ] : []),
+            ],
+        }] : []),
         {
             name: "Mutasi Stok Cabang & Gudang",
             icon: <Icon name="swap_horiz" className="text-[22px]" />,

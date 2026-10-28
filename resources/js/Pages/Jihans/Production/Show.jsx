@@ -1,7 +1,7 @@
 import { formatDate } from '@/lib/format';
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
-import JihansLayout from '@/Layouts/JihansLayout';
+import JihansLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 
 export default function Show({ production }) {

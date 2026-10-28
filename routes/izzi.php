@@ -12,6 +12,14 @@ Route::middleware(['auth', 'check.branch', 'role:owner|super_admin|admin_izzi|ka
     Route::get('/sales/{sale}/receipt', [OperationsController::class, 'show'])->whereNumber('sale')->name('sales.receipt');
     Route::get('/receipts', [OperationsController::class, 'receipts'])->name('receipts');
     Route::get('/shifts', [OperationsController::class, 'shifts'])->name('shifts');
+    Route::middleware('role:super_admin|admin_izzi|kasir_izzi')->prefix('warehouse-shipments')->name('warehouse-shipments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Izzi\WarehouseShipmentController::class, 'index'])->name('index');
+        Route::get('/{shipment}', [\App\Http\Controllers\Izzi\WarehouseShipmentController::class, 'show'])->whereNumber('shipment')->name('show');
+        Route::get('/{shipment}/delivery-note', [\App\Http\Controllers\Izzi\WarehouseShipmentController::class, 'print'])->whereNumber('shipment')->name('print');
+        Route::get('/{id}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'showReceiveForm'])->whereNumber('id')->name('receive-form');
+        Route::post('/{id}/receive', [\App\Http\Controllers\Master\ReceiptController::class, 'receive'])->whereNumber('id')->name('receive');
+        Route::get('/{id}/bast', [\App\Http\Controllers\Master\ReceiptController::class, 'print'])->whereNumber('id')->name('bast');
+    });
     Route::middleware('role:kasir_izzi')->group(function () {
         Route::get('/pos', [OperationsController::class, 'pos'])->name('pos');
         Route::post('/pos', [OperationsController::class, 'checkout'])->name('checkout');

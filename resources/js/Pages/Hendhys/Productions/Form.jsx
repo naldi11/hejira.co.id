@@ -3,7 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import SelectField from '@/Components/SelectField';
 import { useState, useEffect } from 'react';
-import HendhysLayout from '@/Layouts/HendhysLayout';
+import HendhysLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 
 const route = window.route;

@@ -32,7 +32,7 @@ export default function TransferOutIndex({ transfers, filters }) {
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Transfer Keluar Barang</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Pengiriman barang dari Gudang Utama ke Cabang (Hendhys) atau Produksi (Jihans)</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Pengiriman barang dari Gudang Utama ke Hendhys, Jihan’s, dan cabang Izzi</p>
                     </div>
                     <Link href={route('gudang.transfer-out.create')}>
                         <Button size="sm" startIcon={<Icon name="add" className="text-[18px]" />}>
@@ -52,7 +52,8 @@ export default function TransferOutIndex({ transfers, filters }) {
                             <select value={form.to_entity} onChange={(e) => setForm({ ...form, to_entity: e.target.value })} className={selectClass}>
                                 <option value="">Semua Tujuan</option>
                                 <option value="hendhys">Hendhys (Cabang)</option>
-                                <option value="jihans">Jihans (Produksi)</option>
+                                    <option value="jihans">Jihans (Produksi)</option>
+                                    <option value="izzi">Izzi Kebab</option>
                             </select>
                             <Button type="submit" size="sm">Filter</Button>
                             {hasFilter && <Link href={route('gudang.transfer-out.index')} className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"><Icon name="refresh" /></Link>}

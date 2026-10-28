@@ -1,5 +1,6 @@
 import { todayWib } from '@/lib/date';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import ProductionLotSelect from '@/Components/ProductionLotSelect';
 import SelectField from '@/Components/SelectField';
 import GudangLayout from '@/Layouts/GudangLayout';
@@ -9,10 +10,12 @@ import Button from '@/Components/ui/button/Button';
 const route = window.route;
 
 
-export default function TransferOutCreate({ products, branches, transferRequest, productionLots, izziTransferUrl }) {
+export default function TransferOutCreate({ products, branches, transferRequest, productionLots, izziBranches = [] }) {
     const fromRequest = !!transferRequest;
+    const { auth } = usePage().props;
+    const submissionScope = `warehouse-dispatch:${auth.user.id}`;
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, transform, processing, errors } = useForm({
         request_id: transferRequest?.id ?? null,
         to_entity: transferRequest?.from_entity ?? '',
         branch_id: transferRequest?.from_entity === 'hendhys' ? (transferRequest?.branch_id ?? '') : '',
@@ -34,7 +37,19 @@ export default function TransferOutCreate({ products, branches, transferRequest,
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('gudang.transfer-out.store'));
+        transform((values) => {
+            const payload = {
+                request_id: values.request_id || null, to_entity: values.to_entity,
+                branch_id: values.to_entity === 'jihans' ? null : Number(values.branch_id),
+                date: values.date, notes: values.notes.trim(),
+                items: values.items.map((item) => ({
+                    product_id: Number(item.product_id), unit_id: Number(item.unit_id), quantity: Number(item.quantity),
+                    hpp_price: Number(item.hpp_price).toFixed(2), production_lot_id: item.production_lot_id ? Number(item.production_lot_id) : null,
+                })).sort((a, b) => a.product_id - b.product_id),
+            };
+            return { ...payload, request_key: checkoutKey(submissionScope, payload) };
+        });
+        post(route('gudang.transfer-out.store'), { onSuccess: () => clearCheckoutKey(submissionScope) });
     };
 
     const selectClass = 'w-full h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900/50 dark:focus:border-brand-800';
@@ -81,30 +96,25 @@ export default function TransferOutCreate({ products, branches, transferRequest,
                                     {data.to_entity === 'hendhys' ? 'Hendhys (Cabang)' : 'Jihans (Produksi)'}
                                 </div>
                             ) : (
-                                <select value={data.to_entity} onChange={(e) => {
-                                    if (e.target.value === 'izzi') {
-                                        if (data.items.length > 0 && !window.confirm('Buka mutasi Gudang ke Izzi? Item yang belum disimpan perlu dipilih kembali pada formulir baru.')) return;
-                                        router.visit(izziTransferUrl);
-                                    } else setData('to_entity', e.target.value);
-                                }} required className={selectClass}>
+                                <select value={data.to_entity} onChange={(e) => setData({ ...data, to_entity: e.target.value, branch_id: '' })} required className={selectClass}>
                                     <option value="">Pilih Tujuan</option>
                                     <option value="hendhys">Hendhys (Cabang/Outlet)</option>
                                     <option value="jihans">Jihans (Produksi)</option>
-                                    {izziTransferUrl && <option value="izzi">Izzi Kebab (Cabang/Outlet)</option>}
+                                    <option value="izzi">Izzi Kebab (Cabang/Outlet)</option>
                                 </select>
                             )}
                             {errors.to_entity && <p className="mt-1.5 text-xs font-bold text-rose-600 dark:text-rose-455">{errors.to_entity}</p>}
                         </div>
 
-                        {data.to_entity === 'hendhys' && (
+                        {['hendhys', 'izzi'].includes(data.to_entity) && (
                             <div>
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cabang Hendhys <span className="text-rose-500">*</span></label>
+                                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Cabang {data.to_entity === 'izzi' ? 'Izzi' : 'Hendhys'} <span className="text-rose-500">*</span></label>
                                 {fromRequest && transferRequest.from_entity === 'hendhys' ? (
                                     <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
                                         {transferRequest.branch ?? '-'}
                                     </div>
                                 ) : (
-                                    <SelectField options={branches.map((b) => ({ value: b.id, label: `${b.name} (${b.type})` }))} value={data.branch_id} onChange={(v) => setData('branch_id', v)} placeholder="Pilih Cabang" required />
+                                    <SelectField options={(data.to_entity === 'izzi' ? izziBranches : branches).map((b) => ({ value: b.id, label: b.type ? `${b.name} (${b.type})` : b.name }))} value={data.branch_id} onChange={(v) => setData('branch_id', v)} placeholder="Pilih Cabang" required />
                                 )}
                                 {errors.branch_id && <p className="mt-1.5 text-xs font-bold text-rose-600 dark:text-rose-455">{errors.branch_id}</p>}
                             </div>

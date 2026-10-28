@@ -79,7 +79,7 @@
     <div class="doc-header">
         @php
             $transferOut->loadMissing('receiptConfirmation.details');
-            $entityName = $currentScope === 'jihans' ? "JIHAN'S FOOD" : 'HENDHYS BROWNIES';
+            $entityName = match ($currentScope) { 'izzi' => 'IZZI KEBAB', 'jihans' => "JIHAN'S FOOD", default => 'HENDHYS BROWNIES' };
         @endphp
         <div class="header-text">
             <h1>Berita Acara Serah Terima Barang</h1>
@@ -94,11 +94,15 @@
     {{-- Info --}}
     <div class="info-grid">
         <div class="info-row"><span class="info-label">No. Transfer</span><span class="info-value">{{ $transferOut->transfer_number }}</span></div>
+        @if($transferOut->receiptConfirmation)
+        <div class="info-row"><span class="info-label">No. BAST</span><span class="info-value">BAST-GDG-{{ str_pad((string) $transferOut->receiptConfirmation->id, 6, '0', STR_PAD_LEFT) }}</span></div>
+        @endif
+        <div class="info-row"><span class="info-label">Tujuan</span><span class="info-value">{{ $transferOut->destination_label }}</span></div>
         <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ ($transferOut->received_at ?? $transferOut->updated_at)->locale('id')->translatedFormat('d F Y') }}</span></div>
-        <div class="info-row"><span class="info-label">Pengirim (Gudang)</span><span class="info-value">{{ $transferOut->receive_pengirim_name ?: ($transferOut->creator->name ?? '-') }}</span></div>
+        <div class="info-row"><span class="info-label">Pengirim (Gudang)</span><span class="info-value">{{ $transferOut->receive_pengirim_name ?: ($transferOut->sender_name ?? $transferOut->creator?->name ?? '-') }}</span></div>
         <div class="info-row"><span class="info-label">Penerima</span><span class="info-value">{{ $transferOut->receive_received_by_name ?: '-' }}</span></div>
         @if($transferOut->receive_notes)
-        <div class="info-row"><span class="info-label">No. Surat Jalan</span><span class="info-value">{{ $transferOut->receive_notes }}</span></div>
+        <div class="info-row"><span class="info-label">Catatan Terima</span><span class="info-value">{{ $transferOut->receive_notes }}</span></div>
         @endif
         <div class="info-row"><span class="info-label">Dicetak</span><span class="info-value">{{ now()->locale('id')->translatedFormat('d F Y H:i') }}</span></div>
     </div>
@@ -170,12 +174,12 @@
             @endphp
             <tr>
                 <td class="text-center" style="color:#9ca3af">{{ $i + 1 }}</td>
-                <td style="font-weight:600">{{ $item->product->name }}</td>
+                <td style="font-weight:600">{{ ($item->product_name ?? $item->product?->name ?? 'Produk tidak tersedia') }}</td>
                 <td class="text-center" style="color:#9ca3af">{{ floatval($qtySent) }}</td>
                 <td class="text-center" style="font-weight:700; color:#065f46">{{ floatval($qtyBagus) }}</td>
                 <td class="text-center" style="font-weight:700; color:#b91c1c">{{ floatval($qtyRusak) > 0 ? floatval($qtyRusak) : '-' }}</td>
                 <td class="text-center" style="font-weight:700; color:#d97706">{{ floatval($qtyKurang) > 0 ? floatval($qtyKurang) : '-' }}</td>
-                <td class="text-center" style="color:#718096">{{ $item->unit->abbreviation ?? '-' }}</td>
+                <td class="text-center" style="color:#718096">{{ ($item->unit_name ?? $item->unit?->abbreviation ?? '-') ?? '-' }}</td>
                 <td style="color:#4a5568">{{ $notesStr ?: '-' }}</td>
             </tr>
             @endforeach

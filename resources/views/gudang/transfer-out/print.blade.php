@@ -1,7 +1,5 @@
 @php
-    $tujuan = $transferOut->to_entity === 'hendhys'
-        ? ($transferOut->branch->name ?? 'Cabang Hendhys')
-        : 'Jihans — Stok Produksi';
+    $tujuan = $transferOut->destination_label;
 
     $sudahDiterima = $transferOut->status === 'received';
 
@@ -87,7 +85,7 @@
 <body>
 
 <div class="action-bar">
-    <a href="{{ route('gudang.transfer-out.show', $transferOut) }}" class="btn btn-back">← Kembali</a>
+    <a href="{{ $backUrl ?? route('gudang.transfer-out.show', $transferOut) }}" class="btn btn-back">← Kembali</a>
     <button onclick="window.print()" class="btn btn-print">🖨 Cetak Surat Jalan</button>
 </div>
 
@@ -132,7 +130,7 @@
         <div class="info-row"><span class="info-label">No. Surat Jalan</span><span class="info-value">{{ $transferOut->transfer_number }}</span></div>
         <div class="info-row"><span class="info-label">Tanggal Kirim</span><span class="info-value">{{ $tgl($transferOut->date, 'd F Y') }}</span></div>
         <div class="info-row"><span class="info-label">Referensi</span><span class="info-value">{{ $transferOut->request?->request_number ?? 'Pengiriman Langsung' }}</span></div>
-        <div class="info-row"><span class="info-label">Petugas Gudang</span><span class="info-value">{{ $transferOut->creator->name ?? '-' }}</span></div>
+        <div class="info-row"><span class="info-label">Petugas Gudang</span><span class="info-value">{{ $transferOut->sender_name ?? $transferOut->creator?->name ?? '-' }}</span></div>
         @if($sudahDiterima)
             <div class="info-row"><span class="info-label">Tanggal Terima</span><span class="info-value">{{ $tgl($transferOut->received_at, 'd F Y H:i') }}</span></div>
             <div class="info-row"><span class="info-label">Diterima Oleh</span><span class="info-value">{{ $transferOut->receive_received_by_name ?: '-' }}</span></div>
@@ -164,9 +162,9 @@
             @forelse($transferOut->details as $i => $item)
                 <tr>
                     <td class="c muted">{{ $i + 1 }}</td>
-                    <td style="font-weight:700">{{ $item->product->name ?? 'Produk dihapus' }}</td>
+                    <td style="font-weight:700">{{ ($item->product_name ?? $item->product?->name ?? 'Produk tidak tersedia') ?? 'Produk dihapus' }}</td>
                     <td class="c" style="font-weight:700">{{ (int) $item->quantity }}</td>
-                    <td class="c muted">{{ $item->unit->abbreviation ?? '-' }}</td>
+                    <td class="c muted">{{ ($item->unit_name ?? $item->unit?->abbreviation ?? '-') ?? '-' }}</td>
                     <td></td>
                 </tr>
             @empty

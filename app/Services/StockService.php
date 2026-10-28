@@ -258,14 +258,26 @@ class StockService
 
             if ($transfer->to_entity === 'jihans') {
                 $this->creditJihansRetail($detail->product_id, $detail->unit_id, $qty, 'transfer_gudang', $transfer->id, $userId);
-            } else {
+            } elseif ($transfer->to_entity === 'izzi') {
+                $product = Product::withTrashed()->whereKey($detail->product_id)->lockForUpdate()->firstOrFail();
+                if ((int) $product->unit_id !== (int) $detail->unit_id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['received_quantities' => 'Satuan master produk berubah sejak pengiriman. Penerimaan tidak disimpan; periksa satuan terlebih dahulu.']);
+                }
+                $inventory = app(\App\Services\Izzi\Inventory::class);
+                $stock = $inventory->stock($transfer->branch, $product, true);
+                $quantity = \App\Services\Izzi\Quantity::parse((string) $qty);
+                $inventory->movement($stock, (int) $stock->quantity + $quantity, 'transfer_gudang', $transfer->id,
+                    'Penerimaan surat jalan '.$transfer->transfer_number, \App\Models\User::findOrFail($userId));
+            } elseif ($transfer->to_entity === 'hendhys') {
                 $this->creditHendhys($detail->product_id, $detail->unit_id, $qty, $transfer->branch_id, 'transfer_gudang', $transfer->id, $userId);
+            } else {
+                throw \Illuminate\Validation\ValidationException::withMessages(['received_quantities' => 'Unit tujuan pengiriman tidak dikenal.']);
             }
         }
 
         if ($transfer->to_entity === 'jihans') {
             $this->createJihansRetailStockIn($transfer);
-        } else {
+        } elseif ($transfer->to_entity === 'hendhys') {
             $this->createHendhysStockIn($transfer);
         }
     }

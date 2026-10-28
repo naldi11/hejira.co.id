@@ -83,4 +83,14 @@ class BusinessStockAccessTest extends TestCase
         $this->get(route('branch-transfers.create'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('sources', 4)->has('destinations', 3));
     }
+
+    public function test_super_admin_with_a_branch_assignment_can_open_centre_production_while_branch_admin_cannot(): void
+    {
+        $branch = Branch::create(['code' => 'PROD-MENU', 'name' => 'Cabang Hendhys', 'entity' => 'hendhys', 'type' => 'cabang', 'is_active' => true]);
+        $this->actingAs($this->actor('super_admin', 'all', $branch))->withSession(['active_branch_id' => $branch->id]);
+        $this->get(route('hendhys.productions.index'))->assertOk();
+        $this->get(route('hendhys.productions.create'))->assertOk();
+        $this->actingAs($this->actor('admin_hendhys', 'hendhys', $branch));
+        $this->get(route('hendhys.productions.create'))->assertForbidden();
+    }
 }

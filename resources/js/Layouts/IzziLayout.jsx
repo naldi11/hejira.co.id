@@ -55,6 +55,7 @@ export default function IzziLayout({ children, pageTitle = 'Izzi Kebab' }) {
         { name: 'Kartu Stok (Keluar/Masuk)', path: route('izzi.movements') },
         { name: 'Hitung Stok Fisik (Opname)', path: route('stock-opname.index') },
         { name: 'Riwayat SO', path: route('stock-opname.history') },
+        ...(!isOwner ? [{ name: 'Stok Rusak / Retur', path: route('return-stock.index') }] : []),
     ];
     navItems.push(group('Stok & Opname', 'inventory_2', stock));
 
@@ -64,6 +65,7 @@ export default function IzziLayout({ children, pageTitle = 'Izzi Kebab' }) {
     }
     receiving.push({ name: 'Riwayat Penerimaan', path: route('izzi.receipts') });
     if (!isOwner) {
+        receiving.push({ name: 'Terima Pengiriman Gudang', path: route('izzi.warehouse-shipments.index') });
         receiving.push({ name: 'Mutasi Cabang & Gudang', path: route('branch-transfers.index') });
     }
     navItems.push(group('Penerimaan & Mutasi', 'local_shipping', receiving));

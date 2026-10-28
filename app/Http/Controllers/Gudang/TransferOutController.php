@@ -10,21 +10,11 @@ use App\Models\JihansGudangStock;
 use App\Models\Product;
 use App\Models\TransferOut;
 use App\Models\TransferRequest;
-use App\Services\ActivityLogService;
-use App\Services\NumberGeneratorService;
-use App\Services\StockService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class TransferOutController extends Controller
 {
-    public function __construct(
-        private NumberGeneratorService $numbers,
-        private StockService $stock,
-        private ActivityLogService $logger
-    ) {}
-
     public function index(Request $request)
     {
         $transfers = TransferOut::with(['request', 'branch', 'creator'])
@@ -92,88 +82,20 @@ class TransferOutController extends Controller
             ];
         }
 
-        $mutations = app(\App\Services\BranchStockTransfers::class);
-        $warehouse = $mutations->sourceBranches($request->user())->firstWhere('entity', 'gudang');
-        $izziBranches = $mutations->branches()->where('entity', 'izzi');
-        $izziTransferUrl = $warehouse && $izziBranches->isNotEmpty()
-            ? route('branch-transfers.create', ['from_branch_id' => $warehouse->id,
-                ...($izziBranches->count() === 1 ? ['to_branch_id' => $izziBranches->first()->id] : [])]) : null;
+        $izziBranches = Branch::where('entity', 'izzi')->where('type', 'cabang')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('Gudang/TransferOut/Create', [
             'products'        => $products,
             'branches'        => $branches,
             'transferRequest' => $transferRequest,
             'productionLots' => app(\App\Services\ProductionLots::class)->choices('jihans'),
-            'izziTransferUrl' => $izziTransferUrl,
+            'izziBranches' => $izziBranches,
         ]);
     }
 
     public function store(StoreTransferOutRequest $request)
     {
-        $data = $request->validated();
-
-        foreach ($data['items'] as $item) {
-            if ((int) Product::findOrFail($item['product_id'])->unit_id !== (int) $item['unit_id']) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['items' => 'Satuan harus sesuai dengan produk yang dipilih.']);
-            }
-        }
-
-        // Pra-cek stok untuk memberi pesan ramah sebelum transaksi dibuka.
-        // Penjaga sebenarnya ada di StockService::debitJihansGudang yang membaca
-        // saldo di bawah lockForUpdate dan melempar InsufficientStockException,
-        // sehingga dua permintaan bersamaan tidak bisa sama-sama lolos.
-        foreach ($data['items'] as $item) {
-            $stock = (int) round((float) (JihansGudangStock::where('product_id', $item['product_id'])->value('quantity') ?? 0));
-            if ((int) $item['quantity'] > $stock) {
-                $product = Product::find($item['product_id']);
-                return back()->withInput()->withErrors([
-                    'items' => "Stok {$product->name} tidak mencukupi. Tersedia: " . number_format($stock, 0, ',', '.'),
-                ]);
-            }
-        }
-
-        // Block self-produced products from being transferred out of the warehouse.
-        $producedNames = Product::whereIn('id', collect($data['items'])->pluck('product_id'))
-            ->where('source_type', 'produced')
-            ->whereNotIn('id', DB::table('production_lots')->where('entity', 'jihans')->whereNotNull('production_id')->select('product_id'))
-            ->pluck('name');
-
-        if ($producedNames->isNotEmpty()) {
-            return back()->withInput()->withErrors([
-                'items' => 'Produk berikut adalah produk produksi sendiri dan tidak bisa dikirim dari Gudang: ' . $producedNames->implode(', '),
-            ]);
-        }
-
-        DB::transaction(function () use ($data) {
-            $transfer = TransferOut::create([
-                'transfer_number' => $this->numbers->generateYearly('GDG-TRF', 'gudang_transfer_out', 'transfer_number'),
-                'request_id'      => $data['request_id'] ?? null,
-                'to_entity'       => $data['to_entity'],
-                'branch_id'       => $data['to_entity'] === 'hendhys' ? $data['branch_id'] : null,
-                'date'            => $data['date'],
-                'notes'           => $data['notes'] ?? null,
-                'created_by'      => auth()->id(),
-            ]);
-
-            $dispatchDetails = [];
-            foreach ($data['items'] as $item) {
-                $detail = $transfer->details()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity'   => $item['quantity'],
-                    'unit_id'    => $item['unit_id'],
-                    'hpp_price'  => $item['hpp_price'],
-                    'total'      => $item['quantity'] * $item['hpp_price'],
-                ]);
-                // Transient selection; the durable allocation is recorded by StockService.
-                $detail->production_lot_id = $item['production_lot_id'] ?? null;
-                $dispatchDetails[] = $detail;
-            }
-
-            $transfer->setRelation('details', collect($dispatchDetails));
-            $this->stock->processTransferOut($transfer);
-
-            $this->logger->log('create', 'gudang.transfer_out', "Transfer keluar: {$transfer->transfer_number} ke {$transfer->to_entity}", $transfer);
-        });
+        app(\App\Services\WarehouseDispatch::class)->send($request->validated(), $request->user());
 
         return redirect()->route('gudang.transfer-out.index')->with('success', 'Transfer keluar berhasil diproses.');
     }

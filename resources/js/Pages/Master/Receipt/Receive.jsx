@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import JihansLayout from '@/Layouts/JihansLayout';
 import HendhysLayout from '@/Layouts/HendhysLayout';
+import IzziLayout from '@/Layouts/IzziLayout';
 import Icon from '@/Components/Icon';
 import { formatDate } from '@/lib/format';
 
 const route = window.route;
 
 export default function Receive({ transferOut, currentScope, info }) {
-    const Layout = currentScope === 'jihans' ? JihansLayout : HendhysLayout;
+    const Layout = currentScope === 'izzi' ? IzziLayout : currentScope === 'jihans' ? JihansLayout : HendhysLayout;
 
     // Theme values dynamic resolution
     const isJihans = currentScope === 'jihans';
@@ -170,7 +171,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-white/[0.02] rounded-2xl border border-gray-150 dark:border-gray-800">
                             <p className="text-[9px] font-bold text-gray-400 dark:text-gray-550 uppercase tracking-widest">Dikirim Oleh</p>
-                            <p className="text-sm font-bold text-gray-800 dark:text-white/90 mt-1 truncate">{transferOut.creator?.name || '-'}</p>
+                            <p className="text-sm font-bold text-gray-800 dark:text-white/90 mt-1 truncate">{transferOut.sender_name || transferOut.creator?.name || '-'}</p>
                         </div>
                     </div>
                 </div>
@@ -199,7 +200,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                                     return (
                                         <tr key={detail.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
                                             <td className="px-6 py-4">
-                                                <span className="font-bold text-gray-850 dark:text-white/90">{detail.product?.name}</span>
+                                                <span className="font-bold text-gray-850 dark:text-white/90">{detail.product_name || detail.product?.name}</span>
                                             </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className="inline-block text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -233,7 +234,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                                             <td className="px-4 py-4 text-center font-bold text-rose-600">{Math.max(0, qtySent - (Number(data.quantity_bagus[detail.id]) || 0) - (Number(data.quantity_rusak[detail.id]) || 0))}</td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
-                                                    {detail.unit?.abbreviation || 'PCS'}
+                                                    {detail.unit_name || detail.unit?.abbreviation || 'PCS'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 space-y-2">

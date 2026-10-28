@@ -33,6 +33,15 @@ class TransferReceiving
     {
         $warehouse = $document instanceof TransferOut;
         $entity = $warehouse ? $document->to_entity : ($document->branch?->entity ?? 'hendhys');
+        if ($entity === 'izzi') {
+            abort_unless(!$user->hasRole('owner') && ($user->hasRole('super_admin') && $user->entity === 'all'
+                || $user->entity === 'izzi' && $user->hasAnyRole(['admin_izzi', 'kasir_izzi'])), 403);
+            $branch = $document->branch;
+            abort_unless($branch && $branch->entity === 'izzi', 403, 'Cabang penerima tidak sesuai.');
+            if (!$user->hasRole('super_admin')) {
+                abort_unless((int) $branch->id === (int) (session('active_branch_id') ?: $user->branch_id), 403, 'Hanya cabang Izzi penerima yang dapat mengakses pengiriman ini.');
+            }
+        }
         $superAdmin = $user->hasRole('super_admin') && in_array($user->entity, [$entity, 'all'], true);
         if ($force) {
             $centreAdmin = $user->entity === 'hendhys' && $user->hasRole('admin_hendhys') && $user->branch?->type === 'pusat';
@@ -62,6 +71,12 @@ class TransferReceiving
             }
             if ($document->status !== 'sent') {
                 throw ValidationException::withMessages(['received_quantities' => 'Pengiriman ini tidak dapat diterima pada status sekarang.']);
+            }
+            if ($document instanceof TransferOut && $document->to_entity === 'izzi') {
+                $destination = \App\Models\Branch::whereKey($document->branch_id)->lockForUpdate()->first();
+                if (!$destination || !$destination->is_active || $destination->entity !== 'izzi') {
+                    throw ValidationException::withMessages(['received_quantities' => 'Cabang Izzi tujuan sudah tidak aktif atau berubah. Hubungi Super Admin.']);
+                }
             }
             $warehouse = $document instanceof TransferOut;
             $entity = $warehouse ? $document->to_entity : ($document->branch?->entity ?? 'hendhys');

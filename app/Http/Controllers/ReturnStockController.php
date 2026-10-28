@@ -41,6 +41,7 @@ class ReturnStockController extends Controller
     }
     private function destinationName(string $key): string
     {
+        if (str_starts_with($key, 'izzi-branch-')) return 'Cabang Izzi #'.substr($key, strlen('izzi-branch-'));
         return match ($key) {
             'gudang' => 'Gudang Utama', 'hendhys-pusat' => 'Hendhys Pusat', 'jihans-retail' => 'Jihan’s Retail',
             default => 'Cabang Hendhys #'.str_replace('hendhys-branch-', '', $key),

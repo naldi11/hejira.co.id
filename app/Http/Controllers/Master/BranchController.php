@@ -71,6 +71,9 @@ class BranchController extends Controller
         $blockers = [];
 
         // Cek semua data terkait yang mencegah penghapusan
+        if (\App\Models\TransferOut::where('branch_id', $branch->id)->exists()) {
+            $blockers[] = 'riwayat pengiriman Gudang';
+        }
         if ($branch->users()->count() > 0) {
             $blockers[] = $branch->users()->count() . ' user';
         }

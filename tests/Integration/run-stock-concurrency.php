@@ -19,6 +19,7 @@ use App\Services\CheckoutService;
 use App\Services\SaleShiftGuard;
 use App\Services\StockService;
 use App\Services\TransferReceiving;
+use App\Services\WarehouseDispatch;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -70,6 +71,9 @@ if (($argv[1] ?? '') === 'worker') {
     }
     try {
         switch ($job['operation']) {
+            case 'dispatch':
+                app(WarehouseDispatch::class)->send($job['data'], Auth::user());
+                break;
             case 'void':
                 app(TransactionController::class)->void(requestFor(['reason' => 'Uji pembatalan bersamaan']), $sale);
                 break;
@@ -243,8 +247,41 @@ try {
         check((int) HendhysStockPusat::where('product_id', $product->id)->value('quantity') === $before - ($expected ? 1 : 0), 'Checkout/close stock mismatch.');
         $results[] = ['scenario' => $order.' with concurrent closing/checkout', 'passed' => true, 'sales' => $saleCount, 'expected_cash' => $expected];
     }
-    $report = ['database' => DB::connection()->getDatabaseName(), 'driver' => 'mysql', 'independent_worker_processes' => 12, 'scenarios' => $results];
-    file_put_contents($workspace.'/output/stock-fix-concurrency.json', json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+    $izzi = Branch::create(['code' => 'CNC-IZ-'.$suffix, 'name' => 'Concurrency Izzi', 'entity' => 'izzi', 'type' => 'cabang', 'is_active' => true]);
+    $warehouseProduct = Product::create(['code' => 'CNC-GD-'.$suffix, 'name' => 'Concurrency warehouse product', 'category_id' => $category->id, 'unit_id' => $unit->id,
+        'product_type' => 'INV', 'source_type' => 'purchased', 'entity_scope' => 'all', 'status' => 'active']);
+    DB::table('jihans_gudang_stock')->insert(['product_id' => $warehouseProduct->id, 'unit_id' => $unit->id, 'quantity' => 20, 'last_updated' => now()]);
+    Role::findOrCreate('super_admin', 'web');
+    $sender = User::factory()->create(['entity' => 'all', 'branch_id' => null]); $sender->assignRole('super_admin');
+    $dispatch = ['request_key' => (string) Str::uuid(), 'to_entity' => 'izzi', 'branch_id' => $izzi->id, 'date' => today()->toDateString(), 'notes' => 'Concurrent Izzi dispatch',
+        'items' => [['product_id' => $warehouseProduct->id, 'unit_id' => $unit->id, 'quantity' => 6, 'hpp_price' => 1000]]];
+    $job = ['operation' => 'dispatch', 'user' => $sender->id, 'data' => $dispatch];
+    parallelJobs([$job, $job], $temp);
+    $document = TransferOut::where('request_key', $dispatch['request_key'])->firstOrFail();
+    check(TransferOut::where('request_key', $dispatch['request_key'])->count() === 1, 'Concurrent dispatch created two delivery notes.');
+    check((int) DB::table('jihans_gudang_stock')->where('product_id', $warehouseProduct->id)->value('quantity') === 14, 'Concurrent dispatch debited the warehouse twice.');
+    check(!DB::table('izzi_stock')->where('branch_id', $izzi->id)->where('product_id', $warehouseProduct->id)->exists(), 'Dispatch credited Izzi before confirmation.');
+    $results[] = ['scenario' => 'two concurrent Izzi dispatch retries', 'passed' => true, 'delivery_notes' => 1, 'warehouse_remaining' => 14];
+
+    $izziReceiver = person('kasir_izzi', $izzi);
+    $detail = $document->details()->firstOrFail();
+    $job = ['operation' => 'receive', 'user' => $izziReceiver->id, 'transfer' => $document->id,
+        'data' => ['quantity_bagus' => [$detail->id => 3], 'quantity_rusak' => [$detail->id => 2]]];
+    parallelJobs([$job, $job], $temp);
+    check((int) DB::table('izzi_stock')->where('branch_id', $izzi->id)->where('product_id', $warehouseProduct->id)->value('quantity') === 3000, 'Concurrent Izzi receipt duplicated or mis-scaled good stock.');
+    check(DB::table('receipt_confirmations')->where('receiptable_type', TransferOut::class)->where('receiptable_id', $document->id)->count() === 1, 'Concurrent Izzi receipt duplicated BAST.');
+    check(DB::table('return_quarantine_entries')->where('destination_key', 'izzi-branch-'.$izzi->id)->where('product_id', $warehouseProduct->id)->sum('quantity') == 2, 'Concurrent Izzi receipt duplicated damaged stock.');
+    $results[] = ['scenario' => 'two concurrent Izzi receipts with damage and shortfall', 'passed' => true, 'good' => 3, 'damaged' => 2, 'missing' => 1, 'bast_count' => 1];
+
+    $dispatch['items'][0]['quantity'] = 10;
+    $dispatch['request_key'] = (string) Str::uuid(); $second = $dispatch; $second['request_key'] = (string) Str::uuid();
+    $outcomes = parallelJobs([['operation' => 'dispatch', 'user' => $sender->id, 'data' => $dispatch], ['operation' => 'dispatch', 'user' => $sender->id, 'data' => $second]], $temp);
+    check(count(array_filter($outcomes, fn ($r) => $r['success'])) === 1, 'Competing shipments both consumed the same available warehouse stock.');
+    check((int) DB::table('jihans_gudang_stock')->where('product_id', $warehouseProduct->id)->value('quantity') === 4, 'Competing shipments produced an invalid warehouse balance.');
+    $results[] = ['scenario' => 'two different Izzi shipments competing for limited warehouse stock', 'passed' => true, 'successful_shipments' => 1, 'warehouse_remaining' => 4];
+
+    $report = ['database' => DB::connection()->getDatabaseName(), 'driver' => 'mysql', 'independent_worker_processes' => 18, 'scenarios' => $results];
+    file_put_contents($workspace.'/output/izzi-shipment-concurrency.json', json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     echo json_encode($report, JSON_THROW_ON_ERROR), PHP_EOL;
 } finally {
     foreach (glob($temp.'/*') as $file) {

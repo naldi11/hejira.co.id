@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import HendhysLayout from '@/Layouts/HendhysLayout';
+import HendhysLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import JihansLayout from '@/Layouts/JihansLayout';
+import JihansLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 import InputError from '@/Components/InputError';
 

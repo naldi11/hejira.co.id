@@ -14,6 +14,7 @@ class TransferOutDetail extends Model
 
     protected $fillable = [
         'transfer_id', 'product_id', 'quantity', 'received_quantity', 'kondisi', 'unit_id', 'hpp_price', 'total',
+        'product_name', 'product_code', 'unit_name',
     ];
 
     /**

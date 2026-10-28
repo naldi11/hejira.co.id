@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import HendhysLayout from '@/Layouts/HendhysLayout';
+import HendhysLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 import { formatQty } from '@/lib/format';
 

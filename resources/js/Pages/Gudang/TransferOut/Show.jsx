@@ -36,7 +36,7 @@ export default function TransferOutShow({ transfer }) {
                         <div className="space-y-3.5">
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Dikirim Ke (Entitas)</p>
-                                <p className="text-sm font-semibold text-gray-800 dark:text-white/90 capitalize">{transfer.to_entity === 'hendhys' ? `Hendhys - ${transfer.branch ?? 'Cabang'}` : 'Jihans - Stok Produksi'}</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-white/90 capitalize">{transfer.destination}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Catatan Pengiriman</p>

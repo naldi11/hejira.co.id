@@ -264,6 +264,18 @@ class HandleInertiaRequests extends Middleware
                         }
                     }
 
+                    if (!$isOwner && ($user->hasRole('super_admin') && $user->entity === 'all'
+                        || $user->entity === 'izzi' && $user->hasAnyRole(['admin_izzi', 'kasir_izzi']))) {
+                        $pending = \App\Models\TransferOut::where('to_entity', 'izzi')->where('status', 'sent')
+                            ->when(!$user->hasRole('super_admin'), fn ($q) => $q->where('branch_id', session('active_branch_id') ?: $user->branch_id));
+                        $count = (clone $pending)->count();
+                        if ($count > 0) $items[] = [
+                            'id' => 'izzi_warehouse_pending', 'title' => 'Pengiriman Gudang ke Izzi',
+                            'message' => "Ada {$count} surat jalan yang menunggu konfirmasi penerimaan Izzi.",
+                            'path' => route('izzi.warehouse-shipments.index', ['branch_id' => $pending->orderBy('id')->value('branch_id')]),
+                            'icon' => 'local_shipping', 'type' => 'info', 'time' => 'Menunggu penerimaan',
+                        ];
+                    }
                     if (!$isOwner && \Illuminate\Support\Facades\Schema::hasTable('branch_stock_transfers')) {
                         $pending = app(\App\Services\BranchStockTransfers::class)->pendingIncomingCount($user);
                         if ($pending > 0) $items[] = [

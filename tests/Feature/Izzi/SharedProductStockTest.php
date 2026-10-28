@@ -101,7 +101,7 @@ class SharedProductStockTest extends TestCase
         $product = $this->product(); $warehouse = $this->warehouseStock($product); $branch = $this->branch();
         $this->actor('super_admin', 'gudang'); $data = $this->transfer($warehouse, $branch, $product);
         $this->get(route('gudang.transfer-out.create'))->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('izziTransferUrl', route('branch-transfers.create', ['from_branch_id' => $warehouse->id, 'to_branch_id' => $branch->id])));
+            ->has('izziBranches', 1)->where('izziBranches.0.id', $branch->id)->missing('izziTransferUrl'));
         $this->getJson(route('branch-transfers.destination-products', ['branch' => $branch, 'q' => $product->code]))->assertOk()->assertJsonPath('products.0.id', $product->id);
         $this->post(route('branch-transfers.store'), $data)->assertSessionHasNoErrors()->assertSessionHas('success');
         $this->assertDatabaseHas('jihans_gudang_stock', ['product_id' => $product->id, 'quantity' => 17]);

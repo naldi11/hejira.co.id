@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import JihansLayout from '@/Layouts/JihansLayout';
+import JihansLayout from '@/Layouts/ProductionLayout';
 import Icon from '@/Components/Icon';
 
 export default function Index({ sessions, filters }) {

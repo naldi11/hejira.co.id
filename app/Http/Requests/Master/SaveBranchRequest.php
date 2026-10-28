@@ -27,6 +27,9 @@ class SaveBranchRequest extends FormRequest
             'entity'    => ['required', 'in:hendhys,jihans,gudang,izzi', function ($attribute, $value, $fail) {
                 $branch = $this->route('branch');
                 if (!$branch || $branch->entity === $value) return;
+                if (\App\Models\TransferOut::where('branch_id', $branch->id)->exists()) {
+                    $fail('Unit cabang tidak dapat diganti karena sudah memiliki riwayat pengiriman Gudang. Buat cabang baru agar dokumen dan penerimaan tetap sesuai.'); return;
+                }
                 if (\Illuminate\Support\Facades\DB::table('branch_stock_transfers')->where(fn ($q) => $q->where('from_branch_id', $branch->id)->orWhere('to_branch_id', $branch->id))->exists()) {
                     $fail('Unit cabang tidak dapat diganti karena sudah memiliki riwayat mutasi. Buat cabang baru agar saldo dan jejak barang tetap benar.'); return;
                 }

@@ -24,6 +24,7 @@ class ProductionController extends Controller
     private function checkPusat(): void
     {
         $user = auth()->user();
+        if ($user->hasRole('super_admin')) return;
         if ($user->branch && $user->branch->type !== 'pusat') {
             abort(403, 'Hanya Cabang Pusat yang dapat mengakses modul Produksi.');
         }
