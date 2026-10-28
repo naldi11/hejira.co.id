@@ -67,7 +67,7 @@ export default function Receive({ transferOut, currentScope, info }) {
         setData({
             ...data,
             quantity_bagus: { ...data.quantity_bagus, [detailId]: numVal },
-            quantity_rusak: { ...data.quantity_rusak, [detailId]: remaining }
+            quantity_rusak: { ...data.quantity_rusak, [detailId]: Math.min(Number(data.quantity_rusak[detailId]) || 0, remaining) }
         });
     };
 
@@ -84,7 +84,7 @@ export default function Receive({ transferOut, currentScope, info }) {
         setData({
             ...data,
             quantity_rusak: { ...data.quantity_rusak, [detailId]: numVal },
-            quantity_bagus: { ...data.quantity_bagus, [detailId]: remaining }
+            quantity_bagus: { ...data.quantity_bagus, [detailId]: Math.min(Number(data.quantity_bagus[detailId]) || 0, remaining) }
         });
     };
 
@@ -130,7 +130,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                 {/* Title Section */}
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">Konfirmasi Penerimaan Barang</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Verifikasi fisik barang yang diterima dari Gudang Utama</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Isi jumlah baik dan rusak sesuai fisik. Kekurangan dicatat terpisah dan tidak otomatis kembali ke stok gudang.</p>
                 </div>
 
                 {/* Validation Errors */}
@@ -188,6 +188,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                                     <th className="px-4 py-4 text-center">Qty Kirim</th>
                                     <th className="px-4 py-4 text-center w-32">Qty Bagus</th>
                                     <th className="px-4 py-4 text-center w-32">Qty Rusak</th>
+                                    <th className="px-4 py-4 text-center">Kurang</th>
                                     <th className="px-4 py-4 text-center">Satuan</th>
                                     <th className="px-6 py-4 text-center w-48">Batch / Expired</th>
                                 </tr>
@@ -212,7 +213,7 @@ export default function Receive({ transferOut, currentScope, info }) {
                                                     onChange={(e) => handleQtyBagusChange(detail.id, qtySent, e.target.value)} 
                                                     min="0" 
                                                     max={qtySent} 
-                                                    step="any" 
+                                                    step="1"
                                                     required
                                                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-center text-gray-850 dark:text-white focus:bg-white dark:focus:bg-gray-900 focus:border-orange-400 dark:focus:border-orange-500 outline-none transition-all shadow-inner"
                                                 />
@@ -224,11 +225,12 @@ export default function Receive({ transferOut, currentScope, info }) {
                                                     onChange={(e) => handleQtyRusakChange(detail.id, qtySent, e.target.value)} 
                                                     min="0" 
                                                     max={qtySent} 
-                                                    step="any" 
+                                                    step="1"
                                                     required
                                                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-center text-gray-855 dark:text-white focus:bg-white dark:focus:bg-gray-900 focus:border-orange-400 dark:focus:border-orange-500 outline-none transition-all shadow-inner"
                                                 />
                                             </td>
+                                            <td className="px-4 py-4 text-center font-bold text-rose-600">{Math.max(0, qtySent - (Number(data.quantity_bagus[detail.id]) || 0) - (Number(data.quantity_rusak[detail.id]) || 0))}</td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
                                                     {detail.unit?.abbreviation || 'PCS'}

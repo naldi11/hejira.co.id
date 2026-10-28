@@ -1,11 +1,14 @@
 import { todayWib } from '@/lib/date';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import JihansLayout from '@/Layouts/JihansLayout';
 import Icon from '@/Components/Icon';
 
 export default function Form({ karyawans, products, type, warning, targetDate, prediction_id, isEdit = false, production = null, formAction }) {
     const isPrediksi = type === 'prediksi';
+    const { auth } = usePage().props;
+    const submissionScope = `production:jihans:${auth.user.id}`;
 
     // State for basic info
     const [date, setDate] = useState(isEdit ? production.date : (targetDate || todayWib()));
@@ -101,11 +104,12 @@ export default function Form({ karyawans, products, type, warning, targetDate, p
         });
 
         const payload = { date, notes, prediction_id, details };
+        payload.request_key = checkoutKey(submissionScope, payload);
 
         if (isEdit) {
             router.put(formAction, payload);
         } else {
-            router.post(formAction, payload);
+            router.post(formAction, payload, { onSuccess: () => clearCheckoutKey(submissionScope) });
         }
     };
 

@@ -37,10 +37,9 @@ class TransactionController extends Controller
         if ($request->filled('shift_id')) {
             $shift = \App\Models\CashierShift::find($request->shift_id);
             if ($shift) {
-                $query->whereBetween('created_at', [
-                    $shift->opened_at,
-                    $shift->closed_at ?? now()
-                ]);
+                abort_unless($shift->entity === 'jihans', 403);
+                \Illuminate\Support\Facades\Gate::authorize('view', $shift);
+                $shift->scopeTransactions($query, 'jihans_transactions');
             }
         }
 
@@ -96,27 +95,10 @@ class TransactionController extends Controller
             'reason.min'      => 'Alasan pembatalan minimal 5 karakter.',
         ]);
 
-        if ($transaction->status === 'cancelled') {
-            return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya.');
-        }
-
-        // Hanya transaksi dari shift yang MASIH TERBUKA yang boleh dibatalkan.
-        // Setelah shift ditutup, rekap laci sudah dihitung; membatalkan transaksi
-        // lama akan membuat rekap itu tidak pernah cocok lagi.
-        $openShift = CashierShift::where('user_id', $transaction->created_by)
-            ->where('status', 'open')
-            ->latest('id')
-            ->first();
-
-        if (!$openShift || $transaction->created_at < $openShift->opened_at) {
-            return back()->with('error',
-                'Transaksi ini berasal dari shift yang sudah ditutup sehingga tidak bisa dibatalkan. '
-                . 'Gunakan mekanisme retur agar rekap laci tetap cocok.');
-        }
-
         try {
             DB::transaction(function () use ($transaction, $data, $user) {
-                $transaction->load('details');
+                $transaction = app(\App\Services\SaleShiftGuard::class)->sale($transaction, 'jihans');
+                $transaction->load(['details' => fn ($q) => $q->orderBy('product_id')]);
 
                 foreach ($transaction->details as $detail) {
                     $this->stockService->creditJihansRetail(
@@ -134,19 +116,19 @@ class TransactionController extends Controller
                     'notes'  => trim(($transaction->notes ? $transaction->notes . ' | ' : '')
                               . 'DIBATALKAN oleh ' . $user->name . ': ' . $data['reason']),
                 ]);
-            });
+                $this->logger->log(
+                    'void',
+                    'jihans.pos',
+                    "Pembatalan transaksi {$transaction->transaction_number} sebesar {$transaction->grand_total}. Alasan: {$data['reason']}",
+                    $transaction
+                );
+            }, 3);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
         }
 
-        $this->logger->log(
-            'void',
-            'jihans.pos',
-            "Pembatalan transaksi {$transaction->transaction_number} sebesar {$transaction->grand_total}. Alasan: {$data['reason']}",
-            $transaction
-        );
 
         return back()->with('success', "Transaksi {$transaction->transaction_number} berhasil dibatalkan dan stok dikembalikan.");
     }

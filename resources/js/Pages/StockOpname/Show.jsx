@@ -1,57 +1,304 @@
 import SessionActions, { SessionState } from './SessionActions';
-import StockOpnameResultCard from '@/Components/StockOpnameResultCard';
 import { useOpnameActive } from '@/Components/StockOpnameAccess';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import Icon from '@/Components/Icon';
+import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
-import Layout, { panel, input, button, Errors } from './Layout';
+import EmptyState from '@/Components/EmptyState';
+import Layout, { input, Errors } from './Layout';
+
 const route = window.route;
 
-function CountForm({ product, session, onClose }) {
-    const form = useForm({ product_id: product.id, expected_quantity: product.quantity, quantity: '', notes: '', confirmed: false });
-    const diff = form.data.quantity === '' ? null : Number((Number(form.data.quantity) - Number(product.quantity)).toFixed(session.entity === 'izzi' ? 3 : 0));
-    return <form className={`${panel} space-y-4 border-brand-300`} onSubmit={e => { e.preventDefault(); form.post(route('stock-opname.count', session.id), { preserveScroll: true, onSuccess: onClose }); }}>
-        <h2 className="font-bold">Hitung fisik: {product.name}</h2><Errors errors={form.errors} />
-        <p>Stok sistem saat halaman dibuka: <strong>{product.quantity} {product.unit}</strong></p>
-        <label className="block">Jumlah yang benar-benar ada (stok siap jual / distribusi)
-            <input autoFocus required type="number" min="0" max="999999999" step={session.entity === 'izzi' ? '0.001' : '1'} className={`${input} mt-2`} value={form.data.quantity} onChange={e => form.setData('quantity', e.target.value)} />
-        </label>
-        {diff !== null && <p className={diff < 0 ? 'text-red-600' : 'text-green-600'}>Selisih: {diff > 0 ? '+' : ''}{diff} {product.unit}. Saldo sesudah disimpan: {form.data.quantity} {product.unit}.</p>}
-        <label className="block">Catatan hasil hitung / alasan selisih
-            <textarea placeholder="Contoh: Ditemukan barang di rak lain saat hitung ulang. Jelaskan penyebab selisih sesuai keadaan sebenarnya." required minLength={5} maxLength={1000} className={`${input} mt-2`} value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} />
-        </label>
-        <label className="flex items-start gap-3"><input type="checkbox" checked={form.data.confirmed} onChange={e => form.setData('confirmed', e.target.checked)} />Saya sudah menghitung stok fisik. Jumlah ini akan menggantikan saldo sistem di lokasi sesi.</label>
-        <div className="flex flex-wrap gap-3"><button disabled={form.processing || !form.data.confirmed || diff === null} className={button}>Simpan hasil hitung</button><button type="button" disabled={form.processing} className="px-4 py-3" onClick={onClose}>Tutup form</button></div>
-    </form>;
+function CountModal({ product, session, onClose }) {
+    const form = useForm({
+        product_id: product.id,
+        expected_quantity: product.quantity,
+        quantity: '',
+        notes: '',
+        confirmed: false,
+    });
+    const diff =
+        form.data.quantity === ''
+            ? null
+            : Number((Number(form.data.quantity) - Number(product.quantity)).toFixed(session.entity === 'izzi' ? 3 : 0));
+
+    return (
+        <Modal show={true} onClose={onClose} maxWidth="md">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    form.post(route('stock-opname.count', session.id), {
+                        preserveScroll: true,
+                        onSuccess: onClose,
+                    });
+                }}
+                className="p-6"
+            >
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Hitung Fisik: {product.name}</h3>
+                <p className="mt-1 text-xs text-gray-500">
+                    Kode: {product.code} • Saldo sistem saat ini: <strong>{product.quantity} {product.unit}</strong>
+                </p>
+
+                <div className="mt-4 space-y-4">
+                    <Errors errors={form.errors} />
+
+                    <label className="block text-sm font-medium">
+                        Jumlah Fisik Sebenarnya ({product.unit})
+                        <input
+                            autoFocus
+                            required
+                            type="number"
+                            min="0"
+                            max="999999999"
+                            step={session.entity === 'izzi' ? '0.001' : '1'}
+                            className={`${input} mt-1.5 font-bold`}
+                            value={form.data.quantity}
+                            onChange={(e) => form.setData('quantity', e.target.value)}
+                        />
+                    </label>
+
+                    {diff !== null && (
+                        <div
+                            className={`rounded-xl p-3 text-xs font-semibold ${
+                                diff < 0
+                                    ? 'bg-rose-50 text-rose-700'
+                                    : diff > 0
+                                      ? 'bg-emerald-50 text-emerald-700'
+                                      : 'bg-blue-50 text-blue-700'
+                            }`}
+                        >
+                            Selisih: {diff > 0 ? '+' : ''}
+                            {diff} {product.unit} → Saldo baru menjadi <strong>{form.data.quantity} {product.unit}</strong>
+                        </div>
+                    )}
+
+                    <label className="block text-sm font-medium">
+                        Catatan / Alasan Selisih
+                        <textarea
+                            required
+                            minLength={5}
+                            maxLength={1000}
+                            rows={2}
+                            placeholder="Jelaskan hasil hitung fisik atau alasan selisih…"
+                            className={`${input} mt-1.5`}
+                            value={form.data.notes}
+                            onChange={(e) => form.setData('notes', e.target.value)}
+                        />
+                    </label>
+
+                    <label className="flex items-center gap-2 text-xs font-medium">
+                        <input
+                            type="checkbox"
+                            checked={form.data.confirmed}
+                            onChange={(e) => form.setData('confirmed', e.target.checked)}
+                        />
+                        <span>Saya sudah menghitung fisik barang ini dengan benar.</span>
+                    </label>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-2.5 border-t border-gray-100 pt-4 dark:border-gray-800">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={form.processing || !form.data.confirmed || diff === null}
+                        className="rounded-xl bg-brand-500 px-5 py-2 text-sm font-bold text-white hover:bg-brand-600 disabled:opacity-40"
+                    >
+                        {form.processing ? 'Menyimpan…' : 'Simpan Hasil Hitung'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+    );
 }
-export default function Show({ session, products, counts, isOwner, description, canCount: permitted, filters, events = [], eventsPagination, countTotal = counts.length, productCounts = counts }) {
+
+export default function Show({
+    session,
+    products,
+    counts,
+    isOwner,
+    canCount: permitted,
+    filters,
+    countTotal = counts.length,
+    productCounts = counts,
+}) {
     const canCount = useOpnameActive(permitted, session);
     const [selected, select] = useState(null);
-    const [search, setSearch] = useState(filters.search);
-    const counted = new Map(productCounts.map(c => [Number(c.product_id), c]));
-    return <Layout><Head title={`Opname #${session.id}`} /><div className="mx-auto max-w-5xl space-y-6 text-gray-800 dark:text-gray-200">
-        <Link className="text-brand-500" href={route('stock-opname.index')}>← Daftar sesi stock opname</Link>
-        <div className={panel}><div className="flex flex-wrap justify-between gap-2"><h1 className="text-xl font-bold">Opname #{session.id} · {session.location_name}</h1><SessionState session={session} /></div>
-            <p className="mt-3 rounded-lg bg-amber-50 p-3 text-amber-800">{description}</p>
-            <p className="mt-3">Instruksi: {session.notes}</p><p className="mt-2 text-sm text-gray-500">Dibuka {session.opened_at} oleh {session.opened_by_name}. Akses berakhir {session.expires_at}.</p>
-            {session.closed_at && <p className="mt-2 text-sm">Ditutup {session.closed_at} oleh {session.closed_by_name}.</p>}
-            {isOwner && <SessionActions key={session.expires_at_iso + session.status} session={session} />}
-            {!isOwner && !canCount && <p className="mt-4 text-red-600">Akses hitung fisik tidak aktif. Minta Owner membuka kembali sesi ini untuk melanjutkan produk yang belum dihitung.</p>}
-        </div>
-        {events.length > 0 && <section className={`${panel} space-y-3`}><h2 className="font-bold">Riwayat akses Owner</h2>{events.map(e => <div className="border-b border-gray-100 pb-3 text-sm dark:border-gray-800" key={e.id}><strong>{({ open: 'Sesi dibuka', close: 'Sesi ditutup', reopen: 'Sesi dibuka kembali' })[e.action]}</strong><p>{e.created_at} · {e.owner_name}</p>{e.expires_at && <p>Batas waktu: {e.expires_at}</p>}{e.previous_expires_at && <p>Batas waktu sebelumnya: {e.previous_expires_at}</p>}{e.previous_closed_at && <p>Sebelumnya ditutup {e.previous_closed_at} oleh {e.previous_closed_by_name}.</p>}{e.notes && <p>Alasan / instruksi: {e.notes}</p>}</div>)}{eventsPagination?.links && <Pagination links={eventsPagination.links} />}</section>}
-        <section id="hasil-so-sesi" className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-3"><h2 className="text-lg font-bold">Hasil hitung stok sesi ini · {countTotal} produk</h2><Link className="text-sm text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Cari seluruh hasil sesi ini →</Link></div>
-            <p className="text-sm text-gray-500">Sebelum dan sesudah di bawah adalah saldo saat SO disimpan. Klik produk untuk melihat petugas, alasan, izin Owner, dan jejak penyesuaian.</p>
-            {counts.length === 0 ? <p>Belum ada hasil SO yang disimpan dalam sesi ini.</p> : counts.slice(0, 5).map(c => <StockOpnameResultCard key={c.id} count={c} />)}
-            {countTotal > 5 && <Link className="inline-block font-semibold text-brand-500 underline" href={route('stock-opname.history', { session_id: session.id })}>Lihat seluruh {countTotal} hasil hitung stok →</Link>}
-        </section>
-        {canCount && <p className="text-sm text-gray-500">Hitung saat pergerakan barang berhenti sementara. Jika saldo berubah sebelum disimpan, sistem meminta Anda memuat ulang dan menghitung kembali. Setiap produk hanya dapat disimpan satu kali dalam sesi.</p>}
-        {['gudang', 'hendhys-pusat'].includes(session.stock_key) && <p className="text-sm text-gray-500">Untuk stok pusat/produksi: kekurangan mengurangi stok produksi terlama terlebih dahulu; kelebihan dicatat tanpa nomor produksi karena asalnya belum diketahui. Stok retur rusak dan kedaluwarsa tidak termasuk hitungan ini.</p>}
-        {selected && canCount && <CountForm key={`${session.id}-${selected.id}`} product={selected} session={session} onClose={() => select(null)} />}
-        <div className={`${panel} space-y-4`}><h2 className="font-bold">Stok lokasi sesi</h2>
-            <form className="flex gap-3" onSubmit={e => { e.preventDefault(); select(null); router.get(route('stock-opname.show', session.id), { search }, { preserveState: true }); }}><input className={input} placeholder="Cari produk atau kode" aria-label="Cari produk" value={search} onChange={e => setSearch(e.target.value)} /><button className={button}>Cari</button></form>
-            {products.data.length === 0 && <p>Belum ada kartu stok yang sesuai.</p>}
-            {products.data.map(p => <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 py-3 dark:border-gray-800"><div><strong>{p.name}</strong><p className="text-sm text-gray-500">{p.code} · Saldo saat ini: {p.quantity} {p.unit}</p></div>{counted.has(Number(p.id)) ? <div className="text-sm"><Link className="font-semibold text-green-600 underline" href={route('stock-opname.result', counted.get(Number(p.id)).id)}>Sudah dihitung · Lihat detail SO →</Link><p className="mt-1 text-gray-500">Sebelum {counted.get(Number(p.id)).quantity_before} → Sesudah {counted.get(Number(p.id)).quantity_after} {counted.get(Number(p.id)).unit_name}</p></div> : canCount && <button className={button} onClick={() => select(p)}>Hitung fisik</button>}</div>)}
-            <Pagination links={products.links} />
-        </div>
-    </div></Layout>;
+    const [search, setSearch] = useState(filters.search ?? '');
+    const counted = new Map(productCounts.map((c) => [Number(c.product_id), c]));
+
+    return (
+        <Layout pageTitle={`Opname #${session.id}`}>
+            <Head title={`Opname #${session.id}`} />
+
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <Link
+                            href={route('stock-opname.index')}
+                            className="mb-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                        >
+                            <Icon name="arrow_back" className="text-[15px]" />
+                            <span>Kembali ke Daftar Sesi SO</span>
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                                Opname #{session.id} — {session.location_name}
+                            </h2>
+                            <SessionState session={session} />
+                        </div>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                            Dibuka {session.opened_at} oleh {session.opened_by_name} • Berakhir {session.expires_at} •
+                            Instruksi: <strong>{session.notes}</strong>
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href={route('stock-opname.history', { session_id: session.id })}
+                            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                        >
+                            Riwayat Hasil Sesi Ini ({countTotal}) →
+                        </Link>
+                        {isOwner && <SessionActions key={session.expires_at_iso + session.status} session={session} />}
+                    </div>
+                </div>
+
+                {/* Products Table */}
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.01]">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                select(null);
+                                router.get(route('stock-opname.show', session.id), { search }, { preserveState: true });
+                            }}
+                            className="flex flex-wrap items-center gap-2.5"
+                        >
+                            <div className="relative min-w-[240px] flex-1">
+                                <Icon
+                                    name="search"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-gray-400"
+                                />
+                                <input
+                                    type="search"
+                                    aria-label="Cari produk"
+                                    placeholder="Cari nama produk atau kode…"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+                            >
+                                Cari
+                            </button>
+                        </form>
+                    </div>
+
+                    <div className="custom-scrollbar overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.02]">
+                                <tr>
+                                    <th className="px-6 py-3.5">Produk</th>
+                                    <th className="px-6 py-3.5 text-right">Saldo Sistem</th>
+                                    <th className="px-6 py-3.5 text-center">Status Hitung</th>
+                                    <th className="px-6 py-3.5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {products.data.length === 0 ? (
+                                    <EmptyState
+                                        colSpan={4}
+                                        icon="inventory_2"
+                                        message="Tidak ada produk yang ditemukan."
+                                    />
+                                ) : (
+                                    products.data.map((p) => {
+                                        const c = counted.get(Number(p.id));
+                                        return (
+                                            <tr
+                                                key={p.id}
+                                                className="hover:bg-gray-50/60 dark:hover:bg-white/[0.01]"
+                                            >
+                                                <td className="px-6 py-4">
+                                                    <p className="font-semibold text-gray-800 dark:text-white">
+                                                        {p.name}
+                                                    </p>
+                                                    <p className="font-mono text-xs text-gray-400">{p.code}</p>
+                                                </td>
+                                                <td className="whitespace-nowrap px-6 py-4 text-right font-bold tabular-nums">
+                                                    {p.quantity} {p.unit}
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    {c ? (
+                                                        <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                                            Sudah Dihitung ({c.quantity_before} → {c.quantity_after}{' '}
+                                                            {c.unit_name})
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800">
+                                                            Belum Dihitung
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="whitespace-nowrap px-6 py-4 text-right">
+                                                    {c ? (
+                                                        <Link
+                                                            href={route('stock-opname.result', c.id)}
+                                                            className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                                                        >
+                                                            Lihat Detail SO →
+                                                        </Link>
+                                                    ) : (
+                                                        canCount && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => select(p)}
+                                                                className="rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+                                                            >
+                                                                Hitung Fisik
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {products.total > 0 && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+                            <p className="text-xs text-gray-500">
+                                Menampilkan <strong>{products.from || 0}–{products.to || 0}</strong> dari{' '}
+                                <strong>{products.total}</strong> produk
+                            </p>
+                            <Pagination links={products.links} />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {selected && canCount && (
+                <CountModal
+                    key={`${session.id}-${selected.id}`}
+                    product={selected}
+                    session={session}
+                    onClose={() => select(null)}
+                />
+            )}
+        </Layout>
+    );
 }

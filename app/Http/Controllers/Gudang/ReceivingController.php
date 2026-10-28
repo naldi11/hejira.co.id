@@ -80,6 +80,17 @@ class ReceivingController extends Controller
     public function store(StoreReceivingRequest $request)
     {
         DB::transaction(function () use ($request) {
+            if ($request->po_id) {
+                $po = PurchaseOrder::whereKey($request->po_id)->lockForUpdate()->firstOrFail();
+                if (!$po->isReceivable()) throw \Illuminate\Validation\ValidationException::withMessages(['po_id' => 'PO sudah dibatalkan atau selesai dan tidak dapat menerima barang.']);
+                $request->merge(['supplier_id' => $po->supplier_id]);
+            }
+            $products = Product::whereIn('id', collect($request->items)->pluck('product_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach ($request->items as $index => $item) {
+                $product = $products->get($item['product_id']);
+                if (!$product || (int) $product->unit_id !== (int) $item['unit_id']) throw \Illuminate\Validation\ValidationException::withMessages(["items.{$index}.unit_id" => 'Satuan penerimaan harus sesuai master produk.']);
+                if (isset($po) && !$po->details()->where('product_id', $product->id)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(["items.{$index}.product_id" => 'Produk tidak tercantum pada PO yang dipilih.']);
+            }
             $receiving = Receiving::create([
                 'grn_number'        => $this->numbers->generateYearly('GDG-GRN', 'gudang_receivings', 'grn_number'),
                 'po_id'             => $request->po_id,
@@ -233,8 +244,11 @@ class ReceivingController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($data, $receiving) {
+            if ($receiving->po_id) PurchaseOrder::whereKey($receiving->po_id)->lockForUpdate()->firstOrFail();
+            $receiving = Receiving::whereKey($receiving->id)->lockForUpdate()->firstOrFail();
+            abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup dan tidak dapat diedit.');
             foreach ($data['items'] as $item) {
-                $detail = $receiving->details()->findOrFail($item['detail_id']);
+                $detail = $receiving->details()->lockForUpdate()->findOrFail($item['detail_id']);
 
                 // Hanya barang berkondisi 'baik' yang pernah masuk ke stok jual
                 // (lihat store(): item 'rusak' tidak pernah di-credit). Karena itu
@@ -287,19 +301,22 @@ class ReceivingController extends Controller
 
     public function close(Receiving $receiving)
     {
-        abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup.');
+        return DB::transaction(function () use ($receiving) {
+            $receiving = Receiving::whereKey($receiving->id)->lockForUpdate()->firstOrFail();
+            abort_if($receiving->isClosed(), 403, 'GRN sudah ditutup.');
 
-        if (empty($receiving->received_by_name)) {
-            return back()->withErrors(['close' => 'Nama penerima wajib diisi sebelum menutup GRN.']);
-        }
-        if (empty($receiving->supplier_rep_name)) {
-            return back()->withErrors(['close' => 'Nama perwakilan supplier wajib diisi sebelum menutup GRN.']);
-        }
+            if (empty($receiving->received_by_name)) {
+                return back()->withErrors(['close' => 'Nama penerima wajib diisi sebelum menutup GRN.']);
+            }
+            if (empty($receiving->supplier_rep_name)) {
+                return back()->withErrors(['close' => 'Nama perwakilan supplier wajib diisi sebelum menutup GRN.']);
+            }
 
-        $receiving->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => auth()->id()]);
-        $this->logger->log('close', 'gudang.receiving', "GRN ditutup: {$receiving->grn_number}", $receiving);
+            $receiving->update(['status' => 'closed', 'closed_at' => now(), 'closed_by' => auth()->id()]);
+            $this->logger->log('close', 'gudang.receiving', "GRN ditutup: {$receiving->grn_number}", $receiving);
 
-        return back()->with('success', "GRN {$receiving->grn_number} berhasil diselesaikan dan dikunci.");
+            return back()->with('success', "GRN {$receiving->grn_number} berhasil diselesaikan dan dikunci.");
+        }, 3);
     }
 
     public function print(Receiving $receiving)

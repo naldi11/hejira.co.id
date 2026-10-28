@@ -26,7 +26,7 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->group(function() {
-    Route::middleware(['role:kasir_hendhys', 'check.entity:hendhys', 'check.branch'])->group(function () {
+    Route::middleware(['role:kasir_hendhys|super_admin', 'check.entity:hendhys', 'check.branch'])->group(function () {
         Route::get('/production-materials', [\App\Http\Controllers\ProductionMaterialController::class, 'index'])->name('production-materials.index');
         Route::get('/production-materials/create', [\App\Http\Controllers\ProductionMaterialController::class, 'create'])->name('production-materials.create');
         Route::post('/production-materials', [\App\Http\Controllers\ProductionMaterialController::class, 'store'])->name('production-materials.store');

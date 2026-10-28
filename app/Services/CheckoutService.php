@@ -34,7 +34,10 @@ class CheckoutService
                 }
             }
 
+            $shift = in_array($modelClass, [\App\Models\HendhysTransaction::class, \App\Models\JihansTransaction::class], true)
+                ? app(SaleShiftGuard::class)->active(auth()->user()) : null;
             $transaction = $create();
+            if ($shift) $transaction->forceFill(['shift_id' => $shift->id])->save();
 
             if ($key) {
                 $transaction->forceFill([

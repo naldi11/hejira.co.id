@@ -327,6 +327,7 @@ class PosController extends Controller
         }
 
         DB::transaction(function () use ($data, $transaction) {
+            $transaction = app(\App\Services\SaleShiftGuard::class)->sale($transaction, 'jihans');
             foreach ($transaction->details as $detail) {
                 $this->stock->creditJihansRetail($detail->product_id, $detail->unit_id, $detail->quantity, 'adjustment', $transaction->id, auth()->id());
             }

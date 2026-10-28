@@ -1,12 +1,20 @@
+import os from 'node:os';
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import svgr from 'vite-plugin-svgr';
 
+const lanHost = Object.values(os.networkInterfaces())
+    .flat()
+    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal)?.address || '127.0.0.1';
+
 export default defineConfig({
     server: {
-        host: '127.0.0.1',
+        host: '0.0.0.0',
+        hmr: {
+            host: process.env.VITE_DEV_SERVER_HOST || lanHost,
+        },
         cors: true,
     },
     plugins: [

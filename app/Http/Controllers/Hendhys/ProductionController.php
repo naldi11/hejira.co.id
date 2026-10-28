@@ -160,9 +160,10 @@ class ProductionController extends Controller
     {
         $this->checkPusat();
 
-        $request->validate([
+        $data = $request->validate([
             'date' => 'required|date',
             'notes' => 'nullable|string',
+            'request_key' => 'required_without:prediction_id|nullable|uuid',
             'prediction_id' => 'nullable|integer|exists:hendhys_productions,id',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:master_products,id',
@@ -171,16 +172,7 @@ class ProductionController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request) {
-                $existingPrediksi = null;
-                
-                if ($request->prediction_id) {
-                    $existingPrediksi = HendhysProduction::with('details')->where('type', 'prediksi')
-                        ->where('id', $request->prediction_id)
-                        ->whereNull('overridden_at')
-                        ->first();
-                }
-
+            app(\App\Services\ProductionRecording::class)->run('hendhys', $data, function ($existingPrediksi) use ($request) {
                 if ($existingPrediksi) {
                     $existingPrediksi->prediction_snapshot = \App\Services\ProductionSnapshot::capture($existingPrediksi, 'hendhys');
                     $existingPrediksi->details()->delete();
@@ -220,11 +212,14 @@ class ProductionController extends Controller
                         auth()->id()
                     );
                 }
+                return $production;
             });
 
             return redirect()->route('hendhys.productions.index')
                 ->with('success', 'Catatan produksi Hendhys berhasil disimpan dan stok Pusat telah bertambah.');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Gagal menyimpan produksi: ' . $e->getMessage());
         }
@@ -270,6 +265,10 @@ class ProductionController extends Controller
 
         try {
             DB::transaction(function () use ($request, $production) {
+                $production = HendhysProduction::whereKey($production->id)->lockForUpdate()->firstOrFail();
+                if (!$production->isPrediksi() || $production->overridden_at) throw \Illuminate\Validation\ValidationException::withMessages(['production' => 'Prediksi sudah diaktualisasi dan tidak dapat diedit atau dihapus.']);
+                app(\App\Services\ProductionRecording::class)->validateProducts('hendhys', $request->items);
+
                 $production->update(['date' => $request->date, 'notes' => $request->notes]);
                 $production->details()->delete();
 
@@ -300,6 +299,9 @@ class ProductionController extends Controller
 
         try {
             DB::transaction(function () use ($production) {
+                $production = HendhysProduction::whereKey($production->id)->lockForUpdate()->firstOrFail();
+                if (!$production->isPrediksi() || $production->overridden_at) throw \Illuminate\Validation\ValidationException::withMessages(['production' => 'Prediksi sudah diaktualisasi dan tidak dapat diedit atau dihapus.']);
+
                 $production->details()->delete();
                 $production->delete();
             });

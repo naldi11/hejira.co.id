@@ -29,10 +29,17 @@ class ProductionMaterialController extends Controller
 
     public function index(Request $request)
     {
-        $location = $this->materials->location($request->user());
+        $user = $request->user();
+        $isSuperAdmin = $this->materials->isSuperAdmin($user);
+        $branches = $this->materials->branches($user);
         $filters = $request->validate(['search' => 'nullable|string|max:100', 'per_page' => 'nullable|in:20,50,100,all',
-            'status' => 'nullable|in:completed,cancelled', 'date_from' => 'nullable|date_format:Y-m-d', 'date_to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('date_from') ? ['after_or_equal:date_from'] : [])]]);
-        $query = DB::table('production_material_transactions as t')->where('t.kind', 'branch_usage')->where('t.branch_id', $location['branch_id'])
+            'status' => 'nullable|in:completed,cancelled', 'branch_id' => ['nullable', 'integer', Rule::in($branches->pluck('id')->all())],
+            'date_from' => 'nullable|date_format:Y-m-d', 'date_to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('date_from') ? ['after_or_equal:date_from'] : [])]]);
+        $location = $isSuperAdmin
+            ? (!empty($filters['branch_id']) ? $this->materials->location($user, (int) $filters['branch_id']) : null)
+            : $this->materials->location($user);
+        $query = DB::table('production_material_transactions as t')->where('t.kind', 'branch_usage')
+            ->when($location, fn ($q) => $q->where('t.branch_id', $location['branch_id']), fn ($q) => $q->whereIn('t.branch_id', $branches->pluck('id')))
             ->whereIn('t.status', ['completed', 'cancelled'])
             ->when(!empty($filters['status']), fn ($q) => $q->where('t.status', $filters['status']))
             ->when(!empty($filters['date_from']), fn ($q) => $q->where('t.date', '>=', $filters['date_from']))
@@ -48,13 +55,20 @@ class ProductionMaterialController extends Controller
         $transactions = ListPage::paginate($query, $request);
         $items = DB::table('production_material_items')->whereIn('transaction_id', $transactions->pluck('id'))->orderBy('id')->get()->groupBy('transaction_id');
         $transactions->through(fn ($tx) => $this->header($tx) + ['items' => $items->get($tx->id, collect())->values()]);
-        return Inertia::render('ProductionMaterials/Index', ['transactions' => $transactions, 'filters' => $filters, 'location' => $location]);
+        return Inertia::render('ProductionMaterials/Index', [
+            'transactions' => $transactions,
+            'filters' => $filters,
+            'location' => $location,
+            'branches' => $branches->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'type' => $b->type])->values(),
+        ]);
     }
 
     public function create(Request $request)
     {
-        $location = $this->materials->location($request->user());
-        $data = $request->validate(['q' => 'nullable|string|max:100', 'catalog_page' => 'nullable|integer|min:1']);
+        $user = $request->user();
+        $data = $request->validate(['q' => 'nullable|string|max:100', 'catalog_page' => 'nullable|integer|min:1', 'branch_id' => 'nullable|integer|min:1']);
+        $location = $this->materials->location($user, $this->materials->isSuperAdmin($user) && !empty($data['branch_id']) ? (int) $data['branch_id'] : null);
+        $branches = $this->materials->branches($user)->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'type' => $b->type])->values();
         $page = DB::table($location['stock_location'].' as s')->join('master_products as p', 'p.id', '=', 's.product_id')
             ->leftJoin('master_units as u', 'u.id', '=', 'p.unit_id')->leftJoin('master_units as su', 'su.id', '=', 's.unit_id')
             ->when($location['stock_location'] === 'hendhys_stock_branch', fn ($q) => $q->where('s.branch_id', $location['branch_id']))
@@ -66,13 +80,13 @@ class ProductionMaterialController extends Controller
         $products = $page->getCollection()->map(fn ($p) => [...(array) $p, 'quantity' => (int) round((float) $p->quantity), 'unit_matches' => $p->unit !== null && (int) $p->unit_id === (int) $p->stock_unit_id]);
         $catalogue = ['page' => $page->currentPage(), 'has_more' => $page->hasMorePages()];
         if ($request->query('lookup') === 'products') return response()->json(['products' => $products, 'catalogue' => $catalogue, 'branch_id' => $location['branch_id']]);
-        return Inertia::render('ProductionMaterials/Create', ['products' => $products, 'catalogue' => $catalogue, 'location' => $location,
+        return Inertia::render('ProductionMaterials/Create', ['products' => $products, 'catalogue' => $catalogue, 'location' => $location, 'branches' => $branches,
             'today' => now('Asia/Jakarta')->toDateString(), 'currentTime' => now('Asia/Jakarta')->format('H:i')]);
     }
 
     public function store(Request $request)
     {
-        $this->materials->location($request->user());
+        $this->materials->authorize($request->user());
         foreach (['receiver_name', 'reason', 'notes', 'evidence_reference'] as $key) if (is_string($request->input($key))) $request->merge([$key => trim($request->input($key))]);
         $data = $request->validate([
             'request_key' => 'required|uuid', 'branch_id' => 'required|integer|min:1',
@@ -93,9 +107,11 @@ class ProductionMaterialController extends Controller
 
     public function show(Request $request, int $transaction)
     {
-        $location = $this->materials->location($request->user());
+        $user = $request->user();
+        $location = $this->materials->isSuperAdmin($user) ? null : $this->materials->location($user);
+        if ($location === null) $this->materials->authorize($user);
         $tx = DB::table('production_material_transactions')->where('id', $transaction)->first(); abort_unless($tx, 404);
-        $this->materials->assertTransaction($tx, $location);
+        $this->materials->assertTransaction($tx, $location, $user);
         $items = DB::table('production_material_items')->where('transaction_id', $transaction)->orderBy('id')->get();
         $lotSources = $tx->stock_location === 'hendhys_stock_pusat' ? app(ProductionLots::class)->dispatchSources('production_material', $transaction) : [];
         $items = $items->map(fn ($i) => [...(array) $i, 'lots' => $lotSources[$i->id] ?? []]);
@@ -105,7 +121,7 @@ class ProductionMaterialController extends Controller
 
     public function cancel(Request $request, int $transaction)
     {
-        $this->materials->location($request->user());
+        $this->materials->authorize($request->user());
         if (is_string($request->input('reason'))) $request->merge(['reason' => trim($request->input('reason'))]);
         $data = $request->validate(['reason' => 'required|string|min:5|max:1000', 'confirmed' => 'accepted']);
         $this->materials->cancel($transaction, $data, $request->user());

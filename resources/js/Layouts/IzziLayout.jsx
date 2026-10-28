@@ -2,22 +2,86 @@ import { usePage } from '@inertiajs/react';
 import Icon from '@/Components/Icon';
 import FlashToasts from '@/Components/FlashToasts';
 import AppLayout from './AppLayout';
-import OwnerLayout from './OwnerLayout';
-import GudangLayout from './GudangLayout';
+
 const route = window.route;
+const group = (name, icon, subItems) => ({
+    name,
+    icon: <Icon name={icon} className="text-[22px]" />,
+    subItems,
+});
+
 export default function IzziLayout({ children, pageTitle = 'Izzi Kebab' }) {
     const { auth } = usePage().props;
-    const roles = auth.user.roles;
-    if (roles.includes('owner')) return <OwnerLayout pageTitle={pageTitle}>{children}</OwnerLayout>;
-    if (roles.includes('super_admin')) return <GudangLayout pageTitle={pageTitle}>{children}</GudangLayout>;
-    const group = (name, icon, items) => ({ name, icon: <Icon name={icon} />, subItems: items });
-    const navItems = [{ name: 'Ringkasan Izzi Kebab', icon: <Icon name="dashboard" />, path: route('izzi.dashboard') }];
-    if (roles.includes('kasir_izzi')) navItems.push(group('Kasir', 'point_of_sale', [{ name: 'Catat Penjualan', path: route('izzi.pos') }, { name: 'Laci Kasir', path: route('izzi.shifts') }]));
-    navItems.push(group('Penjualan & Riwayat', 'receipt_long', [{ name: 'Riwayat & Pembatalan', path: route('izzi.sales') }, { name: 'Rekap Laci Kasir', path: route('izzi.shifts') }]));
-    const stock = [{ name: 'Stok Bahan Cabang Aktif', path: route('izzi.stock') }, { name: 'Riwayat Keluar Masuk', path: route('izzi.movements') }, { name: 'Riwayat Penerimaan Bahan', path: route('izzi.receipts') }, { name: 'Stock Opname (Izin Owner)', path: route('stock-opname.index') }, { name: 'Riwayat SO', path: route('stock-opname.history') }];
-    if (roles.includes('admin_izzi')) stock.unshift({ name: 'Terima Bahan', path: route('izzi.receipts.create') });
-    stock.unshift({ name:'Mutasi Stok Cabang & Gudang', path:route('branch-transfers.index') });
-    navItems.push(group('Stok & Penerimaan', 'inventory_2', stock));
-    if (roles.includes('admin_izzi')) navItems.push(group('Menu & Resep', 'restaurant_menu', [{ name: 'Penyesuaian Bahan & Kemasan', path: route('izzi.ingredients') }, { name: 'Menu, Harga & Gramasi', path: route('izzi.menus') }]));
-    return <AppLayout navItems={navItems} pageTitle={pageTitle}><FlashToasts />{children}</AppLayout>;
+    const roles = auth?.user?.roles || [];
+    const isKasir = roles.includes('kasir_izzi');
+    const isAdmin = roles.includes('admin_izzi') || roles.includes('super_admin');
+    const isOwner = roles.includes('owner');
+    const isSuperAdmin = roles.includes('super_admin');
+
+    const navItems = [];
+
+    if (isOwner) {
+        navItems.push({
+            name: '← Panel Utama Owner',
+            icon: <Icon name="arrow_back" className="text-[22px]" />,
+            path: route('owner.dashboard'),
+        });
+    } else if (isSuperAdmin) {
+        navItems.push({
+            name: '← Panel Gudang Utama',
+            icon: <Icon name="arrow_back" className="text-[22px]" />,
+            path: route('gudang.dashboard'),
+        });
+    }
+
+    navItems.push({
+        name: 'Dashboard',
+        icon: <Icon name="dashboard" className="text-[22px]" />,
+        path: route('izzi.dashboard'),
+    });
+
+    const sales = [];
+    if (isKasir) {
+        sales.push({ name: 'Kasir POS', path: route('izzi.pos') });
+    }
+    sales.push(
+        { name: 'Riwayat Transaksi', path: route('izzi.sales') },
+        { name: 'Laci Kasir (Shift)', path: route('izzi.shifts') },
+    );
+    navItems.push(group('Penjualan & Kasir', 'point_of_sale', sales));
+
+    const stock = [
+        { name: 'Stok Bahan Tersedia', path: route('izzi.stock') },
+        { name: 'Kartu Stok (Keluar/Masuk)', path: route('izzi.movements') },
+        { name: 'Hitung Stok Fisik (Opname)', path: route('stock-opname.index') },
+        { name: 'Riwayat SO', path: route('stock-opname.history') },
+    ];
+    navItems.push(group('Stok & Opname', 'inventory_2', stock));
+
+    const receiving = [];
+    if (isAdmin) {
+        receiving.push({ name: 'Terima Bahan Masuk', path: route('izzi.receipts.create') });
+    }
+    receiving.push({ name: 'Riwayat Penerimaan', path: route('izzi.receipts') });
+    if (!isOwner) {
+        receiving.push({ name: 'Mutasi Cabang & Gudang', path: route('branch-transfers.index') });
+    }
+    navItems.push(group('Penerimaan & Mutasi', 'local_shipping', receiving));
+
+    if (isAdmin) {
+        navItems.push(
+            group('Menu & Resep', 'restaurant_menu', [
+                { name: 'Daftar Menu & Resep', path: route('izzi.menus') },
+                { name: 'Tambah Menu Baru', path: route('izzi.menus.create') },
+                { name: 'Satuan Kemasan Bahan', path: route('izzi.ingredients') },
+            ]),
+        );
+    }
+
+    return (
+        <AppLayout navItems={navItems} pageTitle={pageTitle}>
+            <FlashToasts />
+            {children}
+        </AppLayout>
+    );
 }

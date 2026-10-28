@@ -1,67 +1,315 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
-import HendhysLayout from '@/Layouts/HendhysLayout';
+import Icon from '@/Components/Icon';
 import SelectField from '@/Components/SelectField';
-import CataloguePages from '@/Components/CataloguePages';
 import usePosCatalogue from '@/hooks/usePosCatalogue';
-import { panel, input, button, Errors } from '../StockOpname/Layout';
+import Layout, { input, Errors } from '../StockOpname/Layout';
+import { uuid } from '../Izzi/Common';
+
 const route = window.route;
 const emptyItem = () => ({ product_id: '', quantity: '', notes: '' });
 
-export default function Create({ products, catalogue: initialCatalogue, location, today, currentTime }) {
+function Form({ products, catalogue: initialCatalogue, location, branches = [], today, currentTime }) {
     const { auth } = usePage().props;
-    const catalogue = usePosCatalogue(route('production-materials.create'), products, initialCatalogue, location.branch_id);
-    const knownProducts = useRef(new Map(products.map(p => [String(p.id), p])));
-    catalogue.products.forEach(p => knownProducts.current.set(String(p.id), p));
-    const form = useForm({ request_key: crypto.randomUUID(), branch_id: location.branch_id, date: today, time: currentTime,
-        receiver_name: auth.user.name, reason: '', notes: '', evidence_reference: '', items: [emptyItem()] });
-    const setItem = (index, key, value) => form.setData('items', form.data.items.map((item, i) => i === index ? {
-        ...item, [key]: value, ...(key === 'product_id' ? { quantity: '' } : {}),
-    } : item));
-    const validItems = form.data.items.every(item => {
+    const catalogue = usePosCatalogue(
+        route('production-materials.create'),
+        products,
+        initialCatalogue,
+        location.branch_id,
+    );
+    const knownProducts = useRef(new Map(products.map((p) => [String(p.id), p])));
+    catalogue.products.forEach((p) => knownProducts.current.set(String(p.id), p));
+
+    const form = useForm({
+        request_key: uuid(),
+        branch_id: location.branch_id,
+        date: today,
+        time: currentTime,
+        receiver_name: auth.user.name,
+        reason: '',
+        notes: '',
+        evidence_reference: '',
+        items: [emptyItem()],
+    });
+
+    const setItem = (index, key, value) =>
+        form.setData(
+            'items',
+            form.data.items.map((item, i) =>
+                i === index
+                    ? {
+                          ...item,
+                          [key]: value,
+                          ...(key === 'product_id' ? { quantity: '' } : {}),
+                      }
+                    : item,
+            ),
+        );
+
+    const validItems = form.data.items.every((item) => {
         const product = knownProducts.current.get(String(item.product_id));
         return product?.unit_matches && Number(item.quantity) > 0 && Number(item.quantity) <= product.quantity;
     });
-    return <HendhysLayout pageTitle="Gunakan Stok untuk Produksi"><Head title="Gunakan Stok untuk Produksi" />
-        <div className="mx-auto max-w-4xl space-y-5 text-gray-800 dark:text-gray-200">
-            <Link className="text-brand-500" href={route('production-materials.index')}>← Riwayat pemakaian stok</Link>
-            <h1 className="text-2xl font-bold">Gunakan Stok untuk Produksi</h1>
-            <p className="rounded-xl bg-blue-50 p-4 text-blue-900 dark:bg-blue-950 dark:text-blue-200">Cabang aktif: <strong>{location.branch_name}</strong>. Pilih barang yang sudah digunakan, isi jumlah dan keperluannya, lalu simpan. Stok cabang ini langsung berkurang.</p>
-            <form className={`${panel} space-y-5`} onSubmit={e => { e.preventDefault(); form.post(route('production-materials.store')); }}>
-                <Errors errors={form.errors} />
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <label>Tanggal pemakaian<input required type="date" max={today} className={`${input} mt-2`} value={form.data.date} onChange={e => form.setData('date', e.target.value)} /></label>
-                    <label>Jam pemakaian (WIB)<input required type="time" className={`${input} mt-2`} value={form.data.time} onChange={e => form.setData('time', e.target.value)} /></label>
+
+    return (
+        <form
+            className="space-y-6"
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.post(route('production-materials.store'));
+            }}
+        >
+            <Errors errors={form.errors} />
+
+            {/* Card 1: Informasi Pemakaian */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-400">
+                    1. Informasi Pemakaian Produksi
+                </h3>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {branches.length > 1 && (
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Cabang Hendhys
+                            <select
+                                className={`${input} mt-1.5`}
+                                value={location.branch_id}
+                                disabled={form.processing}
+                                onChange={(e) =>
+                                    router.get(route('production-materials.create'), { branch_id: e.target.value })
+                                }
+                            >
+                                {branches.map((b) => (
+                                    <option key={b.id} value={b.id}>
+                                        {b.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Tanggal Pemakaian
+                        <input
+                            required
+                            type="date"
+                            max={today}
+                            className={`${input} mt-1.5`}
+                            value={form.data.date}
+                            onChange={(e) => form.setData('date', e.target.value)}
+                        />
+                    </label>
+
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Jam (WIB)
+                        <input
+                            required
+                            type="time"
+                            className={`${input} mt-1.5`}
+                            value={form.data.time}
+                            onChange={(e) => form.setData('time', e.target.value)}
+                        />
+                    </label>
+
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Digunakan Oleh
+                        <input
+                            required
+                            minLength={2}
+                            maxLength={255}
+                            className={`${input} mt-1.5`}
+                            value={form.data.receiver_name}
+                            onChange={(e) => form.setData('receiver_name', e.target.value)}
+                        />
+                    </label>
                 </div>
-                <p className="text-sm text-gray-500">Tanggal dan jam otomatis saat form dibuka, bisa disesuaikan dengan waktu pemakaian sebenarnya. Nomor pemakaian dibuat otomatis saat disimpan.</p>
-                <label className="block">Digunakan oleh<input required minLength={2} maxLength={255} className={`${input} mt-2`} value={form.data.receiver_name} onChange={e => form.setData('receiver_name', e.target.value)} /></label>
-                <label className="block">Keperluan produksi<input required minLength={5} maxLength={1000} placeholder="Contoh: bahan untuk membuat brownies pagi" className={`${input} mt-2`} value={form.data.reason} onChange={e => form.setData('reason', e.target.value)} /></label>
-                <div className="space-y-3">
-                    <h2 className="font-bold">Barang yang digunakan</h2>
-                    <p className="text-sm text-gray-500">Ketik nama atau kode di pilihan barang untuk mencari seluruh stok cabang aktif. Jumlah memakai satuan master produk; stok rusak dan retur tidak termasuk.</p>
-                    <CataloguePages catalogue={catalogue} />
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Keperluan Produksi
+                        <input
+                            required
+                            minLength={5}
+                            maxLength={1000}
+                            placeholder="Contoh: Bahan untuk membuat adonan pagi"
+                            className={`${input} mt-1.5`}
+                            value={form.data.reason}
+                            onChange={(e) => form.setData('reason', e.target.value)}
+                        />
+                    </label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        No. Bukti / Catatan Tambahan (Opsional)
+                        <input
+                            maxLength={255}
+                            placeholder="Contoh: Form Dapur #01"
+                            className={`${input} mt-1.5`}
+                            value={form.data.evidence_reference}
+                            onChange={(e) => form.setData('evidence_reference', e.target.value)}
+                        />
+                    </label>
+                </div>
+            </div>
+
+            {/* Card 2: Daftar Barang */}
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+                    <div>
+                        <h3 className="font-semibold text-gray-800 dark:text-white/90">
+                            2. Barang yang Digunakan dari {location.branch_name}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                            Ketik nama atau kode barang pada kolom pilihan untuk mencari stok tersedia
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        disabled={form.data.items.length >= 100}
+                        onClick={() => form.setData('items', [...form.data.items, emptyItem()])}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3.5 py-2 text-xs font-bold text-brand-600 transition hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-400"
+                    >
+                        <Icon name="add" className="text-[16px]" />
+                        <span>Tambah Baris Barang</span>
+                    </button>
+                </div>
+
+                <div className="divide-y divide-gray-100 p-6 dark:divide-gray-800">
                     {form.data.items.map((item, index) => {
                         const product = knownProducts.current.get(String(item.product_id));
                         const options = [...catalogue.products];
-                        if (product && !options.some(p => p.id === product.id)) options.unshift(product);
-                        return <div key={index} className="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-                            <div className="flex justify-between"><strong>Barang {index + 1}</strong>{form.data.items.length > 1 && <button type="button" className="text-red-600" onClick={() => form.setData('items', form.data.items.filter((_, i) => i !== index))}>Hapus baris</button>}</div>
-                            <label className="block">Pilih barang<SelectField isLoading={catalogue.loading} filterOption={() => true} options={options.map(p => ({ value: p.id, label: `${p.name} · ${p.code} · ${p.quantity} ${p.stock_unit || '?'}`, isDisabled: !p.unit_matches || form.data.items.some((other, n) => n !== index && String(other.product_id) === String(p.id)) }))} value={item.product_id} onChange={value => setItem(index, 'product_id', value)} onInputChange={(value, meta) => { if (meta.action === 'input-change') catalogue.setQuery(value); }} placeholder="Ketik nama atau kode barang" /></label>
-                            <label className="block">Jumlah digunakan {product ? `(${product.unit || '?'})` : ''}<input required disabled={!product?.unit_matches} type="number" min="1" step="1" max={product?.quantity || 0} className={`${input} mt-2`} value={item.quantity} onChange={e => setItem(index, 'quantity', e.target.value)} /></label>
-                            {product && !product.unit_matches && <p className="text-sm text-red-600">Satuan kartu stok berbeda dari master. Minta admin memeriksa sebelum barang digunakan.</p>}
-                            {product?.unit_matches && <p className="rounded-lg bg-gray-50 p-3 text-sm dark:bg-gray-800">Stok {location.branch_name}: <strong>{product.quantity} {product.unit}</strong> → sisa <strong>{product.quantity - Number(item.quantity || 0)} {product.unit}</strong> setelah disimpan.</p>}
-                            <label className="block text-sm">Catatan barang (opsional)<input maxLength={500} className={`${input} mt-2`} placeholder="Contoh: dipakai untuk 2 adonan" value={item.notes} onChange={e => setItem(index, 'notes', e.target.value)} /></label>
-                        </div>;
+                        if (product && !options.some((p) => p.id === product.id)) options.unshift(product);
+
+                        return (
+                            <div
+                                key={index}
+                                className="grid grid-cols-1 items-start gap-4 py-4 first:pt-0 last:pb-0 lg:grid-cols-12"
+                            >
+                                <div className="lg:col-span-5">
+                                    <label className="mb-1 block text-xs font-semibold text-gray-500">
+                                        Barang #{index + 1}
+                                    </label>
+                                    <SelectField
+                                        isLoading={catalogue.loading}
+                                        filterOption={() => true}
+                                        options={options.map((p) => ({
+                                            value: p.id,
+                                            label: `${p.name} (${p.code})`,
+                                            sublabel: `Tersedia: ${p.quantity} ${p.stock_unit || p.unit}`,
+                                            isDisabled:
+                                                !p.unit_matches ||
+                                                form.data.items.some(
+                                                    (other, n) =>
+                                                        n !== index && String(other.product_id) === String(p.id),
+                                                ),
+                                        }))}
+                                        value={item.product_id}
+                                        onChange={(value) => setItem(index, 'product_id', value)}
+                                        onInputChange={(value, meta) => {
+                                            if (meta.action === 'input-change') catalogue.setQuery(value);
+                                        }}
+                                        placeholder="Ketik & pilih barang…"
+                                    />
+                                </div>
+
+                                <div className="lg:col-span-3">
+                                    <label className="mb-1 block text-xs font-semibold text-gray-500">
+                                        Jumlah Digunakan ({product?.unit || 'Satuan'})
+                                    </label>
+                                    <input
+                                        required
+                                        disabled={!product?.unit_matches}
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        max={product?.quantity || 0}
+                                        placeholder="0"
+                                        className={`${input} font-bold`}
+                                        value={item.quantity}
+                                        onChange={(e) => setItem(index, 'quantity', e.target.value)}
+                                    />
+                                    {product?.unit_matches && (
+                                        <span className="mt-1 block text-[11px] text-gray-500">
+                                            Sisa stok:{' '}
+                                            <strong>
+                                                {product.quantity - Number(item.quantity || 0)} {product.unit}
+                                            </strong>
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="lg:col-span-3">
+                                    <label className="mb-1 block text-xs font-semibold text-gray-500">
+                                        Catatan Barang (Opsional)
+                                    </label>
+                                    <input
+                                        maxLength={500}
+                                        placeholder="Contoh: 2 adonan"
+                                        className={input}
+                                        value={item.notes}
+                                        onChange={(e) => setItem(index, 'notes', e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex items-end justify-end pt-6 lg:col-span-1">
+                                    {form.data.items.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                form.setData(
+                                                    'items',
+                                                    form.data.items.filter((_, i) => i !== index),
+                                                )
+                                            }
+                                            className="rounded-lg p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600"
+                                        >
+                                            <Icon name="delete" className="text-[20px]" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
                     })}
-                    <button type="button" disabled={form.data.items.length >= 100} className="font-semibold text-brand-500" onClick={() => form.setData('items', [...form.data.items, emptyItem()])}>+ Tambah barang</button>
                 </div>
-                <details className="space-y-3 text-sm"><summary className="cursor-pointer font-semibold">Catatan dan bukti tambahan (opsional)</summary>
-                    <label className="block pt-3">Nomor bukti<input maxLength={255} className={`${input} mt-2`} value={form.data.evidence_reference} onChange={e => form.setData('evidence_reference', e.target.value)} /></label>
-                    <label className="block">Catatan tambahan<textarea maxLength={2000} className={`${input} mt-2`} value={form.data.notes} onChange={e => form.setData('notes', e.target.value)} /></label>
-                </details>
-                <p className="text-sm text-gray-500">Dicatat oleh {auth.user.name}. Stok sebelum dan sesudah pemakaian, waktu, petugas, dan alasan akan tersimpan dalam riwayat.</p>
-                <button disabled={form.processing || !validItems || Boolean(catalogue.error)} className={button}>{form.processing ? 'Menyimpan…' : 'Catat pemakaian & kurangi stok'}</button>
-            </form>
-        </div>
-    </HendhysLayout>;
+
+                <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50/50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.01]">
+                    <Link
+                        href={route('production-materials.index')}
+                        className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                        Batal
+                    </Link>
+                    <button
+                        type="submit"
+                        disabled={form.processing || !validItems || Boolean(catalogue.error)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-40"
+                    >
+                        <Icon name="check_circle" className="text-[18px]" />
+                        <span>{form.processing ? 'Menyimpan…' : 'Catat Pemakaian & Kurangi Stok'}</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    );
+}
+
+export default function Create(props) {
+    return (
+        <Layout pageTitle="Gunakan Stok untuk Produksi">
+            <Head title="Gunakan Stok untuk Produksi" />
+            <div className="space-y-6">
+                <div>
+                    <Link
+                        href={route('production-materials.index')}
+                        className="mb-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                    >
+                        <Icon name="arrow_back" className="text-[15px]" />
+                        <span>Kembali ke Riwayat Pemakaian Stok</span>
+                    </Link>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-800 dark:text-white/90">
+                        Gunakan Stok untuk Produksi — {props.location.branch_name}
+                    </h2>
+                </div>
+                <Form key={props.location.branch_id} {...props} />
+            </div>
+        </Layout>
+    );
 }

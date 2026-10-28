@@ -44,10 +44,9 @@ class TransactionController extends Controller
         if ($request->filled('shift_id')) {
             $shift = \App\Models\CashierShift::find($request->shift_id);
             if ($shift) {
-                $query->whereBetween('created_at', [
-                    $shift->opened_at,
-                    $shift->closed_at ?? now()
-                ]);
+                abort_unless($shift->entity === 'hendhys', 403);
+                \Illuminate\Support\Facades\Gate::authorize('view', $shift);
+                $shift->scopeTransactions($query, 'hendhys_transactions');
             }
         }
 
@@ -102,34 +101,15 @@ class TransactionController extends Controller
             'reason.min'      => 'Alasan pembatalan minimal 5 karakter.',
         ]);
 
-        if ($transaction->status === 'cancelled') {
-            return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya.');
-        }
-
-        // Batasi ke cabang milik user, konsisten dengan index()/receipt().
         $isPusat = !$user->branch || $user->branch->type === 'pusat';
-        if ($isPusat ? $transaction->branch_id !== null : $transaction->branch_id !== $user->branch_id) {
+        if ($isPusat ? $transaction->branch_id !== null : (int) $transaction->branch_id !== (int) $user->branch_id) {
             abort(403, 'Anda tidak dapat membatalkan transaksi cabang lain.');
-        }
-
-        // Hanya boleh membatalkan transaksi dari shift yang MASIH TERBUKA.
-        // Setelah shift ditutup, rekap laci sudah dicetak dan selisih kasnya sudah
-        // dihitung — membatalkan transaksi lama akan membuat rekap itu tidak cocok
-        // selamanya. Untuk itu gunakan retur, bukan pembatalan.
-        $openShift = CashierShift::where('user_id', $transaction->created_by)
-            ->where('status', 'open')
-            ->latest('id')
-            ->first();
-
-        if (!$openShift || $transaction->created_at < $openShift->opened_at) {
-            return back()->with('error',
-                'Transaksi ini berasal dari shift yang sudah ditutup sehingga tidak bisa dibatalkan. '
-                . 'Gunakan mekanisme retur agar rekap laci tetap cocok.');
         }
 
         try {
             DB::transaction(function () use ($transaction, $data, $user) {
-                $transaction->load('details');
+                $transaction = app(\App\Services\SaleShiftGuard::class)->sale($transaction, 'hendhys');
+                $transaction->load(['details' => fn ($q) => $q->orderBy('product_id')]);
 
                 // Kembalikan stok setiap baris ke tempat asalnya dipotong.
                 foreach ($transaction->details as $detail) {
@@ -149,19 +129,19 @@ class TransactionController extends Controller
                     'notes'  => trim(($transaction->notes ? $transaction->notes . ' | ' : '')
                               . 'DIBATALKAN oleh ' . $user->name . ': ' . $data['reason']),
                 ]);
-            });
+                $this->logger->log(
+                    'void',
+                    'hendhys_pos',
+                    "Pembatalan transaksi {$transaction->transaction_number} sebesar {$transaction->grand_total}. Alasan: {$data['reason']}",
+                    $transaction
+                );
+            }, 3);
         } catch (\Throwable $e) {
             report($e);
 
             return back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
         }
 
-        $this->logger->log(
-            'void',
-            'hendhys_pos',
-            "Pembatalan transaksi {$transaction->transaction_number} sebesar {$transaction->grand_total}. Alasan: {$data['reason']}",
-            $transaction
-        );
 
         return back()->with('success', "Transaksi {$transaction->transaction_number} berhasil dibatalkan dan stok dikembalikan.");
     }

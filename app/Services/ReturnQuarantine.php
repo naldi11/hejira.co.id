@@ -67,11 +67,32 @@ class ReturnQuarantine
         $q = DB::table('return_quarantine_entries');
         if ($user->hasRole('owner')) return $q;
         if ($user->hasRole('super_admin')) return match ($user->entity) {
-            'all' => $q, 'gudang' => $q->where('destination_key', 'gudang'), 'hendhys' => $q->where(fn ($w) => $w->where('destination_key', 'hendhys-pusat')->orWhere('origin_entity', 'hendhys')), 'jihans' => $q->where('origin_entity', 'jihans'), default => $q->whereRaw('1 = 0'),
+            'all' => $q, 'gudang' => $q->where('destination_key', 'gudang'), 'hendhys' => $q->where(fn ($w) => $w->where('destination_key', 'like', 'hendhys-%')->orWhere('origin_entity', 'hendhys')), 'jihans' => $q->where(fn ($w) => $w->where('origin_entity', 'jihans')->orWhere('destination_key', 'jihans-retail')), default => $q->whereRaw('1 = 0'),
         };
         $branch = Branch::find(session('active_branch_id') ?: $user->branch_id);
         if (!$branch || !$branch->is_active || $branch->entity !== $user->entity) return $q->whereRaw('1 = 0');
         if ($user->hasRole('admin_hendhys') && $branch->type === 'pusat') return $q->where(fn ($w) => $w->where('destination_key', 'hendhys-pusat')->orWhere(fn ($own) => $own->where('origin_entity', 'hendhys')->where('origin_branch_id', $branch->id)));
-        return $q->where('origin_entity', $user->entity)->where('origin_branch_id', $branch->id);
+        $destination = $user->entity === 'jihans' ? 'jihans-retail' : ($branch->type === 'pusat' ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id);
+        return $q->where(fn ($w) => $w->where('destination_key', $destination)->orWhere(fn ($own) => $own->where('origin_entity', $user->entity)->where('origin_branch_id', $branch->id)));
+    }
+
+    public function recordTransferReceipt($document, $receipt, string $entity, User $user): void
+    {
+        $warehouse = $document instanceof \App\Models\TransferOut;
+        $branch = $document->branch;
+        $destination = $entity === 'jihans' ? 'jihans-retail' : ($branch?->type === 'pusat' || !$branch ? 'hendhys-pusat' : 'hendhys-branch-'.$branch->id);
+        foreach ($receipt->details()->where('condition', 'rusak')->get() as $item) {
+            $detail = $document->details->firstWhere('product_id', $item->product_id);
+            DB::table('return_quarantine_entries')->insertOrIgnore([
+                'source_type' => $warehouse ? 'warehouse_receipt' : 'centre_receipt', 'return_id' => $document->id,
+                'detail_id' => $item->id, 'return_number' => $document->transfer_number, 'destination_key' => $destination,
+                'origin_entity' => $warehouse ? 'gudang' : 'hendhys', 'origin_name' => $warehouse ? 'Gudang Utama' : 'Hendhys Pusat',
+                'product_id' => $item->product_id, 'unit_id' => $detail->unit_id, 'product_name' => $detail->product?->name ?? 'Produk tidak tersedia',
+                'product_code' => $detail->product?->code, 'unit_name' => $detail->unit?->abbreviation ?? '-',
+                'quantity' => $item->actual_qty, 'condition' => 'damaged', 'received_condition' => 'rusak',
+                'reason' => $document->receive_notes, 'return_date' => now()->toDateString(), 'sent_by' => $document->created_by,
+                'received_by' => $user->id, 'received_by_name' => $user->name, 'received_at' => now(), 'recorded_at' => now(),
+            ]);
+        }
     }
 }

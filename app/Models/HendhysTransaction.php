@@ -14,7 +14,7 @@ class HendhysTransaction extends Model
         'transaction_number', 'branch_id', 'date', 'time', 'customer_name',
         'customer_phone', 'customer_id', 'customer_type', 'subtotal', 'discount_amount',
         'ppn_type', 'tax_amount', 'other_costs', 'grand_total',
-        'status', 'notes', 'created_by'
+        'status', 'notes', 'shift_id', 'created_by'
     ];
 
     public function branch(): BelongsTo

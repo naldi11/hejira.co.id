@@ -60,7 +60,7 @@ class ProductionMaterialsTest extends TestCase
     public function test_only_hendhys_cashier_can_use_every_endpoint_and_direct_service(): void
     {
         $branch = $this->branch(); $p = $this->product(); $this->stock($branch, $p);
-        foreach (['super_admin', 'owner', 'admin_hendhys', 'admin_jihans', 'kasir_jihans'] as $role) {
+        foreach (['owner', 'admin_hendhys', 'admin_jihans', 'kasir_jihans'] as $role) {
             $actor = $this->user($branch, $role); $this->actingAs($actor);
             foreach (['production-materials.index', 'production-materials.create'] as $route) $this->get(route($route))->assertForbidden();
             $this->get(route('production-materials.show', 1))->assertForbidden();
@@ -70,6 +70,7 @@ class ProductionMaterialsTest extends TestCase
             try { app(ProductionMaterials::class)->record($this->data($branch, $p), $actor); $this->fail('Other roles cannot call the service.'); }
             catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame(403, $e->getStatusCode()); }
         }
+        Role::findOrCreate('super_admin', 'web');
         $mixed = $this->user($branch); $mixed->assignRole('super_admin');
         $this->actingAs($mixed)->get(route('production-materials.create'))->assertForbidden();
         $this->assertDatabaseCount('production_material_transactions', 0);
@@ -258,5 +259,64 @@ class ProductionMaterialsTest extends TestCase
         $this->assertDatabaseHas('hendhys_stock_branch', ['product_id' => $a->id, 'quantity' => 13]);
         $this->assertDatabaseHas('production_material_transactions', ['status' => 'completed']);
         $this->assertDatabaseCount('production_material_events', 1);
+    }
+
+    public function test_super_admin_can_record_view_filter_and_cancel_across_active_hendhys_branches(): void
+    {
+        $pusat = $this->branch('pusat');
+        $cabang = $this->branch('cabang');
+        $inactive = $this->branch('cabang'); $inactive->update(['is_active' => false]);
+        $jihans = $this->branch('cabang', 'jihans');
+
+        Role::findOrCreate('super_admin', 'web');
+        $superAdmin = User::factory()->create(['entity' => 'all', 'branch_id' => null]);
+        $superAdmin->assignRole('super_admin');
+
+        $p = $this->product();
+        $this->stock($pusat, $p, 35);
+        $this->stock($cabang, $p, 25);
+
+        $this->actingAs($superAdmin)->get(route('production-materials.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('location.branch_id', $pusat->id)
+                ->has('branches', 2)
+                ->where('products.0.quantity', 35));
+
+        $this->get(route('production-materials.create', ['branch_id' => $cabang->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('location.branch_id', $cabang->id)
+                ->where('products.0.quantity', 25));
+
+        $this->getJson(route('production-materials.create', ['lookup' => 'products', 'branch_id' => $cabang->id]))
+            ->assertJsonPath('branch_id', $cabang->id)
+            ->assertJsonPath('products.0.quantity', 25);
+
+        $this->post(route('production-materials.store'), $this->data($inactive, $p))->assertSessionHasErrors('branch_id');
+        $this->post(route('production-materials.store'), $this->data($jihans, $p))->assertSessionHasErrors('branch_id');
+
+        $this->post(route('production-materials.store'), $this->data($pusat, $p, 5))->assertSessionHas('success');
+        $this->post(route('production-materials.store'), $this->data($cabang, $p, 8))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('hendhys_stock_pusat', ['product_id' => $p->id, 'quantity' => 30]);
+        $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $cabang->id, 'product_id' => $p->id, 'quantity' => 17]);
+
+        $this->get(route('production-materials.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('location', null)
+                ->has('branches', 2)
+                ->where('transactions.total', 2));
+
+        $this->get(route('production-materials.index', ['branch_id' => $cabang->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('location.branch_id', $cabang->id)
+                ->where('transactions.total', 1));
+
+        $this->get(route('production-materials.show', 2))
+            ->assertInertia(fn (Assert $page) => $page->where('transaction.branch_id', $cabang->id));
+
+        $this->post(route('production-materials.cancel', 2), ['reason' => 'Dibatalkan oleh super admin', 'confirmed' => true])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $cabang->id, 'product_id' => $p->id, 'quantity' => 25]);
     }
 }

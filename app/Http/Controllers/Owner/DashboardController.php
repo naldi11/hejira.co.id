@@ -706,9 +706,7 @@ class DashboardController extends Controller
 
         $transactions = \Illuminate\Support\Facades\DB::table($transactionTable . ' as t')
             ->select('t.*')
-            ->where('t.created_by', $shift->user_id)
-            ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$startAt, $closedAt])
+            ->tap(fn ($q) => $shift->scopeTransactions($q))
             ->orderBy('t.created_at', 'desc')
             ->get();
 

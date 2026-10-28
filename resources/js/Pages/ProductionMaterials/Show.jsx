@@ -1,22 +1,184 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import HendhysLayout from '@/Layouts/HendhysLayout';
-import { panel, input, button, Errors } from '../StockOpname/Layout';
+import Icon from '@/Components/Icon';
+import Modal from '@/Components/Modal';
+import Layout, { input, Errors } from '../StockOpname/Layout';
+
 const route = window.route;
 
 export default function Show({ transaction: t, items, events }) {
-    const [cancelling, setCancelling] = useState(false);
+    const [cancelModal, setCancelModal] = useState(false);
     const form = useForm({ reason: '', confirmed: false });
-    return <HendhysLayout pageTitle={`Barang Produksi ${t.number}`}><Head title={t.number} /><div className="mx-auto max-w-6xl space-y-6 text-gray-800 dark:text-gray-200">
-        <Link className="text-brand-500" href={route('production-materials.index')}>← Riwayat pemakaian stok</Link>
-        <div className={`${panel} space-y-4`}><div className="flex flex-wrap justify-between gap-3"><h1 className="font-mono text-2xl font-bold">{t.number}</h1><span className={t.status === 'cancelled' ? 'text-red-600' : 'text-green-600'}>{t.status_label}</span></div><h2 className="text-lg font-bold">{t.kind_label}</h2>
-            <dl className="grid gap-4 text-sm sm:grid-cols-2">{[['Waktu kejadian', t.occurred_label], ['Waktu pencatatan', `${t.recorded_label} · ${t.created_by_name}`], ['Cabang pemakaian', t.branch_name], ['Digunakan oleh', t.receiver_name], ['Alasan / keperluan', t.reason], ['Nomor bukti', t.evidence_reference || '—'], ['Catatan', t.notes || '—']].map(([label, value]) => <div key={label}><dt className="text-gray-500">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value}</dd></div>)}</dl>
-            {t.cancel_reason && <p className="rounded-lg bg-red-50 p-3 text-red-800">Dibatalkan {t.cancelled_label} oleh {t.cancelled_by_name}. Alasan: {t.cancel_reason}</p>}
-        </div>
-        <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Rincian barang dan saldo saat pencatatan</h2><p className="text-sm text-gray-500">Saldo berikut adalah sebelum/sesudah transaksi ini, bukan saldo saat ini. Pembatalan memiliki perubahan saldo sendiri pada jejak riwayat di bawah.</p>
-            {items.map(i => <article key={i.id} className="space-y-2 rounded-xl border border-gray-200 p-4 dark:border-gray-700"><h3 className="font-bold">{i.product_name} <span className="text-sm font-normal text-gray-500">· {i.product_code}</span></h3><p>Jumlah digunakan: <strong>{i.quantity} {i.unit_name}</strong></p><p className="text-sm">{t.branch_name}: {i.source_before} → {i.source_after} {i.unit_name}</p><p className="text-sm text-gray-500">Catatan barang: {i.notes || '—'}</p>{i.lots.length > 0 && <div className="text-sm"><strong>Asal nomor produksi barang:</strong>{i.lots.map((l, n) => <p key={n}>{l.number ?? 'Stok tanpa nomor produksi'} · {l.quantity} {i.unit_name}</p>)}</div>}</article>)}
-        </div>
-        <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Jejak riwayat</h2>{events.map(e => <article key={e.id} className="space-y-2 border-l-4 border-brand-500 pl-4"><h3 className="font-bold">{e.action === 'cancelled' ? 'Transaksi dibatalkan — stok dipulihkan' : 'Transaksi dicatat — stok diperbarui'}</h3><p className="text-sm">{e.at} · {e.actor_name}</p><p className="text-sm">Alasan: {e.reason}</p>{e.stock_changes.map((c, n) => { const i = items.find(i => Number(i.product_id) === Number(c.product_id)); return <p key={n} className="text-sm">{c.location} · {i?.product_name} · {c.before} → {c.after} {i?.unit_name}</p>; })}</article>)}</div>
-        {t.status === 'completed' && <div className={`${panel} space-y-4`}><h2 className="text-lg font-bold">Jika ada kesalahan pencatatan</h2><p className="text-sm text-gray-500">Transaksi asli tetap tersimpan. Pembatalan membalik seluruh barang dalam transaksi ini. Setelah dibatalkan, catat ulang rincian yang benar.</p>{!cancelling ? <button type="button" className="text-red-600 underline" onClick={() => setCancelling(true)}>Batalkan transaksi ini</button> : <form className="space-y-4" onSubmit={e => { e.preventDefault(); form.post(route('production-materials.cancel', t.id)); }}><Errors errors={form.errors} /><p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Pembatalan mengembalikan barang ke stok {t.branch_name} yang sama. Pastikan barang fisik masih ada atau sudah dikembalikan. Alasan, petugas, waktu, dan perubahan saldo pembatalan tetap tersimpan.</p><label className="block">Alasan pembatalan<textarea required minLength={5} maxLength={1000} className={`${input} mt-2`} value={form.data.reason} onChange={e => form.setData('reason', e.target.value)} /></label><label className="flex items-start gap-3"><input type="checkbox" checked={form.data.confirmed} onChange={e => form.setData('confirmed', e.target.checked)} /><span>Saya sudah memeriksa kesalahan dan stok fisik. Seluruh perubahan stok transaksi ini dapat dibalik.</span></label><div className="flex gap-4"><button disabled={form.processing || !form.data.confirmed} className={`${button} bg-red-600`}>Konfirmasi pembatalan dan pulihkan stok</button><button type="button" onClick={() => setCancelling(false)}>Tutup</button></div></form>}</div>}
-    </div></HendhysLayout>;
+
+    return (
+        <Layout pageTitle={`Detail Pemakaian Stok ${t.number}`}>
+            <Head title={t.number} />
+
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <Link
+                            href={route('production-materials.index')}
+                            className="mb-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                        >
+                            <Icon name="arrow_back" className="text-[15px]" />
+                            <span>Kembali ke Riwayat Pemakaian</span>
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <h2 className="font-mono text-2xl font-bold text-gray-800 dark:text-white">{t.number}</h2>
+                            <span
+                                className={`rounded-full px-3 py-0.5 text-xs font-semibold ${
+                                    t.status === 'cancelled'
+                                        ? 'bg-rose-100 text-rose-700'
+                                        : 'bg-emerald-100 text-emerald-700'
+                                }`}
+                            >
+                                {t.status_label}
+                            </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                            {t.branch_name} • Kejadian: {t.occurred_label} • Dicatat oleh {t.created_by_name}
+                        </p>
+                    </div>
+
+                    {t.status === 'completed' && (
+                        <button
+                            type="button"
+                            onClick={() => setCancelModal(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+                        >
+                            <Icon name="cancel" className="text-[18px]" />
+                            <span>Batalkan Transaksi</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* Info Card */}
+                <div className="grid grid-cols-1 gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs sm:grid-cols-2 lg:grid-cols-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div>
+                        <span className="text-xs text-gray-500">Cabang</span>
+                        <strong className="mt-0.5 block text-sm text-gray-800 dark:text-white">{t.branch_name}</strong>
+                    </div>
+                    <div>
+                        <span className="text-xs text-gray-500">Digunakan Oleh</span>
+                        <strong className="mt-0.5 block text-sm text-gray-800 dark:text-white">
+                            {t.receiver_name}
+                        </strong>
+                    </div>
+                    <div>
+                        <span className="text-xs text-gray-500">Keperluan Produksi</span>
+                        <strong className="mt-0.5 block text-sm text-gray-800 dark:text-white">{t.reason}</strong>
+                    </div>
+                    <div>
+                        <span className="text-xs text-gray-500">Nomor Bukti</span>
+                        <strong className="mt-0.5 block text-sm text-gray-800 dark:text-white">
+                            {t.evidence_reference || '—'}
+                        </strong>
+                    </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+                        <h3 className="font-semibold text-gray-800 dark:text-white/90">
+                            Rincian Barang yang Digunakan
+                        </h3>
+                    </div>
+                    <div className="custom-scrollbar overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:border-gray-800 dark:bg-white/[0.02]">
+                                <tr>
+                                    <th className="px-6 py-3.5">Barang</th>
+                                    <th className="px-6 py-3.5 text-right">Jumlah Digunakan</th>
+                                    <th className="px-6 py-3.5 text-right">Saldo (Sebelum → Sesudah)</th>
+                                    <th className="px-6 py-3.5">Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {items.map((i) => (
+                                    <tr key={i.id}>
+                                        <td className="px-6 py-4">
+                                            <p className="font-semibold text-gray-800 dark:text-white">
+                                                {i.product_name}
+                                            </p>
+                                            <p className="font-mono text-xs text-gray-400">{i.product_code}</p>
+                                        </td>
+                                        <td className="whitespace-nowrap px-6 py-4 text-right font-bold text-brand-600">
+                                            {i.quantity} {i.unit_name}
+                                        </td>
+                                        <td className="whitespace-nowrap px-6 py-4 text-right text-xs text-gray-500">
+                                            {i.source_before} → <strong>{i.source_after} {i.unit_name}</strong>
+                                        </td>
+                                        <td className="px-6 py-4 text-xs text-gray-500">{i.notes || '—'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modal Pembatalan */}
+            <Modal show={cancelModal} onClose={() => setCancelModal(false)} maxWidth="md">
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        form.post(route('production-materials.cancel', t.id), {
+                            onSuccess: () => setCancelModal(false),
+                        });
+                    }}
+                    className="p-6"
+                >
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        Batalkan Pemakaian Stok {t.number}
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                        Seluruh barang akan dikembalikan ke stok {t.branch_name}.
+                    </p>
+
+                    <div className="mt-4 space-y-4">
+                        <Errors errors={form.errors} />
+                        <label className="block text-sm font-medium">
+                            Alasan Pembatalan
+                            <textarea
+                                required
+                                minLength={5}
+                                maxLength={1000}
+                                rows={2}
+                                className={`${input} mt-1.5`}
+                                value={form.data.reason}
+                                onChange={(e) => form.setData('reason', e.target.value)}
+                            />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-medium">
+                            <input
+                                type="checkbox"
+                                checked={form.data.confirmed}
+                                onChange={(e) => form.setData('confirmed', e.target.checked)}
+                            />
+                            <span>Saya sudah memeriksa stok fisik dan yakin membatalkan transaksi ini.</span>
+                        </label>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-2.5 border-t border-gray-100 pt-4 dark:border-gray-800">
+                        <button
+                            type="button"
+                            onClick={() => setCancelModal(false)}
+                            className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600"
+                        >
+                            Tutup
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={form.processing || !form.data.confirmed}
+                            className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-40"
+                        >
+                            Konfirmasi Pembatalan
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </Layout>
+    );
 }

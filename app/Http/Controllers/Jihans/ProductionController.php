@@ -156,9 +156,10 @@ class ProductionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'date' => 'required|date',
             'notes' => 'nullable|string',
+            'request_key' => 'required_without:prediction_id|nullable|uuid',
             'prediction_id' => 'nullable|integer|exists:jihans_production_sessions,id',
             'details' => 'required|array',
             'details.*.karyawan_id' => 'nullable|integer',
@@ -172,15 +173,7 @@ class ProductionController extends Controller
             return back()->withInput()->withErrors(['details' => 'Total produksi harus lebih dari 0.']);
         }
 
-        DB::transaction(function () use ($request) {
-            $existingPrediksi = null;
-            if ($request->prediction_id) {
-                $existingPrediksi = JihansProductionSession::with('details')->where('type', 'prediksi')
-                    ->where('id', $request->prediction_id)
-                    ->whereNull('overridden_at')
-                    ->first();
-            }
-
+        app(\App\Services\ProductionRecording::class)->run('jihans', $data, function ($existingPrediksi) use ($request) {
             if ($existingPrediksi) {
                 // Simpan rencana awal sebelum rincian diganti dengan hasil aktual.
                 $existingPrediksi->prediction_snapshot = ProductionSnapshot::capture($existingPrediksi, 'jihans');
@@ -240,6 +233,7 @@ class ProductionController extends Controller
             }
 
             $this->logger->log('create', 'jihans.production', "Input produksi aktual: {$session->session_number}", $session);
+            return $session;
         });
 
         return redirect()->route('jihans.production.index')
@@ -288,6 +282,10 @@ class ProductionController extends Controller
         }
 
         DB::transaction(function () use ($request, $production) {
+            $production = JihansProductionSession::whereKey($production->id)->lockForUpdate()->firstOrFail();
+            if (!$production->isPrediksi() || $production->overridden_at) throw \Illuminate\Validation\ValidationException::withMessages(['production' => 'Prediksi sudah diaktualisasi dan tidak dapat diedit atau dihapus.']);
+            app(\App\Services\ProductionRecording::class)->validateProducts('jihans', $request->details);
+
             $production->load('details');
 
             $production->update(['date' => $request->date, 'notes' => $request->notes]);
@@ -323,6 +321,9 @@ class ProductionController extends Controller
         }
 
         DB::transaction(function () use ($production) {
+            $production = JihansProductionSession::whereKey($production->id)->lockForUpdate()->firstOrFail();
+            if (!$production->isPrediksi() || $production->overridden_at) throw \Illuminate\Validation\ValidationException::withMessages(['production' => 'Prediksi sudah diaktualisasi dan tidak dapat diedit atau dihapus.']);
+
             // Prediksi tidak memengaruhi stok
 
             $this->logger->log('delete', 'jihans.production', "Hapus prediksi produksi: {$production->session_number}");

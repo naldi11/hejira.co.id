@@ -100,6 +100,8 @@ class PurchaseOrderController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($data, $po) {
+            $po = PurchaseOrder::whereKey($po->id)->lockForUpdate()->firstOrFail();
+            abort_if(!$po->isEditable(), 403, 'PO sudah tidak bisa diedit.');
             $total = collect($data['items'])->sum(fn ($i) => (int) $i['quantity'] * (float) $i['price']);
 
             $po->update([
@@ -124,8 +126,12 @@ class PurchaseOrderController extends Controller
     {
         abort_if(! $po->isCancellable(), 403, 'PO tidak bisa dibatalkan.');
 
-        $po->update(['status' => 'cancelled', 'updated_by' => auth()->id()]);
-        $this->logger->log('update', 'gudang.po', "PO dibatalkan: {$po->po_number}", $po);
+        DB::transaction(function () use ($po) {
+            $po = PurchaseOrder::whereKey($po->id)->lockForUpdate()->firstOrFail();
+            abort_if(!$po->isCancellable() || $po->receivings()->exists(), 403, 'PO sudah diproses dan tidak bisa dibatalkan.');
+            $po->update(['status' => 'cancelled', 'updated_by' => auth()->id()]);
+            $this->logger->log('update', 'gudang.po', "PO dibatalkan: {$po->po_number}", $po);
+        }, 3);
 
         return back()->with('success', "PO {$po->po_number} dibatalkan.");
     }

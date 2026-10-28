@@ -29,6 +29,7 @@ class ReturnStockController extends Controller
             ->groupBy('product_id', 'unit_id', 'destination_key', 'condition')->orderBy('product_name')->paginate(12, ['*'], 'stock_page')->withQueryString();
         $rows = $q->orderByDesc('id')->paginate(20)->withQueryString();
         $rows->through(fn ($r) => $this->serialize($r));
+        $balances->through(fn ($r) => [...(array) $r, 'destination_name' => $this->destinationName($r->destination_key)]);
         return Inertia::render('ReturnStock/Index', ['entries' => $rows, 'balances' => $balances, 'branches' => $branches, 'filters' => $filters]);
     }
     public function show(Request $request, int $entry)
@@ -38,11 +39,20 @@ class ReturnStockController extends Controller
         abort_unless($this->quarantine->visible($request->user())->where('id', $entry)->exists(), 403);
         return Inertia::render('ReturnStock/Show', ['entry' => $this->serialize($row)]);
     }
+    private function destinationName(string $key): string
+    {
+        return match ($key) {
+            'gudang' => 'Gudang Utama', 'hendhys-pusat' => 'Hendhys Pusat', 'jihans-retail' => 'Jihan’s Retail',
+            default => 'Cabang Hendhys #'.str_replace('hendhys-branch-', '', $key),
+        };
+    }
+
     private function serialize(object $row): array
     {
         $r = (array) $row;
         foreach (['received_at', 'recorded_at'] as $field) $r[$field] = $row->$field ? Carbon::parse($row->$field)->format('d/m/Y H:i:s').' WIB' : null;
         $r['quantity'] = (float) $row->quantity;
+        $r['destination_name'] = $this->destinationName($row->destination_key);
         return $r;
     }
 }

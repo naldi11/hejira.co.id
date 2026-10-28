@@ -27,7 +27,7 @@ class JihansTransaction extends Model
         'grand_total',
         'status',
         'notes',
-        'created_by',
+        'shift_id', 'created_by',
     ];
 
     protected $casts = [

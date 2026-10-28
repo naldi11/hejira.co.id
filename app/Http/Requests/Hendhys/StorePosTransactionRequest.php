@@ -6,6 +6,29 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StorePosTransactionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (!$this->filled('payment_type')) {
+            $type = $this->filled('payment_method_id') ? \App\Models\PaymentMethod::find($this->input('payment_method_id'))?->type : null;
+            $this->merge(['payment_type' => $type ?? 'tunai']);
+        }
+    }
+
+    public function after(): array
+    {
+        return [function ($validator) {
+            if ($validator->errors()->isNotEmpty()) return;
+            if ($this->filled('payment_method_id')) {
+                $method = \App\Models\PaymentMethod::where('is_active', true)->find($this->payment_method_id);
+                if (!$method || $method->type !== $this->payment_type) {
+                    $validator->errors()->add('payment_method_id', 'Metode pembayaran harus aktif dan sesuai jenis pembayaran.');
+                }
+            }
+            if ($this->payment_type !== 'tunai' && abs((float) $this->amount_paid - (float) $this->grand_total) > 0.00001) {
+                $validator->errors()->add('amount_paid', 'Pembayaran non-tunai harus tepat sesuai total tagihan.');
+            }
+        }];
+    }
     public function authorize(): bool
     {
         return true;

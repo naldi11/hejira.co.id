@@ -19,6 +19,14 @@ export default function GudangLayout({ title, pageTitle, children }) {
             icon: <Icon name="swap_horiz" className="text-[22px]" />,
             path: route('branch-transfers.index')
         },
+        ...(['hendhys', 'all'].includes(auth?.user?.entity) ? [{
+            name: "Pemakaian untuk Produksi",
+            icon: <Icon name="factory" className="text-[22px]" />,
+            subItems: [
+                { name: "Gunakan Stok untuk Produksi", path: route('production-materials.create') },
+                { name: "Riwayat Pemakaian Stok", path: route('production-materials.index') }
+            ]
+        }] : []),
         {
             name: "Pembelian",
             icon: <Icon name="shopping_cart" className="text-[22px]" />,

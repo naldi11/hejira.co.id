@@ -1,5 +1,6 @@
 import { todayWib } from '@/lib/date';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { checkoutKey, clearCheckoutKey } from '@/lib/checkout';
 import SelectField from '@/Components/SelectField';
 import { useState, useEffect } from 'react';
 import HendhysLayout from '@/Layouts/HendhysLayout';
@@ -8,6 +9,8 @@ import Icon from '@/Components/Icon';
 const route = window.route;
 
 export default function ProductionsForm({ products, units, type = 'aktual', formAction, warning, targetDate, prediction_id, production, isEdit = false }) {
+    const { auth } = usePage().props;
+    const submissionScope = `production:hendhys:${auth.user.id}`;
     
     // Initialize items from existing production details if available
     const initialItems = production?.details?.map(d => ({
@@ -17,7 +20,7 @@ export default function ProductionsForm({ products, units, type = 'aktual', form
         search_text: ''
     })) || [{ product_id: '', quantity_produced: 1, unit_id: '', search_text: '' }];
 
-    const { data, setData, post, put, processing, errors } = useForm({ 
+    const { data, setData, post, put, transform, processing, errors } = useForm({
         date: targetDate || production?.date || todayWib(),
         notes: production?.notes || '', 
         prediction_id: prediction_id || '',
@@ -44,7 +47,14 @@ export default function ProductionsForm({ products, units, type = 'aktual', form
         if (isEdit) {
             put(formAction);
         } else {
-            post(formAction); 
+            transform(values => ({
+                ...values,
+                request_key: checkoutKey(submissionScope, {
+                    date: values.date, notes: values.notes, prediction_id: values.prediction_id,
+                    items: values.items.map(({ product_id, quantity_produced, unit_id }) => ({ product_id, quantity_produced, unit_id })),
+                }),
+            }));
+            post(formAction, { onSuccess: () => clearCheckoutKey(submissionScope) });
         }
     };
 

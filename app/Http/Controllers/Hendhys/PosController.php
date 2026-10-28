@@ -175,6 +175,9 @@ class PosController extends Controller
         if ((float) $request->amount_paid < $computed['grand_total']) {
             throw ValidationException::withMessages(['amount_paid' => 'Pembayaran kurang dari total tagihan.']);
         }
+        if ($request->payment_type !== 'tunai' && abs((float) $request->amount_paid - $computed['grand_total']) > 0.00001) {
+            throw ValidationException::withMessages(['amount_paid' => 'Pembayaran non-tunai harus tepat sesuai total tagihan yang dihitung server.']);
+        }
 
         // Tolak (bukan diam-diam menimpa) bila total kiriman klien menyimpang:
         // kasir harus melihat error, bukan struk dengan angka berbeda dari yang
@@ -281,6 +284,10 @@ class PosController extends Controller
                 // Resolve payment type and method id
                 $paymentType = $request->payment_type ?? 'tunai'; // tunai, transfer, kartu_debit, kartu_kredit
                 $pmId = $request->payment_method_id;
+                if ($pmId) {
+                    $method = \App\Models\PaymentMethod::where('is_active', true)->whereKey($pmId)->lockForUpdate()->first();
+                    if (!$method || $method->type !== $paymentType) throw ValidationException::withMessages(['payment_method_id' => 'Metode pembayaran berubah atau tidak sesuai. Muat ulang POS.']);
+                }
 
                 // Map payment_type to legacy payment_method enum (cash, transfer)
                 $paymentMethodLegacy = match($paymentType) {

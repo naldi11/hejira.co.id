@@ -14,25 +14,50 @@ class ProductionMaterials
 
     public function __construct(private ProductionLots $lots, private ActivityLogService $logger) {}
 
-    public function authorize(User $user): void
+    public function isSuperAdmin(User $user): bool
     {
-        abort_unless($user->hasRole('kasir_hendhys') && $user->entity === 'hendhys'
-            && !$user->hasAnyRole(['owner', 'super_admin', 'admin_hendhys', 'admin_jihans', 'kasir_jihans']),
-            403, 'Pemakaian stok untuk produksi hanya dapat dicatat Kasir Hendhys.');
+        return $user->hasRole('super_admin') && in_array($user->entity, ['hendhys', 'all'], true)
+            && !$user->hasAnyRole(['owner', 'kasir_hendhys', 'admin_hendhys', 'admin_jihans', 'kasir_jihans', 'admin_izzi', 'kasir_izzi']);
     }
 
-    public function location(User $user): array
+    public function authorize(User $user): void
+    {
+        $isKasir = $user->hasRole('kasir_hendhys') && $user->entity === 'hendhys'
+            && !$user->hasAnyRole(['owner', 'super_admin', 'admin_hendhys', 'admin_jihans', 'kasir_jihans', 'admin_izzi', 'kasir_izzi']);
+        abort_unless($isKasir || $this->isSuperAdmin($user),
+            403, 'Pemakaian stok untuk produksi hanya dapat dicatat Kasir Hendhys atau Super Admin.');
+    }
+
+    public function branches(User $user)
     {
         $this->authorize($user);
-        $branch = Branch::where('entity', 'hendhys')->where('is_active', true)->find($user->branch_id);
+        $query = Branch::where('entity', 'hendhys')->where('is_active', true)->whereIn('type', ['pusat', 'cabang']);
+        if (!$this->isSuperAdmin($user)) {
+            $query->whereKey(session('active_branch_id') ?: $user->branch_id);
+        }
+        return $query->orderByRaw("CASE WHEN type = 'pusat' THEN 0 ELSE 1 END")->orderBy('name')->get();
+    }
+
+    public function location(User $user, ?int $branchId = null): array
+    {
+        $branches = $this->branches($user);
+        $branch = $this->isSuperAdmin($user)
+            ? ($branchId !== null ? $branches->firstWhere('id', $branchId) : $branches->first())
+            : $branches->first();
+        if ($this->isSuperAdmin($user) && $branchId !== null && !$branch) {
+            throw ValidationException::withMessages(['branch_id' => 'Pilih cabang Hendhys yang aktif terlebih dahulu.']);
+        }
         abort_unless($branch && in_array($branch->type, ['pusat', 'cabang'], true), 403, 'Pilih cabang Hendhys yang aktif terlebih dahulu.');
         return ['branch_id' => $branch->id, 'branch_name' => $branch->name,
             'stock_location' => $branch->type === 'pusat' ? 'hendhys_stock_pusat' : 'hendhys_stock_branch'];
     }
 
-    public function assertTransaction(object $tx, array $location): void
+    public function assertTransaction(object $tx, ?array $location = null, ?User $user = null): void
     {
-        abort_unless($tx->kind === 'branch_usage' && (int) $tx->branch_id === (int) $location['branch_id'], 403,
+        $allowedBranch = $user && $this->isSuperAdmin($user)
+            ? $tx->branch_id !== null && Branch::where('entity', 'hendhys')->where('is_active', true)->whereIn('type', ['pusat', 'cabang'])->whereKey($tx->branch_id)->exists()
+            : $location && (int) $tx->branch_id === (int) $location['branch_id'];
+        abort_unless($tx->kind === 'branch_usage' && $allowedBranch, 403,
             'Riwayat ini bukan pemakaian stok cabang yang sedang aktif.');
     }
 
@@ -77,7 +102,9 @@ class ProductionMaterials
 
     public function record(array $data, User $user): int
     {
-        $location = $this->location($user);
+        $location = $this->isSuperAdmin($user)
+            ? $this->location($user, (int) ($data['branch_id'] ?? 0))
+            : $this->location($user);
         if ((int) ($data['branch_id'] ?? 0) !== (int) $location['branch_id']) {
             throw ValidationException::withMessages(['branch_id' => 'Cabang aktif berubah. Buka ulang form sebelum mencatat pemakaian.']);
         }
@@ -148,10 +175,12 @@ class ProductionMaterials
 
     public function cancel(int $id, array $data, User $user): void
     {
-        $location = $this->location($user);
-        DB::transaction(function () use ($id, $data, $user, $location) {
+        $userLocation = $this->isSuperAdmin($user) ? null : $this->location($user);
+        if ($userLocation === null) $this->authorize($user);
+        DB::transaction(function () use ($id, $data, $user, $userLocation) {
             $tx = DB::table('production_material_transactions')->where('id', $id)->lockForUpdate()->first(); abort_unless($tx, 404);
-            $this->assertTransaction($tx, $location);
+            $this->assertTransaction($tx, $userLocation, $user);
+            $location = $userLocation ?? $this->location($user, (int) $tx->branch_id);
             if ($tx->stock_location !== $location['stock_location']) $this->invalid('Jenis lokasi stok cabang berubah sejak pencatatan. Periksa kartu stok asal sebelum pembatalan.');
             if ($tx->status === 'cancelled') {
                 if ($tx->cancel_reason === $data['reason'] && (int) $tx->cancelled_by === $user->id) return;

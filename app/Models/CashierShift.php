@@ -67,7 +67,8 @@ class CashierShift extends Model
         $openedAt = \Carbon\Carbon::parse($this->opened_at);
 
         $previousShift = self::where('user_id', $this->user_id)
-            ->where('branch_id', $this->branch_id)
+            ->where('entity', $this->entity)
+            ->when($this->entity === 'hendhys', fn ($q) => $q->where('branch_id', $this->branch_id))
             ->where('id', '<', $this->id)
             ->whereNotNull('closed_at')
             ->orderBy('id', 'desc')
@@ -86,6 +87,20 @@ class CashierShift extends Model
         return $this->closed_at ? \Carbon\Carbon::parse($this->closed_at) : now();
     }
 
+    /** Explicit ownership for new sales; branch-scoped periods for historical rows. */
+    public function scopeTransactions($query, string $alias = 't', $start = null): void
+    {
+        $branchId = $this->branch_id;
+        if ($this->entity === 'hendhys' && $branchId && Branch::find($branchId)?->type === 'pusat') $branchId = null;
+        $query->where($alias.'.created_by', $this->user_id)->where($alias.'.status', '!=', 'cancelled')
+            ->where(function ($q) use ($alias, $start, $branchId) {
+                $q->where($alias.'.shift_id', $this->id)->orWhere(function ($legacy) use ($alias, $start, $branchId) {
+                    $legacy->whereNull($alias.'.shift_id')->whereBetween($alias.'.created_at', [$start ?? $this->periodStart(), $this->periodEnd()]);
+                    if ($this->entity === 'hendhys') $legacy->where($alias.'.branch_id', $branchId);
+                });
+            });
+    }
+
     /**
      * Calculate live expected cash so far for active shift
      */
@@ -96,16 +111,11 @@ class CashierShift extends Model
         $paymentTable = ($entity === 'jihans') ? 'jihans_transaction_payments' : 'hendhys_transaction_payments';
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
 
-        $cashSales = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
+        $query = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
             ->join($transactionTable . ' as t', 't.id', '=', 'p.transaction_id')
-            ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
-            ->where('t.created_by', $this->user_id)
-            ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$this->opened_at, now()])
-            ->sum(\Illuminate\Support\Facades\DB::raw("CASE
-                WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
-                WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
-                ELSE 0 END"));
+            ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id');
+        $this->scopeTransactions($query, 't', $this->opened_at);
+        $cashSales = $query->selectRaw(self::paymentSummaryColumns($this->entity === 'hendhys'))->first()->tunai;
 
         return $this->starting_cash + (int) $cashSales;
     }
@@ -121,44 +131,27 @@ class CashierShift extends Model
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
         $hasPtypeCol = ($entity === 'hendhys');
 
-        $closedAt = $this->periodEnd();
-        $startAt  = $this->periodStart();
-
-        $summary = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
+        $query = \Illuminate\Support\Facades\DB::table($paymentTable . ' as p')
             ->join($transactionTable . ' as t', 't.id', '=', 'p.transaction_id')
-            ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id')
-            ->where('t.created_by', $this->user_id)
-            ->where('t.status', '!=', 'cancelled')
-            ->whereBetween('t.created_at', [$startAt, $closedAt])
-            ->selectRaw(self::paymentSummaryColumns($hasPtypeCol))
-            ->first();
+            ->leftJoin('master_payment_methods as pm', 'pm.id', '=', 'p.payment_method_id');
+        $this->scopeTransactions($query);
+        $summary = $query->selectRaw(self::paymentSummaryColumns($hasPtypeCol))->first();
 
         return (array) $summary;
     }
     /** Shared SQL keeps batch reports and a single shift's calculation identical. */
     public static function paymentSummaryColumns(bool $hasPtypeCol): string
     {
-        return "
-                COALESCE(SUM(CASE
-                    WHEN pm.type = 'tunai' THEN LEAST(p.amount, t.grand_total)
-                    WHEN p.payment_method_id IS NULL AND p.payment_method IN ('cash','tunai') THEN LEAST(p.amount, t.grand_total)
-                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'tunai' THEN LEAST(p.amount, t.grand_total)" : "") . "
-                    ELSE 0 END), 0) as tunai,
-                COALESCE(SUM(CASE
-                    WHEN pm.type = 'transfer' THEN p.amount
-                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'transfer' THEN p.amount" : "") . "
-                    WHEN p.payment_method_id IS NULL AND p.payment_method = 'transfer' AND " . ($hasPtypeCol ? "p.payment_type IS NULL" : "1") . " THEN p.amount
-                    ELSE 0 END), 0) as transfer,
-                COALESCE(SUM(CASE
-                    WHEN pm.type = 'kartu_debit' THEN p.amount
-                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_debit' THEN p.amount" : "") . "
-                    ELSE 0 END), 0) as kartu_debit,
-                COALESCE(SUM(CASE
-                    WHEN pm.type = 'kartu_kredit' THEN p.amount
-                    " . ($hasPtypeCol ? "WHEN p.payment_method_id IS NULL AND p.payment_type = 'kartu_kredit' THEN p.amount" : "") . "
-                    ELSE 0 END), 0) as kartu_kredit,
-                COALESCE(SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END), 0) as kredit
-            ";
+        $type = $hasPtypeCol
+            ? "COALESCE(p.payment_type, pm.type, CASE WHEN p.payment_method IN ('cash','tunai') THEN 'tunai' ELSE p.payment_method END)"
+            : "COALESCE(pm.type, CASE WHEN p.payment_method IN ('cash','tunai') THEN 'tunai' ELSE p.payment_method END)";
+        $applied = 'CASE WHEN p.amount < t.grand_total THEN p.amount ELSE t.grand_total END';
+        $columns = [];
+        foreach (['tunai', 'transfer', 'kartu_debit', 'kartu_kredit'] as $kind) {
+            $columns[] = "COALESCE(SUM(CASE WHEN {$type} = '{$kind}' THEN {$applied} ELSE 0 END), 0) as {$kind}";
+        }
+        $columns[] = "COALESCE(SUM(CASE WHEN t.status = 'pending' THEN t.grand_total ELSE 0 END), 0) as kredit";
+        return implode(', ', $columns);
     }
 
     /**
@@ -171,14 +164,9 @@ class CashierShift extends Model
         $entity = $this->entity;
         $transactionTable = ($entity === 'jihans') ? 'jihans_transactions' : 'hendhys_transactions';
 
-        $closedAt = $this->periodEnd();
-        $startAt  = $this->periodStart();
-
-        $summary = \Illuminate\Support\Facades\DB::table($transactionTable)
-            ->where('created_by', $this->user_id)
-            ->where('status', '!=', 'cancelled')
-            ->whereBetween('created_at', [$startAt, $closedAt])
-            ->selectRaw("
+        $query = \Illuminate\Support\Facades\DB::table($transactionTable.' as t');
+        $this->scopeTransactions($query);
+        $summary = $query->selectRaw("
                 COUNT(id) as jumlah_transaksi,
                 COALESCE(SUM(discount_amount), 0) as tot_potongan,
                 COALESCE(SUM(tax_amount), 0) as tot_pajak,
