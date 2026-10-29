@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\{Branch, Product, User};
+use App\Services\Izzi\Quantity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +32,8 @@ class ProductionMaterials
     public function branches(User $user)
     {
         $this->authorize($user);
-        $query = Branch::where('entity', 'hendhys')->where('is_active', true)->whereIn('type', ['pusat', 'cabang']);
+        $query = Branch::whereIn('entity', ['gudang', 'hendhys', 'jihans'])->where('is_active', true)->whereIn('type', ['pusat', 'cabang']);
+        if ($user->entity !== 'all') $query->where('entity', $user->entity);
         if (!$this->isSuperAdmin($user)) {
             $query->whereKey(session('active_branch_id') ?: $user->branch_id);
         }
@@ -45,17 +47,22 @@ class ProductionMaterials
             ? ($branchId !== null ? $branches->firstWhere('id', $branchId) : $branches->first())
             : $branches->first();
         if ($this->isSuperAdmin($user) && $branchId !== null && !$branch) {
-            throw ValidationException::withMessages(['branch_id' => 'Pilih cabang Hendhys yang aktif terlebih dahulu.']);
+            throw ValidationException::withMessages(['branch_id' => 'Pilih cabang atau gudang aktif yang tersedia terlebih dahulu.']);
         }
-        abort_unless($branch && in_array($branch->type, ['pusat', 'cabang'], true), 403, 'Pilih cabang Hendhys yang aktif terlebih dahulu.');
+        abort_unless($branch && in_array($branch->type, ['pusat', 'cabang'], true), 403, 'Pilih cabang atau gudang aktif yang tersedia terlebih dahulu.');
         return ['branch_id' => $branch->id, 'branch_name' => $branch->name,
-            'stock_location' => $branch->type === 'pusat' ? 'hendhys_stock_pusat' : 'hendhys_stock_branch'];
+            'stock_location' => match ($branch->entity) {
+                'gudang' => 'jihans_gudang_stock',
+                'jihans' => 'jihans_retail_stock',
+                'izzi' => 'izzi_stock',
+                'hendhys' => $branch->type === 'pusat' ? 'hendhys_stock_pusat' : 'hendhys_stock_branch',
+            }];
     }
 
     public function assertTransaction(object $tx, ?array $location = null, ?User $user = null): void
     {
         $allowedBranch = $user && $this->isSuperAdmin($user)
-            ? $tx->branch_id !== null && Branch::where('entity', 'hendhys')->where('is_active', true)->whereIn('type', ['pusat', 'cabang'])->whereKey($tx->branch_id)->exists()
+            ? $tx->branch_id !== null && $this->branches($user)->contains('id', $tx->branch_id)
             : $location && (int) $tx->branch_id === (int) $location['branch_id'];
         abort_unless($tx->kind === 'branch_usage' && $allowedBranch, 403,
             'Riwayat ini bukan pemakaian stok cabang yang sedang aktif.');
@@ -66,14 +73,57 @@ class ProductionMaterials
         throw ValidationException::withMessages(['items' => $message.' Tidak ada saldo stok yang diubah.']);
     }
 
+    public function hasBranchStock(array $location): bool
+    {
+        return in_array($location['stock_location'], ['hendhys_stock_branch', 'izzi_stock'], true);
+    }
+
+    public function lotEntity(array $location): ?string
+    {
+        return match ($location['stock_location']) {
+            'hendhys_stock_pusat' => 'hendhys', 'jihans_gudang_stock' => 'jihans', default => null,
+        };
+    }
+
+    public function quantityScale(array $location): int
+    {
+        return $location['stock_location'] === 'izzi_stock' ? Quantity::SCALE : 1;
+    }
+
+    public function displayQuantity(int|string $quantity, int $scale): int|string
+    {
+        return $scale === Quantity::SCALE ? Quantity::display($quantity) : (int) $quantity;
+    }
+
+    public function serializeItem(object $item): array
+    {
+        $row = (array) $item;
+        foreach (['quantity', 'source_before', 'source_after'] as $key) {
+            $row[$key] = $this->displayQuantity($item->$key, (int) $item->quantity_scale);
+        }
+        return $row;
+    }
+
+    public function products(array $location)
+    {
+        $query = Product::where('status', 'active');
+        return match ($location['stock_location']) {
+            'jihans_gudang_stock' => $query->visibleInGudang(),
+            'jihans_retail_stock' => $query->visibleInJihans(),
+            'hendhys_stock_pusat', 'hendhys_stock_branch' => $query->visibleInHendhys(),
+            // Izzi's catalogue shares all master products; the stock row determines availability.
+            'izzi_stock' => $query,
+        };
+    }
+
     private function stock(array $location, int $productId, int $unitId): object
     {
         $stock = DB::table($location['stock_location'])->where('product_id', $productId)
-            ->when($location['stock_location'] === 'hendhys_stock_branch', fn ($q) => $q->where('branch_id', $location['branch_id']))
+            ->when($this->hasBranchStock($location), fn ($q) => $q->where('branch_id', $location['branch_id']))
             ->lockForUpdate()->first();
         if (!$stock || (int) $stock->unit_id !== $unitId) $this->invalid('Kartu stok atau satuan produk di cabang aktif belum sesuai. Periksa master produk dan kartu stok.');
-        if ($location['stock_location'] === 'hendhys_stock_pusat' && DB::table('production_lots')
-            ->where('entity', 'hendhys')->where('product_id', $productId)->where('remaining', '>', 0)->where('unit_id', '!=', $unitId)->exists()) {
+        if (($entity = $this->lotEntity($location)) && DB::table('production_lots')
+            ->where('entity', $entity)->where('product_id', $productId)->where('remaining', '>', 0)->where('unit_id', '!=', $unitId)->exists()) {
             $this->invalid('Satuan stok produksi berbeda dari kartu stok.');
         }
         return $stock;
@@ -81,15 +131,24 @@ class ProductionMaterials
 
     private function balance(array $location, object $stock, int $after): void
     {
-        if ($after < 0 || $after > 4294967295) $this->invalid('Saldo stok tidak cukup atau melebihi batas.');
+        if ($after < 0 || $after > ($this->quantityScale($location) === Quantity::SCALE ? Quantity::MAX : 4294967295)) $this->invalid('Saldo stok tidak cukup atau melebihi batas.');
         DB::table($location['stock_location'])->where('id', $stock->id)->update(['quantity' => $after, 'last_updated' => now()]);
     }
 
     private function movement(array $location, object $stock, int $after, object $tx, User $user, string $event): array
     {
         $before = (int) $stock->quantity;
-        DB::table('hendhys_stock_movements')->insert([
-            'branch_id' => $location['stock_location'] === 'hendhys_stock_branch' ? $location['branch_id'] : null,
+        $table = match ($location['stock_location']) {
+            'jihans_gudang_stock' => 'jihans_gudang_stock_movements',
+            'jihans_retail_stock' => 'jihans_retail_stock_movements',
+            'izzi_stock' => 'izzi_stock_movements',
+            default => 'hendhys_stock_movements',
+        };
+        $extra = [];
+        if ($this->hasBranchStock($location)) $extra['branch_id'] = $location['branch_id'];
+        if ($location['stock_location'] === 'izzi_stock') $extra += ['unit_id' => $stock->unit_id, 'actor_name' => $user->name];
+        DB::table($table)->insert([
+            ...$extra,
             'product_id' => $stock->product_id, 'type' => $after < $before ? 'out' : 'in', 'source' => 'adjustment',
             'reference_id' => null, 'production_material_id' => $tx->id,
             'quantity' => abs($after - $before), 'quantity_before' => $before, 'quantity_after' => $after,
@@ -97,7 +156,8 @@ class ProductionMaterials
             'created_by' => $user->id, 'created_at' => now(),
         ]);
         return ['location' => $tx->branch_name, 'branch_id' => $location['branch_id'],
-            'product_id' => $stock->product_id, 'before' => $before, 'after' => $after];
+            'product_id' => $stock->product_id, 'before' => $this->displayQuantity($before, $this->quantityScale($location)),
+            'after' => $this->displayQuantity($after, $this->quantityScale($location))];
     }
 
     public function record(array $data, User $user): int
@@ -133,19 +193,23 @@ class ProductionMaterials
             DB::table('production_material_transactions')->where('id', $tx->id)->update(['number' => $tx->number]);
             $changes = [];
             foreach ($items as $input) {
-                $p = Product::with('unit')->visibleInHendhys()->where('status', 'active')->find($input['product_id']);
-                if (!$p || !$p->unit) $this->invalid('Produk atau satuan master tidak tersedia untuk Hendhys.');
+                $p = $this->products($location)->with('unit')->find($input['product_id']);
+                if (!$p || !$p->unit) $this->invalid('Produk atau satuan master tidak tersedia untuk lokasi yang dipilih.');
                 $source = $this->stock($location, $p->id, $p->unit_id);
-                $qty = (int) $input['quantity']; $before = (int) $source->quantity;
-                if ($qty < 1 || $qty > $before) $this->invalid('Stok '.$p->name.' tidak cukup. Tersedia '.$before.' '.$p->unit->abbreviation.'.');
+                $scale = $this->quantityScale($location);
+                $parsed = Quantity::parse($input['quantity'], 'items');
+                if ($scale === 1 && $parsed % Quantity::SCALE !== 0) $this->invalid('Jumlah stok Gudang, Jihans, dan Hendhys harus bulat sesuai satuan master.');
+                $qty = $scale === Quantity::SCALE ? $parsed : intdiv($parsed, Quantity::SCALE);
+                $before = (int) $source->quantity;
+                if ($qty < 1 || $qty > $before) $this->invalid('Stok '.$p->name.' tidak cukup. Tersedia '.$this->displayQuantity($before, $scale).' '.$p->unit->abbreviation.'.');
                 $itemId = DB::table('production_material_items')->insertGetId([
                     'transaction_id' => $tx->id, 'product_id' => $p->id, 'unit_id' => $p->unit_id,
                     'product_name' => $p->name, 'product_code' => $p->code, 'unit_name' => $p->unit->abbreviation,
-                    'quantity' => $qty, 'source_before' => $before, 'source_after' => $before - $qty,
+                    'quantity' => $qty, 'quantity_scale' => $scale, 'source_before' => $before, 'source_after' => $before - $qty,
                     'notes' => $input['notes'] ?? null,
                 ]);
-                if ($location['stock_location'] === 'hendhys_stock_pusat') {
-                    $this->lots->debit('hendhys', $p->id, $p->unit_id, $before, $qty, self::SOURCE, $tx->id, $user->id, null, $itemId);
+                if ($entity = $this->lotEntity($location)) {
+                    $this->lots->debit($entity, $p->id, $p->unit_id, $before, $qty, self::SOURCE, $tx->id, $user->id, null, $itemId);
                 }
                 $this->balance($location, $source, $before - $qty);
                 $changes[] = $this->movement($location, $source, $before - $qty, $tx, $user, 'Pencatatan');
@@ -156,16 +220,16 @@ class ProductionMaterials
         }, 3);
     }
 
-    private function restoreLots(object $stock, object $item, object $tx): void
+    private function restoreLots(object $stock, object $item, object $tx, string $entity): void
     {
         $flows = DB::table('production_lot_outflows as o')->join('production_lots as l', 'l.id', '=', 'o.lot_id')
-            ->where('l.entity', 'hendhys')->where('l.product_id', $item->product_id)->where('o.source', self::SOURCE)
+            ->where('l.entity', $entity)->where('l.product_id', $item->product_id)->where('o.source', self::SOURCE)
             ->where('o.reference_id', $tx->id)->where('o.detail_id', $item->id)->select('o.*', 'l.unit_id', 'l.remaining', 'l.quantity as lot_quantity')->lockForUpdate()->get();
         if ($flows->isEmpty()) {
-            $this->lots->credit('hendhys', $item->product_id, $item->unit_id, (int) $stock->quantity, $item->quantity, 'production_material_reversal', $tx->id);
+            $this->lots->credit($entity, $item->product_id, $item->unit_id, (int) $stock->quantity, $item->quantity, 'production_material_reversal', $tx->id);
             return;
         }
-        if ((int) $flows->sum('quantity') !== (int) $item->quantity || (int) DB::table('production_lots')->where('entity', 'hendhys')->where('product_id', $item->product_id)->sum('remaining') !== (int) $stock->quantity) $this->invalid('Saldo nomor produksi tidak sesuai untuk pembatalan.');
+        if ((int) $flows->sum('quantity') !== (int) $item->quantity || (int) DB::table('production_lots')->where('entity', $entity)->where('product_id', $item->product_id)->sum('remaining') !== (int) $stock->quantity) $this->invalid('Saldo nomor produksi tidak sesuai untuk pembatalan.');
         foreach ($flows as $flow) {
             if ((int) $flow->unit_id !== (int) $item->unit_id || (int) $flow->restored_quantity !== 0 || $flow->remaining + $flow->quantity > $flow->lot_quantity) $this->invalid('Rincian stok produksi asal berubah. Periksa sebelum pembatalan.');
             DB::table('production_lots')->where('id', $flow->lot_id)->increment('remaining', $flow->quantity, ['updated_at' => now()]);
@@ -190,7 +254,7 @@ class ProductionMaterials
             $changes = [];
             foreach (DB::table('production_material_items')->where('transaction_id', $id)->orderBy('product_id')->get() as $item) {
                 $source = $this->stock($location, $item->product_id, $item->unit_id);
-                if ($location['stock_location'] === 'hendhys_stock_pusat') $this->restoreLots($source, $item, $tx);
+                if ($entity = $this->lotEntity($location)) $this->restoreLots($source, $item, $tx, $entity);
                 $this->balance($location, $source, (int) $source->quantity + $item->quantity);
                 $changes[] = $this->movement($location, $source, (int) $source->quantity + $item->quantity, $tx, $user, 'Pembatalan');
             }

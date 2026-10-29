@@ -1,0 +1,1 @@
+import{a as e,t}from"./app-DALU0gE9.js";import{t as n}from"./GudangLayout-fjgMObMW.js";import{t as r}from"./HendhysLayout-DnkNrNFm.js";import{t as i}from"./JihansLayout-BE6pUS87.js";var a=t();function o(t){let{auth:o}=e().props;return(0,a.jsx)(o?.user?.roles?.includes(`super_admin`)?n:o?.user?.entity===`jihans`?i:r,{...t})}export{o as t};

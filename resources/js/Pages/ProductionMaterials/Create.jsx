@@ -70,7 +70,7 @@ function Form({ products, catalogue: initialCatalogue, location, branches = [], 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {branches.length > 1 && (
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Cabang Hendhys
+                            Cabang / Gudang (Sumber Stok)
                             <select
                                 className={`${input} mt-1.5`}
                                 value={location.branch_id}
@@ -81,7 +81,7 @@ function Form({ products, catalogue: initialCatalogue, location, branches = [], 
                             >
                                 {branches.map((b) => (
                                     <option key={b.id} value={b.id}>
-                                        {b.name}
+                                        {({ gudang: 'Gudang', hendhys: 'Hendhys', jihans: 'Jihans' })[b.entity]} — {b.name}
                                     </option>
                                 ))}
                             </select>
@@ -123,6 +123,14 @@ function Form({ products, catalogue: initialCatalogue, location, branches = [], 
                         />
                     </label>
                 </div>
+
+                {['jihans_gudang_stock', 'jihans_retail_stock'].includes(location.stock_location) && (
+                    <p className="mt-3 text-xs text-gray-500">
+                        {location.stock_location === 'jihans_retail_stock'
+                            ? 'Cabang Jihans memakai saldo stok retail bersama. Pemakaian ini mengurangi saldo bersama tersebut.'
+                            : 'Pemakaian ini mengurangi saldo stok Gudang Utama, termasuk stok hasil produksi Jihans yang tersimpan di gudang.'}
+                    </p>
+                )}
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -218,8 +226,8 @@ function Form({ products, catalogue: initialCatalogue, location, branches = [], 
                                         required
                                         disabled={!product?.unit_matches}
                                         type="number"
-                                        min="1"
-                                        step="1"
+                                        min={product?.quantity_step || '1'}
+                                        step={product?.quantity_step || '1'}
                                         max={product?.quantity || 0}
                                         placeholder="0"
                                         className={`${input} font-bold`}
@@ -230,7 +238,7 @@ function Form({ products, catalogue: initialCatalogue, location, branches = [], 
                                         <span className="mt-1 block text-[11px] text-gray-500">
                                             Sisa stok:{' '}
                                             <strong>
-                                                {product.quantity - Number(item.quantity || 0)} {product.unit}
+                                                {Number((Number(product.quantity) - Number(item.quantity || 0)).toFixed(3))} {product.unit}
                                             </strong>
                                         </span>
                                     )}

@@ -279,7 +279,7 @@ class ProductionMaterialsTest extends TestCase
         $this->actingAs($superAdmin)->get(route('production-materials.create'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('location.branch_id', $pusat->id)
-                ->has('branches', 2)
+                ->has('branches', 4)
                 ->where('products.0.quantity', 35));
 
         $this->get(route('production-materials.create', ['branch_id' => $cabang->id]))
@@ -292,7 +292,7 @@ class ProductionMaterialsTest extends TestCase
             ->assertJsonPath('products.0.quantity', 25);
 
         $this->post(route('production-materials.store'), $this->data($inactive, $p))->assertSessionHasErrors('branch_id');
-        $this->post(route('production-materials.store'), $this->data($jihans, $p))->assertSessionHasErrors('branch_id');
+        $this->post(route('production-materials.store'), $this->data($jihans, $p))->assertSessionHasErrors('items');
 
         $this->post(route('production-materials.store'), $this->data($pusat, $p, 5))->assertSessionHas('success');
         $this->post(route('production-materials.store'), $this->data($cabang, $p, 8))->assertSessionHas('success');
@@ -303,7 +303,7 @@ class ProductionMaterialsTest extends TestCase
         $this->get(route('production-materials.index'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('location', null)
-                ->has('branches', 2)
+                ->has('branches', 4)
                 ->where('transactions.total', 2));
 
         $this->get(route('production-materials.index', ['branch_id' => $cabang->id]))
@@ -318,5 +318,105 @@ class ProductionMaterialsTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('hendhys_stock_branch', ['branch_id' => $cabang->id, 'product_id' => $p->id, 'quantity' => 25]);
+    }
+
+    public function test_super_admin_uses_and_restores_the_selected_units_stock_with_its_own_audit(): void
+    {
+        $admin = $this->user($this->branch('pusat'), 'super_admin', 'all');
+        $tables = ['gudang' => 'jihans_gudang_stock', 'jihans' => 'jihans_retail_stock', 'hendhys' => 'hendhys_stock_branch'];
+        $movements = ['gudang' => 'jihans_gudang_stock_movements', 'jihans' => 'jihans_retail_stock_movements', 'hendhys' => 'hendhys_stock_movements'];
+        $other = $this->branch('cabang', 'izzi');
+        $this->actingAs($admin);
+        foreach ($tables as $entity => $table) {
+            $branch = $this->branch($entity === 'gudang' ? 'pusat' : 'cabang', $entity);
+            $product = $this->product();
+            $product->update(['entity_scope' => $entity, 'visible_gudang' => false, 'visible_jihans' => false, 'visible_hendhys' => false]);
+            // Seed every stock pool to prove only the selected source changes.
+            foreach ($tables as $pool => $stockTable) {
+                $row = ['product_id' => $product->id, 'unit_id' => $product->unit_id, 'quantity' => 40];
+                if ($pool === 'hendhys') $row['branch_id'] = $branch->id;
+                DB::table($stockTable)->insert($row);
+            }
+            DB::table('izzi_stock')->insert(['branch_id' => $other->id, 'product_id' => $product->id, 'unit_id' => $product->unit_id, 'quantity' => 90000, 'last_updated' => now()]);
+            $this->get(route('production-materials.create', ['branch_id' => $branch->id]))
+                ->assertInertia(fn (Assert $page) => $page->where('location.stock_location', $table)->where('products.0.id', $product->id));
+            $this->getJson(route('production-materials.create', ['branch_id' => $branch->id, 'lookup' => 'products', 'q' => $product->code]))
+                ->assertJsonCount(1, 'products')->assertJsonPath('products.0.quantity', 40);
+            $data = $this->data($branch, $product);
+            $this->post(route('production-materials.store'), $data)->assertSessionHas('success');
+            $this->post(route('production-materials.store'), $data)->assertSessionHas('success');
+            $id = DB::table('production_material_transactions')->where('request_key', $data['request_key'])->value('id');
+            foreach ($tables as $pool => $stockTable) {
+                $this->assertDatabaseHas($stockTable, ['product_id' => $product->id, 'quantity' => $pool === $entity ? 33 : 40]);
+            }
+            $this->assertDatabaseHas('izzi_stock', ['branch_id' => $other->id, 'product_id' => $product->id, 'quantity' => 90000]);
+            $this->assertDatabaseHas($movements[$entity], ['production_material_id' => $id, 'quantity' => 7, 'type' => 'out']);
+            $this->get(route('production-materials.show', $id))->assertInertia(fn (Assert $page) => $page
+                ->where('items.0.quantity', 7)->where('items.0.source_after', 33));
+            $this->get(route('production-materials.index', ['branch_id' => $branch->id]))->assertInertia(fn (Assert $page) => $page
+                ->where('transactions.total', 1)->where('transactions.data.0.items.0.quantity', 7));
+            $cancel = ['reason' => 'Barang belum digunakan untuk produksi', 'confirmed' => true];
+            $this->post(route('production-materials.cancel', $id), $cancel)->assertSessionHas('success');
+            $this->post(route('production-materials.cancel', $id), $cancel)->assertSessionHas('success');
+            $this->assertDatabaseHas($table, ['product_id' => $product->id, 'quantity' => 40]);
+            $this->assertSame(2, DB::table($movements[$entity])->where('production_material_id', $id)->count());
+        }
+    }
+
+    public function test_warehouse_production_lots_are_deducted_and_restored(): void
+    {
+        $warehouse = $this->branch('pusat', 'gudang');
+        $admin = $this->user($warehouse, 'super_admin', 'all');
+        $p = $this->product('produced');
+        DB::table('jihans_gudang_stock')->insert(['product_id' => $p->id, 'unit_id' => $p->unit_id, 'quantity' => 20]);
+        $this->actingAs($admin)->post(route('production-materials.store'), $this->data($warehouse, $p))->assertSessionHas('success');
+        $this->assertDatabaseHas('production_lots', ['entity' => 'jihans', 'product_id' => $p->id, 'remaining' => 13]);
+        $this->get(route('production-materials.show', 1))->assertInertia(fn (Assert $page) => $page->where('items.0.lots.0.quantity', 7));
+        $this->post(route('production-materials.cancel', 1), ['reason' => 'Bahan produksi belum digunakan', 'confirmed' => true])->assertSessionHas('success');
+        $this->assertDatabaseHas('production_lots', ['entity' => 'jihans', 'product_id' => $p->id, 'remaining' => 20]);
+        $this->assertDatabaseHas('production_lot_outflows', ['reference_id' => 1, 'source' => 'production_material', 'restored_quantity' => 7]);
+    }
+
+    public function test_izzi_is_excluded_from_branch_choices_and_rejected_for_direct_requests(): void
+    {
+        $hendhys = $this->branch();
+        $warehouse = Branch::where('entity', 'gudang')->firstOrFail();
+        $jihans = $this->branch('cabang', 'jihans');
+        $izzi = $this->branch('cabang', 'izzi');
+        $admin = $this->user($hendhys, 'super_admin', 'all');
+        $product = $this->product();
+        DB::table('izzi_stock')->insert(['branch_id' => $izzi->id, 'product_id' => $product->id, 'unit_id' => $product->unit_id, 'quantity' => 40000, 'last_updated' => now()]);
+        $allowedIds = collect([$hendhys->id, $warehouse->id, $jihans->id])->sort()->values()->all();
+        $this->actingAs($admin);
+        foreach (['production-materials.create', 'production-materials.index'] as $route) {
+            $this->get(route($route))->assertInertia(fn (Assert $page) => $page
+                ->has('branches', 3)
+                ->where('branches', fn ($branches) => $branches->pluck('id')->sort()->values()->all() === $allowedIds));
+            $this->getJson(route($route, ['branch_id' => $izzi->id]))->assertUnprocessable()->assertJsonValidationErrors('branch_id');
+        }
+        $this->getJson(route('production-materials.create', ['branch_id' => $izzi->id, 'lookup' => 'products']))
+            ->assertUnprocessable()->assertJsonValidationErrors('branch_id');
+        $this->post(route('production-materials.store'), $this->data($izzi, $product))->assertSessionHasErrors('branch_id');
+        $this->assertDatabaseHas('izzi_stock', ['branch_id' => $izzi->id, 'product_id' => $product->id, 'quantity' => 40000]);
+        foreach (['production_material_transactions', 'production_material_items', 'production_material_events', 'izzi_stock_movements'] as $table) {
+            $this->assertDatabaseCount($table, 0);
+        }
+    }
+
+    public function test_other_units_remain_inaccessible_to_hendhys_cashier_and_scoped_super_admin(): void
+    {
+        $hendhys = $this->branch(); $warehouse = $this->branch('pusat', 'gudang');
+        $product = $this->product(); $this->stock($hendhys, $product);
+        DB::table('jihans_gudang_stock')->insert(['product_id' => $product->id, 'unit_id' => $product->unit_id, 'quantity' => 50]);
+        $allAdmin = $this->user($hendhys, 'super_admin', 'all');
+        $this->actingAs($allAdmin)->post(route('production-materials.store'), $this->data($warehouse, $product))->assertSessionHas('success');
+        foreach (['kasir_hendhys', 'super_admin'] as $role) {
+            $actor = $this->user($hendhys, $role);
+            $this->actingAs($actor)->get(route('production-materials.create'))->assertInertia(fn (Assert $page) => $page->has('branches', 1)->where('branches.0.entity', 'hendhys'));
+            $this->post(route('production-materials.store'), $this->data($warehouse, $product))->assertSessionHasErrors('branch_id');
+            $this->get(route('production-materials.show', 1))->assertForbidden();
+            $this->post(route('production-materials.cancel', 1), ['reason' => 'Tidak boleh membatalkan unit lain', 'confirmed' => true])->assertForbidden();
+        }
+        $this->assertDatabaseHas('jihans_gudang_stock', ['product_id' => $product->id, 'quantity' => 43]);
     }
 }

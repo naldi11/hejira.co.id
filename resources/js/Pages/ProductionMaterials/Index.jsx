@@ -44,7 +44,7 @@ export default function Index({ transactions, filters, location, branches = [] }
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                             Riwayat alokasi bahan produksi di{' '}
-                            {location ? location.branch_name : 'seluruh cabang aktif Hendhys'}
+                            {location ? location.branch_name : 'seluruh cabang dan gudang aktif'}
                         </p>
                     </div>
                     <Link
@@ -89,10 +89,10 @@ export default function Index({ transactions, filters, location, branches = [] }
                                 onChange={(e) => set('branch_id', e.target.value)}
                                 className={selectCls}
                             >
-                                <option value="">Semua Cabang Hendhys</option>
+                                <option value="">Semua Cabang & Gudang</option>
                                 {branches.map((b) => (
                                     <option key={b.id} value={b.id}>
-                                        {b.name}
+                                        {({ gudang: 'Gudang', hendhys: 'Hendhys', jihans: 'Jihans' })[b.entity]} — {b.name}
                                     </option>
                                 ))}
                             </select>

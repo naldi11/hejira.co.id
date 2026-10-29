@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, usePage } from "@inertiajs/react";
 
 import Icon from "@/Components/Icon";
@@ -33,11 +33,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
     type: "main" | "others";
     index: number;
   } | null>(null);
-  const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
-  );
-  const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
   // Inertia supplies relative URLs while Ziggy may supply absolute URLs.
   // Prefer the most specific route, including its declared tab parameters.
   const activePath = useMemo(() => {
@@ -79,18 +74,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
       setOpenSubmenu(null);
     }
   }, [url, isActive]);
-
-  useEffect(() => {
-    if (openSubmenu !== null) {
-      const key = `${openSubmenu.type}-${openSubmenu.index}`;
-      if (subMenuRefs.current[key]) {
-        setSubMenuHeight((prevHeights) => ({
-          ...prevHeights,
-          [key]: subMenuRefs.current[key]?.scrollHeight || 0,
-        }));
-      }
-    }
-  }, [openSubmenu, isExpanded, isHovered, isMobileOpen]);
 
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
     setOpenSubmenu((prevOpenSubmenu) => {
@@ -135,7 +118,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                 {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text min-w-0 flex-1 text-left leading-5">{nav.name}</span>
+                <span className="menu-item-text min-w-0 flex-1 whitespace-normal break-words text-left leading-5">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <Icon name="expand_more"
@@ -168,7 +151,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text min-w-0 flex-1 text-left leading-5">{nav.name}</span>
+                  <span className="menu-item-text min-w-0 flex-1 whitespace-normal break-words text-left leading-5">{nav.name}</span>
                 )}
               </Link>
             )
@@ -176,18 +159,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
           {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
               id={`submenu-${menuType}-${index}`}
-              ref={(el) => {
-                subMenuRefs.current[`${menuType}-${index}`] = el;
-              }}
               aria-hidden={!(openSubmenu?.type === menuType && openSubmenu?.index === index)}
-              className="overflow-hidden transition-all duration-300"
+              className="grid transition-[grid-template-rows] duration-300 motion-reduce:transition-none"
               style={{
-                height:
+                gridTemplateRows:
                   openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? `${subMenuHeight[`${menuType}-${index}`]}px`
-                    : "0px",
+                    ? "1fr"
+                    : "0fr",
               }}
             >
+              <div className="min-h-0 overflow-hidden">
               <ul className="mt-1 space-y-1 ml-4 border-l border-gray-200 pl-3 dark:border-gray-700">
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.name}>
@@ -201,7 +182,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                           : "menu-dropdown-item-inactive"
                       }`}
                     >
-                      <span className="min-w-0 flex-1 text-left leading-5">{subItem.name}</span>
+                      <span className="min-w-0 flex-1 whitespace-normal break-words text-left leading-5">{subItem.name}</span>
                       {(subItem.new || subItem.pro) && <span className="flex shrink-0 items-center gap-1 ml-auto">
                         {subItem.new && (
                           <span
@@ -230,6 +211,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ navItems = [], othersItems = []
                   </li>
                 ))}
               </ul>
+              </div>
             </div>
           )}
         </li>
